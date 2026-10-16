@@ -4,6 +4,7 @@ import {
 	FeatherIcon,
 	GavelIcon,
 	HeartPulseIcon,
+	LifeBuoyIcon,
 	LockKeyholeIcon,
 	ScaleIcon,
 	UploadIcon,
@@ -18,6 +19,7 @@ import {
 	CLASSE_IDENTITE_LATERALE,
 	ClocheBureau,
 	DeclencheurRechercheBureau,
+	EntreeLaterale,
 	IdentiteLaterale,
 	type DestinationLaterale,
 	type GroupeLateral
@@ -154,10 +156,33 @@ export function LateraleBranchee({
 			pied={
 				auRepos ? null : (
 					<Facultatif>
+						<AideLaterale actif={chemin.startsWith('/app/aide')} reduite={reduite} />
 						<CompteLateral actif={surLeCompte} />
 					</Facultatif>
 				)
 			}
+		/>
+	);
+}
+
+/**
+ * L'AIDE, EN PIED DE LA BARRE, AU-DESSUS DU COMPTE (16/10/2026, comme chez Melio) : ce
+ * qu'on cherche quand on est perdu se trouve au même endroit sur chaque page, et le
+ * nombre de réponses de l'équipe à lire s'y pose.
+ */
+function AideLaterale({ actif, reduite }: { readonly actif: boolean; readonly reduite: boolean }) {
+	const nonLues = useQuery(api.support.fil.nonLues, {});
+	return (
+		<EntreeLaterale
+			reduite={reduite}
+			destination={{
+				cle: 'aide',
+				libelle: 'Aide',
+				Icone: LifeBuoyIcon,
+				vers: '/app/aide',
+				actif,
+				...(nonLues === undefined || nonLues === 0 ? {} : { valeur: String(nonLues) })
+			}}
 		/>
 	);
 }

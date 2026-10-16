@@ -24,6 +24,11 @@ declare module '@tanstack/react-router' {
 	interface HistoryState {
 		/** Le titre de l'écran d'où l'on vient, tel que `PageEcran` le publie. */
 		titreDeProvenance?: string;
+		/**
+		 * La question à relire dans un fil neuf de l'Aide (16/10/2026) : elle peut nommer
+		 * un client, elle ne passe donc jamais par l'adresse (historique, mesure d'audience).
+		 */
+		questionPourLAide?: string;
 	}
 }
 

@@ -46,11 +46,20 @@ export type Acte = (typeof ACTES)[number];
 export const LIBELLES_DES_RAISONS: Record<RaisonDePassage, { gerant: string; equipe: string }> = {
 	DEMANDE: { gerant: 'Vous avez demandé l’équipe.', equipe: 'Demandé par le gérant' },
 	ACTE: { gerant: 'C’est une demande que seule l’équipe peut traiter.', equipe: 'Demande d’acte' },
-	REFUS: { gerant: 'Mes réponses ne vous ont pas aidé.', equipe: 'Deux réponses de Plume refusées' },
-	INSISTANCE: { gerant: 'Je n’arrive pas à vous répondre.', equipe: 'Le gérant a redit trois fois sa question' },
+	REFUS: {
+		gerant: 'Mes réponses ne vous ont pas aidé.',
+		equipe: 'Deux réponses de Plume refusées'
+	},
+	INSISTANCE: {
+		gerant: 'Je n’arrive pas à vous répondre.',
+		equipe: 'Le gérant a redit trois fois sa question'
+	},
 	LACUNE: { gerant: 'Je ne connais pas la réponse.', equipe: 'Plume ne savait pas' },
 	PANNE: { gerant: 'Je n’ai pas pu vous répondre.', equipe: 'Plume en panne' },
-	PLAFOND: { gerant: 'Ce mois-ci, vos questions vont directement à l’équipe.', equipe: 'Budget de Plume atteint' },
+	PLAFOND: {
+		gerant: 'Ce mois-ci, vos questions vont directement à l’équipe.',
+		equipe: 'Budget de Plume atteint'
+	},
 	FERME: { gerant: 'Vos questions vont directement à l’équipe.', equipe: 'Plume support fermé' },
 	EMAIL: { gerant: 'Votre message est arrivé par e-mail.', equipe: 'Reçu par e-mail' }
 };
@@ -189,7 +198,9 @@ const DROIT_FORT: readonly RegExp[] = [
 	/\bque (?:dois|puis)[- ]je faire contre\b/
 ].map(unicode);
 
-const TOURNURE_FAIBLE = unicode(/\b(?:puis[- ]je|dois[- ]je|peut[- ]on|faut[- ]il|je peux|on peut)\b/);
+const TOURNURE_FAIBLE = unicode(
+	/\b(?:puis[- ]je|dois[- ]je|peut[- ]on|faut[- ]il|je peux|on peut)\b/
+);
 
 const THEMES_DU_DROIT: readonly RegExp[] = [
 	/\b(?:tribunal|juge|injonction|huissier|commissaire de justice|mise en demeure|indemnité|prescri\w*|liquidation|redressement|avocat)\b/,
@@ -218,7 +229,25 @@ export function reponseSansModele(texte: string): ReponseSansModele | null {
 
 /** Les mots qui portent le sens : sans accents, sans les petits mots, à partir de trois lettres. */
 function motsPleins(texte: string): Set<string> {
-	const vides = new Set(['les', 'des', 'une', 'pas', 'est', 'que', 'qui', 'pour', 'mon', 'mes', 'toujours', 'pourquoi', 'avec', 'dans', 'sur', 'vous', 'nous']);
+	const vides = new Set([
+		'les',
+		'des',
+		'une',
+		'pas',
+		'est',
+		'que',
+		'qui',
+		'pour',
+		'mon',
+		'mes',
+		'toujours',
+		'pourquoi',
+		'avec',
+		'dans',
+		'sur',
+		'vous',
+		'nous'
+	]);
 	return new Set(
 		texte
 			.normalize('NFD')

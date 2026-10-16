@@ -25,8 +25,8 @@ import { join } from 'node:path';
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Le critère est mécanique et sans échappatoire : une table qui déclare
- * `organizationId: v.id('organizations')` porte des données client, donc son
- * nom doit apparaître dans `rgpd.ts`. Ni plus, ni moins.
+ * `organizationId: v.id('organizations')`, même facultatif, porte des données
+ * client, donc son nom doit apparaître dans `rgpd.ts`. Ni plus, ni moins.
  *
  * ⚠️ IL LIT LA SOURCE, PAS LE SCHÉMA COMPILÉ. Le schéma à l'exécution ne dit
  * pas si `rgpd.ts` cite une table — et c'est cette citation-là qu'on vérifie.
@@ -45,6 +45,7 @@ function tablesDeclarees(): { nom: string; bloc: string }[] {
 		lire('risque/tables.ts'),
 		lire('croissance/tables.ts'),
 		lire('admin/tables.ts'),
+		lire('support/tables.ts'),
 		lire('schema.ts')
 	].join('\n');
 	const tables: { nom: string; bloc: string }[] = [];
@@ -78,7 +79,10 @@ describe('la purge n’oublie aucune table cloisonnée', () => {
 	it('purge toute table qui porte un organizationId', () => {
 		const rgpd = lire('rgpd.ts');
 		const cloisonnees = tablesDeclarees().filter(({ bloc }) =>
-			/organizationId:\s*v\.id\('organizations'\)/.test(bloc)
+			// Facultatif compris (16/10/2026) : une ligne qui PEUT nommer un établissement
+			// le nomme souvent, et part avec lui. Le motif strict laissait passer
+			// `evenementsCrm`, `tachesCrm` et les conversations du support.
+			/organizationId:\s*(?:v\.optional\(\s*)?v\.id\('organizations'\)/.test(bloc)
 		);
 
 		expect(cloisonnees.length).toBeGreaterThan(5);

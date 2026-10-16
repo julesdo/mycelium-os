@@ -34,7 +34,11 @@ export const adminTables = {
 		invitePar: v.string(),
 		inviteLe: v.number(),
 		rejointLe: v.optional(v.number()),
-		retireLe: v.optional(v.number())
+		retireLe: v.optional(v.number()),
+		/** Le prénom que voit le client dans le support (« Camille »), choisi par le membre. */
+		prenomAffiche: v.optional(v.string()),
+		/** Une vraie photo, posée par le membre lui-même : aucun visage n'est inventé. */
+		photoStorageId: v.optional(v.id('_storage'))
 	}).index('by_email', ['email']),
 
 	journalEquipe: defineTable({

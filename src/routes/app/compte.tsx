@@ -94,6 +94,8 @@ function PageCompte() {
 		| undefined;
 	// Un membre de l'équipe de Letikette voit la rangée « Admin » ; personne d'autre.
 	const accesAdmin = useQuery(api.admin.acces.monAcces, {});
+	// Les réponses de l'équipe pas encore lues : la valeur de la rangée « Aide ».
+	const aideNonLues = useQuery(api.support.fil.nonLues, {});
 	/** Les conseils de Plume par e-mail, pour la personne connectée. */
 	const conseils = useQuery(api.croissance.reglage.mesConseils, {});
 	const reglerConseils = useMutation(api.croissance.reglage.reglerMesConseils).withOptimisticUpdate(
@@ -594,6 +596,7 @@ function PageCompte() {
 			onRegler: (parCourriel) => void reglerPointDuMatin({ parCourriel })
 		},
 		admin: accesAdmin?.etat === 'OK' || accesAdmin?.etat === 'DOUBLE_AUTH_REQUISE',
+		aideNonLues: aideNonLues ?? 0,
 		doubleAuth: {
 			active:
 				utilisateurAuth === undefined ? undefined : utilisateurAuth?.twoFactorEnabled === true,

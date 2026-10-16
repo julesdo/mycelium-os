@@ -14,6 +14,7 @@ import { ECRANS_SANTE } from './sante';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
 import { ECRANS_ADMIN } from './admin';
+import { ECRANS_AIDE } from './aide';
 
 /**
  * LES ÉCRANS DU PRODUIT, TELS QU'IL LES AFFICHE.
@@ -107,5 +108,6 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	/* ── L'ADMIN DE L'ÉQUIPE (16/10/2026) ─────────────────────────────────────
 	 * Rendu dans la coquille de l'application, et non dans la sienne : c'est
 	 * l'écran qu'on regarde ici, pas sa barre latérale. */
-	...ECRANS_ADMIN
+	...ECRANS_ADMIN,
+	...ECRANS_AIDE
 ];

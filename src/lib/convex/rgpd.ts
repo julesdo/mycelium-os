@@ -157,13 +157,14 @@ export const contexteExport = authedQuery({
 	args: {},
 	returns: v.object({
 		organizationId: v.id('organizations'),
-		nomEtablissement: v.string()
+		nomEtablissement: v.string(),
+		userId: v.string()
 	}),
 	handler: async (ctx) => {
 		const organizationId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
 		const org = await ctx.db.get(organizationId);
 		if (!org) throw new ConvexError('Établissement introuvable');
-		return { organizationId, nomEtablissement: org.name };
+		return { organizationId, nomEtablissement: org.name, userId: ctx.user._id };
 	}
 });
 
@@ -247,6 +248,33 @@ export const _pageDeConversations = internalQuery({
 			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 			.paginate({ cursor: curseur, numItems: PAR_PAGE });
 		return { elements: page.page, curseur: page.continueCursor, fini: page.isDone };
+	}
+});
+
+/**
+ * CE QUE L'UTILISATEUR QUI EXPORTE A ÉCRIT AU SUPPORT (16/10/2026), et ce que l'équipe
+ * y a répondu ou noté : ses notes internes le concernent, elles font partie de l'export.
+ * Les conversations d'un collègue restent les siennes : elles lui sont privées.
+ */
+export const _supportExport = internalQuery({
+	args: { organizationId: v.id('organizations'), userId: v.string() },
+	returns: v.array(v.any()),
+	handler: async (ctx, { organizationId, userId }) => {
+		const conversations = (
+			await ctx.db
+				.query('conversationsSupport')
+				.withIndex('by_auteur', (q) => q.eq('auteurUserId', userId))
+				.take(200)
+		).filter((c) => c.organizationId === organizationId);
+		const resultat = [];
+		for (const conversation of conversations) {
+			const messages = await ctx.db
+				.query('messagesSupport')
+				.withIndex('by_conversation', (q) => q.eq('conversationId', conversation._id))
+				.take(500);
+			resultat.push({ conversation, messages });
+		}
+		return resultat;
 	}
 });
 
@@ -339,7 +367,7 @@ export const _entetesExport = internalQuery({
 	}
 });
 
-type Contexte = { organizationId: Id<'organizations'>; nomEtablissement: string };
+type Contexte = { organizationId: Id<'organizations'>; nomEtablissement: string; userId: string };
 
 type Entetes = {
 	org: unknown;
@@ -380,7 +408,7 @@ export const exporterMesDonnees = action({
 		// `any`, ce que la génération de types de Convex refuse. Les annoter
 		// explicitement rompt le cycle ; c'est le remède documenté.
 		const contexte: Contexte = await ctx.runQuery(api.rgpd.contexteExport, {});
-		const { organizationId, nomEtablissement } = contexte;
+		const { organizationId, nomEtablissement, userId } = contexte;
 
 		const entetes: Entetes = await ctx.runQuery(internal.rgpd._entetesExport, { organizationId });
 
@@ -432,6 +460,11 @@ export const exporterMesDonnees = action({
 			curseur = page.curseur;
 		}
 
+		const support: unknown[] = await ctx.runQuery(internal.rgpd._supportExport, {
+			organizationId,
+			userId
+		});
+
 		const contenu = {
 			aPropos: {
 				produit: 'Letikette',
@@ -454,7 +487,8 @@ export const exporterMesDonnees = action({
 			propositions: entetes.propositions,
 			remisesAuConseil: entetes.remises,
 			journal,
-			conversations
+			conversations,
+			support
 		};
 
 		const json = JSON.stringify(contenu, null, 2);
@@ -705,6 +739,11 @@ export const purgerEtablissement = internalMutation({
 		// Les notes, appels et tâches de l'équipe sur ce compte partent avec lui.
 		budget = await viderParIndexOrg(ctx, 'evenementsCrm', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'tachesCrm', organizationId, budget);
+		// Ce que l'établissement a écrit au support, et ce que l'équipe y a répondu :
+		// les messages avant les conversations qu'ils citent.
+		budget = await viderParIndexOrg(ctx, 'messagesSupport', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'conversationsSupport', organizationId, budget);
+		budget = await viderParIndexOrg(ctx, 'compteursSupport', organizationId, budget);
 		// Un prospect rapproché de ce compte lui survit (il appartient à Letikette),
 		// mais perd son lien vers lui.
 		for (const prospect of await ctx.db
@@ -810,6 +849,8 @@ export const supprimerMonCompte = authedMutation({
 		}
 
 		await ctx.scheduler.runAfter(0, internal.rgpd.purgerNotifications, { userId, passe: 0 });
+		// Ce qu'il a écrit au support reste à l'établissement, sans son nom (spec § 8).
+		await ctx.scheduler.runAfter(0, internal.support.entretien.oublierAuteur, { userId });
 		await ctx.scheduler.runAfter(0, internal.rgpd.oublierIdentite, { userId, email: attendu });
 		return null;
 	}
@@ -959,6 +1000,9 @@ async function viderParIndexOrg(
 		| 'journalEquipe'
 		| 'evenementsCrm'
 		| 'tachesCrm'
+		| 'messagesSupport'
+		| 'conversationsSupport'
+		| 'compteursSupport'
 		| 'intervenants'
 		| 'journal'
 		| 'propositions'

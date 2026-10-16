@@ -111,6 +111,9 @@ export function destinationDeNotification(
 
 	// Là où se répare ce qui manque : votre compte.
 	if (lien === '/app/compte') return { vers: '/app/compte' };
+	// La réponse de l'équipe du support (16/10/2026).
+	const aide = /^\/app\/aide\/([\w-]+)$/.exec(lien)?.[1];
+	if (aide !== undefined) return { vers: '/app/aide/$id', parametres: { id: aide } };
 	const arret = /^\/app\/arret\/([\w-]+)$/.exec(lien)?.[1];
 	// L'écran d'arrêt d'un décompte n'existe plus (09/10/2026) : ses anciennes
 	// notifications mènent au dossier, où se lit le montant du jour.

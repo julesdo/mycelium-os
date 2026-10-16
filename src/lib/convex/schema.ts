@@ -5,6 +5,7 @@ import { recouvrementTables } from './recouvrement/tables';
 import { risqueTables } from './risque/tables';
 import { croissanceTables } from './croissance/tables';
 import { adminTables, crmTables } from './admin/tables';
+import { supportTables } from './support/tables';
 import { vStatutConnexion, vStatutConnexionQonto } from './connexions/validateurs';
 
 export default defineSchema({
@@ -338,5 +339,6 @@ export default defineSchema({
 	...risqueTables,
 	...croissanceTables,
 	...adminTables,
-	...crmTables
+	...crmTables,
+	...supportTables
 });

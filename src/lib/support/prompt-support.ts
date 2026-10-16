@@ -23,7 +23,16 @@ export const reponseSupportSchema = z.object({
 			})
 		)
 		.max(6),
-	ecrans: z.array(z.enum(Object.keys(ECRANS_D_AIDE) as [keyof typeof ECRANS_D_AIDE, ...(keyof typeof ECRANS_D_AIDE)[]])).max(2),
+	ecrans: z
+		.array(
+			z.enum(
+				Object.keys(ECRANS_D_AIDE) as [
+					keyof typeof ECRANS_D_AIDE,
+					...(keyof typeof ECRANS_D_AIDE)[]
+				]
+			)
+		)
+		.max(2),
 	sujet: z.enum(SUJETS),
 	nePeutPasRepondre: z.boolean(),
 	questionDeDossier: z.boolean()
@@ -37,7 +46,7 @@ CE QUE TU ES
 
 CE QUE TU LIS, ET RIEN D'AUTRE
 - La BASE D'AIDE ci-dessous : chaque article porte une clé entre crochets, une question, une réponse et l'écran qui règle la question.
-- Le CONTEXTE DU COMPTE, dans le message : la formule, l'état de l'abonnement, le rôle du gérant, le nombre de membres, si les relances sont activées, l'état des logiciels branchés, le nombre de documents en échec.
+- Le CONTEXTE DU COMPTE, dans le message : la formule, l'état de l'abonnement, le rôle du gérant, le nombre de membres, si les relances sont activées, combien de dossiers attendent d'être démarrés, combien de relances sont programmées et combien sont bloquées (et par quoi), l'état des logiciels branchés, le nombre de documents en échec. Ce sont des nombres : tu ne connais aucun nom de client.
 - Tu ne lis jamais les dossiers du gérant : ni ses clients, ni ses factures, ni les montants qu'on lui doit, ni ses documents. Si une question porte sur un dossier précis (« combien me doit Durand », « pourquoi ma relance à Martin n'est pas partie »), mets questionDeDossier à true et réponds en une phrase que le Plume de son espace lit ses dossiers et lui répondra là-bas.
 
 COMMENT TU RÉPONDS
@@ -80,19 +89,45 @@ export interface ContexteDuCompte {
 	readonly finEssaiLe?: string;
 	readonly membres: number;
 	readonly relancesActivees: boolean;
+	/** Ce que fait le pilote, en NOMBRES : jamais un nom de client ni un montant. */
+	readonly dossiersADemarrer: number;
+	readonly relancesProgrammees: number;
+	/** « 2026-10-17 à 10 h », heure de Paris. */
+	readonly prochaineRelanceLe?: string;
+	readonly relancesBloquees: { readonly emailClient: number; readonly votreEmail: boolean };
 	readonly connexions: readonly {
 		readonly fournisseur: string;
+		/** Un code fermé : le texte brut d'une erreur ne part jamais au modèle. */
+		readonly etat: EtatDeConnexion;
 		readonly derniereLecture: string | null;
-		readonly erreur: string | null;
 	}[];
 	readonly documentsEnEchec: number;
 }
+
+export const ETATS_DE_CONNEXION = [
+	'A_JOUR',
+	'EN_COURS',
+	'EN_ATTENTE',
+	'LECTURE_ECHOUEE',
+	'REVOQUEE'
+] as const;
+export type EtatDeConnexion = (typeof ETATS_DE_CONNEXION)[number];
+
+const PHRASE_DE_CONNEXION: Record<EtatDeConnexion, string> = {
+	A_JOUR: 'à jour',
+	EN_COURS: 'lecture en cours',
+	EN_ATTENTE: 'connexion pas terminée',
+	LECTURE_ECHOUEE: 'la dernière lecture a échoué',
+	REVOQUEE: 'l’accès a été retiré, il faut le rebrancher'
+};
 
 /** Le message de l'appel : le contexte du compte, l'historique, la question. */
 export function construireMessageSupport(entree: {
 	readonly contexte: ContexteDuCompte;
 	readonly historique: readonly { readonly auteur: 'GERANT' | 'PLUME'; readonly texte: string }[];
 	readonly question: string;
+	/** Le gérant a répondu « Pas vraiment » à la réponse précédente. */
+	readonly reformuler?: boolean;
 }): string {
 	const { contexte } = entree;
 	const admin = contexte.role === 'ADMINISTRATEUR';
@@ -102,17 +137,29 @@ export function construireMessageSupport(entree: {
 		`- Rôle du gérant : ${admin ? 'administrateur' : 'membre (ne voit pas la facturation)'}`,
 		`- Formule : ${contexte.formule}`,
 		...(admin ? [`- État de l’abonnement : ${contexte.etatAbonnement}`] : []),
-		...(admin && contexte.finEssaiLe !== undefined ? [`- Fin de l’essai : ${contexte.finEssaiLe}`] : []),
+		...(admin && contexte.finEssaiLe !== undefined
+			? [`- Fin de l’essai : ${contexte.finEssaiLe}`]
+			: []),
 		...(admin && contexte.prochainPrelevementLe !== undefined
 			? [`- Prochain prélèvement : ${contexte.prochainPrelevementLe}`]
 			: []),
 		`- Membres de l’établissement : ${contexte.membres}`,
 		`- Relances automatiques : ${contexte.relancesActivees ? 'activées' : 'pas activées'}`,
+		`- Dossiers à démarrer : ${contexte.dossiersADemarrer}`,
+		`- Relances programmées : ${contexte.relancesProgrammees}${contexte.prochaineRelanceLe === undefined ? '' : `, la prochaine le ${contexte.prochaineRelanceLe}`}`,
+		...(contexte.relancesBloquees.emailClient > 0
+			? [
+					`- Relances bloquées faute de l’e-mail du client : ${contexte.relancesBloquees.emailClient}`
+				]
+			: []),
+		...(contexte.relancesBloquees.votreEmail
+			? ['- Relances bloquées faute de votre e-mail (celui qui reçoit les réponses)']
+			: []),
 		...(contexte.connexions.length === 0
 			? ['- Logiciels branchés : aucun']
 			: contexte.connexions.map(
 					(c) =>
-						`- Logiciel branché : ${c.fournisseur}, dernière lecture ${c.derniereLecture ?? 'jamais'}${c.erreur === null ? '' : `, erreur : ${c.erreur}`}`
+						`- Logiciel branché, ${c.fournisseur} : ${PHRASE_DE_CONNEXION[c.etat]}, dernière lecture ${c.derniereLecture ?? 'jamais'}`
 				)),
 		`- Documents en échec de lecture : ${contexte.documentsEnEchec}`,
 		'',
@@ -120,7 +167,13 @@ export function construireMessageSupport(entree: {
 		...entree.historique.map((m) => `${m.auteur === 'GERANT' ? 'Gérant' : 'Plume'} : ${m.texte}`),
 		'',
 		'QUESTION DU GÉRANT',
-		entree.question
+		entree.question,
+		...(entree.reformuler === true
+			? [
+					'',
+					'Le gérant a répondu que ta réponse précédente ne l’aidait pas : reformule autrement, plus concrètement, ou mets nePeutPasRepondre à true.'
+				]
+			: [])
 	];
 	return lignes.join('\n');
 }

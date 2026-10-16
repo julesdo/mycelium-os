@@ -5,9 +5,8 @@ import {
 	LIMITES,
 	RAPPELS_AVANT_PRELEVEMENT_JOURS
 } from '../config/tarifs';
-import { getLegalEmailAddress } from '../config/legal';
 import { HEURES_D_ENVOI, PLAN_PAR_DEFAUT } from '../verticales/recouvrement/plan-relance';
-import { dureePourRetenir, FORMATS_LUS, LOGICIELS_BRANCHES } from '../../marketing/fonctionnalites';
+import { dureePourRetenir, FORMATS_LUS, LOGICIELS_BRANCHES } from '../config/produit';
 import { HORAIRES_DU_SUPPORT } from './horaires';
 import type { Sujet } from './sujets';
 
@@ -30,11 +29,27 @@ export const ECRANS_D_AIDE = {
 	PILOTE: { vers: '/app', libelle: 'Aujourd’hui › Le pilote' },
 	COFFRE: { vers: '/app/coffre', libelle: 'Coffre-fort' },
 	DEPOT: { vers: '/app/coffre', recherche: { deposer: 1 }, libelle: 'Ajouter des factures' },
-	CONNEXIONS: { vers: '/app/compte', recherche: { ouvrir: 'connexions' }, libelle: 'Compte › Connexions' },
-	FORMULE: { vers: '/app/compte', recherche: { ouvrir: 'facturation' }, libelle: 'Compte › Votre formule' },
+	CONNEXIONS: {
+		vers: '/app/compte',
+		recherche: { ouvrir: 'connexions' },
+		libelle: 'Compte › Connexions'
+	},
+	FORMULE: {
+		vers: '/app/compte',
+		recherche: { ouvrir: 'facturation' },
+		libelle: 'Compte › Votre formule'
+	},
 	EQUIPE: { vers: '/app/compte', recherche: { ouvrir: 'equipe' }, libelle: 'Compte › Équipe' },
-	SECURITE: { vers: '/app/compte', recherche: { ouvrir: 'securite' }, libelle: 'Compte › Sécurité' },
-	DONNEES: { vers: '/app/compte', recherche: { ouvrir: 'donnees' }, libelle: 'Compte › Vos données' },
+	SECURITE: {
+		vers: '/app/compte',
+		recherche: { ouvrir: 'securite' },
+		libelle: 'Compte › Sécurité'
+	},
+	DONNEES: {
+		vers: '/app/compte',
+		recherche: { ouvrir: 'donnees' },
+		libelle: 'Compte › Vos données'
+	},
 	ETABLISSEMENT: {
 		vers: '/app/compte',
 		recherche: { ouvrir: 'etablissement' },
@@ -124,15 +139,28 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'FACTURES_DOCUMENTS',
 		question: 'Un de mes documents n’est pas entré',
 		motsCles: ['pas entré', 'échec', 'refusé', 'illisible', 'lecture', 'bilan'],
-		reponse: 'Le bilan du dépôt, au coffre-fort, dit pour chaque ligne pourquoi elle n’est pas entrée : format non lu, document en double, ligne sans montant ou sans client. Corrigez le fichier puis redéposez-le ; un document resté sans nouvelle trop longtemps se retire de lui-même et peut être redéposé.',
+		reponse:
+			'Le bilan du dépôt, au coffre-fort, dit pour chaque ligne pourquoi elle n’est pas entrée : format non lu, document en double, ligne sans montant ou sans client. Corrigez le fichier puis redéposez-le ; un document resté sans nouvelle trop longtemps se retire de lui-même et peut être redéposé.',
 		ecran: 'COFFRE'
 	},
 	{
 		cle: 'connexion-erreur',
 		sujet: 'CONNEXIONS',
 		question: 'Ma connexion à un logiciel ne lit plus rien',
-		motsCles: ['connexion', 'pennylane', 'qonto', 'quickbooks', 'xero', 'sellsy', 'stripe', 'zoho', 'synchro', 'erreur'],
-		reponse: 'Ouvrez Compte › Connexions : chaque logiciel branché y dit sa dernière lecture et, s’il y en a une, son erreur. Une autorisation expirée se renouvelle en le rebranchant ; vos factures déjà lues restent là. Si l’erreur persiste après un nouveau branchement, l’équipe regarde.',
+		motsCles: [
+			'connexion',
+			'pennylane',
+			'qonto',
+			'quickbooks',
+			'xero',
+			'sellsy',
+			'stripe',
+			'zoho',
+			'synchro',
+			'erreur'
+		],
+		reponse:
+			'Ouvrez Compte › Connexions : chaque logiciel branché y dit sa dernière lecture et, s’il y en a une, son erreur. Une autorisation expirée se renouvelle en le rebranchant ; vos factures déjà lues restent là. Si l’erreur persiste après un nouveau branchement, l’équipe regarde.',
 		ecran: 'CONNEXIONS'
 	},
 	{
@@ -147,7 +175,18 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		cle: 'formules',
 		sujet: 'ABONNEMENT',
 		question: 'Quelles sont les formules et leurs prix ?',
-		motsCles: ['prix', 'tarif', 'formule', 'abonnement', 'coût', 'combien', 'solo', 'équipe', 'pro', 'découverte'],
+		motsCles: [
+			'prix',
+			'tarif',
+			'formule',
+			'abonnement',
+			'coût',
+			'combien',
+			'solo',
+			'équipe',
+			'pro',
+			'découverte'
+		],
 		reponse: `Découverte est gratuite : vous voyez ce qu’on vous doit, rien ne part. Puis ${formule('solo')}, ${formule('equipe')} et ${formule('pro')} ; l’année se paie dix mois. Les formules diffèrent par le nombre de clients relancés en même temps (${LIMITES.solo.clientsSuivis} en Solo, ${LIMITES.equipe.clientsSuivis} en Équipe, sans limite en Pro) et de personnes dans l’établissement (${LIMITES.solo.utilisateurs}, ${LIMITES.equipe.utilisateurs}, ${LIMITES.pro.utilisateurs}).`,
 		ecran: 'FORMULE'
 	},
@@ -164,7 +203,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'ABONNEMENT',
 		question: 'Comment changer de formule ?',
 		motsCles: ['changer', 'passer à', 'monter', 'descendre', 'prorata', 'upgrade'],
-		reponse: 'Dans Compte › Votre formule : le montant au prorata s’affiche avant que vous confirmiez, et le changement vaut tout de suite.',
+		reponse:
+			'Dans Compte › Votre formule : le montant au prorata s’affiche avant que vous confirmiez, et le changement vaut tout de suite.',
 		ecran: 'FORMULE'
 	},
 	{
@@ -180,7 +220,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'ABONNEMENT',
 		question: 'Où trouver la facture de mon abonnement ?',
 		motsCles: ['facture', 'reçu', 'paddle', 'tva', 'justificatif'],
-		reponse: 'Paddle, qui vend l’abonnement, émet vos factures ; elles se téléchargent depuis Compte › Votre formule, qui ouvre votre espace de facturation.',
+		reponse:
+			'Paddle, qui vend l’abonnement, émet vos factures ; elles se téléchargent depuis Compte › Votre formule, qui ouvre votre espace de facturation.',
 		ecran: 'FORMULE'
 	},
 	{
@@ -196,7 +237,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'COMPTE_ACCES',
 		question: 'J’ai oublié mon mot de passe',
 		motsCles: ['mot de passe', 'oublié', 'connexion', 'se connecter', 'réinitialiser'],
-		reponse: 'La page « Mot de passe oublié » envoie un lien de réinitialisation à votre adresse. Ni Plume ni l’équipe ne changent l’adresse ou le mot de passe d’un compte sur demande écrite : c’est ce qui protège le vôtre.',
+		reponse:
+			'La page « Mot de passe oublié » envoie un lien de réinitialisation à votre adresse. Ni Plume ni l’équipe ne changent l’adresse ou le mot de passe d’un compte sur demande écrite : c’est ce qui protège le vôtre.',
 		ecran: 'MOT_DE_PASSE'
 	},
 	{
@@ -204,7 +246,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'COMPTE_ACCES',
 		question: 'Comment activer la double authentification ?',
 		motsCles: ['double authentification', '2fa', 'code', 'sécurité', 'authentificateur'],
-		reponse: 'Dans Compte › Sécurité : votre mot de passe, puis le code à scanner avec une application d’authentification, puis un code à six chiffres. Gardez les codes de secours qui s’affichent : ils servent si vous perdez votre téléphone.',
+		reponse:
+			'Dans Compte › Sécurité : votre mot de passe, puis le code à scanner avec une application d’authentification, puis un code à six chiffres. Gardez les codes de secours qui s’affichent : ils servent si vous perdez votre téléphone.',
 		ecran: 'SECURITE'
 	},
 	{
@@ -212,7 +255,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'PLUME',
 		question: 'Que fait Plume ?',
 		motsCles: ['plume', 'assistant', 'pilote', 'ia', 'automatique'],
-		reponse: 'Dans votre espace, Plume prépare vos dossiers, relance vos clients quand vous l’avez activé, et répond sur vos dossiers en citant ses sources ; chaque geste qu’il propose attend votre « Confirmer ». Ici, dans l’aide, il répond sur le logiciel et votre compte, sans lire vos dossiers.',
+		reponse:
+			'Dans votre espace, Plume prépare vos dossiers, relance vos clients quand vous l’avez activé, et répond sur vos dossiers en citant ses sources ; chaque geste qu’il propose attend votre « Confirmer ». Ici, dans l’aide, il répond sur le logiciel et votre compte, sans lire vos dossiers.',
 		ecran: 'PLUME'
 	},
 	{
@@ -220,7 +264,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'PLUME',
 		question: 'J’ai une question sur un de mes dossiers',
 		motsCles: ['dossier', 'client', 'facture impayée', 'montant', 'combien me doit'],
-		reponse: 'Posez-la à Plume dans votre espace : là, il lit vos dossiers et répond avec leurs chiffres. Ici, ni Plume ni l’équipe ne voient vos dossiers ; si c’est un souci technique sur un dossier, décrivez-le sans nom ni montant et l’équipe regarde.',
+		reponse:
+			'Posez-la à Plume dans votre espace : là, il lit vos dossiers et répond avec leurs chiffres. Ici, ni Plume ni l’équipe ne voient vos dossiers ; si c’est un souci technique sur un dossier, décrivez-le sans nom ni montant et l’équipe regarde.',
 		ecran: 'PLUME'
 	},
 	{
@@ -228,15 +273,26 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'RELANCES',
 		question: 'Comment mon client me paie-t-il ?',
 		motsCles: ['payer', 'paiement', 'virement', 'iban', 'lien', 'qr'],
-		reponse: 'Par virement, directement sur votre compte : la lettre peut porter un lien vers une page qui affiche votre IBAN, le montant et la référence. Letikette ne touche jamais l’argent, et rien n’y nomme le logiciel.',
+		reponse:
+			'Par virement, directement sur votre compte : la lettre peut porter un lien vers une page qui affiche votre IBAN, le montant et la référence. Letikette ne touche jamais l’argent, et rien n’y nomme le logiciel.',
 		ecran: 'DOSSIERS'
 	},
 	{
 		cle: 'avis-juridique',
 		sujet: 'AUTRE',
 		question: 'Pouvez-vous me dire ce que je peux réclamer ?',
-		motsCles: ['réclamer', 'droit', 'avocat', 'juridique', 'conseil', 'pénalités', 'indemnité', 'loi'],
-		reponse: 'Ni Plume ni l’équipe ne donnent d’avis juridique. Dans votre espace, chaque dossier montre ce que dit la loi et le calcul de ce qui est dû, avec ses sources ; pour un avis, l’écran Défense propose des professionnels près de votre client.',
+		motsCles: [
+			'réclamer',
+			'droit',
+			'avocat',
+			'juridique',
+			'conseil',
+			'pénalités',
+			'indemnité',
+			'loi'
+		],
+		reponse:
+			'Ni Plume ni l’équipe ne donnent d’avis juridique. Dans votre espace, chaque dossier montre ce que dit la loi et le calcul de ce qui est dû, avec ses sources ; pour un avis, l’écran Défense propose des professionnels près de votre client.',
 		ecran: 'DEFENSE'
 	},
 	{
@@ -252,7 +308,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'DONNEES_PERSONNELLES',
 		question: 'Comment exporter ou supprimer mes données ?',
 		motsCles: ['exporter', 'supprimer', 'effacer', 'données', 'rgpd', 'compte'],
-		reponse: 'Depuis Compte › Vos données : l’export de ce que vous avez déposé, et la suppression de l’établissement, qui efface tout, documents compris. Pour toute autre demande sur vos données personnelles, l’équipe répond.',
+		reponse:
+			'Depuis Compte › Vos données : l’export de ce que vous avez déposé, et la suppression de l’établissement, qui efface tout, documents compris. Pour toute autre demande sur vos données personnelles, l’équipe répond.',
 		ecran: 'DONNEES'
 	},
 	{
@@ -260,7 +317,8 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'FACTURES_DOCUMENTS',
 		question: 'Mes documents sont-ils protégés ?',
 		motsCles: ['sécurité', 'chiffrement', 'protégé', 'hébergement', 'confidentialité'],
-		reponse: 'Chaque document est chiffré dès son arrivée, sous une clé propre à votre établissement, et ne s’ouvre que par votre session ; chaque ouverture est notée. La base de données est chez Convex, aux États-Unis. Nos serveurs détiennent les clés : ce n’est pas un chiffrement qui nous en empêcherait l’accès.',
+		reponse:
+			'Chaque document est chiffré dès son arrivée, sous une clé propre à votre établissement, et ne s’ouvre que par votre session ; chaque ouverture est notée. La base de données est chez Convex, aux États-Unis. Nos serveurs détiennent les clés : ce n’est pas un chiffrement qui nous en empêcherait l’accès.',
 		ecran: 'COFFRE'
 	},
 	{
@@ -268,16 +326,12 @@ export const ARTICLES: readonly ArticleDAide[] = [
 		sujet: 'AUTRE',
 		question: 'Comment joindre l’équipe ?',
 		motsCles: ['équipe', 'humain', 'contact', 'e-mail', 'joindre', 'téléphone'],
-		reponse: `Ici même : « Parler à quelqu’un » passe votre question à l’équipe, qui répond dans ce fil et par e-mail, en semaine de ${HORAIRES_DU_SUPPORT.de} h à ${HORAIRES_DU_SUPPORT.a} h. Vous pouvez aussi écrire à ${getLegalEmailAddress()} : même équipe, même fil.`
+		reponse: `Ici même : « Parler à l’équipe » lui passe votre question, à l’instant. Elle répond dans ce fil, en semaine de ${HORAIRES_DU_SUPPORT.de} h à ${HORAIRES_DU_SUPPORT.a} h, et par e-mail si vous ne l’avez pas lue. Pas de téléphone : tout reste écrit, dans le même fil.`
 	}
 ];
 
 function plat(texte: string): string {
-	return texte
-		.normalize('NFD')
-		.replace(/[̀-ͯ]/g, '')
-		.replace(/[’']/g, ' ')
-		.toLowerCase();
+	return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, ' ').toLowerCase();
 }
 
 /** Les articles qui répondent à ce qui est tapé, du plus pertinent au moins pertinent. */

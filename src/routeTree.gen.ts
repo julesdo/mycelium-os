@@ -54,6 +54,10 @@ import { Route as AdminProspectsIndexRouteImport } from './routes/admin/prospect
 import { Route as AdminProspectsIdRouteImport } from './routes/admin/prospects.$id'
 import { Route as AdminProspectsImporterRouteImport } from './routes/admin/prospects.importer'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AppAideIndexRouteImport } from './routes/app/aide.index'
+import { Route as AppAideIdRouteImport } from './routes/app/aide.$id'
+import { Route as AppAideNouvelleRouteImport } from './routes/app/aide.nouvelle'
+import { Route as AppAideQuestionsRouteImport } from './routes/app/aide.questions'
 import { Route as AppClientsIdRouteImport } from './routes/app/clients.$id'
 import { Route as AppCreanceIdRouteImport } from './routes/app/creance.$id'
 import { Route as AppDebiteursIdRouteImport } from './routes/app/debiteurs.$id'
@@ -67,6 +71,7 @@ import { Route as AppPiloteIdRouteImport } from './routes/app/pilote.$id'
 import { Route as AppRisqueIndexRouteImport } from './routes/app/risque.index'
 import { Route as AppRisqueIdRouteImport } from './routes/app/risque.$id'
 import { Route as AppRisqueVerifierRouteImport } from './routes/app/risque.verifier'
+import { Route as AppAideQuestionCleRouteImport } from './routes/app/aide.question.$cle'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -294,6 +299,26 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAideIndexRoute = AppAideIndexRouteImport.update({
+  id: '/aide/',
+  path: '/aide/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAideIdRoute = AppAideIdRouteImport.update({
+  id: '/aide/$id',
+  path: '/aide/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAideNouvelleRoute = AppAideNouvelleRouteImport.update({
+  id: '/aide/nouvelle',
+  path: '/aide/nouvelle',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAideQuestionsRoute = AppAideQuestionsRouteImport.update({
+  id: '/aide/questions',
+  path: '/aide/questions',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppClientsIdRoute = AppClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -359,6 +384,11 @@ const AppRisqueVerifierRoute = AppRisqueVerifierRouteImport.update({
   path: '/risque/verifier',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppAideQuestionCleRoute = AppAideQuestionCleRouteImport.update({
+  id: '/aide/question/$cle',
+  path: '/aide/question/$cle',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -404,6 +434,9 @@ export interface FileRoutesByFullPath {
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/aide/$id': typeof AppAideIdRoute
+  '/app/aide/nouvelle': typeof AppAideNouvelleRoute
+  '/app/aide/questions': typeof AppAideQuestionsRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
@@ -416,9 +449,11 @@ export interface FileRoutesByFullPath {
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
   '/admin/comptes/': typeof AdminComptesIndexRoute
   '/admin/prospects/': typeof AdminProspectsIndexRoute
+  '/app/aide/': typeof AppAideIndexRoute
   '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
   '/app/risque/': typeof AppRisqueIndexRoute
+  '/app/aide/question/$cle': typeof AppAideQuestionCleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -462,6 +497,9 @@ export interface FileRoutesByTo {
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/aide/$id': typeof AppAideIdRoute
+  '/app/aide/nouvelle': typeof AppAideNouvelleRoute
+  '/app/aide/questions': typeof AppAideQuestionsRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
@@ -474,9 +512,11 @@ export interface FileRoutesByTo {
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
   '/admin/comptes': typeof AdminComptesIndexRoute
   '/admin/prospects': typeof AdminProspectsIndexRoute
+  '/app/aide': typeof AppAideIndexRoute
   '/app/demarrer': typeof AppDemarrerIndexRoute
   '/app/pilote': typeof AppPiloteIndexRoute
   '/app/risque': typeof AppRisqueIndexRoute
+  '/app/aide/question/$cle': typeof AppAideQuestionCleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -523,6 +563,9 @@ export interface FileRoutesById {
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/app/aide/$id': typeof AppAideIdRoute
+  '/app/aide/nouvelle': typeof AppAideNouvelleRoute
+  '/app/aide/questions': typeof AppAideQuestionsRoute
   '/app/clients/$id': typeof AppClientsIdRoute
   '/app/creance/$id': typeof AppCreanceIdRoute
   '/app/debiteurs/$id': typeof AppDebiteursIdRoute
@@ -535,9 +578,11 @@ export interface FileRoutesById {
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
   '/admin/comptes/': typeof AdminComptesIndexRoute
   '/admin/prospects/': typeof AdminProspectsIndexRoute
+  '/app/aide/': typeof AppAideIndexRoute
   '/app/demarrer/': typeof AppDemarrerIndexRoute
   '/app/pilote/': typeof AppPiloteIndexRoute
   '/app/risque/': typeof AppRisqueIndexRoute
+  '/app/aide/question/$cle': typeof AppAideQuestionCleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -585,6 +630,9 @@ export interface FileRouteTypes {
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
     | '/api/auth/$'
+    | '/app/aide/$id'
+    | '/app/aide/nouvelle'
+    | '/app/aide/questions'
     | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
@@ -597,9 +645,11 @@ export interface FileRouteTypes {
     | '/app/risque/verifier'
     | '/admin/comptes/'
     | '/admin/prospects/'
+    | '/app/aide/'
     | '/app/demarrer/'
     | '/app/pilote/'
     | '/app/risque/'
+    | '/app/aide/question/$cle'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -643,6 +693,9 @@ export interface FileRouteTypes {
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
     | '/api/auth/$'
+    | '/app/aide/$id'
+    | '/app/aide/nouvelle'
+    | '/app/aide/questions'
     | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
@@ -655,9 +708,11 @@ export interface FileRouteTypes {
     | '/app/risque/verifier'
     | '/admin/comptes'
     | '/admin/prospects'
+    | '/app/aide'
     | '/app/demarrer'
     | '/app/pilote'
     | '/app/risque'
+    | '/app/aide/question/$cle'
   id:
     | '__root__'
     | '/'
@@ -703,6 +758,9 @@ export interface FileRouteTypes {
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
     | '/api/auth/$'
+    | '/app/aide/$id'
+    | '/app/aide/nouvelle'
+    | '/app/aide/questions'
     | '/app/clients/$id'
     | '/app/creance/$id'
     | '/app/debiteurs/$id'
@@ -715,9 +773,11 @@ export interface FileRouteTypes {
     | '/app/risque/verifier'
     | '/admin/comptes/'
     | '/admin/prospects/'
+    | '/app/aide/'
     | '/app/demarrer/'
     | '/app/pilote/'
     | '/app/risque/'
+    | '/app/aide/question/$cle'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1065,6 +1125,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/aide/': {
+      id: '/app/aide/'
+      path: '/aide'
+      fullPath: '/app/aide/'
+      preLoaderRoute: typeof AppAideIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/aide/$id': {
+      id: '/app/aide/$id'
+      path: '/aide/$id'
+      fullPath: '/app/aide/$id'
+      preLoaderRoute: typeof AppAideIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/aide/nouvelle': {
+      id: '/app/aide/nouvelle'
+      path: '/aide/nouvelle'
+      fullPath: '/app/aide/nouvelle'
+      preLoaderRoute: typeof AppAideNouvelleRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/aide/questions': {
+      id: '/app/aide/questions'
+      path: '/aide/questions'
+      fullPath: '/app/aide/questions'
+      preLoaderRoute: typeof AppAideQuestionsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/clients/$id': {
       id: '/app/clients/$id'
       path: '/$id'
@@ -1156,6 +1244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRisqueVerifierRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/aide/question/$cle': {
+      id: '/app/aide/question/$cle'
+      path: '/aide/question/$cle'
+      fullPath: '/app/aide/question/$cle'
+      preLoaderRoute: typeof AppAideQuestionCleRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -1234,6 +1329,9 @@ interface AppRouteRouteChildren {
   AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAideIdRoute: typeof AppAideIdRoute
+  AppAideNouvelleRoute: typeof AppAideNouvelleRoute
+  AppAideQuestionsRoute: typeof AppAideQuestionsRoute
   AppCreanceIdRoute: typeof AppCreanceIdRoute
   AppDecompteIdRoute: typeof AppDecompteIdRoute
   AppDemarrerIdRoute: typeof AppDemarrerIdRoute
@@ -1241,9 +1339,11 @@ interface AppRouteRouteChildren {
   AppPiloteIdRoute: typeof AppPiloteIdRoute
   AppRisqueIdRoute: typeof AppRisqueIdRoute
   AppRisqueVerifierRoute: typeof AppRisqueVerifierRoute
+  AppAideIndexRoute: typeof AppAideIndexRoute
   AppDemarrerIndexRoute: typeof AppDemarrerIndexRoute
   AppPiloteIndexRoute: typeof AppPiloteIndexRoute
   AppRisqueIndexRoute: typeof AppRisqueIndexRoute
+  AppAideQuestionCleRoute: typeof AppAideQuestionCleRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -1258,6 +1358,9 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAideIdRoute: AppAideIdRoute,
+  AppAideNouvelleRoute: AppAideNouvelleRoute,
+  AppAideQuestionsRoute: AppAideQuestionsRoute,
   AppCreanceIdRoute: AppCreanceIdRoute,
   AppDecompteIdRoute: AppDecompteIdRoute,
   AppDemarrerIdRoute: AppDemarrerIdRoute,
@@ -1265,9 +1368,11 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppPiloteIdRoute: AppPiloteIdRoute,
   AppRisqueIdRoute: AppRisqueIdRoute,
   AppRisqueVerifierRoute: AppRisqueVerifierRoute,
+  AppAideIndexRoute: AppAideIndexRoute,
   AppDemarrerIndexRoute: AppDemarrerIndexRoute,
   AppPiloteIndexRoute: AppPiloteIndexRoute,
   AppRisqueIndexRoute: AppRisqueIndexRoute,
+  AppAideQuestionCleRoute: AppAideQuestionCleRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(

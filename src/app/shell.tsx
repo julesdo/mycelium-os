@@ -149,7 +149,9 @@ function BarreSaufEnConversation({ sessionOuverte }: { readonly sessionOuverte: 
 	const enConversation = useRouterState({
 		select: (etat) =>
 			etat.location.pathname.startsWith('/app/pilote') ||
-			etat.location.pathname.startsWith('/app/demarrer')
+			etat.location.pathname.startsWith('/app/demarrer') ||
+			// L'Aide a son propre Plume : deux Plume sur un écran se contrediraient.
+			etat.location.pathname.startsWith('/app/aide')
 	});
 	if (enConversation) return null;
 	return (

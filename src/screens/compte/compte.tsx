@@ -6,6 +6,7 @@ import {
 	CheckIcon,
 	KeyRoundIcon,
 	LayoutDashboardIcon,
+	LifeBuoyIcon,
 	ScaleIcon,
 	CreditCardIcon,
 	LogOutIcon,
@@ -164,6 +165,8 @@ export interface CompteAffiche {
 	readonly doubleAuth?: GestesDoubleAuth;
 	/** Vrai pour un membre de l'équipe de Letikette : la rangée « Admin » y mène (16/10/2026). */
 	readonly admin?: boolean;
+	/** Les réponses de l'équipe pas encore lues, sur la rangée « Aide » (16/10/2026). */
+	readonly aideNonLues?: number;
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -458,6 +461,17 @@ export function EcranCompte({
 							<DoubleAuthentification {...pret.doubleAuth} />
 						</RangeeDepliable>
 					)}
+
+					<RangeeLien
+						vers="/app/aide"
+						icone={<LifeBuoyIcon />}
+						titre="Aide"
+						valeur={
+							(pret.aideNonLues ?? 0) > 0
+								? `${pret.aideNonLues} réponse${(pret.aideNonLues ?? 0) > 1 ? 's' : ''} à lire`
+								: 'Plume, puis l’équipe'
+						}
+					/>
 
 					{/* L'admin, pour la seule équipe de Letikette : il ne s'annonce à personne d'autre. */}
 					{pret.admin === true ? (

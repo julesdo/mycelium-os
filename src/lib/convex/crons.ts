@@ -140,6 +140,12 @@ crons.daily(
 	{}
 );
 
+/*
+  L'ENTRETIEN DU SUPPORT (16/10/2026). Plume qui a perdu son appel passe la main,
+  une conversation sans nouvelles se termine, le gérant attendu est rappelé.
+*/
+crons.interval('support', { minutes: 15 }, internal.support.entretien.entretenir, {});
+
 export default crons;
 
 /*

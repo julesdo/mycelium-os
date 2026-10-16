@@ -334,7 +334,8 @@ export function BarreLaterale({
 	);
 }
 
-function EntreeLaterale({
+/** Une entrée de la barre : exportée pour le pied, où « Aide » se pose au-dessus du compte. */
+export function EntreeLaterale({
 	destination,
 	reduite
 }: {

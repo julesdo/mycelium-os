@@ -64,10 +64,8 @@ export async function signatureSvixValide(entree: {
 			await crypto.subtle.sign('HMAC', cle, new TextEncoder().encode(`${id}.${timestamp}.${corps}`))
 		)
 	);
-	return signatures
-		.split(' ')
-		.some((entreeSig) => {
-			const [version, signature] = entreeSig.split(',');
-			return version === 'v1' && signature !== undefined && egalEnTempsConstant(signature, attendue);
-		});
+	return signatures.split(' ').some((entreeSig) => {
+		const [version, signature] = entreeSig.split(',');
+		return version === 'v1' && signature !== undefined && egalEnTempsConstant(signature, attendue);
+	});
 }

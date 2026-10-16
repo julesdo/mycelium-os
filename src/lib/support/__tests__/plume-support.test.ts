@@ -75,9 +75,33 @@ describe('construireMessageSupport', () => {
 		prochainPrelevementLe: '2026-11-02',
 		membres: 3,
 		relancesActivees: true,
-		connexions: [{ fournisseur: 'Pennylane', derniereLecture: '2026-10-15', erreur: null }],
+		dossiersADemarrer: 2,
+		relancesProgrammees: 1,
+		prochaineRelanceLe: '2026-10-17 à 10 h',
+		relancesBloquees: { emailClient: 1, votreEmail: false },
+		connexions: [{ fournisseur: 'Pennylane', etat: 'A_JOUR', derniereLecture: '2026-10-15' }],
 		documentsEnEchec: 0
 	};
+
+	it('dit ce que fait le pilote en nombres, sans un nom', () => {
+		const message = construireMessageSupport({ contexte, historique: [], question: 'Ma relance est partie ?' });
+		expect(message).toContain('Dossiers à démarrer : 2');
+		expect(message).toContain('Relances programmées : 1, la prochaine le 2026-10-17 à 10 h');
+		expect(message).toContain('Relances bloquées faute de l’e-mail du client : 1');
+		expect(message).not.toContain('faute de votre e-mail');
+	});
+
+	it('dit l’état d’un logiciel branché par un code fermé, jamais le texte de l’erreur', () => {
+		const message = construireMessageSupport({
+			contexte: {
+				...contexte,
+				connexions: [{ fournisseur: 'Pennylane', etat: 'LECTURE_ECHOUEE', derniereLecture: null }]
+			},
+			historique: [],
+			question: 'Pennylane ne lit plus rien'
+		});
+		expect(message).toContain('Pennylane : la dernière lecture a échoué');
+	});
 
 	it('ne montre l’argent qu’à un administrateur', () => {
 		const pourMembre = construireMessageSupport({ contexte, historique: [], question: 'Quand suis-je prélevé ?' });
@@ -100,5 +124,12 @@ describe('construireMessageSupport', () => {
 			question: 'Comment résilier ?'
 		});
 		expect(message.indexOf('Bonjour, je vous écoute.')).toBeLessThan(message.indexOf('Comment résilier ?'));
+	});
+
+	it('demande de reformuler après un « Pas vraiment »', () => {
+		const normal = construireMessageSupport({ contexte, historique: [], question: 'Comment résilier ?' });
+		const encore = construireMessageSupport({ contexte, historique: [], question: 'Comment résilier ?', reformuler: true });
+		expect(normal).not.toMatch(/reformule/i);
+		expect(encore).toMatch(/reformule/i);
 	});
 });

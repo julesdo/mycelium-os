@@ -30,7 +30,9 @@ export function retirerCitation(texte: string): { visible: string; coupe: boolea
 		lignes = lignes.slice(0, indexDelimiteur);
 		coupe = true;
 	} else {
-		const indexOuverture = lignes.findIndex((ligne) => OUVERTURES.some((motif) => motif.test(ligne)));
+		const indexOuverture = lignes.findIndex((ligne) =>
+			OUVERTURES.some((motif) => motif.test(ligne))
+		);
 		if (indexOuverture >= 0) {
 			lignes = lignes.slice(0, indexOuverture);
 			coupe = true;

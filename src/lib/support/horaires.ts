@@ -83,7 +83,10 @@ export function heuresOuvreesEntre(de: number, a: number): number {
 	return total / HEURE_MS;
 }
 
-const JOUR_DE_LA_SEMAINE = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long' });
+const JOUR_DE_LA_SEMAINE = new Intl.DateTimeFormat('fr-FR', {
+	timeZone: 'Europe/Paris',
+	weekday: 'long'
+});
 const JOUR_ET_MOIS = new Intl.DateTimeFormat('fr-FR', {
 	timeZone: 'Europe/Paris',
 	day: 'numeric',
@@ -101,7 +104,8 @@ export function phraseDeReponseAttendue(instant: number, maintenant: number): st
 	const partieHeure = HEURE.formatToParts(new Date(instant)).find((p) => p.type === 'hour')?.value;
 	const heure = `${Number(partieHeure)} h`;
 	const ecart = Math.round(
-		(Date.parse(`${jourDeParis(instant)}T12:00:00Z`) - Date.parse(`${jourDeParis(maintenant)}T12:00:00Z`)) /
+		(Date.parse(`${jourDeParis(instant)}T12:00:00Z`) -
+			Date.parse(`${jourDeParis(maintenant)}T12:00:00Z`)) /
 			JOUR_MS
 	);
 	if (ecart <= 0) return `aujourd’hui avant ${heure}`;
