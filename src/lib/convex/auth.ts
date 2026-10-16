@@ -6,6 +6,7 @@ import { type DataModel } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { passkey } from '@better-auth/passkey';
 import { admin } from 'better-auth/plugins/admin';
+import { twoFactor } from 'better-auth/plugins/two-factor';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import authSchema from './betterAuth/schema';
 import authConfig from './auth.config';
@@ -168,6 +169,9 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>): BetterAuthOptions
 				jwksRotateOnTokenGenerationError: true
 			}),
 			passkey(),
+			// La double authentification (16/10/2026) : offerte à tous, obligatoire pour
+			// l'équipe qui ouvre l'admin (`admin/enveloppe.ts`).
+			twoFactor({ issuer: 'Letikette' }),
 			admin({
 				defaultRole: 'user',
 				adminRoles: ['admin']

@@ -40,6 +40,7 @@ import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogAdresseRouteImport } from './routes/blog/$adresse'
 import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
+import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -213,6 +214,11 @@ const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
   path: '/blog/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnexionVerificationRoute = ConnexionVerificationRouteImport.update({
+  id: '/connexion_/verification',
+  path: '/connexion/verification',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PJetonRoute = PJetonRouteImport.update({
   id: '/p/$jeton',
   path: '/p/$jeton',
@@ -324,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/app/revelation': typeof AppRevelationRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
+  '/connexion/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
@@ -372,6 +379,7 @@ export interface FileRoutesByTo {
   '/app/revelation': typeof AppRevelationRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
+  '/connexion/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app': typeof AppIndexRoute
@@ -422,6 +430,7 @@ export interface FileRoutesById {
   '/app/revelation': typeof AppRevelationRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
+  '/connexion_/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/app/': typeof AppIndexRoute
@@ -473,6 +482,7 @@ export interface FileRouteTypes {
     | '/app/revelation'
     | '/blog/$adresse'
     | '/blog/rss.xml'
+    | '/connexion/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app/'
@@ -521,6 +531,7 @@ export interface FileRouteTypes {
     | '/app/revelation'
     | '/blog/$adresse'
     | '/blog/rss.xml'
+    | '/connexion/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app'
@@ -570,6 +581,7 @@ export interface FileRouteTypes {
     | '/app/revelation'
     | '/blog/$adresse'
     | '/blog/rss.xml'
+    | '/connexion_/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/app/'
@@ -610,6 +622,7 @@ export interface RootRouteChildren {
   TarifsRoute: typeof TarifsRoute
   BlogAdresseRoute: typeof BlogAdresseRoute
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
+  ConnexionVerificationRoute: typeof ConnexionVerificationRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
@@ -835,6 +848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connexion_/verification': {
+      id: '/connexion_/verification'
+      path: '/connexion/verification'
+      fullPath: '/connexion/verification'
+      preLoaderRoute: typeof ConnexionVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/p/$jeton': {
       id: '/p/$jeton'
       path: '/p/$jeton'
@@ -1057,6 +1077,7 @@ const rootRouteChildren: RootRouteChildren = {
   TarifsRoute: TarifsRoute,
   BlogAdresseRoute: BlogAdresseRoute,
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
+  ConnexionVerificationRoute: ConnexionVerificationRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   BlogIndexRoute: BlogIndexRoute,

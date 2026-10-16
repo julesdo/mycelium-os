@@ -72,6 +72,7 @@ export { CarteListe, LigneValeur } from './carte-liste';
 export { CarteDemarrage } from './carte-demarrage';
 export { Faisceau } from './faisceau';
 export { BoutonPrincipal, BoutonSecondaire, BoutonTexte } from './bouton';
+export { DoubleAuthentification, type GestesDoubleAuth } from './double-authentification';
 export { CompositionDue, type PartsDues } from './composition';
 export { TwoPane } from './two-pane';
 export { MaitreDetail, useDeuxVolets } from './maitre-detail';

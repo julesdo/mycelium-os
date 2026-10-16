@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { Input } from '@cladd-ui/react';
 import { authClient } from '../lib/client/auth';
 import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
+import { suiteSure } from '../lib/compte/suite';
 
 /**
  * `invitation` porte le jeton d'une invitation en cours.
@@ -14,15 +15,18 @@ import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
  * on revient sur l'écran d'acceptation une fois la session ouverte.
  */
 export const Route = createFileRoute('/connexion')({
-	validateSearch: (search: Record<string, unknown>): { invitation?: string } => ({
-		invitation: typeof search.invitation === 'string' ? search.invitation : undefined
+	validateSearch: (search: Record<string, unknown>): { invitation?: string; suite?: string } => ({
+		invitation: typeof search.invitation === 'string' ? search.invitation : undefined,
+		// Le retour après connexion (l'invitation dans l'équipe mène à l'admin), borné
+		// à l'admin et à l'application : jamais une redirection ouverte.
+		suite: suiteSure(search.suite)
 	}),
 	component: Connexion
 });
 
 function Connexion() {
 	const navigate = useNavigate();
-	const { invitation } = Route.useSearch();
+	const { invitation, suite } = Route.useSearch();
 	const [email, setEmail] = useState('');
 	const [motDePasse, setMotDePasse] = useState('');
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -32,7 +36,7 @@ function Connexion() {
 		e.preventDefault();
 		setErreur(null);
 		setEnCours(true);
-		const { error } = await authClient.signIn.email({ email, password: motDePasse });
+		const { data, error } = await authClient.signIn.email({ email, password: motDePasse });
 		setEnCours(false);
 		if (error) {
 			// Message unique et neutre : distinguer « compte inconnu » de « mot de
@@ -40,11 +44,16 @@ function Connexion() {
 			setErreur("L'adresse ou le mot de passe ne correspond pas.");
 			return;
 		}
+		// La double authentification active : le code d'abord, la suite ensuite.
+		if (data !== null && 'twoFactorRedirect' in data && data.twoFactorRedirect === true) {
+			await navigate({ to: '/connexion/verification', search: { invitation, suite } });
+			return;
+		}
 		if (invitation) {
 			await navigate({ to: '/rejoindre/$token', params: { token: invitation } });
 			return;
 		}
-		await navigate({ to: '/app' });
+		await navigate({ to: suite ?? '/app' });
 	}
 
 	return (

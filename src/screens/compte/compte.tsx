@@ -4,6 +4,7 @@ import {
 	ArrowLeftRightIcon,
 	Building2Icon,
 	CheckIcon,
+	KeyRoundIcon,
 	ScaleIcon,
 	CreditCardIcon,
 	LogOutIcon,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { Theme } from '../../app/use-theme';
 import {
+	DoubleAuthentification,
 	EmptyState,
 	LigneBouton,
 	ListeAnalyses,
@@ -28,6 +30,7 @@ import {
 	RangeeDepliable,
 	RangeeLien,
 	SectionsDepliables,
+	type GestesDoubleAuth,
 	type Lecture
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
@@ -156,6 +159,8 @@ export interface CompteAffiche {
 		readonly parCourriel: boolean | undefined;
 		readonly onRegler: (parCourriel: boolean) => void;
 	};
+	/** La double authentification de la personne connectée (16/10/2026). */
+	readonly doubleAuth?: GestesDoubleAuth;
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -436,6 +441,20 @@ export function EcranCompte({
 							</>
 						)}
 					</RangeeDepliable>
+
+					{pret.doubleAuth === undefined ? null : (
+						<RangeeDepliable
+							cle="securite"
+							icone={<KeyRoundIcon />}
+							titre="Sécurité"
+							valeur={
+								pret.doubleAuth.active === true ? 'Double authentification' : 'Mot de passe seul'
+							}
+						>
+							<SectionTitle>Double authentification</SectionTitle>
+							<DoubleAuthentification {...pret.doubleAuth} />
+						</RangeeDepliable>
+					)}
 				</ListeDeRangees>
 
 				{/*

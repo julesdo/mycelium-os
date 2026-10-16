@@ -1,5 +1,6 @@
 import { createAuthClient } from 'better-auth/react';
 import { convexClient } from '@convex-dev/better-auth/client/plugins';
+import { twoFactorClient } from 'better-auth/client/plugins';
 
 /**
  * Le client Better Auth.
@@ -11,5 +12,5 @@ import { convexClient } from '@convex-dev/better-auth/client/plugins';
  * change de framework.
  */
 export const authClient = createAuthClient({
-	plugins: [convexClient()]
+	plugins: [convexClient(), twoFactorClient()]
 });

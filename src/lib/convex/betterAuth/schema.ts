@@ -12,6 +12,9 @@
  *
  * Customizations preserved across regeneration:
  * - `.index('role', ['role'])` on the `user` table — generator drops it.
+ * - `twoFactorEnabled` on `user` and the `twoFactor` table (16/10/2026, plugin
+ *   `twoFactor`), written by hand from `better-auth/dist/plugins/two-factor/schema.mjs`
+ *   because the generator stalls on `passkey`.
  *
  * Custom-index pattern: https://labs.convex.dev/better-auth/features/local-install#adding-custom-indexes.
  */
@@ -32,7 +35,8 @@ export const tables = {
 		banned: v.optional(v.union(v.null(), v.boolean())),
 		banReason: v.optional(v.union(v.null(), v.string())),
 		banExpires: v.optional(v.union(v.null(), v.number())),
-		locale: v.optional(v.union(v.null(), v.string()))
+		locale: v.optional(v.union(v.null(), v.string())),
+		twoFactorEnabled: v.optional(v.union(v.null(), v.boolean()))
 	})
 		.index('email_name', ['email', 'name'])
 		.index('name', ['name'])
@@ -98,6 +102,14 @@ export const tables = {
 		aaguid: v.optional(v.union(v.null(), v.string()))
 	})
 		.index('credentialID', ['credentialID'])
+		.index('userId', ['userId']),
+	twoFactor: defineTable({
+		secret: v.string(),
+		backupCodes: v.string(),
+		userId: v.string(),
+		verified: v.optional(v.union(v.null(), v.boolean()))
+	})
+		.index('secret', ['secret'])
 		.index('userId', ['userId'])
 };
 

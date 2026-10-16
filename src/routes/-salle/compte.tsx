@@ -850,6 +850,16 @@ function compteDe(
 		// Le point du matin par e-mail : reçu, comme pour tout membre qui n'a rien changé.
 		pointDuMatin: { parCourriel: true, onRegler: () => undefined },
 		conseils: { parCourriel: true, onRegler: () => undefined },
+		doubleAuth: {
+			active: false,
+			onCommencer: async () => ({
+				totpURI:
+					'otpauth://totp/Letikette:camille%40exemple.fr?secret=JBSWY3DPEHPK3PXP&issuer=Letikette',
+				codes: ['a1b2c-3d4e5', 'f6g7h-8i9j0', 'k1l2m-3n4o5', 'p6q7r-8s9t0']
+			}),
+			onVerifier: async () => ({}),
+			onDesactiver: async () => ({})
+		},
 		onSeDeconnecter: () => undefined
 	} satisfies CompteAffiche;
 }

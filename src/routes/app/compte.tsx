@@ -87,6 +87,11 @@ function PageCompte() {
 	).withOptimisticUpdate((local, { parCourriel }) => {
 		local.setQuery(api.recouvrement.briefing.monPointDuMatin, {}, parCourriel);
 	});
+	/** La personne connectée, telle que Better Auth la tient : sa double authentification. */
+	const utilisateurAuth = useQuery(api.auth.getCurrentUser, {}) as
+		| { twoFactorEnabled?: boolean | null }
+		| null
+		| undefined;
 	/** Les conseils de Plume par e-mail, pour la personne connectée. */
 	const conseils = useQuery(api.croissance.reglage.mesConseils, {});
 	const reglerConseils = useMutation(api.croissance.reglage.reglerMesConseils).withOptimisticUpdate(
@@ -585,6 +590,28 @@ function PageCompte() {
 		pointDuMatin: {
 			parCourriel: pointDuMatin,
 			onRegler: (parCourriel) => void reglerPointDuMatin({ parCourriel })
+		},
+		doubleAuth: {
+			active:
+				utilisateurAuth === undefined ? undefined : utilisateurAuth?.twoFactorEnabled === true,
+			onCommencer: async (motDePasse) => {
+				const { data, error } = await authClient.twoFactor.enable({ password: motDePasse });
+				if (error || !data) return { erreur: 'Ce mot de passe ne correspond pas.' };
+				return { totpURI: data.totpURI, codes: data.backupCodes };
+			},
+			onVerifier: async (code) => {
+				const { error } = await authClient.twoFactor.verifyTotp({ code });
+				return error
+					? {
+							erreur:
+								'Ce code ne correspond pas. Vérifiez l’heure de votre téléphone, puis réessayez.'
+						}
+					: {};
+			},
+			onDesactiver: async (motDePasse) => {
+				const { error } = await authClient.twoFactor.disable({ password: motDePasse });
+				return error ? { erreur: 'Ce mot de passe ne correspond pas.' } : {};
+			}
 		},
 		conseils: {
 			parCourriel: conseils,
