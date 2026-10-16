@@ -32,7 +32,8 @@ const SURFACES = [
 	join('src', 'routes'),
 	join('src', 'marketing'),
 	join('src', 'lib', 'config'),
-	join('src', 'lib', 'convex', 'emails')
+	join('src', 'lib', 'convex', 'emails'),
+	join('src', 'lib', 'croissance')
 ];
 
 const MOT_INTERDIT = /garanti/i;

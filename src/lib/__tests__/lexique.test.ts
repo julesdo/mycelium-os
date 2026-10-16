@@ -33,6 +33,8 @@ const PERIMETRE = [
 	  cette moitié-là n'était pas celle que le gérant lit le plus.
 	*/
 	join('src', 'lib', 'verticales'),
+	// Les textes du moteur de croissance (16/10/2026), lus par le gérant.
+	join('src', 'lib', 'croissance'),
 	/*
 	  ⚠️ ET LA PAGE PUBLIQUE, QUI EST LE PREMIER ÉCRAN DU PARCOURS. Elle
 	  promettait « Signification de l'ordonnance » à un prospect qui n'a pas

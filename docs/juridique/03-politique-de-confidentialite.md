@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.5** du 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -173,6 +173,8 @@ analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête 
 | Analyser la santé des débiteurs et le parcours de leurs dirigeants (section 4.6) | **Intérêt légitime** du créancier à évaluer son risque de crédit | art. 6.1.f |
 | Assurer la sécurité et prévenir la fraude | **Intérêt légitime** | art. 6.1.f |
 | Mesurer l'audience du site et l'usage du Service, en statistiques agrégées | **Intérêt légitime** à améliorer le Service | art. 6.1.f |
+| Suivre où en est votre compte (provenance de l'inscription, étapes franchies, indice d'activité) pour vous accompagner | **Intérêt légitime** à faire réussir l'utilisation du Service | art. 6.1.f |
+| Vous envoyer les conseils de Plume dans vos premières semaines (quatre au plus) | **Intérêt légitime**, avec opposition en un clic | art. 6.1.f |
 
 **Aucune donnée n'est traitée à des fins de prospection commerciale ou de profilage publicitaire.**
 
@@ -183,6 +185,18 @@ identifiants de la base sont retirés de l'adresse de la page, les paramètres e
 l'adresse ne partent pas, et aucun événement ne porte de nom, de montant ni d'adresse. **La page où
 un débiteur consulte ce qu'il doit et les coordonnées de virement n'est jamais mesurée** : le script
 ne s'y charge pas. Le réglage « Ne pas me pister » du navigateur est respecté.
+
+**Accompagnement.** Pour savoir ce qui vous a mené à Letikette et vous accompagner dans vos premières
+semaines, le Service garde, pour chaque établissement : la page d'entrée et le site d'origine de
+la visite qui a mené à l'inscription (avec ses éventuels paramètres de campagne), les étapes
+franchies et leur date (entreprise renseignée, factures déposées, relances activées, abonnement),
+et un indice d'activité de 0 à 100. **Jamais le contenu d'un dossier** : ni débiteur, ni facture,
+ni montant. Ces informations ne sont vues que par Letikette ; elles servent à choisir le prochain
+conseil de Plume et les comptes que l'équipe contacte, et ne produisent aucune décision qui vous
+concerne juridiquement. La provenance de la visite est gardée dans l'onglet du navigateur le temps
+de la visite, sans cookie, puis jointe à l'inscription ; elle n'est pas notée sur la page où un
+débiteur consulte ce qu'il doit. Les conseils de Plume se coupent dans Votre compte, puis Votre
+profil, ou par le lien présent en bas de chacun d'eux.
 
 **Cookies.** Le Service dépose un **cookie de session d'authentification**, strictement nécessaire à
 son fonctionnement et exempté de consentement au titre de l'article 82 de la loi Informatique et
@@ -336,6 +350,7 @@ rectification ou son effacement à bonjour@letikette.com.
 | Pièces comptables et factures d'abonnement | **10 ans** (art. L123-22 c. com.), détenues par le prestataire de facturation |
 | Journal des accès aux documents (dépôt, ouverture, téléchargement, retrait) | **jusqu'à la suppression de l'établissement** |
 | Jetons d'ouverture d'un document | **une minute**, à usage unique ; les jetons expirés sont effacés chaque nuit |
+| Parcours du compte (provenance, étapes, indice d'activité) et journal des conseils envoyés | **jusqu'à la suppression de l'établissement**, qui les efface |
 
 **Ce que la suppression d'un établissement efface** : la totalité des données cloisonnées par
 établissement, **fichiers de stockage compris** — pièces déposées, documents importés, logo, photo

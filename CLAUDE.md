@@ -550,6 +550,20 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   Découverte ne fait rien partir, une formule relance ses N premiers clients suivis. À
   l'ouverture, les comptes existants reçoivent trente jours d'accès offert et un préavis
   (`ouvertureFacturation:prevenir`).
+- **Le moteur de croissance** (16/10/2026, stratégie `docs/superpowers/specs/2026-10-16-strategie-de-croissance.md`,
+  moteur `2026-10-16-moteur-de-croissance-design.md`). Le fondateur : « commencer à la main au lieu
+  d'exploser un budget ». La prospection se fait d'abord à la main (`docs/croissance/phase-manuelle.md`,
+  son tableur et ses e-mails types), et chaque dépense (Instantly, Twenty, le point écrit par Claude)
+  attend son seuil mesuré. Le code, gratuit : la **source** de chaque inscription (amorce du `<head>`,
+  `app/source-visite.ts`, gardée le temps de l'onglet, jamais sur `/p/`, bornée par `lireSource`) ;
+  les **étapes** déduites de l'état réel, jamais réécrites (`croissance/releve.ts`, logique pure dans
+  `src/lib/croissance/`, frontière testée comme le socle), relevées après la création, un dépôt lu,
+  l'activation des relances, et chaque nuit — le code de facturation n'est pas touché ; un **score**
+  de 0 à 100 aux règles nommées ; les **quatre conseils de Plume** (`croissance/conseils.ts`), chacun
+  avec une fenêtre de validité qui protège les comptes anciens, un tous les deux jours au plus, dans
+  le créneau des relances, coupés par le profil ou un lien dont seul le POST désinscrit ; et le
+  **point chiffré du lundi** à `FONDATEUR_EMAIL` (trafic Umami par `UMAMI_API_KEY`, facultatif).
+  Jamais un débiteur ni un montant ne sort de l'établissement.
 - **Plume parle sur chaque écran** (13/10/2026, `docs/superpowers/specs/2026-10-13-plume-compagnon.md`,
   sur Alan, Rocket Money, Credit Karma, Fabric et ClickUp). Le fondateur : « un vrai agent qui
   assiste partout […] au lieu de simplement être dans un chat ». Une **bulle** sort de Plume,
