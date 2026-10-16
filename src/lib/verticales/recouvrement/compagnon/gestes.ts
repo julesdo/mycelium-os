@@ -76,7 +76,9 @@ export const ECRANS_ETABLISSEMENT = [
 	'RELANCES',
 	'COMPTE',
 	// 13/10/2026 : la santé de tous les clients, l'analyse du risque.
-	'SANTE_CLIENTS'
+	'SANTE_CLIENTS',
+	// 16/10/2026 : écrire à l'équipe Letikette, dans l'Aide (un fil neuf, rien de recopié).
+	'AIDE'
 ] as const;
 
 /** Les écrans d'un dossier précis : le geste porte son identifiant. */
@@ -407,6 +409,10 @@ const TITRE_ECRAN: Readonly<Record<string, { titre: string; detail?: string }>> 
 		detail: 'Votre équipe, les avocats et commissaires près de vos clients.'
 	},
 	NOTIFICATIONS: { titre: 'Vos notifications' },
+	AIDE: {
+		titre: 'Parler à l’équipe Letikette',
+		detail: 'Un fil neuf s’ouvre dans l’Aide : écrivez-y votre question, sans nom de client. L’équipe la lira.'
+	},
 	DEMARRER_LOT: {
 		titre: 'Les dossiers prêts à démarrer',
 		detail: 'Tout est coché : vous décochez ceux que vous gardez en main.'

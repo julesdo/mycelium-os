@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useAction, useMutation } from 'convex/react';
 import { useToast } from '@cladd-ui/react';
 import { useQuery } from '../../app/donnees';
@@ -123,7 +123,12 @@ function ConversationDePlume() {
 	);
 	const parId = new Map((dossiers ?? []).map((d) => [d._id as string, d]));
 
-	const { question: questionDeDepart, depuis, client: clientDuRegard } = Route.useSearch();
+	const { question: questionDeLAdresse, depuis, client: clientDuRegard } = Route.useSearch();
+	// Une question confiée par l'Aide arrive par l'état de la navigation, jamais par l'adresse.
+	const questionDeLEtat = useRouterState({
+		select: (etat) => etat.location.state.questionPourPlume
+	});
+	const questionDeDepart = questionDeLAdresse ?? questionDeLEtat;
 
 	/*
 	  D'OÙ L'ON PARLE (13/10/2026) — l'écran qu'on regardait en touchant Plume, et le

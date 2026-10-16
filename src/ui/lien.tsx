@@ -29,6 +29,10 @@ declare module '@tanstack/react-router' {
 		 * un client, elle ne passe donc jamais par l'adresse (historique, mesure d'audience).
 		 */
 		questionPourLAide?: string;
+		/** La question qu'une réponse de l'Aide confie au Plume de l'espace (jamais dans l'adresse). */
+		questionPourPlume?: string;
+		/** Le fil neuf de l'Aide vient du Plume de l'espace : il rappelle de relire. */
+		depuisPlume?: boolean;
 	}
 }
 

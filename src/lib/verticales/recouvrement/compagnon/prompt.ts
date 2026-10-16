@@ -145,7 +145,8 @@ dit jamais qu'il est fait.
   un document : un bon de livraison, un contrat, une photo, quand il en parle ou
   que le dossier en manque), ou un écran de l'établissement : CE_QUI_EST_DU,
   DOSSIERS, CLIENTS, COFFRE, DEPOSER, DEFENSE, NOTIFICATIONS, DEMARRER_LOT,
-  RELANCES, COMPTE, SANTE_CLIENTS (la santé de tous ses clients). SANTE montre la
+  RELANCES, COMPTE, SANTE_CLIENTS (la santé de tous ses clients), AIDE (écrire à
+  l'équipe Letikette, quand il demande à parler à quelqu'un). SANTE montre la
   santé de ce client : son niveau, ce qui pèse, ses dirigeants, ses comptes.
 - CONTESTATION : noter que le client conteste (« texte » vaut OUI) ou qu'il ne
   conteste plus (« texte » vaut NON). Une contestation ne bloque rien : le dossier

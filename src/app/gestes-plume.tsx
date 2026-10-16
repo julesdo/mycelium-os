@@ -322,6 +322,10 @@ export function useGestesDePlume({
 			case 'SANTE_CLIENTS':
 				void navigate({ to: '/app/risque' });
 				return;
+			case 'AIDE':
+				// Un fil neuf, et rien de recopié : la question posée ici nomme souvent un client.
+				void navigate({ to: '/app/aide/nouvelle', state: { depuisPlume: true } });
+				return;
 		}
 	}
 

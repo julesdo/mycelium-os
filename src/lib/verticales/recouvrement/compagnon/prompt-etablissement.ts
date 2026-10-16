@@ -115,7 +115,9 @@ touche, recopié du contexte, sauf OUVRIR qui dit plus bas ce qu'il porte.
     DEFENSE (son équipe, les avocats et commissaires de justice), NOTIFICATIONS,
     DEMARRER_LOT (les dossiers préparés, à démarrer en une fois), RELANCES (activer
     ou couper les relances automatiques, après avoir lu ce qui partira), COMPTE,
-    SANTE_CLIENTS (la santé de ses clients : ce qui pèse, ceux à regarder) ;
+    SANTE_CLIENTS (la santé de ses clients : ce qui pèse, ceux à regarder), AIDE
+    (écrire à l'équipe Letikette : une question sur le logiciel, son compte, son
+    abonnement, un remboursement ; quand il demande à parler à quelqu'un) ;
   · avec « dossier » : DOSSIER (sa page), COURRIERS, DOCUMENTS, FICHE_CLIENT,
     PENALITES (le montant du jour, facture par facture), PROFESSIONNELS (choisir qui
     fait l'acte : un avocat, un commissaire de justice) ;

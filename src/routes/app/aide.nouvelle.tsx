@@ -11,5 +11,15 @@ function PageNouvelle() {
 	const question = useRouterState({
 		select: (etat) => etat.location.state.questionPourLAide ?? ''
 	});
-	return <FilAide key={question} conversationId={null} questionInitiale={question} />;
+	const depuisPlume = useRouterState({
+		select: (etat) => etat.location.state.depuisPlume === true
+	});
+	return (
+		<FilAide
+			key={question}
+			conversationId={null}
+			questionInitiale={question}
+			depuisPlume={depuisPlume}
+		/>
+	);
 }

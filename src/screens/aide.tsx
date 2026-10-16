@@ -85,7 +85,11 @@ export interface AideAffichee {
 
 const ID_FORMULAIRE = 'aide-demander';
 
-function CartesDeConversations({ cartes }: { readonly cartes: readonly CarteDeConversationAffichee[] }) {
+function CartesDeConversations({
+	cartes
+}: {
+	readonly cartes: readonly CarteDeConversationAffichee[];
+}) {
 	return (
 		<ListeDeCartes>
 			{cartes.map((carte) => (
@@ -141,10 +145,14 @@ export function EcranAide({ donnees }: { readonly donnees: Lecture<AideAffichee>
 						value={aide.recherche}
 						onChange={(valeur) => aide.onRecherche(valeur)}
 						placeholder="Demandez à Plume ou cherchez"
-						inputComponentProps={{ 'aria-label': 'Demandez à Plume ou cherchez', enterKeyHint: 'send' }}
+						inputComponentProps={{
+							'aria-label': 'Demandez à Plume ou cherchez',
+							enterKeyHint: 'send'
+						}}
 					/>
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						{aide.avantLaSaisie ?? 'Plume répond en quelques secondes. L’équipe prend le relais dans le même fil.'}
+						{aide.avantLaSaisie ??
+							'Plume répond en quelques secondes. L’équipe prend le relais dans le même fil.'}
 					</p>
 				</form>
 
@@ -209,7 +217,13 @@ export interface SujetDeQuestions {
 
 export function EcranQuestionsDAide({ sujets }: { readonly sujets: readonly SujetDeQuestions[] }) {
 	return (
-		<PageEcran entete={{ genre: 'poussee', retour: { vers: '/app/aide', libelle: 'Aide' }, titre: 'Toutes les questions' }}>
+		<PageEcran
+			entete={{
+				genre: 'poussee',
+				retour: { vers: '/app/aide', libelle: 'Aide' },
+				titre: 'Toutes les questions'
+			}}
+		>
 			<div className="flex flex-col gap-cladd-2xs">
 				{sujets.map((groupe) => (
 					<section key={groupe.sujet} className="flex flex-col gap-2">
@@ -234,7 +248,11 @@ export interface ReponseDAideAffichee {
 }
 
 /** Une réponse de la base d'aide, tout de suite, et l'écran qui règle la question. */
-export function EcranQuestionDAide({ donnees }: { readonly donnees: Lecture<ReponseDAideAffichee> }) {
+export function EcranQuestionDAide({
+	donnees
+}: {
+	readonly donnees: Lecture<ReponseDAideAffichee>;
+}) {
 	const entete = {
 		genre: 'poussee',
 		retour: { vers: '/app/aide', libelle: 'Aide' },
@@ -302,7 +320,12 @@ export type ElementDuFilAide =
 			readonly texte: string;
 			readonly heure: string;
 	  }
-	| { readonly genre: 'RETIRE'; readonly id: string; readonly auteur: AuteurAffiche; readonly heure: string }
+	| {
+			readonly genre: 'RETIRE';
+			readonly id: string;
+			readonly auteur: AuteurAffiche;
+			readonly heure: string;
+	  }
 	| {
 			readonly genre: 'LIGNE';
 			readonly id: string;
@@ -332,6 +355,8 @@ export interface ConversationAideAffichee {
 	readonly parlerALEquipe?: () => void;
 	/** « Parler à l'équipe » touché avant d'écrire : la question ira droit à l'équipe. */
 	readonly pourLEquipe: boolean;
+	/** « Relisez avant d'envoyer… », quand le fil vient du Plume de l'espace. */
+	readonly relire?: string;
 	readonly avis?: { readonly onRepondre: (utile: boolean) => void };
 	/** Une conversation terminée depuis plus de sept jours : écrire ici, ou un nouveau sujet. */
 	readonly choixAncienne?: { readonly onNouveau: () => void };
@@ -370,7 +395,10 @@ function Element({ element }: { readonly element: ElementDuFilAide }) {
 					)}
 					<LegendeDuMessage auteur="PLUME" heure={element.heure} />
 					{element.satisfaction === undefined ? null : (
-						<QuestionDeSatisfaction onOui={element.satisfaction.onOui} onNon={element.satisfaction.onNon} />
+						<QuestionDeSatisfaction
+							onOui={element.satisfaction.onOui}
+							onNon={element.satisfaction.onNon}
+						/>
 					)}
 				</ReponseDePlume>
 			);
@@ -384,7 +412,11 @@ function Element({ element }: { readonly element: ElementDuFilAide }) {
 				/>
 			);
 		case 'RETIRE':
-			return <MessageRetire legende={<LegendeDuMessage auteur={element.auteur} heure={element.heure} />} />;
+			return (
+				<MessageRetire
+					legende={<LegendeDuMessage auteur={element.auteur} heure={element.heure} />}
+				/>
+			);
 		case 'LIGNE':
 			return <LigneDuFil texte={element.texte} heure={element.heure} annoncee={element.annoncee} />;
 		case 'TRANSMIS':
@@ -427,10 +459,14 @@ export function EcranConversationAide({ fil }: { readonly fil: ConversationAideA
 					enCours={fil.enCours}
 					placeholder={fil.pourLEquipe ? 'Votre question pour l’équipe' : 'Votre question'}
 					dessus={
-						fil.choixAncienne !== undefined ? (
+						fil.relire !== undefined ? (
+							<p className="text-cladd-2xs leading-relaxed text-cladd-fg">{fil.relire}</p>
+						) : fil.choixAncienne !== undefined ? (
 							<div className="flex flex-wrap items-center gap-2">
 								<p className="text-cladd-2xs text-cladd-fg-soft">Écrire ici rouvre ce sujet.</p>
-								<BoutonSecondaire onClick={fil.choixAncienne.onNouveau}>Nouveau sujet</BoutonSecondaire>
+								<BoutonSecondaire onClick={fil.choixAncienne.onNouveau}>
+									Nouveau sujet
+								</BoutonSecondaire>
 							</div>
 						) : fil.parlerALEquipe === undefined ? null : fil.pourLEquipe ? (
 							<p className="flex items-center gap-1.5 text-cladd-2xs text-cladd-fg-soft">
@@ -464,7 +500,11 @@ export function EcranConversationAide({ fil }: { readonly fil: ConversationAideA
 export function EcranConversationAbsente({ etat }: { readonly etat: 'attente' | 'erreur' }) {
 	return (
 		<PageEcran
-			entete={{ genre: 'poussee', retour: { vers: '/app/aide', libelle: 'Aide' }, titre: 'Conversation' }}
+			entete={{
+				genre: 'poussee',
+				retour: { vers: '/app/aide', libelle: 'Aide' },
+				titre: 'Conversation'
+			}}
 			etat={etat}
 		/>
 	);

@@ -23,10 +23,13 @@ function messageDuServeur(erreur: unknown, repli: string): string {
  */
 export function FilAide({
 	conversationId,
-	questionInitiale
+	questionInitiale,
+	depuisPlume = false
 }: {
 	readonly conversationId: Id<'conversationsSupport'> | null;
 	readonly questionInitiale: string;
+	/** Le fil neuf vient du Plume de l'espace : il rappelle de relire avant d'envoyer. */
+	readonly depuisPlume?: boolean;
 }) {
 	const navigate = useNavigate();
 	const dire = usePlumeDit();
@@ -159,7 +162,8 @@ export function FilAide({
 						: elementsDuFil(fil, maintenant, absentJusquAu, delaiHeures, {
 								onAvis: (messageId, utile) =>
 									void avisSurPlume({ messageId: messageId as Id<'messagesSupport'>, utile }),
-								versLEspace: () => void navigate({ to: '/app/pilote' }),
+								versLEspace: (question) =>
+									void navigate({ to: '/app/pilote', state: { questionPourPlume: question } }),
 								cartesArreter
 							}),
 				plumeReflechit: fil?.plumeReflechit === true,
@@ -172,6 +176,12 @@ export function FilAide({
 						}
 					: {}),
 				pourLEquipe,
+				...(depuisPlume && fil === null
+					? {
+							relire:
+								'Relisez avant d’envoyer : l’équipe Letikette ne doit lire aucun nom de client.'
+						}
+					: {}),
 				...(fil?.avisDemande === true
 					? {
 							avis: {
