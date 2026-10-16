@@ -382,3 +382,83 @@ export function EcranReponsesEnregistrees({
 		</PageEcran>
 	);
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// LA MESURE
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface MesureAffichee {
+	/** « Calculée à 14 h 00 ». */
+	readonly calculee: string;
+	readonly entonnoir: readonly { readonly libelle: string; readonly valeur: string }[];
+	readonly delais: readonly { readonly libelle: string; readonly valeur: string }[];
+	readonly plume: readonly { readonly libelle: string; readonly valeur: string }[];
+	readonly parSujet: readonly { readonly libelle: string; readonly valeur: string }[];
+	readonly lacunes: readonly {
+		readonly id: string;
+		readonly titre: string;
+		readonly ligne: string;
+		readonly onCreerTache?: () => void;
+	}[];
+}
+
+/** La mesure du support, trente jours comparés aux trente d'avant (Intercom, Help Scout). */
+export function EcranMesureSupport({ lecture }: { readonly lecture: Lecture<MesureAffichee | null> }) {
+	const entete = { genre: 'onglet', titre: 'Mesure du support' } as const;
+	if (lecture.etat !== 'pret') return <PageEcran entete={entete} etat={lecture.etat} />;
+	const m = lecture.valeur;
+	if (m === null) {
+		return (
+			<PageEcran entete={entete}>
+				<p className="py-cladd-xs text-center text-cladd-2xs text-cladd-fg-soft">
+					La mesure se calcule chaque heure : elle apparaît au prochain calcul.
+				</p>
+			</PageEcran>
+		);
+	}
+	return (
+		<PageEcran entete={entete}>
+			<div className="flex flex-col gap-cladd-2xs">
+				<p className="text-cladd-2xs text-cladd-fg-soft">{m.calculee}</p>
+				<BlocDeFiche titre="Trente jours">
+					<ChampsDeFiche champs={m.entonnoir} />
+				</BlocDeFiche>
+				<BlocDeFiche titre="Les délais, en heures ouvrées">
+					<ChampsDeFiche champs={m.delais} />
+				</BlocDeFiche>
+				<BlocDeFiche titre="Plume et les avis">
+					<ChampsDeFiche champs={m.plume} />
+				</BlocDeFiche>
+				{m.parSujet.length === 0 ? null : (
+					<BlocDeFiche titre="Par sujet">
+						<ChampsDeFiche champs={m.parSujet} />
+					</BlocDeFiche>
+				)}
+				<BlocDeFiche titre="Ce que Plume n’a pas su">
+					{m.lacunes.length === 0 ? (
+						<p className="px-1 text-cladd-2xs text-cladd-fg-soft">Rien ces trente derniers jours.</p>
+					) : (
+						<div className="flex flex-col gap-2">
+							{m.lacunes.map((l) => (
+								<div key={l.id} className="flex flex-col gap-1">
+									<CarteLien
+										vers="/admin/support/$id"
+										parametres={{ id: l.id }}
+										titre={l.titre}
+										ligne={l.ligne}
+										icone={<VignetteIcone icone={<MessageSquareIcon aria-hidden />} />}
+									/>
+									{l.onCreerTache === undefined ? null : (
+										<BoutonTexte onClick={l.onCreerTache} className="self-start">
+											Créer une tâche pour la base d’aide
+										</BoutonTexte>
+									)}
+								</div>
+							))}
+						</div>
+					)}
+				</BlocDeFiche>
+			</div>
+		</PageEcran>
+	);
+}

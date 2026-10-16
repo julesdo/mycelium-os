@@ -55,6 +55,7 @@ import { Route as AdminProspectsIdRouteImport } from './routes/admin/prospects.$
 import { Route as AdminProspectsImporterRouteImport } from './routes/admin/prospects.importer'
 import { Route as AdminSupportIndexRouteImport } from './routes/admin/support.index'
 import { Route as AdminSupportIdRouteImport } from './routes/admin/support.$id'
+import { Route as AdminSupportMesureRouteImport } from './routes/admin/support.mesure'
 import { Route as AdminSupportReponsesRouteImport } from './routes/admin/support.reponses'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppAideIndexRouteImport } from './routes/app/aide.index'
@@ -307,6 +308,11 @@ const AdminSupportIdRoute = AdminSupportIdRouteImport.update({
   path: '/support/$id',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSupportMesureRoute = AdminSupportMesureRouteImport.update({
+  id: '/support/mesure',
+  path: '/support/mesure',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSupportReponsesRoute = AdminSupportReponsesRouteImport.update({
   id: '/support/reponses',
   path: '/support/reponses',
@@ -452,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/admin/support/$id': typeof AdminSupportIdRoute
+  '/admin/support/mesure': typeof AdminSupportMesureRoute
   '/admin/support/reponses': typeof AdminSupportReponsesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/aide/$id': typeof AppAideIdRoute
@@ -518,6 +525,7 @@ export interface FileRoutesByTo {
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/admin/support/$id': typeof AdminSupportIdRoute
+  '/admin/support/mesure': typeof AdminSupportMesureRoute
   '/admin/support/reponses': typeof AdminSupportReponsesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/aide/$id': typeof AppAideIdRoute
@@ -587,6 +595,7 @@ export interface FileRoutesById {
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
   '/admin/support/$id': typeof AdminSupportIdRoute
+  '/admin/support/mesure': typeof AdminSupportMesureRoute
   '/admin/support/reponses': typeof AdminSupportReponsesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/aide/$id': typeof AppAideIdRoute
@@ -657,6 +666,7 @@ export interface FileRouteTypes {
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
     | '/admin/support/$id'
+    | '/admin/support/mesure'
     | '/admin/support/reponses'
     | '/api/auth/$'
     | '/app/aide/$id'
@@ -723,6 +733,7 @@ export interface FileRouteTypes {
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
     | '/admin/support/$id'
+    | '/admin/support/mesure'
     | '/admin/support/reponses'
     | '/api/auth/$'
     | '/app/aide/$id'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
     | '/admin/support/$id'
+    | '/admin/support/mesure'
     | '/admin/support/reponses'
     | '/api/auth/$'
     | '/app/aide/$id'
@@ -1168,6 +1180,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportIdRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/support/mesure': {
+      id: '/admin/support/mesure'
+      path: '/support/mesure'
+      fullPath: '/admin/support/mesure'
+      preLoaderRoute: typeof AdminSupportMesureRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/support/reponses': {
       id: '/admin/support/reponses'
       path: '/support/reponses'
@@ -1320,6 +1339,7 @@ interface AdminRouteRouteChildren {
   AdminProspectsIdRoute: typeof AdminProspectsIdRoute
   AdminProspectsImporterRoute: typeof AdminProspectsImporterRoute
   AdminSupportIdRoute: typeof AdminSupportIdRoute
+  AdminSupportMesureRoute: typeof AdminSupportMesureRoute
   AdminSupportReponsesRoute: typeof AdminSupportReponsesRoute
   AdminComptesIndexRoute: typeof AdminComptesIndexRoute
   AdminProspectsIndexRoute: typeof AdminProspectsIndexRoute
@@ -1335,6 +1355,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminProspectsIdRoute: AdminProspectsIdRoute,
   AdminProspectsImporterRoute: AdminProspectsImporterRoute,
   AdminSupportIdRoute: AdminSupportIdRoute,
+  AdminSupportMesureRoute: AdminSupportMesureRoute,
   AdminSupportReponsesRoute: AdminSupportReponsesRoute,
   AdminComptesIndexRoute: AdminComptesIndexRoute,
   AdminProspectsIndexRoute: AdminProspectsIndexRoute,

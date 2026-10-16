@@ -36,12 +36,12 @@ function PageAide() {
 
 	if (minute === null || accueil === undefined) return <EcranAide donnees={{ etat: 'attente' }} />;
 	const cartes = accueil.conversations.map((c) =>
-		carteDeConversation(c, maintenant, accueil.absentJusquAu)
+		carteDeConversation(c, maintenant, accueil.absentJusquAu, accueil.delaiHeures)
 	);
 	const enCours: readonly string[] = accueil.conversations
 		.filter((c) => c.etat !== 'TERMINEE')
 		.map((c) => c.id);
-	const horaires = horairesDeLEquipe(maintenant, accueil.absentJusquAu);
+	const horaires = horairesDeLEquipe(maintenant, accueil.absentJusquAu, accueil.delaiHeures);
 
 	return (
 		<EcranAide

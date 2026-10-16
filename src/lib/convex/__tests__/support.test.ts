@@ -445,6 +445,38 @@ describe('la réponse de l’équipe', () => {
 	);
 });
 
+describe('la mesure', () => {
+	it(
+		'se matérialise dans un seul document, sans aucun texte de gérant',
+		async () => {
+			process.env.PLUME_SUPPORT_OUVERT = 'oui';
+			const t = convexTest(schema, modules);
+			const organizationId = await etablissement(t);
+			const id = await ecrire(t, organizationId, { texte: 'Comment activer les relances ?' });
+			await t.mutation(internal.support.lecture.consignerReponse, {
+				conversationId: id,
+				messageId: (await etat(t, id)).messages[0]!._id,
+				phrases: [{ texte: 'Je passe la main.', source: { genre: 'AUCUNE' } }],
+				ecrans: [],
+				sujet: 'RELANCES',
+				nePeutPasRepondre: true,
+				questionDeDossier: false,
+				usage: USAGE
+			});
+
+			await t.mutation(internal.support.mesure.materialiser, {});
+			await t.mutation(internal.support.mesure.materialiser, {});
+
+			const documents = await t.run((ctx) => ctx.db.query('mesuresSupport').collect());
+			expect(documents).toHaveLength(1);
+			expect(documents[0]?.entonnoir.conversations).toBe(1);
+			expect(documents[0]?.lacunes).toEqual([{ id, sujet: 'RELANCES', raison: 'LACUNE' }]);
+			expect(JSON.stringify(documents[0])).not.toContain('relances ?');
+		},
+		DELAI_CONVEX
+	);
+});
+
 describe('la purge', () => {
 	it(
 		'efface les conversations, les messages et les compteurs de l’établissement',

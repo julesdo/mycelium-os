@@ -153,12 +153,18 @@ export const supportTables = {
 			v.object({ utile: v.boolean(), motif: v.optional(v.string()), le: v.number() })
 		),
 		rappelLe: v.optional(v.number()),
+		/** Les « Oui, merci » et « Pas vraiment » sous les réponses de Plume : son taux, dans la mesure. */
+		ouiPlume: v.optional(v.number()),
+		nonPlume: v.optional(v.number()),
+		/** La durée de la conversation en minutes ouvrées, quand l'équipe la termine. */
+		resolutionOuvreeMin: v.optional(v.number()),
 		creeeLe: v.number()
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_auteur', ['auteurUserId', 'dernierMessageLe'])
 		.index('by_jeton', ['jeton'])
-		.index('by_etat_and_dernier', ['etat', 'dernierMessageLe']),
+		.index('by_etat_and_dernier', ['etat', 'dernierMessageLe'])
+		.index('by_creee', ['creeeLe']),
 
 	messagesSupport: defineTable({
 		conversationId: v.id('conversationsSupport'),
@@ -225,6 +231,44 @@ export const supportTables = {
 	})
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_mois', ['organizationId', 'mois']),
+
+	/**
+	 * LA MESURE, MATÉRIALISÉE CHAQUE HEURE (`support/mesure.ts`) : un seul document. Il ne
+	 * garde AUCUN texte de gérant (les lacunes y sont des identifiants, leurs titres se lisent
+	 * en direct) : une conversation purgée en sort au calcul suivant, sans rien laisser.
+	 */
+	mesuresSupport: defineTable({
+		calculeeLe: v.number(),
+		entonnoir: v.object({
+			conversations: v.number(),
+			resoluesParPlume: v.number(),
+			passees: v.number(),
+			resoluesParLEquipe: v.number(),
+			sansNouvelles: v.number()
+		}),
+		precedent: v.object({
+			conversations: v.number(),
+			resoluesParPlume: v.number(),
+			passees: v.number(),
+			resoluesParLEquipe: v.number(),
+			sansNouvelles: v.number()
+		}),
+		medianes: v.object({
+			premiereReponseH: v.union(v.number(), v.null()),
+			resolutionH: v.union(v.number(), v.null()),
+			reponses: v.number()
+		}),
+		tauxDeOuiPlume: v.union(v.number(), v.null()),
+		satisfaction: v.union(v.number(), v.null()),
+		parSujet: v.array(v.object({ sujet: vSujet, conversations: v.number(), passees: v.number() })),
+		lacunes: v.array(
+			v.object({
+				id: v.id('conversationsSupport'),
+				sujet: v.optional(vSujet),
+				raison: v.union(v.literal('LACUNE'), v.literal('REFUS'))
+			})
+		)
+	}),
 
 	/** Un seul document : les réglages de l'équipe (son absence annoncée). */
 	reglagesSupport: defineTable({

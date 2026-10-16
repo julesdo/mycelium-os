@@ -28,14 +28,15 @@ const DUREE_D_UNE_CONVERSATION_ANCIENNE_MS = 7 * 24 * 60 * 60 * 1000;
 export function delaiAnnonce(
 	passeeLe: number,
 	maintenant: number,
-	absentJusquAu: number | null
+	absentJusquAu: number | null,
+	delaiHeures?: number
 ): { attendue: string; enRetard?: string } {
-	const attendueLe = reponseAttendue(passeeLe, absentJusquAu ?? undefined);
+	const attendueLe = reponseAttendue(passeeLe, absentJusquAu ?? undefined, delaiHeures);
 	const attendue = `Réponse attendue ${phraseDeReponseAttendue(attendueLe, passeeLe)}`;
 	if (maintenant <= attendueLe) return { attendue };
 	return {
 		attendue,
-		enRetard: `Réponse en retard : nous visons ${phraseDeReponseAttendue(reponseAttendue(maintenant), maintenant)}`
+		enRetard: `Réponse en retard : nous visons ${phraseDeReponseAttendue(reponseAttendue(maintenant, undefined, delaiHeures), maintenant)}`
 	};
 }
 
@@ -51,7 +52,8 @@ export function dureeEnMots(ms: number): string {
 export function carteDeConversation(
 	carte: Carte,
 	maintenant: number,
-	absentJusquAu: number | null
+	absentJusquAu: number | null,
+	delaiHeures?: number
 ): CarteDeConversationAffichee {
 	const ligne = (() => {
 		switch (carte.etat) {
@@ -59,7 +61,7 @@ export function carteDeConversation(
 				return carte.dernierMessagePar === 'PLUME' ? 'Plume vous a répondu' : 'Plume réfléchit';
 			case 'A_NOUS': {
 				if (carte.passeeLe === undefined) return 'Transmis à l’équipe';
-				const { attendue, enRetard } = delaiAnnonce(carte.passeeLe, maintenant, absentJusquAu);
+				const { attendue, enRetard } = delaiAnnonce(carte.passeeLe, maintenant, absentJusquAu, delaiHeures);
 				return enRetard ?? `Transmis · ${attendue.charAt(0).toLowerCase()}${attendue.slice(1)}`;
 			}
 			case 'EN_ATTENTE_CLIENT':
@@ -81,9 +83,10 @@ export function carteDeConversation(
 
 export function horairesDeLEquipe(
 	maintenant: number,
-	absentJusquAu: number | null
+	absentJusquAu: number | null,
+	delaiHeures?: number
 ): { horaires: string; attendue: string; absence?: string } {
-	const attendueLe = reponseAttendue(maintenant, absentJusquAu ?? undefined);
+	const attendueLe = reponseAttendue(maintenant, absentJusquAu ?? undefined, delaiHeures);
 	return {
 		horaires: phraseDesHoraires(),
 		attendue: `Une question posée maintenant : réponse attendue ${phraseDeReponseAttendue(attendueLe, maintenant)}.`,
@@ -139,6 +142,7 @@ export function elementsDuFil(
 	conversation: Conversation,
 	maintenant: number,
 	absentJusquAu: number | null,
+	delaiHeures: number | undefined,
 	gestes: {
 		readonly onAvis: (messageId: string, utile: boolean) => void;
 		readonly versLEspace: (question: string) => void;
@@ -163,7 +167,7 @@ export function elementsDuFil(
 		}
 		if (m.genre === 'EVENEMENT') {
 			if (m.evenement === 'PASSE' && conversation.raisonDePassage !== undefined) {
-				const { attendue, enRetard } = delaiAnnonce(m.le, maintenant, absentJusquAu);
+				const { attendue, enRetard } = delaiAnnonce(m.le, maintenant, absentJusquAu, delaiHeures);
 				const pourquoi =
 					conversation.acte === undefined
 						? LIBELLES_DES_RAISONS[conversation.raisonDePassage].gerant

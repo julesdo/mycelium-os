@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMutation } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
 import type { FunctionReturnType } from 'convex/server';
 import { useQuery } from '../../app/donnees';
+import { usePlumeDit } from '../../app/parole-de-plume';
 import { dureeEnMots } from '../../app/aide';
 import { heureEnMots, heureOuJour } from '../../app/heures';
 import { permis, useGesteAdmin, useHorlogeAdmin, useRoleAdmin } from '../../app/coquille-admin';
@@ -103,7 +104,10 @@ function ConversationSupport() {
 	const retirer = useMutation(api.admin.support.retirerContenu);
 	const suspendre = useMutation(api.admin.support.suspendreRelances);
 	const poserPrenom = useMutation(api.admin.support.poserPrenom);
+	const preparerBrouillon = useAction(api.admin.brouillon.preparer);
+	const [brouillonEnCours, setBrouillonEnCours] = useState(false);
 	const faire = useGesteAdmin();
+	const dire = usePlumeDit();
 	const [mode, setMode] = useState<ModeDuComposeur>('REPONSE');
 	const [valeur, setValeur] = useState('');
 	const [enCours, setEnCours] = useState(false);
@@ -240,6 +244,29 @@ function ConversationSupport() {
 							setValeur(valeur.trim() === '' ? texte : `${valeur}\n\n${texte}`);
 						},
 						enCours,
+						...(c.verifiee && !c.messages.some((m) => m.genre === 'NON_VERIFIE')
+							? {
+									brouillon: {
+										enCours: brouillonEnCours,
+										onDemander: () => {
+											setBrouillonEnCours(true);
+											void preparerBrouillon({ conversationId })
+												.then((texte) => {
+													if (texte === null) {
+														dire({
+															titre: 'Pas de brouillon',
+															texte: 'Plume n’a rien à proposer ici : écrivez la réponse.',
+															humeur: 'attention'
+														});
+													} else {
+														setValeur(texte);
+													}
+												})
+												.finally(() => setBrouillonEnCours(false));
+										}
+									}
+								}
+							: {}),
 						...(relecture.refus !== null
 							? { avertissement: relecture.refus }
 							: relecture.avertissement !== null

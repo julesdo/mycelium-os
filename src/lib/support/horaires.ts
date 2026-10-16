@@ -57,10 +57,15 @@ export function estOuvert(instant: number): boolean {
 /**
  * L'instant où la réponse est attendue : `DELAI_VISE_HEURES_OUVREES` heures ouvrées après
  * `depuis` (ou après le retour de l'équipe, si elle est absente), arrondi à l'heure pleine.
+ * `heures` : le délai que l'équipe se donne (`delaiVise`), le visé par défaut.
  */
-export function reponseAttendue(depuis: number, absentJusquAu?: number): number {
+export function reponseAttendue(
+	depuis: number,
+	absentJusquAu?: number,
+	heures: number = DELAI_VISE_HEURES_OUVREES
+): number {
 	const depart = absentJusquAu !== undefined && absentJusquAu > depuis ? absentJusquAu : depuis;
-	let reste = DELAI_VISE_HEURES_OUVREES * HEURE_MS;
+	let reste = heures * HEURE_MS;
 	for (const { debut, fin } of fenetres(depart)) {
 		const duree = fin - debut;
 		if (duree >= reste) {
@@ -117,4 +122,17 @@ export function phraseDeReponseAttendue(instant: number, maintenant: number): st
 /** « L'équipe répond en semaine, de 9 h à 18 h. » — lu sur la constante, jamais tapé ailleurs. */
 export function phraseDesHoraires(): string {
 	return `L’équipe répond en semaine, de ${HORAIRES_DU_SUPPORT.de} h à ${HORAIRES_DU_SUPPORT.a} h.`;
+}
+
+/**
+ * LE DÉLAI QUE L'ÉQUIPE SE DONNE (spec § 2.5) : le visé, ou la médiane mesurée de ses
+ * premières réponses si elle est plus longue ET établie sur assez de réponses. Un délai
+ * dit doit être vrai : on n'annonce pas quatre heures quand l'équipe en met sept.
+ */
+export function delaiVise(
+	mediane: { readonly premiereReponseH: number | null; readonly reponses: number } | null
+): number {
+	if (mediane === null || mediane.premiereReponseH === null) return DELAI_VISE_HEURES_OUVREES;
+	if (mediane.reponses < MEDIANE_A_PARTIR_DE) return DELAI_VISE_HEURES_OUVREES;
+	return Math.max(DELAI_VISE_HEURES_OUVREES, Math.ceil(mediane.premiereReponseH));
 }

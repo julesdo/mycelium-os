@@ -13,6 +13,7 @@ import { CartesArreterLesEnvois } from '../../ui/aide';
 import {
 	EcranConversationSupport,
 	EcranFileSupport,
+	EcranMesureSupport,
 	EcranReponsesEnregistrees,
 	type ConversationVueParLEquipe,
 	type LigneDeFileAffichee
@@ -457,6 +458,43 @@ function DemoReponsesEnregistrees({ etat }: { etat: EtatDemo }) {
 	);
 }
 
+function DemoMesure({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranMesureSupport
+			lecture={lectureDemo(etat, {
+				calculee: 'Calculée à 14 h, sur trente jours, comparés aux trente d’avant.',
+				entonnoir: [
+					{ libelle: 'Conversations', valeur: '86 (+12 sur la période d’avant)' },
+					{ libelle: 'Résolues par Plume', valeur: '51 · 59 %' },
+					{ libelle: 'Passées à l’équipe', valeur: '31 · 36 %' },
+					{ libelle: 'Résolues par l’équipe', valeur: '27' },
+					{ libelle: 'Sans nouvelles', valeur: '4' }
+				],
+				delais: [
+					{ libelle: 'Première réponse (médiane)', valeur: '2,5 h, sur 29 réponses' },
+					{ libelle: 'Résolution (médiane)', valeur: '6 h' }
+				],
+				plume: [
+					{ libelle: 'Réponses de Plume jugées utiles', valeur: '78 %' },
+					{ libelle: 'Satisfaction après l’équipe', valeur: '92 % d’avis utiles' }
+				],
+				parSujet: [
+					{ libelle: 'Logiciels branchés', valeur: '24, dont 11 passées' },
+					{ libelle: 'Relances', valeur: '19, dont 4 passées' }
+				],
+				lacunes: [
+					{
+						id: 'c7',
+						titre: 'Puis-je relier deux comptes Qonto ?',
+						ligne: 'Logiciels branchés · Plume ne savait pas',
+						onCreerTache: RIEN
+					}
+				]
+			})}
+		/>
+	);
+}
+
 export const ECRANS_SUPPORT_EQUIPE: readonly EcranDuProduit[] = [
 	{ route: '/admin/support/', libelle: 'admin · support, la file', vide: true, Demo: DemoFileEquipe },
 	{
@@ -466,6 +504,7 @@ export const ECRANS_SUPPORT_EQUIPE: readonly EcranDuProduit[] = [
 		variantes: ['note', 'avertissement'],
 		Demo: DemoConversationEquipe
 	},
+	{ route: '/admin/support/mesure', libelle: 'admin · mesure du support', vide: false, Demo: DemoMesure },
 	{
 		route: '/admin/support/reponses',
 		libelle: 'admin · réponses enregistrées',

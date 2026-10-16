@@ -10,6 +10,7 @@ import { LONGUEUR_MAX_MESSAGE, MESSAGES_PAR_HEURE, titreDe } from '../../support
 import { masquerDonneesSensibles } from '../../support/masquage';
 import { decidePassage, reponseSansModele, type Passage } from '../../support/passage';
 import { questionsDuCompte } from '../../support/questions';
+import { delaiVise } from '../../support/horaires';
 import { lireContexteDuCompte } from './contexte';
 import {
 	adresseDuSupport,
@@ -303,6 +304,9 @@ export const avisSurPlume = authedMutation({
 		);
 		if (conversation.etat !== 'PLUME' || message.avis !== undefined) return null;
 		await ctx.db.patch(messageId, { avis: utile ? 'OUI' : 'NON' });
+		await ctx.db.patch(conversation._id, utile
+			? { ouiPlume: (conversation.ouiPlume ?? 0) + 1 }
+			: { nonPlume: (conversation.nonPlume ?? 0) + 1 });
 
 		if (utile) {
 			await ctx.db.patch(conversation._id, {
@@ -427,6 +431,8 @@ export const accueil = authedQuery({
 		adresse: v.union(v.string(), v.null()),
 		equipe: v.array(v.object({ prenom: v.string(), photo: v.union(v.string(), v.null()) })),
 		absentJusquAu: v.union(v.number(), v.null()),
+		/** Le délai que l'équipe se donne, en heures ouvrées (`delaiVise`). */
+		delaiHeures: v.number(),
 		questions: v.array(v.object({ cle: v.string(), question: v.string() })),
 		conversations: v.array(vCarteDeConversation)
 	}),
@@ -459,6 +465,7 @@ export const accueil = authedQuery({
 			});
 		}
 		const reglages = await ctx.db.query('reglagesSupport').first();
+		const mesure = await ctx.db.query('mesuresSupport').first();
 		const debutDuMois = Date.parse(`${/^\d{4}-\d{2}$/.test(mois) ? mois : '2026-01'}-15T12:00:00Z`);
 
 		return {
@@ -467,6 +474,7 @@ export const accueil = authedQuery({
 			adresse: adresseDuSupport(),
 			equipe,
 			absentJusquAu: reglages?.absentJusquAu ?? null,
+			delaiHeures: delaiVise(mesure?.medianes ?? null),
 			questions: questionsDuCompte({
 				relancesActivees: contexte.relancesActivees,
 				essaiEnCours: contexte.etatAbonnement === 'essai en cours',

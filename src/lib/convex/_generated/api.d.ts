@@ -10,12 +10,16 @@
 
 import type * as abonnementRappels from "../abonnementRappels.js";
 import type * as admin_acces from "../admin/acces.js";
+import type * as admin_action from "../admin/action.js";
 import type * as admin_aujourdhui from "../admin/aujourdhui.js";
+import type * as admin_brouillon from "../admin/brouillon.js";
+import type * as admin_brouillonLecture from "../admin/brouillonLecture.js";
 import type * as admin_comptes from "../admin/comptes.js";
 import type * as admin_compteurs from "../admin/compteurs.js";
 import type * as admin_entretien from "../admin/entretien.js";
 import type * as admin_enveloppe from "../admin/enveloppe.js";
 import type * as admin_equipe from "../admin/equipe.js";
+import type * as admin_equipier from "../admin/equipier.js";
 import type * as admin_historique from "../admin/historique.js";
 import type * as admin_importer from "../admin/importer.js";
 import type * as admin_prospects from "../admin/prospects.js";
@@ -140,6 +144,7 @@ import type * as support_emails from "../support/emails.js";
 import type * as support_entretien from "../support/entretien.js";
 import type * as support_fil from "../support/fil.js";
 import type * as support_lecture from "../support/lecture.js";
+import type * as support_mesure from "../support/mesure.js";
 import type * as support_plume from "../support/plume.js";
 import type * as support_tables from "../support/tables.js";
 import type * as tests from "../tests.js";
@@ -155,12 +160,16 @@ import type {
 declare const fullApi: ApiFromModules<{
   abonnementRappels: typeof abonnementRappels;
   "admin/acces": typeof admin_acces;
+  "admin/action": typeof admin_action;
   "admin/aujourdhui": typeof admin_aujourdhui;
+  "admin/brouillon": typeof admin_brouillon;
+  "admin/brouillonLecture": typeof admin_brouillonLecture;
   "admin/comptes": typeof admin_comptes;
   "admin/compteurs": typeof admin_compteurs;
   "admin/entretien": typeof admin_entretien;
   "admin/enveloppe": typeof admin_enveloppe;
   "admin/equipe": typeof admin_equipe;
+  "admin/equipier": typeof admin_equipier;
   "admin/historique": typeof admin_historique;
   "admin/importer": typeof admin_importer;
   "admin/prospects": typeof admin_prospects;
@@ -285,6 +294,7 @@ declare const fullApi: ApiFromModules<{
   "support/entretien": typeof support_entretien;
   "support/fil": typeof support_fil;
   "support/lecture": typeof support_lecture;
+  "support/mesure": typeof support_mesure;
   "support/plume": typeof support_plume;
   "support/tables": typeof support_tables;
   tests: typeof tests;

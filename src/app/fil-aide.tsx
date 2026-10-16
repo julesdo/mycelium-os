@@ -71,6 +71,7 @@ export function FilAide({
 	const fil = conversation ?? null;
 	const plumeOuvert = accueil?.plumeOuvert === true && accueil.plafondAtteint !== true;
 	const absentJusquAu = accueil?.absentJusquAu ?? null;
+	const delaiHeures = accueil?.delaiHeures;
 
 	const onEnvoyer = async () => {
 		const texte = question.trim();
@@ -143,7 +144,7 @@ export function FilAide({
 
 	const attendue =
 		fil?.etat === 'A_NOUS' && fil.passeeLe !== undefined
-			? delaiAnnonce(fil.passeeLe, maintenant, absentJusquAu)
+			? delaiAnnonce(fil.passeeLe, maintenant, absentJusquAu, delaiHeures)
 			: undefined;
 
 	return (
@@ -155,7 +156,7 @@ export function FilAide({
 				elements:
 					fil === null
 						? []
-						: elementsDuFil(fil, maintenant, absentJusquAu, {
+						: elementsDuFil(fil, maintenant, absentJusquAu, delaiHeures, {
 								onAvis: (messageId, utile) =>
 									void avisSurPlume({ messageId: messageId as Id<'messagesSupport'>, utile }),
 								versLEspace: () => void navigate({ to: '/app/pilote' }),

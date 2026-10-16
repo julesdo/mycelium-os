@@ -368,7 +368,13 @@ export async function repondreCommeEquipe(
 					premiereReponseOuvreeMin: Math.round(heuresOuvreesEntre(c.passeeLe!, maintenant) / 60_000)
 				}
 			: {}),
-		...(terminer ? { termineeLe: maintenant, issue: 'RESOLUE_PAR_EQUIPE' as const } : {}),
+		...(terminer
+			? {
+					termineeLe: maintenant,
+					issue: 'RESOLUE_PAR_EQUIPE' as const,
+					resolutionOuvreeMin: Math.round(heuresOuvreesEntre(c.creeeLe, maintenant) / 60_000)
+				}
+			: {}),
 		rappelLe: undefined
 	});
 	if (terminer) await ajouterEvenement(ctx, c, 'TERMINEE', 'Conversation terminée');
@@ -434,7 +440,10 @@ export const regler = equipeMutation('SUPPORT')({
 						issue:
 							c.premiereReponseHumaineLe === undefined
 								? ('SANS_NOUVELLES' as const)
-								: ('RESOLUE_PAR_EQUIPE' as const)
+								: ('RESOLUE_PAR_EQUIPE' as const),
+						...(c.premiereReponseHumaineLe === undefined
+							? {}
+							: { resolutionOuvreeMin: Math.round(heuresOuvreesEntre(c.creeeLe, Date.now()) / 60_000) })
 					}
 				: etat === 'A_NOUS'
 					? { etat, termineeLe: undefined, issue: undefined, passeeLe: Date.now() }
@@ -630,5 +639,78 @@ export const poserAbsence = equipeMutation('FONDATEUR')({
 		if (reglages === null) await ctx.db.insert('reglagesSupport', valeur);
 		else await ctx.db.patch(reglages._id, valeur);
 		return null;
+	}
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// LA MESURE
+// ─────────────────────────────────────────────────────────────────────────
+
+const vEntonnoir = v.object({
+	conversations: v.number(),
+	resoluesParPlume: v.number(),
+	passees: v.number(),
+	resoluesParLEquipe: v.number(),
+	sansNouvelles: v.number()
+});
+
+/**
+ * LA MESURE, LUE DANS SON DOCUMENT MATÉRIALISÉ. Les titres de « ce que Plume n'a pas
+ * su » se relisent en direct (le document n'en garde aucun) ; le rôle LECTURE n'en lit
+ * que le sujet.
+ */
+export const mesure = equipeQuery('LECTURE')({
+	args: {},
+	returns: v.union(
+		v.null(),
+		v.object({
+			calculeeLe: v.number(),
+			entonnoir: vEntonnoir,
+			precedent: vEntonnoir,
+			medianes: v.object({
+				premiereReponseH: v.union(v.number(), v.null()),
+				resolutionH: v.union(v.number(), v.null()),
+				reponses: v.number()
+			}),
+			tauxDeOuiPlume: v.union(v.number(), v.null()),
+			satisfaction: v.union(v.number(), v.null()),
+			parSujet: v.array(v.object({ sujet: vSujet, conversations: v.number(), passees: v.number() })),
+			lacunes: v.array(
+				v.object({
+					id: v.id('conversationsSupport'),
+					titre: v.string(),
+					sujet: v.optional(vSujet),
+					raison: v.union(v.literal('LACUNE'), v.literal('REFUS')),
+					organizationId: v.optional(v.id('organizations'))
+				})
+			)
+		})
+	),
+	handler: async (ctx) => {
+		const document = await ctx.db.query('mesuresSupport').first();
+		if (document === null) return null;
+		const lecture = ctx.equipier.role === 'LECTURE';
+		const lacunes = [];
+		for (const lacune of document.lacunes) {
+			const c = await ctx.db.get(lacune.id);
+			if (c === null || !visible(c, ctx.equipier)) continue;
+			lacunes.push({
+				id: lacune.id,
+				titre: lecture ? (c.sujet === undefined ? 'Question' : LIBELLES_DES_SUJETS[c.sujet]) : c.titre,
+				...(lacune.sujet === undefined ? {} : { sujet: lacune.sujet }),
+				raison: lacune.raison,
+				...(c.organizationId === undefined ? {} : { organizationId: c.organizationId })
+			});
+		}
+		return {
+			calculeeLe: document.calculeeLe,
+			entonnoir: document.entonnoir,
+			precedent: document.precedent,
+			medianes: document.medianes,
+			tauxDeOuiPlume: document.tauxDeOuiPlume,
+			satisfaction: document.satisfaction,
+			parSujet: document.parSujet,
+			lacunes
+		};
 	}
 });

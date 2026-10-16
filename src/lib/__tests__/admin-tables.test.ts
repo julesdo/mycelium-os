@@ -37,7 +37,8 @@ const TABLES_AUTORISEES = new Set([
 	'conversationsSupport',
 	'messagesSupport',
 	'reponsesEnregistrees',
-	'reglagesSupport'
+	'reglagesSupport',
+	'mesuresSupport'
 ]);
 
 function fichiers(dossier: string): string[] {

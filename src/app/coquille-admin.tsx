@@ -197,6 +197,13 @@ const GROUPES: readonly {
 				recherche: { vue: 'TERMINEES' }
 			},
 			{
+				cle: 'support-mesure',
+				libelle: 'Mesure',
+				vers: '/admin/support/mesure',
+				Icone: ChartColumnDecreasingIcon,
+				prefixes: ['/admin/support/mesure']
+			},
+			{
 				cle: 'support-reponses',
 				libelle: 'Réponses enregistrées',
 				vers: '/admin/support/reponses',
@@ -359,7 +366,7 @@ function allumee(
 function surUneFiche(chemin: string): boolean {
 	return (
 		/^\/admin\/(comptes|prospects)\/(?!importer)[^/]+\/?$/.test(chemin) ||
-		/^\/admin\/support\/(?!reponses)[^/]+\/?$/.test(chemin)
+		/^\/admin\/support\/(?!reponses|mesure)[^/]+\/?$/.test(chemin)
 	);
 }
 

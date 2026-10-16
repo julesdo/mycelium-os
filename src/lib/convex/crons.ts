@@ -145,6 +145,8 @@ crons.daily(
   une conversation sans nouvelles se termine, le gérant attendu est rappelé.
 */
 crons.interval('support', { minutes: 15 }, internal.support.entretien.entretenir, {});
+// La mesure du support, matérialisée d'heure en heure.
+crons.interval('mesureSupport', { hours: 1 }, internal.support.mesure.materialiser, {});
 
 export default crons;
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { signatureSvixValide } from '../svix';
 import { masquerDonneesSensibles } from '../masquage';
 import {
+	delaiVise,
 	heuresOuvreesEntre,
 	phraseDeReponseAttendue,
 	reponseAttendue,
@@ -140,5 +141,19 @@ describe('retirerCitation', () => {
 
 	it('rend le message entier quand il ne reste rien', () => {
 		expect(retirerCitation('> tout est cité')).toEqual({ visible: '> tout est cité', coupe: false });
+	});
+});
+
+describe('le délai que l’équipe se donne', () => {
+	it('suit la médiane mesurée quand elle est plus longue et établie sur vingt réponses', () => {
+		expect(delaiVise(null)).toBe(4);
+		expect(delaiVise({ premiereReponseH: 6.2, reponses: 12 })).toBe(4);
+		expect(delaiVise({ premiereReponseH: 6.2, reponses: 25 })).toBe(7);
+		expect(delaiVise({ premiereReponseH: 1.5, reponses: 25 })).toBe(4);
+	});
+
+	it('se compte en heures ouvrées depuis le passage', () => {
+		// Jeudi 14 h 30 à Paris, sept heures ouvrées : vendredi 12 h 30, arrondi à 13 h.
+		expect(reponseAttendue(Date.UTC(2026, 9, 15, 12, 30), undefined, 7)).toBe(Date.UTC(2026, 9, 16, 11, 0));
 	});
 });
