@@ -199,6 +199,12 @@ describe('prochainConseil', () => {
 			)
 		).toBeNull();
 	});
+	it('un compte ancien dont une étape vient d’être relevée ne reçoit rien', () => {
+		// Au premier relevé, un client inscrit depuis trois mois voit son « montant révélé »
+		// daté d'aujourd'hui : ce n'est pas un nouvel inscrit, il ne reçoit pas de conseil.
+		expect(prochainConseil({ INSCRIT: T0 - 90 * JOUR, MONTANT_REVELE: T0 }, [], T0)).toBeNull();
+	});
+
 	it('un compte ancien ne reçoit rien', () => {
 		expect(
 			prochainConseil({ INSCRIT: T0 - 60 * JOUR, MONTANT_REVELE: T0 - 50 * JOUR }, [], T0)

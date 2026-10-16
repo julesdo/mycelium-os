@@ -22,6 +22,14 @@ export type CleConseil = (typeof CLES_CONSEILS)[number];
 const JOUR = 24 * 60 * 60 * 1000;
 export const ECART_MINIMAL_MS = 2 * JOUR;
 
+/**
+ * LES CONSEILS NE VALENT QUE POUR LES PREMIÈRES SEMAINES DU COMPTE. ⚠️ C'est ce qui
+ * protège les clients anciens : à leur premier relevé, une étape comme « montant
+ * révélé » est datée du jour où on la remarque, et sans cette borne un compte
+ * inscrit depuis un an recevrait « Ce qu'on vous doit » comme un nouvel inscrit.
+ */
+export const PREMIERES_SEMAINES_MS = 30 * JOUR;
+
 interface Regle {
 	readonly cle: CleConseil;
 	readonly depart: Etape;
@@ -56,6 +64,8 @@ export function prochainConseil(
 	envoyes: readonly { readonly cle: CleConseil; readonly le: number }[],
 	maintenant: number
 ): { cle: CleConseil; des: number } | null {
+	const inscrit = etapes.INSCRIT;
+	if (inscrit === undefined || maintenant - inscrit > PREMIERES_SEMAINES_MS) return null;
 	const dernier = envoyes.reduce((m, x) => Math.max(m, x.le), 0);
 	let meilleur: { cle: CleConseil; des: number } | null = null;
 	for (const r of REGLES) {
