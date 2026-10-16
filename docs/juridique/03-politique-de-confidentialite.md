@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -175,8 +175,12 @@ analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête 
 | Mesurer l'audience du site et l'usage du Service, en statistiques agrégées | **Intérêt légitime** à améliorer le Service | art. 6.1.f |
 | Suivre où en est votre compte (provenance de l'inscription, étapes franchies, indice d'activité) pour vous accompagner | **Intérêt légitime** à faire réussir l'utilisation du Service | art. 6.1.f |
 | Vous envoyer les conseils de Plume dans vos premières semaines (quatre au plus) | **Intérêt légitime**, avec opposition en un clic | art. 6.1.f |
+| Permettre à l'équipe de Letikette d'accompagner les comptes, et journaliser ses accès | **Intérêt légitime** à assister les clients et à sécuriser l'administration du Service | art. 6.1.f |
+| Prospecter des entreprises qui ne sont pas clientes, par leurs contacts professionnels (section 8 bis) | **Intérêt légitime** à présenter le Service, avec opposition à tout moment | art. 6.1.f |
 
-**Aucune donnée n'est traitée à des fins de prospection commerciale ou de profilage publicitaire.**
+**Les données des clients ne servent à aucune prospection commerciale ni à aucun profilage
+publicitaire.** Letikette prospecte des entreprises qui ne sont pas encore clientes (section 8 bis) ;
+elle ne prospecte jamais les débiteurs de ses clients, ni à partir de leurs données.
 
 **Mesure d'audience.** Le site et le Service comptent leurs pages vues et quelques gestes d'usage
 (une inscription, un dépôt de documents, l'activation des relances, une question posée à Plume, une
@@ -338,6 +342,40 @@ rectification ou son effacement à bonjour@letikette.com.
 
 ---
 
+## 8 bis. La prospection de Letikette
+
+Letikette présente son Service à des entreprises qui ne sont pas encore clientes. Elle est, pour ce
+traitement, **responsable de traitement**.
+
+**Ce qui est traité.** Pour chaque entreprise : sa dénomination, son SIREN, son activité, son
+effectif et sa ville ; pour la personne contactée, **son nom, sa fonction, son adresse électronique
+et son téléphone professionnels** ; la source du contact ; l'état de l'échange (contactée,
+relancée, a répondu, intéressée, inscrite) et les notes de l'équipe sur ces échanges.
+
+**D'où viennent ces données.** De sources publiques ou professionnelles (annuaires
+professionnels, registre du commerce, site de l'entreprise, salon, recommandation), et la source
+est **notée pour chaque contact** (« Trouvé où »). Les données n'étant pas collectées auprès de la personne,
+l'article 14 du RGPD s'applique : la présente section vaut information, et le premier message
+qu'elle reçoit dit qui écrit et comment s'y opposer.
+
+**Base légale.** L'**intérêt légitime** de Letikette à présenter son Service à des professionnels
+(article 6.1.f), pour un message en rapport avec leur activité.
+
+**Qui y accède.** La seule équipe de Letikette. Ces données ne sont rattachées à aucun établissement
+client, ne sont jamais montrées à un client et ne sont jamais croisées avec le contenu de ses
+dossiers.
+
+**Opposition.** Toute personne peut s'y opposer à tout moment, en répondant au message reçu ou à
+bonjour@letikette.com. Ses coordonnées (nom, fonction, adresse électronique, téléphone) sont alors
+**effacées**, et son adresse n'est plus conservée que sous une **empreinte irréversible**
+(SHA-256), dans une liste d'opposition qui empêche qu'elle soit de nouveau importée ou contactée.
+
+**Durée.** Un prospect est **effacé automatiquement trois ans après le dernier contact** (ou, à
+défaut de contact, après son ajout), avec les notes et les tâches qui le concernent ; un contrôle
+s'exécute chaque nuit.
+
+---
+
 ## 9. Durées de conservation
 
 **Cette section dit ce qui est fait, pas ce qui serait souhaitable.** Les écarts sont nommés.
@@ -351,12 +389,14 @@ rectification ou son effacement à bonjour@letikette.com.
 | Journal des accès aux documents (dépôt, ouverture, téléchargement, retrait) | **jusqu'à la suppression de l'établissement** |
 | Jetons d'ouverture d'un document | **une minute**, à usage unique ; les jetons expirés sont effacés chaque nuit |
 | Parcours du compte (provenance, étapes, indice d'activité) et journal des conseils envoyés | **jusqu'à la suppression de l'établissement**, qui les efface |
+| Notes, tâches et journal de l'équipe de Letikette portant sur un établissement | **jusqu'à la suppression de l'établissement**, qui les efface |
+| Prospects (section 8 bis) | **trois ans après le dernier contact**, effacés automatiquement ; la liste d'opposition ne garde que des empreintes |
 
 **Ce que la suppression d'un établissement efface** : la totalité des données cloisonnées par
 établissement, **fichiers de stockage compris** — pièces déposées, documents importés, logo, photo
 de profil. C'est vérifié par un test automatisé qui échoue si une table nouvelle échappe à la purge.
 
-**QUATRE ÉCARTS, ÉNONCÉS PLUTÔT QUE MASQUÉS.** Les corriger relève du produit ; les taire serait
+**SIX ÉCARTS, ÉNONCÉS PLUTÔT QUE MASQUÉS.** Les corriger relève du produit ; les taire serait
 promettre ce qui n'est pas fait.
 
 > 1. **Aucune durée de conservation automatique ne s'applique au contenu du client.** Factures,
@@ -369,6 +409,11 @@ promettre ce qui n'est pas fait.
 >    suppression de l'établissement entier. C'est l'écart le plus gênant, et il est nommé comme tel.
 > 4. **Les sessions expirées et les invitations expirées ne sont pas purgées.** Les premières
 >    portent une adresse IP et un agent utilisateur.
+> 5. **Un prospect devenu client n'est pas effacé par le délai de trois ans**, et sa fiche de
+>    prospection n'est pas effacée avec l'établissement : seul le lien vers le compte l'est. Elle
+>    s'efface sur demande.
+> 6. **Les entrées du journal de l'équipe qui ne portent sur aucun établissement** (une invitation,
+>    un import de prospects) n'ont pas de durée automatique.
 
 ### Pourquoi la durée est courte sur les documents du client, quand elle s'applique
 
@@ -388,7 +433,15 @@ Les mesures suivantes sont **effectivement en place** et vérifiables :
   (`max-age=63072000; includeSubDomains`) ;
 - mots de passe stockés sous forme de condensats, jamais en clair ;
 - longueur minimale de douze caractères, imposée **côté serveur** et non seulement à la saisie ;
-- authentification par clé d'accès (*passkey*) disponible ;
+- authentification par clé d'accès (*passkey*) disponible, et **double authentification** par code
+  à usage unique (application d'authentification, avec codes de secours) disponible pour tout
+  compte ;
+- **accès de l'équipe de Letikette à l'administration du Service réservé à des membres nommés**,
+  chacun avec un rôle, une adresse vérifiée et la double authentification obligatoire ; l'équipe
+  voit l'établissement, son abonnement, ses membres et son parcours, **jamais le contenu des
+  dossiers** (débiteurs, factures, montants, documents, courriers), et une barrière automatisée
+  borne ce que l'administration peut lire ; **chaque ouverture de la fiche d'un client par l'équipe est
+  journalisée** ;
 - cloisonnement strict des données par établissement, appliqué à chaque requête serveur et vérifié
   par des tests automatisés ;
 - jetons des connexions bancaires **chiffrés en base** (AES-256-GCM) ;
@@ -438,6 +491,9 @@ nous pouvons vous indiquer à qui vous adresser.
 
 **Si vous figurez à l'annuaire des auxiliaires de justice** (section 8), Letikette est responsable de
 ce traitement et répond directement.
+
+**Si Letikette vous a contacté pour vous présenter le Service** (section 8 bis), Letikette est
+responsable de ce traitement et répond directement ; votre opposition prend effet dès sa réception.
 
 **Réclamation.** Toute personne peut introduire une réclamation auprès de la Commission nationale de
 l'informatique et des libertés, 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, ou sur

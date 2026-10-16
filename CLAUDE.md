@@ -337,10 +337,21 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
 
 - **Multi-tenant strict par `organizationId`**, SANS AUCUNE EXCEPTION. Rien n'est mutualisé entre
   clients : un débiteur, un montant et une échéance sont des données client, toujours. La purge
-  RGPD est donc totale, sans exception à justifier.
+  RGPD est donc totale, sans exception à justifier. Les seules tables sans établissement sont des
+  données de Letikette elle-même, exemptées NOMMÉMENT par un test : l'annuaire des avocats,
+  l'équipe et ses prospects (`admin-tables.test.ts`).
 - Interface **en français uniquement** (le droit applicable est français).
-- **Un seul espace : `/app/*`**. Une seule verticale, donc pas de sélecteur de domaine.
-- Rôles : `ORG_ADMIN`, `ORG_MEMBER`. Aucun rôle staff.
+- **Un espace par public : `/app/*` pour le gérant, `/admin/*` pour l'équipe de Letikette.** Une
+  seule verticale, donc pas de sélecteur de domaine.
+- Rôles : `ORG_ADMIN`, `ORG_MEMBER` dans un établissement ; et **une équipe Letikette à rôles
+  (`FONDATEUR`, `SUPPORT`, `LECTURE`), hors des établissements, qui ne voit jamais le contenu
+  d'un dossier** (16/10/2026, le fondateur : « une équipe avec des rôles »). Elle voit
+  l'établissement, la formule, les membres, le parcours et les conseils envoyés ; jamais un
+  débiteur, une facture, un montant, un document, un courrier ni une conversation avec Plume —
+  `admin-tables.test.ts` borne les tables que `convex/admin/` peut lire. Chaque requête de
+  l'équipe passe par l'enveloppe (`equipeQuery`, `equipeMutation`), qui exige un membre actif,
+  une adresse vérifiée et la double authentification ; chaque ouverture d'une fiche client va au
+  journal que le fondateur lit.
 - **Téléphone d'abord**, comme une application iOS native. _(Décision du fondateur, 30/09/2026 :
   « tout est trop petit et galère à manipuler, on doit être full mobile first, comme une app native
   iOS ». Elle remplace le « tablette d'abord » d'origine — la tablette reste servie, elle n'est plus
@@ -662,6 +673,24 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   reste celui de l'écran) ; une liste qui le demande se lit en tableau, une carte par ligne et des
   colonnes alignées (`EnTableauSurBureau`). **Tout ce qui est bureau est `lg:` ou `xl:`** : un
   changement de la coquille se vérifie à 375 px par une empreinte des positions, avant et après.
+- **L'interface admin, un vrai CRM** (16/10/2026, `docs/superpowers/specs/2026-10-16-admin-socle-crm.md`,
+  sur Attio, Twenty, Lightfield, folk, Pipedrive et HubSpot). Le fondateur : « un vrai CRM avec la
+  sidebar spécifique du CRM […] du drag & drop, des funnels, plusieurs types de vue ». `/admin`
+  vit dans l'application, garde par `monAcces` (hors équipe : « Réservé à l'équipe de
+  Letikette » ; sans double authentification : une page qui mène à la rangée « Sécurité » du
+  compte), et a SA coquille (`app/coquille-admin.tsx`) : au bureau, une barre latérale de CRM —
+  Travail, Fiches, Vues enregistrées, Analyse, L'équipe —, chaque entrée avec son compte
+  (`admin.compteurs`) ; au téléphone, quatre onglets. Chaque liste a quatre vues gardées dans
+  l'adresse (`?affichage=`) : tableau triable, kanban, liste, entonnoir (`ui/admin-vues.tsx`).
+  **Le glisser-déposer passe par dnd-kit**, jamais par le glisser natif du navigateur (rien au
+  doigt, image fantôme grise) : souris, appui long au doigt, clavier, annonces en français ; un
+  statut glissé se change de façon optimiste. **Un entonnoir compte ce qui a atteint AU MOINS
+  une étape** (`lib/admin/entonnoirs.ts`) : un prospect perdu a répondu, un compte abonné a passé
+  ses relances. Les fiches suivent Twenty et Pipedrive (deux colonnes, « À faire » épinglé,
+  historique par jour, composeur) ; l'import du tableur se fait en étapes et rien ne s'écrit avant
+  « Importer » ; « Stop » efface les coordonnées et met l'empreinte de l'adresse sur la liste des
+  adresses à ne plus contacter. Le premier fondateur s'amorce en ligne de commande
+  (`npx convex run --prod admin/equipe:amorcer '{"email":"…"}'`), les autres s'invitent.
 - **Sous 1024 px, un panneau se PRÉSENTE ; au-dessus, il se déplie.** Déplier deux mille pixels au
   milieu d'un défilement fait perdre sa place et oblige à remonter pour refermer : aucune
   application iOS ne le fait. `SectionDepliable` et `RangeeDepliable` rendent donc une **page
