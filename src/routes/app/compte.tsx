@@ -87,6 +87,13 @@ function PageCompte() {
 	).withOptimisticUpdate((local, { parCourriel }) => {
 		local.setQuery(api.recouvrement.briefing.monPointDuMatin, {}, parCourriel);
 	});
+	/** Les conseils de Plume par e-mail, pour la personne connectée. */
+	const conseils = useQuery(api.croissance.reglage.mesConseils, {});
+	const reglerConseils = useMutation(api.croissance.reglage.reglerMesConseils).withOptimisticUpdate(
+		(local, { parCourriel }) => {
+			local.setQuery(api.croissance.reglage.mesConseils, {}, parCourriel);
+		}
+	);
 	const mesure = useQuery(api.recouvrement.monEtablissement.volumeEmis, {});
 	const mettreAJourOrg = useMutation(api.organizations.updateOrganization);
 	const enregistrerProfil = useMutation(api.recouvrement.profil.enregistrer);
@@ -578,6 +585,10 @@ function PageCompte() {
 		pointDuMatin: {
 			parCourriel: pointDuMatin,
 			onRegler: (parCourriel) => void reglerPointDuMatin({ parCourriel })
+		},
+		conseils: {
+			parCourriel: conseils,
+			onRegler: (parCourriel) => void reglerConseils({ parCourriel })
 		},
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};

@@ -151,6 +151,11 @@ export interface CompteAffiche {
 		readonly parCourriel: boolean | undefined;
 		readonly onRegler: (parCourriel: boolean) => void;
 	};
+	/** Les conseils de Plume par e-mail (16/10/2026), même forme que le point du matin. */
+	readonly conseils?: {
+		readonly parCourriel: boolean | undefined;
+		readonly onRegler: (parCourriel: boolean) => void;
+	};
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -416,7 +421,18 @@ export function EcranCompte({
 						{pret.pointDuMatin === undefined ? null : (
 							<>
 								<SectionTitle>Notifications</SectionTitle>
-								<ContenuNotifications {...pret.pointDuMatin} />
+								<ContenuNotifications
+									{...pret.pointDuMatin}
+									libelle="Le point du matin, par e-mail"
+									aide="Trois lignes au plus, et rien quand il n’y a rien à dire. Tout reste dans la boîte de réception de l’application."
+								/>
+								{pret.conseils === undefined ? null : (
+									<ContenuNotifications
+										{...pret.conseils}
+										libelle="Les conseils de Plume, par e-mail"
+										aide="Quatre au plus, dans vos premières semaines, et jamais deux en deux jours."
+									/>
+								)}
 							</>
 						)}
 					</RangeeDepliable>
@@ -557,14 +573,18 @@ function ContenuEtablissement({
  */
 function ContenuNotifications({
 	parCourriel,
-	onRegler
+	onRegler,
+	libelle,
+	aide
 }: {
 	readonly parCourriel: boolean | undefined;
 	readonly onRegler: (parCourriel: boolean) => void;
+	readonly libelle: string;
+	readonly aide: string;
 }) {
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
-			<p className="text-cladd-xs">Le point du matin, par e-mail</p>
+			<p className="text-cladd-xs">{libelle}</p>
 			<Segmented className="w-full" activeColor="neutral" activeVariant="solid">
 				<SegmentedButton
 					active={parCourriel === true}
@@ -583,10 +603,7 @@ function ContenuNotifications({
 					Ne plus le recevoir
 				</SegmentedButton>
 			</Segmented>
-			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				Trois lignes au plus, et rien quand il n’y a rien à dire. Tout reste dans la boîte de
-				réception de l’application.
-			</p>
+			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{aide}</p>
 		</div>
 	);
 }

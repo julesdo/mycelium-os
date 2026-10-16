@@ -849,6 +849,7 @@ function compteDe(
 		onChoisirTheme,
 		// Le point du matin par e-mail : reçu, comme pour tout membre qui n'a rien changé.
 		pointDuMatin: { parCourriel: true, onRegler: () => undefined },
+		conseils: { parCourriel: true, onRegler: () => undefined },
 		onSeDeconnecter: () => undefined
 	} satisfies CompteAffiche;
 }

@@ -26,6 +26,10 @@ import { decompterCreance } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
 import { composerLettreRelance } from '../../verticales/recouvrement/gabarits/lettre-relance-officielle';
 import type { Evenement } from '../../verticales/recouvrement/surveillance';
+import { conseilHtml, conseilTexte, objetDuConseil } from './modeles/conseils';
+import { CLES_CONSEILS } from '../../croissance/conseils';
+import { lignesDuPlan } from '../croissance/conseils';
+import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
 
 /**
  * TOUS LES E-MAILS DE LETIKETTE, ENVOYÉS À UNE SEULE ADRESSE (15/10/2026).
@@ -165,6 +169,31 @@ export function lesEssais(
 			de: plateforme,
 			html: rappelAbonnementHtml(donnees),
 			texte: rappelAbonnementTexte(donnees)
+		});
+	}
+
+	// Les conseils de Plume, dans l'ordre où ils partent (`croissance/conseils.ts`).
+	const unitaire = depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire));
+	for (const cle of CLES_CONSEILS) {
+		const donnees = {
+			cle,
+			prenom: 'Camille',
+			nomEtablissement: CREANCIER,
+			site: SITE,
+			desinscription: `${SITE}/conseils`,
+			du: {
+				montant: `${versEuros(depuisCentimes(246_240n))} €`,
+				factures: 2,
+				indemnite: `${versEuros(unitaire)} €`,
+				indemniteTotale: `${versEuros(depuisCentimes((unitaire as bigint) * 2n))} €`
+			},
+			plan: lignesDuPlan()
+		};
+		essais.push({
+			objet: objetDuConseil(cle),
+			de: plume,
+			html: conseilHtml(donnees),
+			texte: conseilTexte(donnees)
 		});
 	}
 

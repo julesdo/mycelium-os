@@ -6,6 +6,7 @@ import { webhookHandler as paddleWebhookHandler } from './paddle';
 import { retourQonto, webhookQonto } from './connexions/qonto';
 import { webhookNango } from './connexions/nango';
 import { ouvrirDocument } from './coffre/ouverture';
+import { desinscriptionConseils } from './croissance/conseils';
 
 const http = httpRouter();
 
@@ -41,5 +42,10 @@ http.route({ path: '/nango/webhook', method: 'POST', handler: webhookNango });
 // Le coffre : un document ne sort que par ici, contre un jeton d'une minute
 // émis par `coffre/coffre.ts:ouvrirAuCoffre`. Voir `coffre/ouverture.ts`.
 http.route({ path: '/coffre/ouvrir', method: 'POST', handler: ouvrirDocument });
+
+// Les conseils de Plume se coupent ici : un GET montre la page, seul le POST
+// désinscrit (les antivirus ouvrent les liens). Voir `croissance/conseils.ts`.
+http.route({ path: '/conseils/desinscription', method: 'GET', handler: desinscriptionConseils });
+http.route({ path: '/conseils/desinscription', method: 'POST', handler: desinscriptionConseils });
 
 export default http;

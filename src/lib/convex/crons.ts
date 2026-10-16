@@ -43,6 +43,14 @@ crons.daily(
 	internal.croissance.releve.releverTous,
 	{}
 );
+// Les conseils de Plume (`croissance/conseils.ts`) : chaque quart d'heure, ceux
+// dont le rendez-vous est passé, dans le créneau des relances.
+crons.interval(
+	'conseilsCroissance',
+	{ minutes: 15 },
+	internal.croissance.conseils.envoyerLesConseils,
+	{}
+);
 
 crons.daily(
 	'battementQuotidien',
