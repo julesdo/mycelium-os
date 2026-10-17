@@ -691,6 +691,19 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   « Importer » ; « Stop » efface les coordonnées et met l'empreinte de l'adresse sur la liste des
   adresses à ne plus contacter. Le premier fondateur s'amorce en ligne de commande
   (`npx convex run --prod admin/equipe:amorcer '{"email":"…"}'`), les autres s'invitent.
+- **La prospection outillée** (17-18/10/2026). Le fondateur, basé à Paris : « fais donc ça ».
+  Trois pièces, toutes gratuites. **Trouver** (`/admin/prospects/trouver`, `crm/annuaire.ts`) :
+  l'API Recherche d'entreprises de l'État, une zone (Paris, petite couronne, Île-de-France) et un
+  secteur, les PME de 3 à 49 salariés ; **le siège doit être dans la zone** (l'API retient une
+  entreprise dès qu'un établissement y est), aucune date de naissance gardée, ni diffusion
+  restreinte, ni association, ni commissaire aux comptes pris pour le dirigeant ; rien n'entre avant
+  « Ajouter ». **Écrire** (`crm/modeles.ts`, `crm/valeurs-loi.ts`) : la feuille « E-mail » d'un
+  prospect porte le modèle de son étape (premier, J+4, J+10), les chiffres de la loi lus au registre,
+  la phrase personnelle entre crochets ; « Écrire » ouvre la messagerie de l'équipier — le CRM
+  n'envoie rien — et « Je l'ai envoyé » pose la relance suivante (`historique.emailEcrit`).
+  **Attirer** : `/taux-des-penalites-de-retard`, `/secteurs/<métier>` (`marketing/secteurs.ts`),
+  `/llms.txt`, où mènent les liens des e-mails. Le siège légal reste à Bordeaux au registre : les
+  mentions légales le disent tant que le transfert n'est pas déclaré.
 - **Le service client : Plume d'abord, l'équipe dans le même fil** (16/10/2026,
   `docs/superpowers/specs/2026-10-16-service-client.md`, sur Intercom Fin, Plain, Front, Monzo, Alan
   et Linktree). Le fondateur : « un module de service client humain avec tout un système automatisé
