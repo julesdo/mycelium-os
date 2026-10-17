@@ -14,6 +14,12 @@ import {
 import { EcranFicheProspect } from '../../screens/admin/fiche-prospect';
 import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
 
+/** « jules.dore@… » → « Jules ». */
+function prenomDeLAdresse(email: string): string {
+	const debut = email.split('@')[0]?.split(/[._-]/)[0] ?? '';
+	return debut === '' ? 'L’équipe' : debut.charAt(0).toUpperCase() + debut.slice(1);
+}
+
 /** La fiche d'un prospect : ses champs, son historique, ses tâches, et « Stop ». */
 export const Route = createFileRoute('/admin/prospects/$id')({
 	component: FicheProspectAdmin
@@ -28,6 +34,8 @@ function FicheProspectAdmin() {
 	const historique = useQuery(api.admin.historique.deLaFiche, { cible: { prospect: prospectId } });
 	const taches = useQuery(api.admin.taches.liste, { fiche: { prospect: prospectId } });
 	const noter = useMutation(api.admin.historique.noter);
+	const emailEcrit = useMutation(api.admin.historique.emailEcrit);
+	const moi = useQuery(api.admin.support.moi, {});
 	const creerTache = useMutation(api.admin.taches.creer);
 	const changerStatut = useMutation(api.admin.prospects.changerStatut);
 	const remettreStatuts = useMutation(api.admin.prospects.remettreStatuts);
@@ -51,6 +59,15 @@ function FicheProspectAdmin() {
 			}
 			maintenant={horloge?.maintenant ?? 0}
 			finDuJour={horloge?.finDuJour ?? 0}
+			{...(moi === undefined
+				? {}
+				: {
+						signataire: {
+							// Sans prénom affiché, le début de l'adresse : « jules » plutôt que rien.
+							prenom: moi.prenomAffiche ?? prenomDeLAdresse(moi.email),
+							fondateur: role === 'FONDATEUR'
+						}
+					})}
 			{...(permis(role, 'SUPPORT')
 				? {
 						gestes: {
@@ -98,7 +115,24 @@ function FicheProspectAdmin() {
 									titre: 'Coordonnées effacées',
 									texte: 'Il ne sera plus contacté, ni réimporté.'
 								}),
-							onChercherAuRegistre: async (nom) => (await chercherAuRegistre({ nom })).candidats
+							onChercherAuRegistre: async (nom) => (await chercherAuRegistre({ nom })).candidats,
+							onEmailEcrit: (etape, objet, texte) =>
+								faire(
+									() =>
+										emailEcrit({
+											prospect: prospectId,
+											etape,
+											objet,
+											...(texte.trim() === '' ? {} : { texte })
+										}),
+									{
+										titre: 'E-mail noté',
+										texte:
+											etape === 'RELANCE_2'
+												? 'C’était la dernière relance.'
+												: 'La relance suivante est dans « Prochaine action ».'
+									}
+								)
 						}
 					}
 				: {})}

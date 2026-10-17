@@ -62,7 +62,11 @@ const AJOUT_MAX = 100;
 const SIEGES_VISES = 15;
 const PAGES_PAR_APPEL = 3;
 
-async function lirePage(secteur: CleSecteur, zone: CleZone, page: number): Promise<PageDeLAnnuaire> {
+async function lirePage(
+	secteur: CleSecteur,
+	zone: CleZone,
+	page: number
+): Promise<PageDeLAnnuaire> {
 	let reponse: Response;
 	try {
 		reponse = await fetch(adresseDeRecherche({ secteur, zone, page }), {

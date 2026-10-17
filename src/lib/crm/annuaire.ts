@@ -335,7 +335,12 @@ export function lireReponseDeLAnnuaire(
 		const lue = lireEntreprise(e);
 		return lue === null ? [] : [lue];
 	});
-	return { total: r.total_results, pages: Math.min(r.total_pages, PAGE_MAX), entreprises, horsZone };
+	return {
+		total: r.total_results,
+		pages: Math.min(r.total_pages, PAGE_MAX),
+		entreprises,
+		horsZone
+	};
 }
 
 /** « 17/10/2026 », le jour qu'il est à Paris. */

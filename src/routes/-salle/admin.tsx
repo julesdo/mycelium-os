@@ -375,10 +375,31 @@ const FICHE_PROSPECT: DonneesFicheProspect = {
 	taches: TACHES.filter((t) => t.fiche?.id === 'p2')
 };
 
-function DemoFicheProspect({ etat }: { etat: EtatDemo }) {
+/** Un transporteur trouvé à l'annuaire, jamais contacté : la feuille « E-mail » porte le modèle. */
+const FICHE_A_ECRIRE: DonneesFicheProspect = {
+	fiche: {
+		...(PROSPECTS[0] as LigneProspect),
+		entreprise: 'TRANSPORTS MOREAU ET FILS',
+		activite: 'Transports routiers de fret de proximité (49.41B)',
+		statut: 'A_CONTACTER',
+		siren: '512345678',
+		effectif: '20 à 49 salariés',
+		ville: 'Paris',
+		dirigeant: 'Claire Moreau',
+		fonction: 'Gérante',
+		email: 'contact@transports-moreau.fr',
+		trouveOu: 'Annuaire des entreprises (data.gouv.fr), le 18/10/2026',
+		creeLe: MAINTENANT - JOUR,
+		creePar: 'jules@letikette.com'
+	},
+	historique: [],
+	taches: []
+};
+
+function DemoFicheProspect({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	return (
 		<EcranFicheProspect
-			lecture={lectureDemo(etat, FICHE_PROSPECT)}
+			lecture={lectureDemo(etat, variante === 'a-ecrire' ? FICHE_A_ECRIRE : FICHE_PROSPECT)}
 			maintenant={MAINTENANT}
 			finDuJour={FIN}
 			gestes={{
@@ -388,8 +409,10 @@ function DemoFicheProspect({ etat }: { etat: EtatDemo }) {
 				onChangerStatut: RIEN,
 				onModifier: RIEN_ASYNC,
 				onStop: RIEN_ASYNC,
-				onChercherAuRegistre: async () => []
+				onChercherAuRegistre: async () => [],
+				onEmailEcrit: RIEN_ASYNC
 			}}
+			signataire={{ prenom: 'Jules', fondateur: true }}
 		/>
 	);
 }
@@ -614,10 +637,16 @@ export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
 		route: '/admin/prospects/$id',
 		libelle: 'admin · fiche d’un prospect',
 		vide: false,
+		variantes: ['a-ecrire'],
 		Demo: DemoFicheProspect
 	},
 	{ route: '/admin/prospects/importer', libelle: 'admin · import', vide: false, Demo: DemoImport },
-	{ route: '/admin/prospects/trouver', libelle: 'admin · annuaire', vide: false, Demo: DemoTrouver },
+	{
+		route: '/admin/prospects/trouver',
+		libelle: 'admin · annuaire',
+		vide: false,
+		Demo: DemoTrouver
+	},
 	{ route: '/admin/taches', libelle: 'admin · tâches', vide: true, Demo: DemoTaches },
 	{ route: '/admin/equipe', libelle: 'admin · équipe', vide: false, Demo: DemoEquipe },
 	{ route: '/admin/journal', libelle: 'admin · journal', vide: true, Demo: DemoJournal }

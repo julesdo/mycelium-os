@@ -8,7 +8,16 @@ import {
 	type Lecture
 } from '../../ui';
 import { BlocDeFiche, ChampsDeFiche } from '../../ui/admin';
-import { dateCourteDeParis, echeanceDeTache } from '../../lib/admin/dates';
+import { dateCourteDeParis, echeanceDeTache, jourDeParis } from '../../lib/admin/dates';
+import { ficheALAnnuaire } from '../../lib/crm/annuaire';
+import {
+	composerEmail,
+	composerLinkedIn,
+	etapeDEcriture,
+	modeleDe,
+	type EtapeDEcriture
+} from '../../lib/crm/modeles';
+import { valeursDeLaLoi } from '../../lib/crm/valeurs-loi';
 import { LIBELLES_DES_CIBLES, type StatutProspect } from '../../lib/crm/statuts';
 import { quandInscrit } from './aujourdhui';
 import { evenementAffiche, nomCourt, type EvenementCrm, type TacheAffichee } from './commun';
@@ -19,6 +28,7 @@ import {
 	type ChampsProspect
 } from './formulaire-prospect';
 import { SelecteurDeStatut, type LigneProspect } from './prospects';
+import { RedactionDEmail, rechercheDuSite } from './redaction-email';
 
 /**
  * LA FICHE D'UN PROSPECT (16/10/2026) : la forme de celle d'un compte (gestes, À
@@ -54,7 +64,22 @@ export interface GestesDuProspect extends GestesDeFiche {
 	readonly onModifier: (champs: ChampsProspect) => Promise<void>;
 	readonly onStop: () => Promise<void>;
 	readonly onChercherAuRegistre: (nom: string) => Promise<readonly CandidatDuRegistre[]>;
+	/** Un e-mail écrit depuis son modèle : noté avec son étape, la relance suivante posée. */
+	readonly onEmailEcrit: (
+		etape: Exclude<EtapeDEcriture, 'FINI'>,
+		objet: string,
+		texte: string
+	) => Promise<void>;
 }
+
+/** Qui signe les e-mails de prospection : le prénom affiché, et « Fondateur » s'il l'est. */
+export interface Signataire {
+	readonly prenom: string;
+	readonly fondateur: boolean;
+}
+
+/** Les statuts où la routine écrit encore : après une réponse, on écrit à la main. */
+const EN_PROSPECTION: readonly StatutProspect[] = ['A_CONTACTER', 'CONTACTE', 'RELANCE'];
 
 const RETOUR = { vers: '/admin/prospects' as const, libelle: 'Prospects' };
 
@@ -66,12 +91,14 @@ export function EcranFicheProspect({
 	lecture,
 	maintenant,
 	finDuJour,
-	gestes
+	gestes,
+	signataire
 }: {
 	readonly lecture: Lecture<DonneesFicheProspect | null>;
 	readonly maintenant: number;
 	readonly finDuJour: number;
 	readonly gestes?: GestesDuProspect;
+	readonly signataire?: Signataire;
 }) {
 	const [feuille, setFeuille] = useState<null | 'MODIFIER' | 'STOP'>(null);
 	const [stopEnCours, setStopEnCours] = useState(false);
@@ -101,6 +128,23 @@ export function EcranFicheProspect({
 	const { fiche, historique, taches } = lecture.valeur;
 	const stop = fiche.statut === 'STOP';
 	const actif = gestes !== undefined && !stop;
+
+	// Le modèle de l'étape, d'après le nombre d'e-mails déjà notés sur la fiche.
+	const etape = etapeDEcriture(historique.filter((e) => e.type === 'EMAIL').length);
+	const modele = modeleDe(fiche);
+	const redaction =
+		actif && signataire !== undefined && EN_PROSPECTION.includes(fiche.statut) && etape !== 'FINI'
+			? (() => {
+					const loi = valeursDeLaLoi(jourDeParis(maintenant));
+					const { objet, corps } = composerEmail({ prospect: fiche, etape, signataire, loi });
+					return {
+						etape,
+						objet,
+						corps,
+						linkedin: etape === 'PREMIER' ? composerLinkedIn({ prospect: fiche, loi }) : undefined
+					};
+				})()
+			: null;
 
 	async function confirmerLeStop() {
 		if (gestes === undefined) return;
@@ -164,7 +208,29 @@ export function EcranFicheProspect({
 										</a>
 									)
 							},
-							{ libelle: 'Site', valeur: ouVide(fiche.site) }
+							{
+								libelle: 'Site',
+								valeur:
+									fiche.site !== undefined && fiche.site !== '' ? (
+										<a
+											className="underline-offset-2 hover:underline"
+											href={/^https?:\/\//.test(fiche.site) ? fiche.site : `https://${fiche.site}`}
+											target="_blank"
+											rel="noreferrer"
+										>
+											{fiche.site}
+										</a>
+									) : (
+										<a
+											className="underline-offset-2 hover:underline"
+											href={rechercheDuSite(fiche.entreprise, fiche.ville)}
+											target="_blank"
+											rel="noreferrer"
+										>
+											Le chercher
+										</a>
+									)
+							}
 						]}
 					/>
 				)}
@@ -173,7 +239,23 @@ export function EcranFicheProspect({
 			<BlocDeFiche titre="Entreprise">
 				<ChampsDeFiche
 					champs={[
-						{ libelle: 'SIREN', valeur: ouVide(fiche.siren) },
+						{
+							libelle: 'SIREN',
+							valeur:
+								fiche.siren === undefined || fiche.siren === '' ? (
+									'Pas renseigné'
+								) : (
+									<a
+										className="underline-offset-2 hover:underline"
+										href={ficheALAnnuaire(fiche.siren)}
+										target="_blank"
+										rel="noreferrer"
+										title="Sa fiche à l’annuaire des entreprises"
+									>
+										{fiche.siren}
+									</a>
+								)
+						},
 						{ libelle: 'Activité', valeur: ouVide(fiche.activite) },
 						{ libelle: 'Effectif', valeur: ouVide(fiche.effectif) },
 						{ libelle: 'Ville', valeur: ouVide(fiche.ville) },
@@ -262,6 +344,24 @@ export function EcranFicheProspect({
 				maintenant={maintenant}
 				finDuJour={finDuJour}
 				{...(actif ? { gestes } : {})}
+				{...(redaction === null || gestes === undefined
+					? {}
+					: {
+							ecrire: (
+								<RedactionDEmail
+									etape={redaction.etape}
+									modele={modele}
+									objet={redaction.objet}
+									corps={redaction.corps}
+									{...(redaction.linkedin === undefined ? {} : { linkedin: redaction.linkedin })}
+									{...(fiche.email === undefined ? {} : { email: fiche.email })}
+									entreprise={fiche.entreprise}
+									{...(fiche.ville === undefined ? {} : { ville: fiche.ville })}
+								/>
+							),
+							onNoterEmail: (texte: string) =>
+								gestes.onEmailEcrit(redaction.etape, redaction.objet, texte)
+						})}
 			/>
 
 			{actif ? (

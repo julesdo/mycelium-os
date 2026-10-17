@@ -215,7 +215,9 @@ export function FeuilleDEchange({
 	onFermer,
 	type,
 	onNoter,
-	avant
+	avant,
+	titreDeLaFeuille,
+	libelleDuGeste
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -223,6 +225,9 @@ export function FeuilleDEchange({
 	readonly onNoter: (texte: string) => Promise<void>;
 	/** Au-dessus du champ : pour un e-mail, de quoi l'écrire. */
 	readonly avant?: ReactNode;
+	/** Quand la feuille sert d'abord à écrire (un modèle de prospection). */
+	readonly titreDeLaFeuille?: string;
+	readonly libelleDuGeste?: string;
 }) {
 	const [texte, setTexte] = useState('');
 	const [enCours, setEnCours] = useState(false);
@@ -245,10 +250,10 @@ export function FeuilleDEchange({
 		<FeuillePleinEcran
 			ouverte={ouverte}
 			onFermer={onFermer}
-			titre={titre}
+			titre={titreDeLaFeuille ?? titre}
 			pied={
 				<BoutonPrincipal pleineLargeur disabled={enCours} onClick={() => void noter()}>
-					{titre}
+					{libelleDuGeste ?? titre}
 				</BoutonPrincipal>
 			}
 		>

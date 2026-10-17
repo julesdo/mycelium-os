@@ -47,7 +47,9 @@ function entreprise(surcharges: Record<string, unknown> = {}) {
 
 describe('adresseDeRecherche', () => {
 	it('demande les PME de 3 à 49 salariés en activité, du secteur et de la zone choisis', () => {
-		const url = new URL(adresseDeRecherche({ secteur: 'TRANSPORT', zone: 'PETITE_COURONNE', page: 2 }));
+		const url = new URL(
+			adresseDeRecherche({ secteur: 'TRANSPORT', zone: 'PETITE_COURONNE', page: 2 })
+		);
 		expect(url.origin + url.pathname).toBe('https://recherche-entreprises.api.gouv.fr/search');
 		expect(url.searchParams.get('activite_principale')).toBe('49.41A,49.41B,49.41C');
 		expect(url.searchParams.get('departement')).toBe('75,92,93,94');
@@ -66,12 +68,29 @@ describe('adresseDeRecherche', () => {
 	});
 
 	it('couvre les huit départements d’Île-de-France', () => {
-		expect(ZONES.ILE_DE_FRANCE.departements).toEqual(['75', '77', '78', '91', '92', '93', '94', '95']);
+		expect(ZONES.ILE_DE_FRANCE.departements).toEqual([
+			'75',
+			'77',
+			'78',
+			'91',
+			'92',
+			'93',
+			'94',
+			'95'
+		]);
 	});
 
 	it('borne la page entre 1 et 400', () => {
-		expect(new URL(adresseDeRecherche({ secteur: 'CABINETS', zone: 'PARIS', page: 0 })).searchParams.get('page')).toBe('1');
-		expect(new URL(adresseDeRecherche({ secteur: 'CABINETS', zone: 'PARIS', page: 9999 })).searchParams.get('page')).toBe('400');
+		expect(
+			new URL(adresseDeRecherche({ secteur: 'CABINETS', zone: 'PARIS', page: 0 })).searchParams.get(
+				'page'
+			)
+		).toBe('1');
+		expect(
+			new URL(
+				adresseDeRecherche({ secteur: 'CABINETS', zone: 'PARIS', page: 9999 })
+			).searchParams.get('page')
+		).toBe('400');
 	});
 });
 
@@ -101,17 +120,30 @@ describe('lireReponseDeLAnnuaire', () => {
 	it('ne retient ni un commissaire aux comptes ni une société comme dirigeant', () => {
 		const seuls = entreprise({
 			dirigeants: [
-				{ nom: 'X', prenoms: 'Y', qualite: 'Commissaire aux comptes titulaire', type_dirigeant: 'personne physique' },
+				{
+					nom: 'X',
+					prenoms: 'Y',
+					qualite: 'Commissaire aux comptes titulaire',
+					type_dirigeant: 'personne physique'
+				},
 				{ denomination: 'HOLDING', qualite: 'Président', type_dirigeant: 'personne morale' }
 			]
 		});
-		const [e] = lireReponseDeLAnnuaire({ total_results: 1, total_pages: 1, results: [seuls] }).entreprises;
+		const [e] = lireReponseDeLAnnuaire({
+			total_results: 1,
+			total_pages: 1,
+			results: [seuls]
+		}).entreprises;
 		expect(e?.dirigeant).toBeUndefined();
 		expect(e?.fonction).toBeUndefined();
 	});
 
 	it('ne garde aucune date de naissance', () => {
-		const page = lireReponseDeLAnnuaire({ total_results: 1, total_pages: 1, results: [entreprise()] });
+		const page = lireReponseDeLAnnuaire({
+			total_results: 1,
+			total_pages: 1,
+			results: [entreprise()]
+		});
 		expect(JSON.stringify(page)).not.toMatch(/1975|1980|naissance/);
 	});
 
@@ -197,7 +229,10 @@ describe('le siège dans la zone', () => {
 				total_results: 2,
 				total_pages: 1,
 				results: [
-					entreprise({ siren: '392165080', siege: { libelle_commune: 'MIONS', departement: '69' } }),
+					entreprise({
+						siren: '392165080',
+						siege: { libelle_commune: 'MIONS', departement: '69' }
+					}),
 					entreprise()
 				]
 			},

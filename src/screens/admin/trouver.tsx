@@ -119,9 +119,7 @@ export function ParcoursTrouver({
 		setErreur(null);
 		setEnCours(true);
 		try {
-			const choisies = trouvees
-				.filter((e) => cochees.has(e.siren))
-				.map(sansLaMarque);
+			const choisies = trouvees.filter((e) => cochees.has(e.siren)).map(sansLaMarque);
 			setResultat(await onAjouter(secteur, zone, choisies));
 			setEtape('resume');
 		} catch (e) {
@@ -154,9 +152,7 @@ export function ParcoursTrouver({
 				disabled={enCours || nombre === 0}
 				onClick={() => void ajouter()}
 			>
-				{nombre === 0
-					? 'Cochez des entreprises'
-					: `Ajouter ${nombre} prospect${pluriel(nombre)}`}
+				{nombre === 0 ? 'Cochez des entreprises' : `Ajouter ${nombre} prospect${pluriel(nombre)}`}
 			</BoutonPrincipal>
 		) : etape === 'resume' ? (
 			<BoutonPrincipal pleineLargeur onClick={onFermer}>
@@ -221,7 +217,9 @@ export function ParcoursTrouver({
 								<BoutonTexte
 									onClick={() =>
 										setCochees(
-											toutesCochees ? new Set() : new Set([...cochees, ...libres.map((e) => e.siren)])
+											toutesCochees
+												? new Set()
+												: new Set([...cochees, ...libres.map((e) => e.siren)])
 										)
 									}
 								>

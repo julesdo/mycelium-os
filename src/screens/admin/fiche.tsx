@@ -54,7 +54,9 @@ export function CorpsDeFiche({
 	evenements,
 	maintenant,
 	finDuJour,
-	gestes
+	gestes,
+	ecrire,
+	onNoterEmail
 }: {
 	readonly nom: string;
 	readonly ligne?: string;
@@ -68,6 +70,10 @@ export function CorpsDeFiche({
 	readonly finDuJour: number;
 	/** Absents pour le rôle en lecture. */
 	readonly gestes?: GestesDeFiche;
+	/** Pour un prospect : le modèle d'e-mail prêt à écrire, à la place du seul lien. */
+	readonly ecrire?: ReactNode;
+	/** Pour un prospect : noter l'envoi avec son étape, au lieu d'un e-mail quelconque. */
+	readonly onNoterEmail?: (texte: string) => Promise<void>;
 }) {
 	const [feuille, setFeuille] = useState<Feuille>(null);
 	const [segment, setSegment] = useState<'historique' | 'details'>('historique');
@@ -184,9 +190,14 @@ export function CorpsDeFiche({
 						ouverte={feuille === 'EMAIL'}
 						onFermer={() => setFeuille(null)}
 						type="EMAIL"
-						onNoter={(texte) => gestes.onNoter('EMAIL', texte)}
+						onNoter={onNoterEmail ?? ((texte) => gestes.onNoter('EMAIL', texte))}
+						{...(ecrire === undefined
+							? {}
+							: { titreDeLaFeuille: 'Écrire un e-mail', libelleDuGeste: 'Je l’ai envoyé' })}
 						avant={
-							email === undefined ? (
+							ecrire !== undefined ? (
+								ecrire
+							) : email === undefined ? (
 								<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
 									Aucune adresse connue pour cette fiche.
 								</p>
