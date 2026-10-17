@@ -365,7 +365,7 @@ function allumee(
 /** Les pages d'une fiche : le composeur y prend la place de la barre d'onglets. */
 function surUneFiche(chemin: string): boolean {
 	return (
-		/^\/admin\/(comptes|prospects)\/(?!importer)[^/]+\/?$/.test(chemin) ||
+		/^\/admin\/(comptes|prospects)\/(?!importer|trouver)[^/]+\/?$/.test(chemin) ||
 		/^\/admin\/support\/(?!reponses|mesure)[^/]+\/?$/.test(chemin)
 	);
 }

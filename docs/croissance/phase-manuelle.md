@@ -19,7 +19,7 @@ la ligne d'exemple).
 | **Lundi, 30 min** | Lister des entreprises cibles sur [annuaire-entreprises.data.gouv.fr](https://annuaire-entreprises.data.gouv.fr) (filtres : activité, département, effectif ; le dirigeant est sur la fiche). L'e-mail se trouve sur le site de l'entreprise, sa page de contact ou ses mentions légales. | 30 lignes |
 | **Chaque jour, 40 min** | E-mails écrits à la main (modèles ci-dessous, une phrase personnalisée chaque fois) | 10 |
 | | Messages LinkedIn, à la main | 5 |
-| | Appels à des cabinets comptables de Gironde | 2 |
+| | Appels à des cabinets comptables d’Île-de-France | 2 |
 | **Chaque jour, 10 min** | Relances (J+4, puis J+10), et noter chaque réponse et chaque objection dans le tableur | — |
 | **Vendredi, 15 min** | Relire la semaine : quelle phrase a fait répondre, quelle objection revient. Ajuster un seul élément du modèle pour la semaine suivante. | — |
 
@@ -29,7 +29,7 @@ la ligne d'exemple).
    est l'argument le plus fort.
 2. **Bâtiment** (codes 41 à 43) et **services aux entreprises** (agences, conseil, nettoyage,
    sécurité), 3 à 49 salariés.
-3. **Cabinets comptables** (69.20Z) de Gironde, par téléphone : un cabinet amène plusieurs clients.
+3. **Cabinets comptables** (69.20Z) de Paris et de la petite couronne, par téléphone : un cabinet amène plusieurs clients.
 
 ## 2. Les règles
 
@@ -72,7 +72,7 @@ comptes du prospect.
 > Une facture de transport ne se réclame en justice que pendant un an, contre cinq ans pour la
 > plupart des factures, et ce délai court depuis la livraison. Passé ce délai, la somme est perdue.
 >
-> Je développe Letikette, à Bordeaux : un logiciel qui lit vos factures, surveille ces délais et
+> Je développe Letikette, à Paris : un logiciel qui lit vos factures, surveille ces délais et
 > calcule ce que la loi ajoute à chaque facture payée en retard, 40 € par facture et des pénalités
 > à 12,40 % par an ce semestre. Par exemple, 100 factures de 2 000 € réglées avec 30 jours de
 > retard, c'est environ 6 000 € dus en plus, que presque personne ne réclame.
@@ -99,7 +99,7 @@ comptes du prospect.
 > facture, plus des pénalités au taux de 12,40 % par an ce semestre. Presque personne ne les
 > réclame, faute de savoir les calculer.
 >
-> Je développe Letikette, à Bordeaux : le logiciel lit vos factures, chiffre ce qui vous est dû au
+> Je développe Letikette, à Paris : le logiciel lit vos factures, chiffre ce qui vous est dû au
 > centime, et envoie les relances à votre nom quand vous l'avez décidé. Sans commission sur ce qui
 > rentre : tout est à vous.
 >
@@ -120,11 +120,11 @@ comptes du prospect.
 > Bonjour {Prénom},
 >
 > Vous voyez passer les retards de paiement de vos clients dans leurs balances, sans avoir grand-chose
-> à leur proposer. Je développe Letikette, à Bordeaux : le logiciel lit leurs factures, chiffre ce
+> à leur proposer. Je développe Letikette, à Paris : le logiciel lit leurs factures, chiffre ce
 > que la loi y ajoute (40 € par facture payée en retard et les pénalités), surveille les délais
 > pour agir et envoie les relances au nom de votre client, sans commission sur ce qui rentre.
 >
-> Je cherche cinq cabinets de Gironde pour construire avec eux l'espace qui leur permettra de suivre
+> Je cherche cinq cabinets parisiens pour construire avec eux l'espace qui leur permettra de suivre
 > les impayés de leurs clients. Accès gratuit pour le cabinet.
 >
 > Auriez-vous vingt minutes cette semaine ou la suivante ?
@@ -145,13 +145,13 @@ comptes du prospect.
 
 ### LinkedIn (300 caractères)
 
-> Bonjour {Prénom}, je développe Letikette à Bordeaux : un logiciel qui chiffre ce que la loi
+> Bonjour {Prénom}, je développe Letikette à Paris : un logiciel qui chiffre ce que la loi
 > ajoute aux factures payées en retard (40 € par facture, plus les pénalités) et relance à votre
 > nom. Je serais curieux d'avoir votre avis de dirigeant, sans engagement.
 
 ## 4. L'appel aux cabinets (deux minutes)
 
-1. **Qui vous êtes :** « Bonjour, Jules, je développe Letikette à Bordeaux, un logiciel pour les
+1. **Qui vous êtes :** « Bonjour, Jules, je développe Letikette à Paris, un logiciel pour les
    impayés des TPE. Je ne vous vends rien aujourd'hui : je cherche l'avis de cabinets. Vous avez
    deux minutes ? »
 2. **Trois questions, puis écouter :**
@@ -160,7 +160,7 @@ comptes du prospect.
    - « Est-ce qu'ils réclament les 40 € et les pénalités de retard ? »
 3. **Ce que fait Letikette, en une phrase :** « Il lit les factures du client, chiffre ce qui est
    dû au centime, surveille les délais pour agir et relance à son nom. »
-4. **La demande :** « Je construis l'espace cabinet avec cinq cabinets de Gironde, gratuit pour
+4. **La demande :** « Je construis l'espace cabinet avec cinq cabinets parisiens, gratuit pour
    vous. Je peux vous le montrer vingt minutes ? »
 5. **Noter** dans le tableur : la réponse, l'objection, la prochaine action.
 

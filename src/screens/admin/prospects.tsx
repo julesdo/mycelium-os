@@ -1,6 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { Button, SearchField, Select } from '@cladd-ui/react';
-import { FilterIcon, KanbanIcon, ListIcon, PlusIcon, Table2Icon, UploadIcon } from 'lucide-react';
+import {
+	Building2Icon,
+	FilterIcon,
+	KanbanIcon,
+	ListIcon,
+	PlusIcon,
+	Table2Icon,
+	UploadIcon
+} from 'lucide-react';
 import {
 	BoutonTexte,
 	CarteLien,
@@ -233,6 +241,20 @@ export function EcranProspects({
 					<>
 						<Button
 							as={Lien}
+							to="/admin/prospects/trouver"
+							size="md"
+							rounded
+							square
+							variant="solid"
+							outline={false}
+							className="shrink-0"
+							aria-label="Trouver des entreprises à l’annuaire"
+							title="Trouver des entreprises à l’annuaire"
+						>
+							<Building2Icon />
+						</Button>
+						<Button
+							as={Lien}
 							to="/admin/prospects/importer"
 							size="md"
 							rounded
@@ -291,13 +313,13 @@ export function EcranProspects({
 				<p className="text-cladd-xs text-cladd-fg-soft">
 					{lecture.valeur.length === 0
 						? vue === 'TOUS'
-							? 'Aucun prospect pour l’instant. Importez votre tableur, ou ajoutez-en un.'
+							? 'Aucun prospect pour l’instant. Trouvez des entreprises à l’annuaire, ou importez votre tableur.'
 							: 'Aucun prospect dans cette vue.'
 						: 'Aucun prospect ne répond à ce que vous cherchez.'}
 				</p>
 				{lecture.valeur.length === 0 && vue === 'TOUS' && gestes !== undefined ? (
-					<BoutonTexte as={Lien} to="/admin/prospects/importer">
-						Importer le tableur
+					<BoutonTexte as={Lien} to="/admin/prospects/trouver">
+						Trouver des entreprises
 					</BoutonTexte>
 				) : vue === 'TOUS' && terme === '' ? null : (
 					<BoutonTexte

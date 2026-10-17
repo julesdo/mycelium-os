@@ -15,6 +15,7 @@ import {
 } from '../../screens/admin/prospects';
 import { EcranFicheProspect, type DonneesFicheProspect } from '../../screens/admin/fiche-prospect';
 import { ParcoursImport } from '../../screens/admin/import';
+import { ParcoursTrouver, type EntrepriseAffichee } from '../../screens/admin/trouver';
 import { EcranTaches } from '../../screens/admin/taches';
 import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
 import { EcranJournal, type EntreeDuJournal } from '../../screens/admin/journal';
@@ -393,6 +394,47 @@ function DemoFicheProspect({ etat }: { etat: EtatDemo }) {
 	);
 }
 
+const TROUVEES_DEMO: readonly EntrepriseAffichee[] = [
+	{
+		siren: '799531322',
+		entreprise: '37 EXPRESS',
+		activite: 'Transports routiers de fret interurbains (49.41A)',
+		effectif: '10 à 19 salariés',
+		ville: 'Aubervilliers',
+		connue: false
+	},
+	{
+		siren: '512345678',
+		entreprise: 'TRANSPORTS MOREAU ET FILS',
+		activite: 'Transports routiers de fret de proximité (49.41B)',
+		effectif: '20 à 49 salariés',
+		ville: 'Paris',
+		dirigeant: 'Claire Moreau',
+		fonction: 'Gérante',
+		connue: false
+	},
+	{
+		siren: '423456789',
+		entreprise: 'LOGISTIQUE DU CANAL',
+		activite: 'Transports routiers de fret interurbains (49.41A)',
+		effectif: '6 à 9 salariés',
+		ville: 'Pantin',
+		dirigeant: 'Karim Benali',
+		fonction: 'Président',
+		connue: true
+	}
+];
+
+function DemoTrouver() {
+	return (
+		<ParcoursTrouver
+			onFermer={RIEN}
+			onChercher={async () => ({ pages: 90, derniere: 1, entreprises: TROUVEES_DEMO })}
+			onAjouter={async (_s, _z, e) => ({ importes: e.length, ecartes: 0 })}
+		/>
+	);
+}
+
 function DemoImport() {
 	return (
 		<ParcoursImport
@@ -575,6 +617,7 @@ export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
 		Demo: DemoFicheProspect
 	},
 	{ route: '/admin/prospects/importer', libelle: 'admin · import', vide: false, Demo: DemoImport },
+	{ route: '/admin/prospects/trouver', libelle: 'admin · annuaire', vide: false, Demo: DemoTrouver },
 	{ route: '/admin/taches', libelle: 'admin · tâches', vide: true, Demo: DemoTaches },
 	{ route: '/admin/equipe', libelle: 'admin · équipe', vide: false, Demo: DemoEquipe },
 	{ route: '/admin/journal', libelle: 'admin · journal', vide: true, Demo: DemoJournal }

@@ -559,6 +559,58 @@ export function LigneDeProspect({
 }
 
 /**
+ * LA LIGNE À COCHER (17/10/2026) : une entreprise trouvée à l'annuaire, que l'équipe
+ * retient ou non. La carte entière coche ; une ligne déjà connue reste lisible,
+ * inerte, et dit pourquoi.
+ */
+export function LigneACocher({
+	titre,
+	ligne,
+	detail,
+	cochee,
+	onBasculer,
+	inerte
+}: {
+	readonly titre: string;
+	/** L'activité et l'effectif. */
+	readonly ligne?: string;
+	/** La ville et le dirigeant. */
+	readonly detail?: string;
+	readonly cochee: boolean;
+	readonly onBasculer: () => void;
+	/** Dit pourquoi la ligne ne se coche pas (« Déjà dans vos prospects »). */
+	readonly inerte?: string;
+}) {
+	return (
+		<Button
+			variant="transparent"
+			outline={false}
+			hoverable={false}
+			size="md"
+			aria-pressed={inerte === undefined ? cochee : undefined}
+			disabled={inerte !== undefined}
+			onClick={onBasculer}
+			className={cn(
+				'verre-carte verre-bouton h-auto min-h-17 w-full rounded-cladd-xl text-left',
+				cochee && 'outline-2 outline-cladd-primary'
+			)}
+			contentClassName="w-full items-center gap-2.5 py-2 pr-3.5 pl-2"
+		>
+			<Checkbox as="span" size="md" checked={cochee} disabled={inerte !== undefined} />
+			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span className="truncate text-cladd-xs font-semibold">{titre}</span>
+				{ligne === undefined ? null : (
+					<span className="truncate text-cladd-2xs text-cladd-fg-soft">{ligne}</span>
+				)}
+				<span className="truncate text-cladd-2xs text-cladd-fg-soft">
+					{inerte ?? detail ?? ' '}
+				</span>
+			</span>
+		</Button>
+	);
+}
+
+/**
  * LA BARRE D'ACTIONS GROUPÉES (Attio, ClickUp) : elle paraît en bas quand des lignes
  * sont cochées, dit combien, porte les gestes, et se ferme d'une croix.
  */
