@@ -150,11 +150,12 @@ function Champ({ etiquette, children }: { etiquette: string; children: React.Rea
 	);
 }
 
-export function Calcul() {
+/** `secteurInitial` : une page de métier ouvre le calculateur sur son régime (le transport). */
+export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteur } = {}) {
 	const jour = aujourdHui();
 	const [montant, setMontant] = useState('12 400');
 	const [echeance, setEcheance] = useState(() => ajouterMois(jour, -7));
-	const [secteur, setSecteur] = useState<Secteur>('GENERAL');
+	const [secteur, setSecteur] = useState<Secteur>(secteurInitial);
 
 	// Le taux du semestre en cours doit être relevé : sans lui, aucun calcul du
 	// jour ne serait juste, et la section se tait.

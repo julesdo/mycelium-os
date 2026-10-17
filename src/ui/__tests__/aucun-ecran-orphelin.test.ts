@@ -52,6 +52,8 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 		'Le plan du site, pour les moteurs de recherche. Ils le trouvent par robots.txt, pas par un lien.',
 	'/blog/rss.xml':
 		'Le flux du blog. Les lecteurs de flux le trouvent par la balise alternate des pages du blog.',
+	'/llms.txt':
+		'Ce qu’est Letikette, pour les assistants qui lisent le site. Ils le cherchent à la racine (llmstxt.org), pas par un lien.',
 	/**
 	 * ⚠️ AUCUN ÉCRAN N'Y MÈNE, ET AUCUN N'Y MÈNERA JAMAIS.
 	 *

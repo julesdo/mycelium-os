@@ -17,6 +17,7 @@ import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConditionsGeneralesRouteImport } from './routes/conditions-generales'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InscriptionRouteImport } from './routes/inscription'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
@@ -27,6 +28,7 @@ import { Route as SecuriteRouteImport } from './routes/securite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TarifsRouteImport } from './routes/tarifs'
+import { Route as TauxDesPenalitesDeRetardRouteImport } from './routes/taux-des-penalites-de-retard'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminEquipeRouteImport } from './routes/admin/equipe'
 import { Route as AdminJournalRouteImport } from './routes/admin/journal'
@@ -48,6 +50,7 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
+import { Route as SecteursSecteurRouteImport } from './routes/secteurs.$secteur'
 import { Route as AdminComptesIndexRouteImport } from './routes/admin/comptes.index'
 import { Route as AdminComptesIdRouteImport } from './routes/admin/comptes.$id'
 import { Route as AdminProspectsIndexRouteImport } from './routes/admin/prospects.index'
@@ -118,6 +121,11 @@ const InscriptionRoute = InscriptionRouteImport.update({
   path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   id: '/mentions-legales',
   path: '/mentions-legales',
@@ -169,6 +177,12 @@ const TarifsRoute = TarifsRouteImport.update({
   path: '/tarifs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TauxDesPenalitesDeRetardRoute =
+  TauxDesPenalitesDeRetardRouteImport.update({
+    id: '/taux-des-penalites-de-retard',
+    path: '/taux-des-penalites-de-retard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -272,6 +286,11 @@ const PJetonRoute = PJetonRouteImport.update({
 const RejoindreTokenRoute = RejoindreTokenRouteImport.update({
   id: '/rejoindre/$token',
   path: '/rejoindre/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecteursSecteurRoute = SecteursSecteurRouteImport.update({
+  id: '/secteurs/$secteur',
+  path: '/secteurs/$secteur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminComptesIndexRoute = AdminComptesIndexRouteImport.update({
@@ -429,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
@@ -439,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
+  '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -457,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
+  '/secteurs/$secteur': typeof SecteursSecteurRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
@@ -497,6 +519,7 @@ export interface FileRoutesByTo {
   '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
@@ -507,6 +530,7 @@ export interface FileRoutesByTo {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
+  '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -525,6 +549,7 @@ export interface FileRoutesByTo {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
+  '/secteurs/$secteur': typeof SecteursSecteurRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
@@ -568,6 +593,7 @@ export interface FileRoutesById {
   '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
@@ -578,6 +604,7 @@ export interface FileRoutesById {
   '/showroom': typeof ShowroomRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
+  '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -596,6 +623,7 @@ export interface FileRoutesById {
   '/connexion_/verification': typeof ConnexionVerificationRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
+  '/secteurs/$secteur': typeof SecteursSecteurRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
@@ -640,6 +668,7 @@ export interface FileRouteTypes {
     | '/conditions-generales'
     | '/connexion'
     | '/inscription'
+    | '/llms.txt'
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
@@ -650,6 +679,7 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/tarifs'
+    | '/taux-des-penalites-de-retard'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -668,6 +698,7 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
+    | '/secteurs/$secteur'
     | '/admin/'
     | '/app/'
     | '/blog/'
@@ -708,6 +739,7 @@ export interface FileRouteTypes {
     | '/conditions-generales'
     | '/connexion'
     | '/inscription'
+    | '/llms.txt'
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
@@ -718,6 +750,7 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/tarifs'
+    | '/taux-des-penalites-de-retard'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -736,6 +769,7 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
+    | '/secteurs/$secteur'
     | '/admin'
     | '/app'
     | '/blog'
@@ -778,6 +812,7 @@ export interface FileRouteTypes {
     | '/conditions-generales'
     | '/connexion'
     | '/inscription'
+    | '/llms.txt'
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
@@ -788,6 +823,7 @@ export interface FileRouteTypes {
     | '/showroom'
     | '/sitemap.xml'
     | '/tarifs'
+    | '/taux-des-penalites-de-retard'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -806,6 +842,7 @@ export interface FileRouteTypes {
     | '/connexion_/verification'
     | '/p/$jeton'
     | '/rejoindre/$token'
+    | '/secteurs/$secteur'
     | '/admin/'
     | '/app/'
     | '/blog/'
@@ -849,6 +886,7 @@ export interface RootRouteChildren {
   ConditionsGeneralesRoute: typeof ConditionsGeneralesRoute
   ConnexionRoute: typeof ConnexionRoute
   InscriptionRoute: typeof InscriptionRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
@@ -859,11 +897,13 @@ export interface RootRouteChildren {
   ShowroomRoute: typeof ShowroomRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TarifsRoute: typeof TarifsRoute
+  TauxDesPenalitesDeRetardRoute: typeof TauxDesPenalitesDeRetardRoute
   BlogAdresseRoute: typeof BlogAdresseRoute
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   ConnexionVerificationRoute: typeof ConnexionVerificationRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
+  SecteursSecteurRoute: typeof SecteursSecteurRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -924,6 +964,13 @@ declare module '@tanstack/react-router' {
       path: '/inscription'
       fullPath: '/inscription'
       preLoaderRoute: typeof InscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mentions-legales': {
@@ -994,6 +1041,13 @@ declare module '@tanstack/react-router' {
       path: '/tarifs'
       fullPath: '/tarifs'
       preLoaderRoute: typeof TarifsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/taux-des-penalites-de-retard': {
+      id: '/taux-des-penalites-de-retard'
+      path: '/taux-des-penalites-de-retard'
+      fullPath: '/taux-des-penalites-de-retard'
+      preLoaderRoute: typeof TauxDesPenalitesDeRetardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1141,6 +1195,13 @@ declare module '@tanstack/react-router' {
       path: '/rejoindre/$token'
       fullPath: '/rejoindre/$token'
       preLoaderRoute: typeof RejoindreTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/secteurs/$secteur': {
+      id: '/secteurs/$secteur'
+      path: '/secteurs/$secteur'
+      fullPath: '/secteurs/$secteur'
+      preLoaderRoute: typeof SecteursSecteurRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/comptes/': {
@@ -1493,6 +1554,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConditionsGeneralesRoute: ConditionsGeneralesRoute,
   ConnexionRoute: ConnexionRoute,
   InscriptionRoute: InscriptionRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
@@ -1503,11 +1565,13 @@ const rootRouteChildren: RootRouteChildren = {
   ShowroomRoute: ShowroomRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TarifsRoute: TarifsRoute,
+  TauxDesPenalitesDeRetardRoute: TauxDesPenalitesDeRetardRoute,
   BlogAdresseRoute: BlogAdresseRoute,
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   ConnexionVerificationRoute: ConnexionVerificationRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
+  SecteursSecteurRoute: SecteursSecteurRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

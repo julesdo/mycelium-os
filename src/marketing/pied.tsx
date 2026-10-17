@@ -3,6 +3,7 @@ import { LogoLetikette } from '../ui';
 import { getLegalEmailAddress } from '../lib/config/legal';
 import { articlesPublies } from './blog';
 import { FONCTIONNALITES } from './fonctionnalites';
+import { NOMS_DES_SECTEURS, SECTEURS_PUBLICS } from './secteurs';
 
 /**
  * LE PIED DE PAGE — l'encre, la marque en grand, les liens légaux (06/10/2026).
@@ -19,7 +20,8 @@ import { FONCTIONNALITES } from './fonctionnalites';
  *
  * ⚠️ TROIS COLONNES DEPUIS LE 14/10/2026, à la manière de Midday : le logiciel
  * (le registre, `FONCTIONNALITES`), les ressources, le compte. Le pied ne
- * menait jusqu'ici à aucune fonction du produit.
+ * menait jusqu'ici à aucune fonction du produit. Une quatrième le 18/10 : les
+ * pages par métier.
  */
 const LIEN =
 	'py-cladd-3xs text-cladd-sm text-creme-sur-encre-douce underline underline-offset-4 transition-colors hover:text-creme-sur-encre';
@@ -42,7 +44,7 @@ export function Pied() {
 					</span>
 				</Link>
 
-				<div className="grid grid-cols-2 gap-cladd-sm pt-cladd-xs md:grid-cols-4">
+				<div className="grid grid-cols-2 gap-cladd-sm pt-cladd-xs md:grid-cols-5">
 					<nav aria-label="Le logiciel" className="col-span-2 flex flex-col">
 						<span className={TITRE}>Le logiciel</span>
 						<ul className="grid grid-cols-2 gap-x-cladd-sm">
@@ -55,6 +57,19 @@ export function Pied() {
 							))}
 						</ul>
 					</nav>
+					<nav aria-label="Par métier" className="flex flex-col">
+						<span className={TITRE}>Par métier</span>
+						{SECTEURS_PUBLICS.map((secteur) => (
+							<Link
+								key={secteur}
+								to="/secteurs/$secteur"
+								params={{ secteur }}
+								className={LIEN_COLONNE}
+							>
+								{NOMS_DES_SECTEURS[secteur]}
+							</Link>
+						))}
+					</nav>
 					<nav aria-label="Ressources" className="flex flex-col">
 						<span className={TITRE}>Ressources</span>
 						<Link to="/tarifs" className={LIEN_COLONNE}>
@@ -62,6 +77,9 @@ export function Pied() {
 						</Link>
 						<Link to="/securite" className={LIEN_COLONNE}>
 							Sécurité
+						</Link>
+						<Link to="/taux-des-penalites-de-retard" className={LIEN_COLONNE}>
+							Taux des pénalités
 						</Link>
 						{articlesPublies().length > 0 ? (
 							<Link to="/blog" className={LIEN_COLONNE}>

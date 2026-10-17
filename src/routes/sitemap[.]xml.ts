@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { articlesPublies } from '../marketing/blog';
+import { SECTEURS_PUBLICS } from '../marketing/secteurs';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 
 /**
@@ -13,6 +14,8 @@ const PAGES_FIXES = [
 	'/',
 	'/tarifs',
 	'/securite',
+	'/taux-des-penalites-de-retard',
+	...SECTEURS_PUBLICS.map((s) => `/secteurs/${s}`),
 	'/blog',
 	'/inscription',
 	'/mentions-legales',

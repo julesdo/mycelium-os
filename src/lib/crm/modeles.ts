@@ -93,13 +93,22 @@ function campagneDe(modele: Modele, activite: string | undefined): string {
 	return /^4[123]\./.test(codeDActivite(activite)) ? 'batiment' : 'services';
 }
 
+/** La page du métier (`marketing/secteurs.ts`) ; un cabinet va à l'accueil. */
+const PAGES_DES_CAMPAGNES: Readonly<Record<string, string>> = {
+	transport: '/secteurs/transport-routier',
+	batiment: '/secteurs/batiment',
+	services: '/secteurs/services-aux-entreprises',
+	cabinet: '/'
+};
+
 /** Le lien du calculateur, avec sa source : on saura d'où vient l'inscription. */
 export function lienSuivi(
 	modele: Modele,
 	activite: string | undefined,
 	canal: 'email' | 'linkedin'
 ) {
-	return `https://www.letikette.com/?utm_source=manuel&utm_medium=${canal}&utm_campaign=${campagneDe(modele, activite)}#calcul`;
+	const campagne = campagneDe(modele, activite);
+	return `https://www.letikette.com${PAGES_DES_CAMPAGNES[campagne] ?? '/'}?utm_source=manuel&utm_medium=${canal}&utm_campaign=${campagne}#calcul`;
 }
 
 export function prenomDe(dirigeant: string | undefined): string | undefined {

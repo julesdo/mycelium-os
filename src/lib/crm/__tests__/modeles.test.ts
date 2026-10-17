@@ -211,3 +211,24 @@ describe('valeursDeLaLoi', () => {
 		expect(loi.exemple).toBeNull();
 	});
 });
+
+describe('le lien', () => {
+	it('mène à la page du métier, avec sa source', () => {
+		const { corps } = composerEmail({
+			prospect: TRANSPORTEUR,
+			etape: 'PREMIER',
+			signataire: { prenom: 'Jules', fondateur: true },
+			loi: LOI
+		});
+		expect(corps).toContain(
+			'https://www.letikette.com/secteurs/transport-routier?utm_source=manuel&utm_medium=email&utm_campaign=transport#calcul'
+		);
+		const batiment = composerEmail({
+			prospect: { entreprise: 'B', cible: 'PME', activite: 'Travaux (43.21A)' },
+			etape: 'PREMIER',
+			signataire: { prenom: 'Jules', fondateur: true },
+			loi: LOI
+		});
+		expect(batiment.corps).toContain('/secteurs/batiment?utm_source=manuel');
+	});
+});

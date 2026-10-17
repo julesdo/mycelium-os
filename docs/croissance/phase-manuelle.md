@@ -51,7 +51,7 @@ la ligne d'exemple).
   second semestre 2026** (BCE 2,40 % au 1er juillet). **Le taux change au 1er janvier : à vérifier
   dans le registre avant d'envoyer en 2027.**
 - **Les liens portent leur source**, pour savoir d'où vient chaque inscription :
-  `https://www.letikette.com/?utm_source=manuel&utm_medium=email&utm_campaign=transport#calcul`
+  `https://www.letikette.com/secteurs/transport-routier?utm_source=manuel&utm_medium=email&utm_campaign=transport#calcul`
   (remplacer `transport` par `batiment`, `services` ou `cabinet`, et `email` par `linkedin`).
 
 ## 3. Les e-mails
