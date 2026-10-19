@@ -150,3 +150,11 @@ export function baremeDuDebiteur(debiteur: {
 	}
 	return { bareme: 'COMMERCIAL', categorie: null, qualifie: false };
 }
+
+/**
+ * Une collectivité territoriale ou l'un de ses établissements publics, d'après sa
+ * catégorie juridique : ceux que vise le mandatement d'office de L1612-18 du CGCT.
+ */
+export function estCollectiviteTerritoriale(categorieJuridique: string | undefined): boolean {
+	return categorieJuridique !== undefined && COLLECTIVITES.has(categorieJuridique.trim());
+}

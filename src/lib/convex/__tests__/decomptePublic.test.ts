@@ -132,3 +132,86 @@ describe('le décompte d’un client public', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('les courriers d’un client public', () => {
+	it(
+		'composent la demande sur les factures payées en retard, et nomment celles qu’ils laissent',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, debiteurId } = await t.run(async (ctx) => {
+				const organizationId = await ctx.db.insert('organizations', {
+					name: 'Nettoyage du Val',
+					createdAt: Date.now()
+				});
+				await ctx.db.insert('profilsCreancier', {
+					organizationId,
+					denomination: 'Nettoyage du Val',
+					formeJuridique: 'SAS',
+					siren: '552100554',
+					adresse: '12 rue des Forges, 94000 Créteil',
+					email: 'compta@nettoyage-du-val.fr',
+					signataireNom: 'Karim Benali',
+					signataireQualite: 'Président',
+					iban: 'FR7630006000011234567890189',
+					estCommercant: 'ok',
+					majLe: Date.now()
+				});
+				const debiteurId = await ctx.db.insert('debiteurs', {
+					organizationId,
+					denomination: 'Centre hospitalier de Créteil',
+					denominationNormalisee: 'CENTRE HOSPITALIER DE CRETEIL',
+					denominationsBrutes: ['Centre hospitalier de Créteil'],
+					adresse: '40 avenue de Verdun, 94000 Créteil',
+					categorieJuridique: '7364',
+					estCommercant: 'ko',
+					santeFinanciere: 'SAINE',
+					creeLe: Date.now()
+				});
+				const poserFacture = async (
+					reference: string,
+					echeance: string | undefined,
+					paiement: { date: string; dateSource?: 'LECTURE' }
+				) => {
+					const factureId = await ctx.db.insert('facturesVente', {
+						organizationId,
+						debiteurId,
+						reference,
+						montantHT: 0n,
+						montantTTC: 1_000_000n,
+						dateEmission: '2026-03-01',
+						...(echeance === undefined ? {} : { dateEcheance: echeance }),
+						statutPaiement: 'SOLDEE',
+						creeLe: Date.now()
+					});
+					await ctx.db.insert('reglements', {
+						organizationId,
+						factureId,
+						date: paiement.date,
+						montant: 1_000_000n,
+						nature: 'PAIEMENT',
+						creeLe: Date.now(),
+						...(paiement.dateSource === undefined ? {} : { dateSource: paiement.dateSource })
+					});
+				};
+				await poserFacture('CHU-1', '2026-05-01', { date: '2026-09-01' });
+				await poserFacture('CHU-2', undefined, { date: '2026-09-01' });
+				await poserFacture('CHU-3', '2026-05-01', { date: '2026-09-01', dateSource: 'LECTURE' });
+				return { organizationId, debiteurId };
+			});
+			const r = await t.query(internal.recouvrement.courriersPublics.courriersPublicsInterne, {
+				organizationId,
+				debiteurId,
+				aujourdHui: '2026-10-19'
+			});
+			expect(r?.reclamation.ok).toBe(true);
+			if (r?.reclamation.ok !== true) return;
+			expect(r.reclamation.corps).toContain('facture n° CHU-1');
+			expect(r.reclamation.corps).toContain('342,04 €');
+			expect(r.reclamation.corps).not.toContain('CHU-2');
+			expect(r.laissees.map((l) => l.reference).sort()).toEqual(['CHU-2', 'CHU-3']);
+			// L'hôpital a payé le 1er septembre : plus de trente jours, le signalement se compose.
+			expect(r.signalement.ok).toBe(true);
+		},
+		DELAI_CONVEX
+	);
+});

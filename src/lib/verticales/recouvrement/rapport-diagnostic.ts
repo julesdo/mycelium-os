@@ -46,6 +46,9 @@ export interface DiagnosticPourRapport {
 			readonly joursDeRetard: number;
 			readonly supplement: bigint;
 			readonly echeanceSupposee: boolean;
+			/** Lus par l'écran (les clients publics), ignorés par le rapport. */
+			readonly debiteurId?: string;
+			readonly public?: boolean;
 		}[];
 	};
 	readonly horsPeriode: { readonly nombre: number; readonly principal: bigint };

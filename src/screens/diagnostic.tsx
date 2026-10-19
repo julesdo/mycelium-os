@@ -1,6 +1,7 @@
 import { DownloadIcon, UploadIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
+	CarteBouton,
 	ChiffreHero,
 	EnTeteDeGroupe,
 	FacturesNonChiffrees,
@@ -33,12 +34,30 @@ export interface DiagnosticDuJour {
 	readonly etablissement: string;
 }
 
+/** Les clients publics qui ont payé en retard : un par carte, ses factures et leur somme. */
+function clientsPublics(d: DiagnosticPourRapport) {
+	const parClient = new Map<string, { nom: string; factures: number; supplement: bigint }>();
+	for (const l of d.payeesEnRetard.lignes) {
+		if (l.public !== true || l.debiteurId === undefined) continue;
+		const deja = parClient.get(l.debiteurId);
+		parClient.set(l.debiteurId, {
+			nom: l.debiteur ?? 'Client public',
+			factures: (deja?.factures ?? 0) + 1,
+			supplement: (deja?.supplement ?? 0n) + l.supplement
+		});
+	}
+	return [...parClient.entries()].map(([id, c]) => ({ id, ...c }));
+}
+
 export function EcranDiagnostic({
 	donnees,
-	onTelecharger
+	onTelecharger,
+	onPreparerCourrier
 }: {
 	readonly donnees: Lecture<DiagnosticDuJour>;
 	readonly onTelecharger?: () => void;
+	/** Ouvre la demande de paiement des intérêts moratoires d'un client public (lot 1 bis). */
+	readonly onPreparerCourrier?: (debiteurId: string) => void;
 }) {
 	const entete = {
 		genre: 'poussee',
@@ -141,6 +160,26 @@ export function EcranDiagnostic({
 								{payees.note}
 							</p>
 						)}
+					</section>
+				)}
+
+				{onPreparerCourrier === undefined || clientsPublics(d).length === 0 ? null : (
+					<section className="flex flex-col gap-cladd-3xs">
+						<EnTeteDeGroupe libelle="Vos clients publics" nombre={clientsPublics(d).length} />
+						{clientsPublics(d).map((c) => (
+							<CarteBouton
+								key={c.id}
+								titre={c.nom}
+								ligne={`${c.factures} facture${c.factures > 1 ? 's' : ''} payée${c.factures > 1 ? 's' : ''} en retard`}
+								montant={eurosCentimes(c.supplement)}
+								onClick={() => onPreparerCourrier(c.id)}
+							/>
+						))}
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							Un acheteur public doit les pénalités de retard (« intérêts moratoires ») et les frais
+							de recouvrement de plein droit. La demande de paiement se prépare à votre nom, vous la
+							relisez et vous l’envoyez.
+						</p>
 					</section>
 				)}
 

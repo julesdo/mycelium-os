@@ -376,6 +376,9 @@ const vDiagnostic = v.object({
 				reference: v.string(),
 				_id: v.optional(v.id('facturesVente')),
 				debiteur: v.union(v.string(), v.null()),
+				debiteurId: v.optional(v.id('debiteurs')),
+				/** Le client est un acheteur public : sa réclamation se prépare (lot 1 bis). */
+				public: v.boolean(),
 				payeeLe: v.string(),
 				joursDeRetard: v.number(),
 				interets: v.int64(),
@@ -405,6 +408,9 @@ async function composerDiagnostic(
 	const du = await plancherDe(ctx, organizationId, arreteAu);
 	const factures = await facturesPour(ctx, organizationId, arreteAu, reperes);
 	const d = diagnostiquer(factures, du, arreteAu, CONVENTION);
+	const publiques = new Set(
+		factures.filter((f) => f.bareme === 'COMMANDE_PUBLIQUE').map((f) => f.reference)
+	);
 	return {
 		du: d.du,
 		arreteAu: d.arreteAu,
@@ -425,6 +431,8 @@ async function composerDiagnostic(
 				reference: l.reference,
 				_id: reperes.get(l.reference)?._id,
 				debiteur: reperes.get(l.reference)?.debiteur ?? null,
+				debiteurId: reperes.get(l.reference)?.debiteurId,
+				public: publiques.has(l.reference),
 				payeeLe: l.payeeLe,
 				joursDeRetard: l.joursDeRetard,
 				interets: enCentimes(l.interets),

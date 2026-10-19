@@ -3,6 +3,11 @@ import { suivreProcedure } from '../../lib/verticales/recouvrement/apres-procedu
 import { EcranDossiers, type DossierDeLIndex, type DossiersAffiches } from '../../screens/dossiers';
 import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
 import { EcranDiagnostic, type DiagnosticDuJour } from '../../screens/diagnostic';
+import { FeuilleCourriersPublics } from '../../screens/courriers-publics';
+import {
+	composerReclamationInteretsMoratoires,
+	composerSignalementMandatement
+} from '../../lib/verticales/recouvrement/gabarits/commande-publique';
 import {
 	EcranNotifications,
 	type NotificationAffichee,
@@ -378,7 +383,9 @@ const DIAGNOSTIC_DEMO: DiagnosticDuJour = {
 				},
 				{
 					reference: 'FA-2026-0127',
-					debiteur: 'Transports Moreau',
+					debiteur: 'Centre hospitalier de Créteil',
+					debiteurId: 'chu',
+					public: true,
 					payeeLe: '2026-09-02',
 					joursDeRetard: 19,
 					supplement: 7_050n,
@@ -420,6 +427,82 @@ const DIAGNOSTIC_VIDE_DEMO: DiagnosticDuJour = {
 	}
 };
 
+/** Les courriers d'un client public, composés par le vrai gabarit. */
+const COURRIERS_PUBLICS_DEMO = (() => {
+	const creancier = {
+		denomination: 'Ateliers Martin',
+		formeJuridique: 'SAS',
+		siren: '552100554',
+		adresse: '12 rue des Forges, 94000 Créteil',
+		email: 'compta@ateliers-martin.fr',
+		signataireNom: 'Claire Martin',
+		signataireQualite: 'Présidente',
+		iban: 'FR7630006000011234567890189'
+	};
+	const acheteur = {
+		denomination: 'Centre hospitalier de Créteil',
+		siren: '269400220',
+		adresse: '40 avenue de Verdun, 94000 Créteil',
+		categorieJuridique: '7364'
+	};
+	const factures = [
+		{
+			reference: 'FA-2026-0127',
+			dateEmission: '2026-07-01',
+			montantTTC: 1_200_000n,
+			echeance: '2026-08-14',
+			payeeLe: '2026-09-02',
+			jours: 19,
+			taux: '10,40 %',
+			interets: 6_496n,
+			indemnite: 4_000n
+		}
+	];
+	const reclamation = composerReclamationInteretsMoratoires({
+		creancier,
+		acheteur,
+		factures,
+		dateCourrier: '2026-10-19'
+	});
+	const signalement = composerSignalementMandatement({
+		creancier,
+		acheteur,
+		factures,
+		dateCourrier: '2026-10-19'
+	});
+	return {
+		acheteur: acheteur.denomination,
+		reclamation,
+		signalement,
+		laissees: [
+			{
+				reference: 'FA-2026-0098',
+				raison:
+					'échéance inconnue : la date de réception de la demande de paiement est à renseigner'
+			}
+		]
+	};
+})();
+
+function DemoDiagnostic({ etat }: { etat: EtatDemo }) {
+	const [ouvert, setOuvert] = useState(false);
+	return (
+		<>
+			<EcranDiagnostic
+				donnees={lectureDemo(etat, DIAGNOSTIC_DEMO, DIAGNOSTIC_VIDE_DEMO)}
+				onTelecharger={() => undefined}
+				onPreparerCourrier={() => setOuvert(true)}
+			/>
+			<FeuilleCourriersPublics
+				ouverte={ouvert}
+				onFermer={() => setOuvert(false)}
+				lecture={{ etat: 'pret', valeur: COURRIERS_PUBLICS_DEMO }}
+				onTelecharger={() => undefined}
+			/>
+		</>
+	);
+}
+
 export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 	/*
 	  ⚠️ L'ACCUEIL N'EST PLUS ICI, ET IL N'EXISTE PLUS. `/app/` rend la file
@@ -455,11 +538,6 @@ export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 		route: '/app/diagnostic',
 		libelle: 'votre diagnostic',
 		vide: true,
-		Demo: ({ etat }) => (
-			<EcranDiagnostic
-				donnees={lectureDemo(etat, DIAGNOSTIC_DEMO, DIAGNOSTIC_VIDE_DEMO)}
-				onTelecharger={() => undefined}
-			/>
-		)
+		Demo: DemoDiagnostic
 	}
 ];
