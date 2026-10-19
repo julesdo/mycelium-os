@@ -1,0 +1,106 @@
+---
+titre: Bâtiment, chaque situation payée en retard vous doit des frais en plus
+description: Dans le bâtiment, chaque situation ou facture payée en retard par un client professionnel ouvre droit à des frais forfaitaires et à des pénalités, sans clause au contrat.
+date: 2026-10-29
+categorie: La loi
+pilier: Le bâtiment
+illustration: indemnites
+enBref:
+  - Une situation de travaux est une facture, et chaque facture payée en retard par un professionnel ouvre droit à des frais forfaitaires.
+  - Ces frais s'ajoutent aux pénalités de retard, et restent dus même quand le client a fini par payer.
+  - Aucune clause au contrat n'est nécessaire entre professionnels.
+  - Sur un chantier facturé par situations mensuelles, les sommes oubliées montent vite.
+---
+
+Sur un chantier, on facture rarement en une fois. Une situation par mois, un acompte au démarrage,
+un décompte à la fin : un seul client peut recevoir dix factures pour un même ouvrage. Et quand il
+paie chacune avec quelques semaines de retard, il vous doit bien plus que leurs montants.
+
+## Une situation, c'est une facture
+
+Pour la loi, une situation de travaux est une facture comme une autre : elle porte une date
+d'échéance, et elle est payée à l'heure ou en retard. Or entre professionnels, le retard a un prix
+fixé par la loi.
+
+« Tout professionnel en situation de retard de paiement est de plein droit débiteur » d'une
+indemnité forfaitaire pour frais de recouvrement (<Source de="indemniteDuePleinDroit" />), de
+<Indemnite /> (<Source de="indemniteForfaitaire" />). Et l'administration l'applique « à chaque
+facture qui n'a pas été payée dans les délais » (<Source de="indemniteParFacture" />).
+
+## Un chantier d'exemple
+
+Prenons une menuiserie d'exemple qui pose les menuiseries d'un immeuble pour un promoteur. Le
+chantier dure six mois, facturé en six situations mensuelles. Le promoteur les règle toutes, mais
+chacune avec trois à quatre semaines de retard.
+
+Le promoteur ne doit pas une indemnité pour le chantier : il en doit une par situation payée en
+retard.
+
+<CompteurIndemnites factures={6} />
+
+Ces frais restent dus même si toutes les situations ont fini par être payées : le retard a bien eu
+lieu. C'est la somme la plus souvent oubliée du bâtiment, parce qu'elle ne se voit sur aucun relevé
+de banque.
+
+## Des pénalités en plus
+
+Les frais forfaitaires s'ajoutent aux pénalités de retard, ils ne les remplacent pas. Sans taux
+prévu au contrat, les pénalités courent au taux de la BCE majoré de <Majoration />, soit
+<TauxDePenalites /> par an ce semestre (<Source de="tauxInteretLegalDefaut" />), à partir du
+lendemain de la date de règlement figurant sur la facture (<Source de="pointDepartPenalitesRetard" />).
+
+Sur une situation de 18 450 € attendue fin juillet et toujours impayée à la mi-septembre, voici ce
+que la loi y ajoute.
+
+<ExempleDecompte montant={18450} echeance="2026-07-31" arrete="2026-09-17" />
+
+## Sans clause au contrat
+
+Beaucoup d'artisans pensent qu'il faut avoir écrit ces pénalités dans le devis ou les conditions
+générales pour pouvoir les réclamer. Entre professionnels, ce n'est pas le cas : les pénalités sont
+« exigibles sans qu'un rappel soit nécessaire » (<Source de="penalitesExigiblesSansRappel" />), et
+l'indemnité est due de plein droit. Le contrat peut prévoir un autre taux, à condition qu'il ne soit
+pas inférieur au plancher légal, de <PlancherContractuel /> (<Source de="tauxInteretMinimalLegal" />).
+
+## Ce qui n'est pas concerné
+
+Deux cas à part, pour ne pas se tromper de règle.
+
+- **Un client particulier.** Les frais de <Indemnite /> et le taux majoré visent les retards entre
+  professionnels. Pour un chantier chez un particulier, la règle est différente, et le délai pour
+  agir en justice aussi : <DelaiPourAgir regime="CONSOMMATEUR" /> au lieu de <DelaiPourAgir />.
+- **Un client en procédure collective.** Quand une procédure de sauvegarde, de redressement ou de
+  liquidation interdit le paiement à l'échéance, les indemnités ne peuvent pas être invoquées
+  (<Source de="exclusionIndemnitesProcedureCollective" />).
+
+<Encadre titre="À retenir">
+
+- Chaque situation de travaux payée en retard par un professionnel vaut <Indemnite /> de frais.
+- Les pénalités s'y ajoutent, au taux de <TauxDePenalites /> par an ce semestre.
+- Aucune clause n'est nécessaire, et une situation payée en retard reste concernée.
+- Les chantiers chez les particuliers suivent d'autres règles.
+
+</Encadre>
+
+## Réclamer, ou non
+
+Réclamer ces sommes à un donneur d'ordre avec qui vous travaillez depuis des années est une décision
+commerciale, qui vous appartient. Les connaître change pourtant la discussion : quand un promoteur
+demande un geste sur le décompte final, savoir ce que ses retards vous ont coûté donne un point
+d'appui.
+
+## Ce que fait Letikette
+
+Letikette lit vos situations et vos factures, repère celles qui ont été payées en retard, même
+soldées depuis, et calcule pour chacune les frais et les pénalités au centime. Vous voyez par client
+ce qui n'a jamais été réclamé, et vous décidez de ce que vous en faites.
+
+<Capture
+	ecran="metier-batiment-cartes"
+	legende="Les cartes d'une menuiserie d'exemple dans Letikette : une situation impayée, une lettre officielle prête, une facture payée en retard et ses frais."
+/>
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

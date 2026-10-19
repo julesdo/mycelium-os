@@ -15,6 +15,7 @@ import { dureePourRetenir } from '../lib/config/produit';
 import { DUREE_ESSAI_JOURS, GRILLE, historiqueDeDecouverte } from '../lib/config/tarifs';
 import type { QuestionReponse } from './faq';
 import type { CaptureProduit } from './section';
+import type { PilierBlog } from './motifs-blog';
 
 /**
  * LES PAGES PAR MÉTIER (18/10/2026) : transport routier, bâtiment, services aux
@@ -90,6 +91,14 @@ export const NOMS_DES_SECTEURS: Readonly<Record<SecteurPublic, string>> = {
 	batiment: 'Bâtiment',
 	'services-aux-entreprises': 'Services aux entreprises',
 	'fournisseurs-publics': 'Fournisseurs publics'
+};
+
+/** Le pilier du blog de chaque métier : la page métier montre ses articles publiés. */
+export const PILIER_DU_SECTEUR: Readonly<Record<SecteurPublic, PilierBlog>> = {
+	'transport-routier': 'Le transport',
+	batiment: 'Le bâtiment',
+	'services-aux-entreprises': 'Les services',
+	'fournisseurs-publics': 'Le secteur public'
 };
 
 /** À qui s'adresse la page, en cinq mots : le menu « Métiers » de la barre. */

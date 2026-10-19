@@ -1,0 +1,114 @@
+---
+titre: Retards de paiement en 2025, ce que dit le rapport de l'Observatoire
+description: 13,4 jours de retard moyen, 13 milliards d'euros de trésorerie qui manquent aux PME, des hôpitaux à 70 jours. Les chiffres du rapport 2025, métier par métier.
+date: 2026-10-20
+categorie: Trésorerie
+pilier: L’argent oublié
+illustration: loupe
+enBref:
+  - Fin 2025, une entreprise française payait ses fournisseurs avec 13,4 jours de retard en moyenne.
+  - Sans ces retards, les PME et les microentreprises auraient disposé de 13 milliards d'euros de trésorerie en plus en 2024.
+  - Les entreprises de services et de transport paient leurs fournisseurs plus tard que les autres ; les hôpitaux publics paient en 70 jours en métropole.
+  - Chaque jour de retard ouvre droit à des pénalités, et chaque facture payée en retard à des frais de recouvrement.
+---
+
+Le 24 septembre 2026, la Banque de France a publié le
+[rapport 2025 de l'Observatoire des délais de paiement](https://www.banque-france.fr/fr/publications-et-statistiques/publications/rapport-de-lobservatoire-des-delais-de-paiement-2025).
+C'est le document de référence sur la façon dont les entreprises, l'État et les hôpitaux règlent
+leurs factures. Nous l'avons lu pour vous, avec une seule question en tête : qu'est-ce que ça
+change pour une entreprise qui facture d'autres entreprises ?
+
+## 13,4 jours de retard en moyenne
+
+Le chiffre central est celui-ci : fin 2025, le retard moyen de paiement atteint 13,4 jours en
+France. Il recule un peu par rapport à décembre 2024, mais reste au-dessus de son niveau moyen de
+long terme, de 12,2 jours, et au-dessus de la moyenne européenne, de 13,3 jours.
+
+Au printemps 2025, pour la première fois, le retard français a même dépassé celui de l'Europe :
+14,1 jours contre 14,0. La France, longtemps meilleure élève, ne l'est plus.
+
+Un retard moyen de deux semaines cache des écarts énormes. Une partie des entreprises paie à
+l'heure ; d'autres paient avec un ou deux mois de retard. Selon
+[Altares](https://www.altares.com/2026/10/12/delais-de-paiement-en-france-une-annee-2025-tendue/),
+qui mesure les comportements de paiement des entreprises, 47 % des entreprises françaises payaient sans retard au
+dernier trimestre 2025, et 8,6 % avec plus de trente jours de retard.
+
+## 13 milliards d'euros qui manquent aux PME
+
+Le rapport chiffre ce que ces retards coûtent. En 2024, sans paiements au-delà des délais légaux,
+les PME et les microentreprises « auraient disposé de 13 milliards d'euros de trésorerie
+supplémentaire » : 9 milliards pour les PME, 4 milliards pour les microentreprises.
+
+Les plus mauvais payeurs ne sont pas les petits. Moins d'une grande entreprise sur deux respecte
+le délai de <DelaiConvenu cas="apresFacture" /> : les retards descendent la chaîne, du grand
+donneur d'ordre vers la PME qui travaille pour lui.
+
+## Qui paie le plus tard
+
+Les mesures d'Altares détaillent, secteur par secteur, le retard avec lequel les entreprises
+paient leurs propres fournisseurs, au dernier trimestre 2025.
+
+- **Services aux entreprises** : 18,4 jours, l'un des niveaux les plus élevés.
+- **Transport et logistique** : 16 jours.
+- **Commerce** : 12,3 jours.
+- **Industrie** : 11,2 jours.
+- **Construction** : 10,8 jours.
+
+Ce classement dit qui paie tard, pas qui est payé tard. Il se lit donc du côté de vos clients :
+si vous travaillez pour des entreprises de services ou de transport, elles font partie de celles
+qui règlent le plus tard. Et un artisan payé par un promoteur ou un syndic subit les délais de ses
+donneurs d'ordre, pas ceux de son propre secteur.
+
+## Et les acheteurs publics
+
+Le rapport suit aussi l'État, les collectivités et les hôpitaux, qui ont leurs propres délais.
+
+- **L'État** paie en 15,9 jours en moyenne en 2025, contre 14,1 jours en 2024.
+- **Les collectivités** de métropole paient en 18,9 jours, mais 15 % d'entre elles dépassent les
+  <DelaiPublic acheteur="POUVOIR_ADJUDICATEUR" /> permis.
+- **Les hôpitaux publics** paient en 70,2 jours en métropole et 71,3 jours sur tout le territoire,
+  pour un délai permis de <DelaiPublic acheteur="SANTE" />. Le rapport parle d'une « nouvelle
+  dégradation préoccupante ».
+
+Si vous fournissez des hôpitaux, vous l'avez sans doute constaté. Ce que beaucoup de fournisseurs
+ignorent, c'est que ce retard leur ouvre droit à des pénalités, calculées à un taux fixé par le
+code de la commande publique. Nous y revenons dans un article dédié.
+
+## Ce que deux semaines de retard valent
+
+Un retard moyen de 13 jours paraît anodin. Il ne l'est pas, parce que la loi y attache deux
+sommes, dues de plein droit entre professionnels.
+
+- Des **pénalités de retard**, au taux de la BCE majoré de <Majoration />, soit
+  <TauxDePenalites /> par an ce semestre (<Source de="tauxInteretLegalDefaut" />).
+- Une **indemnité forfaitaire** de <Indemnite /> par facture payée en retard
+  (<Source de="indemniteForfaitaire" />).
+
+Prenons une facture d'exemple de 4 800 €, attendue le 30 juin et payée le 14 juillet, soit deux
+semaines plus tard.
+
+<ExempleDecompte montant={4800} echeance="2026-06-30" arrete="2026-07-14" />
+
+Sur un retard court, les pénalités font quelques euros. Les frais de recouvrement, eux, valent
+<Indemnite /> dès le premier jour. Multipliés par le nombre de factures payées en retard dans
+l'année, ils deviennent une somme qui compte.
+
+<Encadre titre="À retenir">
+
+- 13,4 jours de retard moyen fin 2025, plus qu'en Europe.
+- 13 milliards d'euros de trésorerie manquent aux PME et aux microentreprises.
+- Services aux entreprises et transport sont les plus touchés ; les hôpitaux paient en 70 jours.
+- Chaque facture payée en retard ouvre droit à des pénalités et à <Indemnite /> de frais.
+
+</Encadre>
+
+## Ce que fait Letikette
+
+Letikette lit vos factures et vos règlements, repère celles qui ont été payées en retard, même
+soldées depuis, et calcule pour chacune les pénalités et les frais de recouvrement, au centime. Vous
+voyez ce que vos clients vous doivent, et vous décidez de ce que vous réclamez.
+
+---
+
+Cet article présente des données publiques et des règles générales. Il ne constitue pas un conseil
+juridique : la décision d'agir, et la manière de le faire, restent les vôtres.

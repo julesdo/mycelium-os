@@ -1,0 +1,114 @@
+---
+titre: Hôpital qui paie en retard, des pénalités dues sans rien demander
+description: Les hôpitaux publics paient en 70 jours en moyenne, bien au-delà du délai permis. Ce retard fait courir des pénalités et des frais, de plein droit.
+date: 2026-10-27
+categorie: La loi
+pilier: Le secteur public
+illustration: decompte
+enBref:
+  - Un hôpital public a un délai fixé par la loi pour payer ; en métropole, il met 70 jours en moyenne.
+  - Passé ce délai, des pénalités courent de plein droit, sans relance ni clause au contrat.
+  - Leur taux suit celui de la BCE, et il est fixé une seule fois, au premier jour du retard.
+  - S'y ajoutent des frais de recouvrement forfaitaires, et les deux se paient après la facture, à part.
+---
+
+Si vous fournissez des hôpitaux publics, vous connaissez la situation : la facture part, le
+matériel est livré, et le paiement arrive deux mois et demi plus tard. Vous attendez, parce que
+l'hôpital finit toujours par payer, et parce qu'on ne relance pas un hôpital comme un client privé.
+
+Ce que la plupart des fournisseurs ignorent, c'est que ce retard leur ouvre droit à des sommes que
+personne ne leur versera s'ils ne les demandent pas.
+
+## 70 jours, pour un délai de 50
+
+Le délai de paiement d'un établissement public de santé est fixé à
+<DelaiPublic acheteur="SANTE" />, contre <DelaiPublic acheteur="POUVOIR_ADJUDICATEUR" /> pour
+l'État et les collectivités (<Source de="delaisPaiementPublics" />). Un marché ne peut pas prévoir
+plus long.
+
+Dans les faits, le
+[rapport 2025 de l'Observatoire des délais de paiement](https://www.banque-france.fr/fr/publications-et-statistiques/publications/rapport-de-lobservatoire-des-delais-de-paiement-2025)
+mesure un délai moyen de 70,2 jours pour les hôpitaux publics de métropole en 2025, contre 62,3
+jours un an plus tôt, et 71,3 jours sur tout le territoire. Il parle d'une « nouvelle dégradation
+préoccupante ».
+
+## Des pénalités qui courent sans formalité
+
+Le code de la commande publique est clair : dès le lendemain du délai de paiement, le retard « fait
+courir, de plein droit et sans autre formalité, des intérêts moratoires »
+(<Source de="interetsMoratoiresDePleinDroit" />). « Intérêts moratoires » est le nom que la loi
+donne aux pénalités de retard d'un acheteur public.
+
+« De plein droit et sans autre formalité » signifie que vous n'avez rien à faire pour qu'elles
+soient dues : ni relance, ni clause dans le marché, ni lettre recommandée. Et une clause par
+laquelle vous y renonceriez serait sans effet : « toute renonciation au paiement des intérêts
+moratoires est réputée non écrite ».
+
+## Un taux fixé une fois pour tout le retard
+
+Le taux est celui de la Banque centrale européenne majoré de <MajorationPublique />, soit
+<TauxPublic /> par an pour un retard qui commence ce semestre
+(<Source de="tauxInteretsMoratoiresPublics" />).
+
+Une particularité le distingue du taux entre entreprises : il est fixé une seule fois, au premier
+jour du retard, et vaut pour toute sa durée. Un retard qui commence en juin garde le taux du premier
+semestre même s'il dure jusqu'en décembre.
+
+Les pénalités se calculent sur le montant toutes taxes comprises de la facture, moins la retenue
+éventuellement prévue au marché (<Source de="baseInteretsMoratoires" />), du lendemain de
+l'échéance jusqu'au jour de la mise en paiement (<Source de="pointDepartInteretsMoratoires" />).
+
+## Et des frais de recouvrement
+
+Le retard donne aussi droit à une indemnité forfaitaire pour frais de recouvrement, de
+<Valeur de="indemniteForfaitairePublique" /> (<Source de="indemniteForfaitairePublique" />), elle
+aussi « de plein droit et sans autre formalité ».
+
+## Un exemple
+
+Prenons un fournisseur d'exemple qui livre du matériel médical à un hôpital. Sa facture de
+12 840 € arrive à échéance le 9 juillet, à la fin des <DelaiPublic acheteur="SANTE" />. L'hôpital
+la met en paiement le 17 septembre, soit avec le retard moyen constaté par l'Observatoire.
+
+<ExempleDecompte montant={12840} echeance="2026-07-09" arrete="2026-09-17" publique />
+
+Sur une seule facture, la somme reste modeste. Sur un an de livraisons, avec une facture par
+semaine payée systématiquement en retard, elle ne l'est plus.
+
+## Elles se paient après la facture
+
+Les pénalités et les frais ne sont pas réglés avec la facture : ils doivent être payés dans les
+<Valeur de="paiementAccessoiresPublics" /> qui suivent sa mise en paiement
+(<Source de="paiementAccessoiresPublics" />).
+
+En pratique, beaucoup d'hôpitaux ne les versent jamais d'eux-mêmes. Une facture payée en retard,
+pour vous, n'est donc pas une affaire close : les sommes qui s'y attachent restent dues, et se
+demandent. Pas indéfiniment : d'après la lecture de la loi, elles pourraient ne plus se réclamer
+au bout de <Valeur de="delaiPrescriptionQuadriennale" />, comptés selon des règles propres aux
+acheteurs publics que nous détaillons dans un autre article.
+
+<Encadre titre="À retenir">
+
+- <DelaiPublic acheteur="SANTE" /> pour un hôpital public, <DelaiPublic acheteur="POUVOIR_ADJUDICATEUR" /> pour une collectivité.
+- Passé ce délai, des pénalités et <Valeur de="indemniteForfaitairePublique" /> de frais sont dus, de plein droit.
+- Un seul taux pour tout le retard : celui de la BCE majoré de <MajorationPublique />, au premier jour.
+- Ils se paient dans les <Valeur de="paiementAccessoiresPublics" /> qui suivent la facture, et beaucoup ne sont jamais versés.
+
+</Encadre>
+
+## Ce que fait Letikette
+
+Letikette reconnaît un client public d'après son numéro SIREN et applique le barème de la commande
+publique à chacune de ses factures, payées ou non. Il calcule les pénalités et les frais facture par
+facture, et prépare la demande de paiement à votre nom. Vous la relisez, et vous décidez de
+l'envoyer.
+
+<Capture
+	ecran="metier-fournisseurs-publics"
+	legende="L'écran Aujourd'hui d'un fournisseur d'hôpitaux d'exemple dans Letikette : ce que ses clients publics lui doivent, pénalités et frais compris."
+/>
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

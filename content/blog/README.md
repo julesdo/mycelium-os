@@ -32,7 +32,7 @@ Du texte, des **mots en gras**, des [liens](/blog), des listes…
 | `description`  | oui         | 50 à 170 caractères : le résumé affiché par Google.                                                                            |
 | `date`         | oui         | Date de publication, au format `2026-10-06`. Une date future attend son jour, à Paris : on écrit d’avance, un par semaine.     |
 | `categorie`    | oui         | `La loi`, `Procédures`, `Trésorerie`, `Méthode` ou `Letikette`.                                                                |
-| `pilier`       | non         | `L’argent oublié`, `Le secteur public`, `Le transport` ou `Les règles qui changent` : de quoi parle l’article.                 |
+| `pilier`       | non         | `L’argent oublié`, `Le secteur public`, `Le transport`, `Le bâtiment`, `Les services` ou `Les règles qui changent`. Les quatre piliers de métier alimentent « À lire » sur la page du métier. |
 | `misAJour`     | non         | Date de la dernière mise à jour, même format.                                                                                  |
 | `auteur`       | non         | « L’équipe Letikette » par défaut.                                                                                             |
 | `illustration` | non         | Le motif de la couverture : `facture` (par défaut), `decompte`, `indemnites`, `calendrier`, `relance` ou `paiement`.           |
@@ -60,6 +60,11 @@ dans les paramètres du logiciel et la met à jour seule.
 | `<DelaiPourAgir regime="CONSOMMATEUR" />`           | 2 ans                              |
 | `<PointDeDepart regime="TRANSPORT_MARCHANDISES" />` | le point de départ du délai        |
 | `<ArticleDuCode de="indemnite" />`                  | article D441-5 du code de commerce |
+| `<Majoration />`, `<MajorationPublique />`          | dix points, huit points            |
+| `<TauxPublic />`                                    | le taux public du semestre         |
+| `<DelaiPublic acheteur="SANTE" />`                  | le délai d’un hôpital public       |
+| `<DelaiConvenu cas="finDeMois" />`                  | le plafond « fin de mois »         |
+| `<Valeur de="delaiPaiementTransportRoutier" />`     | le plafond du transport routier    |
 
 `de` accepte `taux`, `indemnite`, `prescription-general`, `prescription-transport` et
 `prescription-consommateur`.
@@ -85,12 +90,12 @@ des paramètres et du moteur du logiciel : aucun chiffre n'y est dessiné à la 
 
 | On écrit                                                                        | Ce qui s'affiche                                                                            |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `<ExempleDecompte montant={12400} echeance="2026-03-31" arrete="2026-09-30" />` | une facture décomptée par le moteur, période par période                                    |
+| `<ExempleDecompte montant={12400} echeance="2026-03-31" arrete="2026-09-30" />` | une facture décomptée par le moteur, période par période ; `publique` pour un acheteur public |
 | `<DelaisParSecteur />`                                                          | les délais pour agir, en barres                                                             |
 | `<CompteurIndemnites factures={6} />`                                           | une indemnité par facture, et le total                                                      |
 | `<Etapes><Etape titre="…" quand="…">…</Etape></Etapes>`                         | des étapes numérotées                                                                       |
 | `<Comparaison titreOui="…" oui={[…]} titreNon="…" non={[…]} />`                 | deux colonnes : ce qui compte, ce qui ne compte pas                                         |
-| `<Capture ecran="decompte" legende="…" />`                                      | une capture du logiciel (`aujourdhui`, `file`, `dossier`, `decompte`, `paiement`, `depots`) |
+| `<Capture ecran="decompte" legende="…" />`                                      | une capture du logiciel, dont celles d’un métier (`metier-batiment`, `metier-batiment-cartes`…) |
 | `<Source de="miseEnDemeureNonInterruptive" />`                                  | la référence relevée d'une règle (article, arrêt)                                           |
 | `<PlancherContractuel />`, `<TauxLegal />`                                      | le plancher d'un taux au contrat, le taux légal du semestre                                 |
 
@@ -126,6 +131,14 @@ débiteur » ; « la date limite pour agir en justice », puis « (la prescripti
 « il est crucial de », « n'hésitez pas à », « en conclusion », « véritable », « incontournable »,
 « optimiser », les listes de trois adjectifs, les questions rhétoriques en série, les tirets
 cadratins. Pas de point d'exclamation. Pas d'emoji.
+
+**Aucune valeur de la loi dans l’en-tête.** Le titre, la description et `enBref` ne lisent pas le
+registre : on y écrit « un délai bien plus court », jamais « un an » ni « 40 € ». L’adresse de
+l’article non plus.
+
+**Un chiffre de veille porte son lien.** Retard moyen, défaillances, délais publics : la source
+(Banque de France, Altares) en lien, la période dite, et ce que mesure le chiffre (qui paie tard,
+pas qui est payé tard).
 
 **Avant de publier.** Relire à voix haute ; tout ce qui ne se dirait pas à un client au comptoir se
 réécrit. Puis passer `brouillon: true` à `false`.

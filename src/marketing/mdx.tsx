@@ -6,6 +6,10 @@ import {
 	majorationLisible
 } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
+import {
+	majorationPubliqueLisible,
+	tauxInteretsMoratoires
+} from '../lib/verticales/recouvrement/pays/france/commande-publique';
 import { eurosCentimesCourts, tauxLisible } from '../ui/format';
 import { cn } from '../ui';
 import { articleDe } from './articles';
@@ -73,6 +77,43 @@ export function Indemnite() {
 		return <>des frais de recouvrement forfaitaires</>;
 	}
 	return <>{eurosCentimesCourts(indemnite.valeur)}</>;
+}
+
+/** Le taux des pénalités d'un acheteur public, ce semestre (« intérêts moratoires »). */
+function tauxPublicDuJour(): string {
+	try {
+		return tauxLisible(tauxInteretsMoratoires(new Date().toISOString().slice(0, 10)));
+	} catch {
+		// Un semestre absent de la série : la règle plutôt qu'un nombre extrapolé.
+		return `le taux de la BCE majoré de ${majorationPubliqueLisible()}`;
+	}
+}
+
+export function TauxPublic() {
+	return <>{tauxPublicDuJour()}</>;
+}
+
+export function MajorationPublique() {
+	return <>{majorationPubliqueLisible()}</>;
+}
+
+/** Le délai de paiement d'un acheteur public : trente jours, cinquante pour un hôpital… */
+export function DelaiPublic({
+	acheteur
+}: {
+	acheteur: keyof typeof PARAMETRES.delaisPaiementPublics.valeur;
+}) {
+	return <>{`${PARAMETRES.delaisPaiementPublics.valeur[acheteur]} jours`}</>;
+}
+
+/** Les plafonds d'un délai de paiement convenu entre professionnels (L441-10 I). */
+export function DelaiConvenu({
+	cas
+}: {
+	cas: keyof typeof PARAMETRES.delaiDeReglementConvenuMaximal.valeur;
+}) {
+	const jours = PARAMETRES.delaiDeReglementConvenuMaximal.valeur[cas];
+	return <>{cas === 'finDeMois' ? `${jours} jours fin de mois` : `${jours} jours`}</>;
 }
 
 type Regime = 'GENERAL' | 'TRANSPORT_MARCHANDISES' | 'CONSOMMATEUR';
@@ -248,6 +289,10 @@ export const COMPOSANTS_MDX = {
 	),
 	TauxDePenalites,
 	Majoration,
+	TauxPublic,
+	MajorationPublique,
+	DelaiPublic,
+	DelaiConvenu,
 	Indemnite,
 	DelaiPourAgir,
 	PointDeDepart,

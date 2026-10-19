@@ -2,6 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon, CheckIcon, XIcon } from 'lucide-react';
 import { BoutonAffiche, LienAffiche, cn } from '../ui';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
+import { articlesPublies } from './blog';
+import { CarteArticle } from './blog-pages';
 import { Calcul } from './calcul';
 import { Faq } from './faq';
 import { CarteMetier, SceneDuMetier } from './metiers';
@@ -16,6 +18,7 @@ import {
 } from './section';
 import {
 	pageDuSecteur,
+	PILIER_DU_SECTEUR,
 	SECTEURS_PUBLICS,
 	type EcranDuMetier,
 	type PageDeSecteur
@@ -251,6 +254,30 @@ function Offre({ page }: { page: PageDeSecteur }) {
 	);
 }
 
+/**
+ * À LIRE : les articles publiés du métier (son pilier), les plus récents d'abord. Le blog
+ * s'écrit d'avance et publie un article à son jour : la section grandit seule, et se tait
+ * tant qu'aucun n'est paru.
+ */
+function ALire({ page }: { page: PageDeSecteur }) {
+	const articles = articlesPublies()
+		.filter((article) => article.pilier === PILIER_DU_SECTEUR[page.secteur])
+		.slice(0, 3);
+	if (articles.length === 0) return null;
+	return (
+		<SectionMarketing ton="creme" className="gap-cladd-lg">
+			<TitreSection>À lire.</TitreSection>
+			<ul className="grid gap-cladd-lg md:grid-cols-3 md:gap-x-cladd-sm">
+				{articles.map((article) => (
+					<li key={article.adresse} className="md:row-span-4 md:grid md:grid-rows-subgrid">
+						<CarteArticle article={article} />
+					</li>
+				))}
+			</ul>
+		</SectionMarketing>
+	);
+}
+
 /** Les autres métiers : le maillage entre pages, en cartes qui mènent. */
 function AutresMetiers({ page, jour }: { page: PageDeSecteur; jour: string }) {
 	const autres = SECTEURS_PUBLICS.filter((secteur) => secteur !== page.secteur);
@@ -281,6 +308,7 @@ export function PageSecteur({ page, jour }: { page: PageDeSecteur; jour: string 
 			<Ecrans page={page} />
 			<Calcul secteurInitial={page.regime} />
 			<Offre page={page} />
+			<ALire page={page} />
 			<Faq id="questions" titre={`${page.nom}\u00a0: vos questions.`} questions={page.questions} />
 			<AutresMetiers page={page} jour={jour} />
 		</>

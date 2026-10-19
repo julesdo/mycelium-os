@@ -1,0 +1,92 @@
+---
+titre: Transporteur, ce que les retards de vos clients vous doivent sur un an
+description: Un transporteur facture souvent chaque semaine ou chaque tournée. Payées en retard, ces factures ouvrent droit à des frais et des pénalités qui, sur un an, pèsent lourd.
+date: 2026-12-03
+categorie: Trésorerie
+pilier: Le transport
+illustration: indemnites
+enBref:
+  - Un transporteur qui facture à la semaine émet des dizaines de factures par an au même client.
+  - Chacune payée en retard ouvre droit à des frais forfaitaires, quel que soit son montant.
+  - Les pénalités s'y ajoutent, et le plafond de paiement du transport fait commencer le retard tôt.
+  - Dans un secteur où les défaillances restent élevées, ces sommes comptent pour la trésorerie.
+---
+
+Les marges du transport routier sont connues pour être minces. Le gazole, les péages, les salaires,
+l'entretien : tout part avant que le client ne paie. Et quand il paie avec deux ou trois semaines de
+retard, la trésorerie absorbe la différence. Ce que peu de transporteurs calculent, c'est ce que ces
+retards leur doivent, au sens propre.
+
+## Une facture par semaine, cinquante-deux occasions
+
+Beaucoup de transporteurs facturent un chargeur régulier chaque semaine, parfois à chaque tournée.
+Sur un an, cela fait des dizaines de factures au même client. Or entre professionnels, chaque facture
+payée en retard ouvre droit à une indemnité forfaitaire de <Indemnite />
+(<Source de="indemniteForfaitaire" />), appliquée « à chaque facture qui n'a pas été payée dans les
+délais » (<Source de="indemniteParFacture" />).
+
+Prenons un transporteur d'exemple qui facture un négociant chaque semaine, et que ce négociant paie
+systématiquement en retard. Sur une année, il lui doit cinquante-deux indemnités.
+
+<CompteurIndemnites factures={52} />
+
+Cette somme ne dépend ni du montant des factures ni de la longueur du retard : un jour de retard
+suffit pour qu'elle soit due.
+
+## Le plafond du transport fait commencer le retard tôt
+
+Le transport routier de marchandises a son propre plafond de paiement : <Valeur de="delaiPaiementTransportRoutier" />
+après la date d'émission de la facture, et aucun contrat ne peut l'allonger
+(<Source de="delaiPaiementTransportRoutier" />). Un client qui applique un délai plus long, parce que
+c'est son habitude ou celle de ses autres fournisseurs, est donc en retard plus tôt qu'il ne le pense.
+Nous le détaillons dans
+[notre article sur ce plafond](/blog/transport-routier-delai-de-paiement-maximal).
+
+## Et des pénalités sur chaque facture
+
+Aux frais forfaitaires s'ajoutent les pénalités, au taux de la BCE majoré de <Majoration />, soit
+<TauxDePenalites /> par an ce semestre (<Source de="tauxInteretLegalDefaut" />). Sur une facture de
+tournée de 1 850 € payée trois semaines après son échéance, voici ce que la loi ajoute.
+
+<ExempleDecompte montant={1850} echeance="2026-10-01" arrete="2026-10-22" />
+
+Multiplié par le nombre de factures de l'année, le total dépasse souvent ce que le gérant imagine.
+
+## Un secteur où la trésorerie compte double
+
+Le contexte rend ces sommes plus importantes encore. Selon la
+[Banque de France](https://www.banque-france.fr/en/statistics/compagnies/business-failures-france-2026-07),
+les transports et l'entreposage comptaient 3 235 défaillances sur les douze mois précédant juillet
+2026, 70 % de plus que la moyenne des années 2010 à 2019, quand la construction restait proche de la
+sienne. Et selon
+[Altares](https://www.altares.com/2026/10/12/delais-de-paiement-en-france-une-annee-2025-tendue/),
+les entreprises de transport et de logistique payaient elles-mêmes leurs fournisseurs avec 16 jours
+de retard en moyenne à la fin de 2025.
+
+Dans ce contexte, les sommes nées des retards ne sont pas un détail. Elles se réclament, ou non, mais
+elles se connaissent.
+
+<Encadre titre="À retenir">
+
+- Une facture par semaine, ce sont jusqu'à cinquante-deux fois <Indemnite /> de frais par an et par client.
+- Le plafond du transport, <Valeur de="delaiPaiementTransportRoutier" /> après la facture, fait commencer le retard tôt.
+- Les pénalités s'ajoutent, facture par facture.
+- Une facture payée en retard reste concernée, même soldée depuis.
+
+</Encadre>
+
+## Ce que fait Letikette
+
+Letikette lit vos factures et vos règlements, repère chaque facture payée en retard, même soldée
+depuis, et calcule les frais et les pénalités client par client. Vous voyez ce que chaque chargeur
+vous doit au-delà de ses factures, et vous choisissez ce que vous réclamez.
+
+<Capture
+	ecran="metier-transport-routier"
+	legende="L'écran Aujourd'hui d'un transporteur d'exemple dans Letikette : ce que ses clients lui doivent, et ce qui n'a jamais été réclamé."
+/>
+
+---
+
+Cet article présente des règles générales et des données publiques. Il ne constitue pas un conseil
+juridique : la décision d'agir, et la manière de le faire, restent les vôtres.

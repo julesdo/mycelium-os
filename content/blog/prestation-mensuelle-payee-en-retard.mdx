@@ -1,0 +1,114 @@
+---
+titre: Prestation mensuelle payée en retard, ce que vous laissez filer en un an
+description: Nettoyage, sécurité, maintenance, conseil. Un client qui règle chaque mois avec quelques semaines de retard vous doit, sur un an, bien plus que vous ne l'imaginez.
+date: 2026-11-03
+categorie: Trésorerie
+pilier: Les services
+illustration: calendrier
+enBref:
+  - Un contrat facturé chaque mois produit douze factures par an, et chacune payée en retard ouvre droit à des frais forfaitaires.
+  - Les pénalités de retard s'y ajoutent, même sur des retards de quelques semaines.
+  - Les entreprises de services font partie de celles qui paient leurs fournisseurs le plus tard.
+  - Ces sommes restent dues quand la facture a fini par être payée, et presque personne ne les réclame.
+---
+
+Un contrat d'entretien, une mission de sécurité, un forfait de maintenance, un accompagnement
+mensuel : beaucoup d'entreprises de services facturent le même client tous les mois. C'est confortable
+pour la trésorerie, tant que le client paie à l'heure. Quand il prend l'habitude de payer avec deux
+ou trois semaines de retard, la perte ne se voit pas, parce que la facture finit toujours par être
+réglée.
+
+Elle existe pourtant, et la loi la chiffre.
+
+## Douze factures, douze retards
+
+Entre professionnels, chaque facture payée après son échéance ouvre droit à une indemnité
+forfaitaire pour frais de recouvrement de <Indemnite /> (<Source de="indemniteForfaitaire" />), et
+l'administration l'applique « à chaque facture qui n'a pas été payée dans les délais »
+(<Source de="indemniteParFacture" />).
+
+Un client facturé tous les mois, qui paie chaque facture en retard, vous doit donc douze indemnités
+sur l'année.
+
+<CompteurIndemnites factures={12} />
+
+Cette somme ne dépend ni du montant des factures ni de la durée du retard : un jour suffit. Sur un
+petit contrat, elle pèse souvent plus lourd que les pénalités elles-mêmes.
+
+## Et des pénalités sur chaque facture
+
+Les pénalités de retard s'ajoutent à ces frais. Sans taux prévu au contrat, elles courent au taux de
+la BCE majoré de <Majoration />, soit <TauxDePenalites /> par an ce semestre
+(<Source de="tauxInteretLegalDefaut" />), dès le lendemain de la date de règlement figurant sur la
+facture.
+
+Prenons une entreprise de propreté d'exemple, qui facture 2 400 € par mois à un hôtel. L'hôtel règle
+chaque facture avec trois semaines de retard. Voici ce que la loi ajoute à une seule de ses
+factures.
+
+<ExempleDecompte montant={2400} echeance="2026-08-31" arrete="2026-09-21" />
+
+Multipliez par douze : sur l'année, ce client vous doit plusieurs centaines d'euros que vous ne lui
+avez jamais demandés, pour une seule raison, l'habitude.
+
+## Un secteur qui paie tard
+
+Les services aux entreprises sont particulièrement exposés, à double titre. Ils facturent souvent
+d'autres entreprises de services, et ce secteur est l'un de ceux qui paient le plus tard : selon
+[Altares](https://www.altares.com/2026/10/12/delais-de-paiement-en-france-une-annee-2025-tendue/),
+les entreprises de services aux entreprises réglaient leurs fournisseurs avec 18,4 jours de retard
+en moyenne à la fin de 2025, contre 13,4 jours pour l'ensemble des entreprises.
+
+Le [rapport 2025 de l'Observatoire des délais de paiement](https://www.banque-france.fr/fr/publications-et-statistiques/publications/rapport-de-lobservatoire-des-delais-de-paiement-2025)
+estime que ces retards ont privé les PME et les microentreprises de 13 milliards d'euros de
+trésorerie en 2024.
+
+## Une facture payée reste concernée
+
+C'est le point qui surprend le plus. Les frais et les pénalités sont dus pour le retard, pas pour
+l'impayé : quand la facture finit par être réglée, ils restent dus. La loi vise d'ailleurs
+expressément les sommes « réglées après » la date de paiement prévue
+(<Source de="sommesRegleesApresLEcheance" />).
+
+Autrement dit, votre client le plus régulier, celui qui paie toujours mais toujours en retard, est
+peut-être celui qui vous doit le plus.
+
+<Encadre titre="Idée reçue" variante="attention">
+
+« Il a payé, le dossier est clos. » La facture est réglée, mais les frais et les pénalités nés du
+retard restent dus. Les réclamer, ou non, reste votre choix.
+
+</Encadre>
+
+## Réclamer sans abîmer la relation
+
+Personne ne souhaite envoyer un décompte de pénalités à un client qu'on veut garder. Mais un rappel
+cordial, envoyé quelques jours après l'échéance, suffit souvent à faire revenir les paiements à
+l'heure. Et connaître le montant de ce que les retards vous coûtent permet de décider, client par
+client, si l'on en parle, et quand.
+
+<Encadre titre="À retenir">
+
+- Douze factures payées en retard, ce sont douze fois <Indemnite /> de frais.
+- Les pénalités s'y ajoutent, au taux de <TauxDePenalites /> par an ce semestre.
+- Une facture payée en retard reste concernée.
+- Les entreprises de services font partie de celles qui paient le plus tard.
+
+</Encadre>
+
+## Ce que fait Letikette
+
+Letikette lit vos factures et vos règlements, repère chaque facture payée en retard, même soldée
+depuis, et calcule les frais et les pénalités client par client. Il envoie aussi vos rappels, à
+votre nom, au rythme que vous avez choisi : chacun s'affiche avant de partir et se retient d'un
+geste.
+
+<Capture
+	ecran="metier-services-aux-entreprises"
+	legende="L'écran Aujourd'hui d'une entreprise de propreté d'exemple dans Letikette : ce que ses clients lui doivent, et ce qui n'a jamais été réclamé."
+/>
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.

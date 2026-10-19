@@ -7,6 +7,7 @@ import {
 	tauxInteretLegal
 } from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
+import { periodesDeTauxPublics } from '../lib/verticales/recouvrement/pays/france/commande-publique';
 import { decompterFacture } from '../lib/verticales/recouvrement/decompte';
 import { finDeDelai } from '../lib/verticales/recouvrement/delais';
 import { ajouterMois } from '../lib/verticales/recouvrement/calendrier';
@@ -112,7 +113,7 @@ const LIBELLE_SEMESTRE = (date: string): string => {
 	return Number(mois) <= 6 ? `1er semestre ${annee}` : `2e semestre ${annee}`;
 };
 
-function calculerExemple(montantEuros: number, echeance: string, arrete: string) {
+function calculerExemple(montantEuros: number, echeance: string, arrete: string, publique = false) {
 	try {
 		const principal = depuisCentimes(BigInt(Math.round(montantEuros * 100)));
 		const ligne = decompterFacture(
@@ -121,7 +122,11 @@ function calculerExemple(montantEuros: number, echeance: string, arrete: string)
 				montantExigible: principal,
 				dateExigibilite: echeance,
 				reglements: [],
-				taux: periodesDeTauxParDefaut(echeance, arrete)
+				// Un acheteur public : le barème de la commande publique, un seul taux (R2192-31).
+				taux: publique
+					? periodesDeTauxPublics(echeance)
+					: periodesDeTauxParDefaut(echeance, arrete),
+				...(publique ? { bareme: 'COMMANDE_PUBLIQUE' as const } : {})
 			},
 			arrete,
 			'ACT_365',
@@ -141,13 +146,16 @@ function calculerExemple(montantEuros: number, echeance: string, arrete: string)
 export function ExempleDecompte({
 	montant = 12400,
 	echeance = '2026-03-31',
-	arrete = '2026-09-30'
+	arrete = '2026-09-30',
+	publique = false
 }: {
 	montant?: number;
 	echeance?: string;
 	arrete?: string;
+	/** Un hôpital, une commune : le barème de la commande publique (19/10/2026). */
+	publique?: boolean;
 }) {
-	const exemple = calculerExemple(montant, echeance, arrete);
+	const exemple = calculerExemple(montant, echeance, arrete, publique);
 	if (exemple === null) return null;
 	const { principal, ligne } = exemple;
 	const total = Number(ligne.total);

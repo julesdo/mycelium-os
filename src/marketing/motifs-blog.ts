@@ -31,6 +31,8 @@ export const PILIERS = [
 	'L’argent oublié',
 	'Le secteur public',
 	'Le transport',
+	'Le bâtiment',
+	'Les services',
 	'Les règles qui changent'
 ] as const;
 export type PilierBlog = (typeof PILIERS)[number];

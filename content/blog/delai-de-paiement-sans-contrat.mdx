@@ -1,0 +1,88 @@
+---
+titre: Aucun délai de paiement écrit, combien de temps votre client a-t-il
+description: Sans délai prévu dans vos conditions, la loi en fixe un, compté depuis la prestation. Et même convenu, un délai a des plafonds. Les règles entre professionnels.
+date: 2026-11-17
+categorie: La loi
+pilier: Les services
+illustration: facture
+enBref:
+  - Sans délai convenu, la loi fixe un délai de paiement par défaut, compté depuis la livraison ou la prestation.
+  - Un délai convenu ne peut pas dépasser un plafond, compté depuis la facture, avec une variante en fin de mois.
+  - Les factures périodiques ont leur propre plafond.
+  - Passé l'échéance, pénalités et frais de recouvrement courent sans formalité.
+---
+
+Beaucoup d'entreprises de services envoient leurs factures sans délai de paiement, ou avec un vague
+« à réception ». Le client paie quand il peut, et personne ne sait vraiment à partir de quand il est
+en retard. La loi, elle, le sait : entre professionnels, le délai de paiement est encadré, qu'il soit
+écrit ou non.
+
+## Sans délai convenu, le délai de la loi
+
+Quand ni vos conditions de vente ni votre accord avec le client ne fixent de délai, la loi en
+prévoit un : le paiement « ne peut dépasser » <Valeur de="delaiDeReglementSuppletif" /> « après la
+date de réception des marchandises ou d'exécution de la prestation demandée »
+(<Source de="delaiDeReglementSuppletif" />).
+
+Deux choses à noter.
+
+- Le délai part de la **prestation**, pas de la facture. Une facture envoyée trois semaines après la
+  fin de la mission n'ajoute pas trois semaines au délai du client.
+- C'est un délai **maximal** : rien ne vous empêche de demander un paiement plus rapide dans vos
+  conditions.
+
+## Un délai convenu a des plafonds
+
+Vous pouvez convenir d'un délai plus long avec votre client, mais pas sans limite. Le délai convenu
+ne peut pas dépasser <DelaiConvenu cas="apresFacture" /> après la date d'émission de la facture. Par
+dérogation, il peut aller jusqu'à <DelaiConvenu cas="finDeMois" /> après la facture, à condition
+d'être expressément prévu au contrat et de ne pas constituer « un abus manifeste à l'égard du
+créancier » (<Source de="delaiDeReglementConvenuMaximal" />).
+
+Pour une **facture périodique**, celle qui regroupe plusieurs livraisons ou prestations d'une même
+période, le plafond est de <DelaiConvenu cas="facturePeriodique" /> après la facture.
+
+Ces plafonds valent pour la plupart des métiers. Certains secteurs ont des règles propres, plus
+courtes : le transport routier de marchandises, par exemple, a son
+[plafond particulier](/blog/transport-routier-delai-de-paiement-maximal).
+
+## Écrire une date d'échéance
+
+Le plus simple reste d'écrire une date d'échéance précise sur chaque facture. C'est elle qui sert de
+point de départ aux pénalités : elles courent à partir du « jour suivant la date de règlement
+figurant sur la facture » (<Source de="formulationPointDepartPenalites" />).
+
+## Ce qui court après l'échéance
+
+Une fois l'échéance passée, la loi attache deux sommes au retard, sans relance ni clause.
+
+- Des **pénalités**, au taux de la BCE majoré de <Majoration />, soit <TauxDePenalites /> par an ce
+  semestre (<Source de="tauxInteretLegalDefaut" />).
+- Des **frais de recouvrement** forfaitaires de <Indemnite /> par facture
+  (<Source de="indemniteForfaitaire" />).
+
+Prenons une agence de communication d'exemple, qui livre une campagne fin juin et facture 6 800 € sans
+délai. Son client paie à la mi-septembre. Même sans délai écrit, le retard a commencé bien avant :
+voici ce que la loi y ajoute, pour une échéance d'exemple au 30 juillet.
+
+<ExempleDecompte montant={6800} echeance="2026-07-30" arrete="2026-09-15" />
+
+<Encadre titre="À retenir">
+
+- Sans délai convenu : <Valeur de="delaiDeReglementSuppletif" /> au plus après la prestation.
+- Convenu : <DelaiConvenu cas="apresFacture" /> après la facture au plus, ou <DelaiConvenu cas="finDeMois" /> si le contrat le prévoit.
+- Facture périodique : <DelaiConvenu cas="facturePeriodique" /> après la facture au plus.
+- Une date d'échéance écrite sur chaque facture évite toute discussion.
+
+</Encadre>
+
+## Ce que fait Letikette
+
+Letikette lit l'échéance de chaque facture. Quand elle n'en porte pas, il retient le délai de la loi,
+compté depuis la date de la facture, et le signale comme une hypothèse. Il calcule ensuite les
+pénalités et les frais de chaque facture payée en retard, au centime.
+
+---
+
+Cet article présente des règles générales. Il ne constitue pas un conseil juridique : la décision
+d'agir, et la manière de le faire, restent les vôtres.
