@@ -13,6 +13,7 @@ import {
 } from '../../socle/montants';
 import { qualifier } from '../../verticales/recouvrement/scoring';
 import { PROCEDURES, proceduresEnvisageables } from '../../verticales/recouvrement/procedures';
+import { baremeDuDebiteur } from '../../verticales/recouvrement/pays/france/commande-publique';
 import { MACHINES, etapesDeLaVoie } from '../../verticales/recouvrement/apres-procedure';
 import { pyramideDePreuves } from '../../verticales/recouvrement/solidite';
 import { NIVEAUX_RELANCE, composerRelance } from '../../verticales/recouvrement/relance';
@@ -660,7 +661,18 @@ export const creanceComplete = authedQuery({
 
 		const pyramide = pyramideDePreuves(piecesFournies);
 
-		const envisageables = proceduresEnvisageables();
+		// Un client public ne se voit proposer aucune voie du juge civil (lot 1 bis).
+		const envisageables = proceduresEnvisageables({
+			personnePublique:
+				baremeDuDebiteur({
+					...(debiteur?.categorieJuridique === undefined
+						? {}
+						: { categorieJuridique: debiteur.categorieJuridique }),
+					...(debiteur?.acheteurPublic === undefined
+						? {}
+						: { acheteurPublic: debiteur.acheteurPublic })
+				}).bareme === 'COMMANDE_PUBLIQUE'
+		});
 		const clesEnvisageables = new Set(envisageables.map((p) => p.cle));
 
 		return {

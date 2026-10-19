@@ -203,6 +203,21 @@ export function procedureParCle(cle: string): Procedure {
  * ÉNUMÈRE, NE CLASSE PAS. Ordonner les procédures par « pertinence » reviendrait
  * à recommander la première, ce que le § 0.4 interdit.
  */
-export function proceduresEnvisageables(): readonly Procedure[] {
-	return Object.values(PROCEDURES).filter((procedure) => procedure.peutEvaluer());
+export function proceduresEnvisageables(
+	client: {
+		/**
+		 * Une personne publique (un hôpital, une commune) : l'injonction de payer et la
+		 * procédure entre entreprises sont des voies du juge civil et du commerce ; elles se
+		 * taisent (lot 1 bis, 19/10/2026). C'est montrer moins, jamais montrer une voie
+		 * qui ne la concerne pas. La demande de paiement des intérêts moratoires, elle, se
+		 * prépare depuis le diagnostic.
+		 */
+		readonly personnePublique?: boolean;
+	} = {}
+): readonly Procedure[] {
+	return Object.values(PROCEDURES).filter(
+		(procedure) =>
+			procedure.peutEvaluer() &&
+			(client.personnePublique !== true || procedure.cle === 'relance-amiable')
+	);
 }

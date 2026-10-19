@@ -109,3 +109,13 @@ describe('registre des procédures', () => {
 		expect(() => procedureParCle('procedure-imaginaire')).toThrow();
 	});
 });
+
+describe('un client public (lot 1 bis)', () => {
+	it('ne se voit proposer ni l’injonction de payer ni la procédure entre entreprises', () => {
+		const cles = proceduresEnvisageables({ personnePublique: true }).map((p) => p.cle);
+		expect(cles).not.toContain('injonction-de-payer');
+		expect(cles).not.toContain('l126-creances-commerciales');
+		// La relance amiable reste : la liste n'est jamais vide.
+		expect(cles).toContain('relance-amiable');
+	});
+});
