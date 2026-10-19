@@ -137,8 +137,7 @@ export function scriptDuParcours(parcours: Parcours, c: ContexteDAppel): ScriptD
 					'Est-ce qu’ils réclament les frais de recouvrement et les pénalités de retard ?'
 				],
 				phrase: `Letikette lit les factures du client, chiffre ce que la loi y ajoute (${penalitesCommerciales(c.loi)}), surveille les délais pour agir et relance à son nom, sans commission sur ce qui rentre.`,
-				demande:
-					`Je construis le partenariat cabinet avec les ${PARTENARIAT_CABINET.premiersCabinets} premiers cabinets : le diagnostic à proposer à vos clients, et ${PARTENARIAT_CABINET.commissionPourcent} % de la première année de ceux qui s’abonnent. Je peux vous le montrer vingt minutes ?`,
+				demande: `Je construis le partenariat cabinet avec les ${PARTENARIAT_CABINET.premiersCabinets} premiers cabinets : le diagnostic à proposer à vos clients, et ${PARTENARIAT_CABINET.commissionPourcent} % de la première année de ceux qui s’abonnent. Je peux vous le montrer vingt minutes ?`,
 				objections: [
 					{
 						objection: '« Mes clients ont déjà Pennylane ou Qonto. »',
