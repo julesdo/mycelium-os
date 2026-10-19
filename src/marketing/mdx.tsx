@@ -61,6 +61,11 @@ export function TauxDePenalites() {
 	return <>{tauxDuJour()}</>;
 }
 
+/** « dix points » : la majoration du taux de la BCE entre professionnels, lue au registre. */
+export function Majoration() {
+	return <>{majorationLisible()}</>;
+}
+
 /** L'indemnité forfaitaire pour frais de recouvrement, par facture. */
 export function Indemnite() {
 	const indemnite = PARAMETRES.indemniteForfaitaire;
@@ -242,6 +247,7 @@ export const COMPOSANTS_MDX = {
 		<code className="rounded-md bg-creme-profonde px-1.5 py-0.5 text-cladd-sm" {...p} />
 	),
 	TauxDePenalites,
+	Majoration,
 	Indemnite,
 	DelaiPourAgir,
 	PointDeDepart,
