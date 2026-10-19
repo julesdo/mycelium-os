@@ -264,8 +264,8 @@ export const SCENES_DES_METIERS: Readonly<Record<SecteurPublic, SceneDuMetier>> 
 
 	'services-aux-entreprises': {
 		etablissement: 'Propreté Delta',
-		photo: 'factures',
-		descriptionPhoto: 'Une main qui annote une pile de factures étalées sur un bureau.',
+		photo: 'proprete',
+		descriptionPhoto: 'Un agent de propreté qui passe l’aspirateur dans des bureaux vitrés.',
 		teinte: 'papiers',
 		cartes: [
 			{
@@ -357,10 +357,9 @@ export const SCENES_DES_METIERS: Readonly<Record<SecteurPublic, SceneDuMetier>> 
 
 	'fournisseurs-publics': {
 		etablissement: 'Médical Fournitures Ouest',
-		photo: 'entrepot',
+		photo: 'hopital',
 		descriptionPhoto:
-			'Deux personnes qui marchent dans l’allée d’un entrepôt, un classeur à la main.',
-		cadrage: 'object-top',
+			'Une employée souriante qui pousse un chariot de fournitures dans un couloir d’hôpital.',
 		teinte: 'argent',
 		cartes: [
 			{

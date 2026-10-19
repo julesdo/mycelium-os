@@ -250,14 +250,24 @@ export function EcranBureau({
  * « chauffeur » —, jamais une personne : un visage réel accolé à un prénom se
  * lirait comme un client qui témoigne, et ce produit ne fabrique aucune preuve.
  */
-export type PhotoSite = 'artisan' | 'chauffeur' | 'factures' | 'commercante' | 'entrepot';
+export type PhotoSite =
+	| 'artisan'
+	| 'chauffeur'
+	| 'factures'
+	| 'commercante'
+	| 'entrepot'
+	// Les pages métier (19/10/2026), Unsplash, licence Unsplash : @webseoweb, @ageing_better.
+	| 'proprete'
+	| 'hopital';
 
 const FORMAT_PHOTO: Record<PhotoSite, readonly [number, number]> = {
 	artisan: [1280, 1600],
 	chauffeur: [1280, 960],
 	factures: [1280, 853],
 	commercante: [1280, 1600],
-	entrepot: [1280, 1600]
+	entrepot: [1280, 1600],
+	proprete: [1280, 1024],
+	hopital: [1280, 853]
 };
 
 export function Photo({
