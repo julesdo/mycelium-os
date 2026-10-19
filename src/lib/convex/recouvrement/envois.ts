@@ -184,15 +184,20 @@ function decompteCourrier(d: DecompteLu): DecompteCourrier {
 			interets: l.interets,
 			indemnite: l.indemniteForfaitaire,
 			total: l.total,
-			tauxConvenu: l.segments.some((s) => {
-				try {
-					return !tauxParDefaut(s.debut, s.fin, s.taux);
-				} catch {
-					// Un semestre absent de la série légale : on ne sait pas dire, et le
-					// doute ne profite jamais au produit — on ne prétend pas « à défaut ».
-					return true;
-				}
-			})
+			// Un segment au barème public n'est jamais un « taux convenu » : il est fixé par
+			// le code de la commande publique (BCE + 8), et le comparer à BCE + 10 le ferait
+			// passer pour une clause des conditions générales du client.
+			tauxConvenu:
+				l.bareme !== 'COMMANDE_PUBLIQUE' &&
+				l.segments.some((s) => {
+					try {
+						return !tauxParDefaut(s.debut, s.fin, s.taux);
+					} catch {
+						// Un semestre absent de la série légale : on ne sait pas dire, et le
+						// doute ne profite jamais au produit — on ne prétend pas « à défaut ».
+						return true;
+					}
+				})
 		}))
 	};
 }

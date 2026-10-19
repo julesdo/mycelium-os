@@ -35,8 +35,12 @@ import { sansCommentaires } from '../../../__tests__/source-lisible';
  * courriels — on LIT le registre, on ne le recopie pas.
  */
 
-/** La signature d'une référence d'article : `L441-10`, `L. 110-4`, `D441-5`. */
-const REFERENCE_ARTICLE = /\b[LRD]\.? ?\d{3}-\d+/;
+/**
+ * La signature d'une référence d'article : `L441-10`, `L. 110-4`, `D441-5`, et à quatre
+ * chiffres celles du code de la commande publique (`R2192-31`, `L2192-13`), que la
+ * première version de ce motif laissait passer.
+ */
+const REFERENCE_ARTICLE = /\b[LRD]\.? ?\d{3,4}-\d+/;
 
 const RACINE = join(process.cwd(), 'src');
 
@@ -81,6 +85,9 @@ describe('les règles de droit ne vivent que dans le registre', () => {
 		// détecte rien » sont indiscernables.
 		expect(REFERENCE_ARTICLE.test('art. L441-10 II du code de commerce')).toBe(true);
 		expect(REFERENCE_ARTICLE.test('Article L. 110-4')).toBe(true);
+		// Le code de la commande publique : quatre chiffres avant le tiret.
+		expect(REFERENCE_ARTICLE.test('Article R2192-31 du code de la commande publique')).toBe(true);
+		expect(REFERENCE_ARTICLE.test('article L. 2192-13')).toBe(true);
 		expect(REFERENCE_ARTICLE.test('décret n° 2012-1115')).toBe(false);
 	});
 

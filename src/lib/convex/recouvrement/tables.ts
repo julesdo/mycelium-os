@@ -1452,6 +1452,8 @@ export const recouvrementTables = {
 		lignes: v.array(
 			v.object({
 				reference: v.string(),
+				/** Absent sur les décomptes d'avant le 19/10/2026 : le barème commercial. */
+				bareme: v.optional(v.union(v.literal('COMMERCIAL'), v.literal('COMMANDE_PUBLIQUE'))),
 				principalRestantDu: v.int64(),
 				interets: v.int64(),
 				indemniteForfaitaire: v.int64(),

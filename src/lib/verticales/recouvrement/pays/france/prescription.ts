@@ -1,3 +1,4 @@
+import { PARAMETRES, exiger } from '../../parametres';
 import { ajouterMois, estDateReelle } from '../../calendrier';
 import type { MotifPrescriptionInconnue } from '../../surveillance';
 import { joursEntre } from '../../decompte';
@@ -183,6 +184,56 @@ export const ANGLE_MORT_PRESCRIPTION =
 	'l’interrompt pas. Si votre conseil a saisi une juridiction, ce logiciel ne le sait pas tant qu’un ' +
 	'fait de procédure n’est pas consigné ici : la date affichée reste celle du calcul, pas celle ' +
 	'de votre dossier.';
+
+/**
+ * LE MÊME ANGLE MORT POUR UN CLIENT PUBLIC, OÙ LA RÈGLE EST INVERSE.
+ *
+ * Contre l'État, une collectivité ou un hôpital public, une réclamation écrite
+ * INTERROMPT la prescription de quatre ans (`PARAMETRES.reclamationEcriteInterruptive`,
+ * loi n° 68-1250, art. 2) : c'est l'inverse du droit commun. Le texte le dit comme une
+ * règle, jamais comme un constat sur le dossier (« votre prescription est
+ * interrompue » serait un verdict que le logiciel ne peut pas porter).
+ */
+export const ANGLE_MORT_PRESCRIPTION_PUBLIQUE =
+	'Ce logiciel ne gère ni suspension ni interruption de la prescription. Contre une personne ' +
+	'publique, la règle est l’inverse du droit commun : une demande de paiement ou une ' +
+	'réclamation écrite adressée à l’administration peut interrompre le délai de quatre ans, et ' +
+	'un nouveau délai court alors du 1er janvier suivant. Ce logiciel ne sait pas ce qui a été ' +
+	'envoyé tant que ce n’est pas consigné ici : la date affichée reste celle du calcul.';
+
+/**
+ * LA PRESCRIPTION QUADRIENNALE (loi n° 68-1250, art. 1er et 2) : quatre ans à partir
+ * du 1er janvier qui suit l'année où les droits ont été acquis ; une réclamation écrite
+ * fait recourir quatre ans à partir du 1er janvier qui suit l'interruption.
+ *
+ * ⚠️ PAS UNE VALEUR DE `SecteurCreance`. Ce n'est pas une relation commerciale mais un
+ * débiteur : l'union est partagée avec la base Convex et les écrans, et `dateDePrescription`
+ * ajoute des mois à une date, ce qui donnerait le 15 mars au lieu du 1er janvier.
+ *
+ * ⚠️ L'ANNÉE DES DROITS EST UNE LECTURE. Pour les intérêts de factures payées une à une,
+ * deux arrêts inédits de la CAA de Lyon retiennent l'année des prestations ; aucune
+ * décision du Conseil d'État ne tranche (`PARAMETRES.delaiPrescriptionQuadriennale`).
+ * L'appelant fournit l'année ; le texte affiché dit « peuvent se prescrire ».
+ *
+ * Rend le premier jour où la créance est prescrite (même sens que `dateDePrescription`,
+ * lu par `estPrescrite`) et le dernier jour pour agir, celui qu'on affiche.
+ */
+export function datePrescriptionQuadriennale(
+	anneeDesDroits: number,
+	anneeDeLaDerniereInterruption?: number
+): { premierJourPrescrit: string; dernierJourPourAgir: string } {
+	const duree = exiger(PARAMETRES.delaiPrescriptionQuadriennale);
+	exiger(PARAMETRES.reclamationEcriteInterruptive);
+	const depart =
+		anneeDeLaDerniereInterruption !== undefined && anneeDeLaDerniereInterruption >= anneeDesDroits
+			? anneeDeLaDerniereInterruption
+			: anneeDesDroits;
+	const anneePrescrite = depart + 1 + duree;
+	return {
+		premierJourPrescrit: `${anneePrescrite}-01-01`,
+		dernierJourPourAgir: `${anneePrescrite - 1}-12-31`
+	};
+}
 
 /** Le délai le plus court de tous les régimes connus, en années. */
 export function secteurLePlusCourt(): number {

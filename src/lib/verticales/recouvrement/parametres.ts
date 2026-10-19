@@ -148,6 +148,15 @@ const LE_25 = '2026-09-25';
 /** Le relevé de l'analyse du risque, article par article sur Légifrance. */
 const LE_13_10 = '2026-10-13';
 
+/**
+ * Le relevé du barème public (19/10/2026) : la commande publique et la prescription
+ * quadriennale, article par article sur Légifrance, chaque fait contre-vérifié par un
+ * second lecteur. Citations exactes :
+ * `docs/superpowers/recherches/2026-10-19-audit/verification-public.json` et
+ * `verification-prescription.json`.
+ */
+const LE_19_10 = '2026-10-19';
+
 const AVOCAT_ATTENDU =
 	'Relevé sur source publique par le logiciel, PAS validé par un avocat : utilisable pour ' +
 	'calculer et surveiller, insuffisant pour produire un acte.';
@@ -1060,7 +1069,246 @@ export const PARAMETRES = {
 			'mesures de sûreté connexes ne peuvent être effectués que par les personnes que l’article ' +
 			'énumère. L’analyse du risque ne lit donc ni sanction, ni faillite personnelle, ni ' +
 			`interdiction de gérer : les antécédents d'un dirigeant se lisent dans les sociétés qu'il a dirigées. ${AVOCAT_ATTENDU}`
-	} satisfies ParametreLegal<string>
+	} satisfies ParametreLegal<string>,
+
+	// ── Le barème public : la commande publique ─────────────────────────────
+	//
+	// ⚠️ CE N'EST PAS L441-10 AVEC UN AUTRE CHIFFRE. Le taux public est ANCRÉ une fois
+	// pour toutes au semestre où les intérêts commencent à courir ; le taux commercial
+	// est recalé chaque semestre. Réutiliser le découpage de `periodesDeTauxParDefaut`
+	// donnerait un décompte faux qui a l'air juste.
+
+	tauxInteretsMoratoiresPublics: {
+		cle: 'tauxInteretsMoratoiresPublics',
+		nature: 'SERIE',
+		valeur: null,
+		unite: 'sans',
+		source: 'Article R2192-31 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		resoluPar: 'pays/france/commande-publique.ts → tauxInteretsMoratoires(premierJourDInterets)',
+		note:
+			'« Le taux des intérêts moratoires mentionnés à l’article L. 2192-13 est égal au taux ' +
+			'd’intérêt appliqué par la Banque centrale européenne à ses opérations principales de ' +
+			'refinancement les plus récentes, en vigueur au premier jour du semestre de l’année civile ' +
+			'au cours duquel les intérêts moratoires ont commencé à courir, majoré de huit points de ' +
+			'pourcentage. » En vigueur depuis le 01/04/2019 (décret n° 2018-1075). UN SEUL taux pour ' +
+			'toute la durée du retard, celui du semestre du premier jour d’intérêts (le lendemain de ' +
+			'l’échéance, R2192-32) : un délai qui expire le 30 juin fait courir les intérêts au taux du ' +
+			'second semestre. Le tableau de la DILA, classé par « fin du délai de paiement », diverge ' +
+			`ce jour-là : on suit l’article. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<never>,
+
+	pointDepartInteretsMoratoires: {
+		cle: 'pointDepartInteretsMoratoires',
+		nature: 'CONSTANTE',
+		valeur: 'LENDEMAIN_ECHEANCE',
+		unite: 'sans',
+		source: 'Article R2192-32 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Les intérêts moratoires courent à compter du lendemain de l’expiration du délai de ' +
+			'paiement ou de l’échéance prévue par le marché jusqu’à la date de mise en paiement du ' +
+			'principal incluse. » En vigueur depuis le 22/07/2019 (décret n° 2019-748). Le décompte ' +
+			'compte de l’échéance incluse à l’arrêté exclu : le même NOMBRE de jours que du lendemain ' +
+			'à la mise en paiement incluse. Une date de paiement importée est une date de crédit en ' +
+			`banque, postérieure à la mise en paiement : elle ne compte jamais moins de jours. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<'LENDEMAIN_ECHEANCE'>,
+
+	// Citation exacte de R2192-33, gardée en commentaire parce que l'article emploie un
+	// mot interdit à l'écran : « Les intérêts moratoires appliqués aux acomptes ou au
+	// solde sont calculés sur le montant total de l'acompte ou du solde toutes taxes
+	// comprises, diminué de la retenue de garantie, et après application des clauses
+	// d'actualisation, de révision et de pénalisation. »
+	baseInteretsMoratoires: {
+		cle: 'baseInteretsMoratoires',
+		nature: 'CONSTANTE',
+		valeur: 'TTC_MOINS_RETENUE',
+		unite: 'sans',
+		source: 'Article R2192-33 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'La base est le montant toutes taxes comprises de l’acompte ou du solde, moins la retenue ' +
+			'prévue au marché, après actualisation, révision et pénalisation. En vigueur depuis le ' +
+			'01/04/2019. Le logiciel ne connaît pas la retenue d’un marché : il calcule sur le montant ' +
+			'de la facture et le dit, pour que le gérant déduise la retenue s’il y en a une. ' +
+			AVOCAT_ATTENDU
+	} satisfies ParametreLegal<'TTC_MOINS_RETENUE'>,
+
+	interetsMoratoiresDePleinDroit: {
+		cle: 'interetsMoratoiresDePleinDroit',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Articles L2192-13 et L2192-14 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Dès le lendemain de l’expiration du délai de paiement ou de l’échéance prévue par le ' +
+			'marché, le retard de paiement fait courir, de plein droit et sans autre formalité, des ' +
+			'intérêts moratoires dont le taux est fixé par voie réglementaire. » « Le retard de ' +
+			'paiement donne lieu, de plein droit et sans autre formalité, au versement d’une indemnité ' +
+			'forfaitaire pour frais de recouvrement. » L’indemnisation complémentaire, elle, se ' +
+			'demande, sur justification. L2192-14 : « Toute renonciation au paiement des intérêts ' +
+			'moratoires est réputée non écrite » (les intérêts seulement, pas l’indemnité). Le retard ' +
+			'suppose un créancier « qui a rempli ses obligations légales et contractuelles » ' +
+			`(L2192-12). ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	indemniteForfaitairePublique: {
+		cle: 'indemniteForfaitairePublique',
+		nature: 'CONSTANTE',
+		valeur: 4000n,
+		unite: 'centimes',
+		source: 'Article D2192-35 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le montant de l’indemnité forfaitaire pour frais de recouvrement est fixé à 40 euros. » ' +
+			'En vigueur depuis le 01/04/2019. ⚠️ LE TEXTE NE DIT PAS « PAR FACTURE » : L2192-13 la ' +
+			'rattache au « retard de paiement ». Le décompte l’applique une fois par demande de ' +
+			'paiement réglée en retard, comme l’indemnité commerciale (lecture `indemniteParFacture`) ; ' +
+			`l’unité reste à faire valider. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<bigint>,
+
+	delaisPaiementPublics: {
+		cle: 'delaisPaiementPublics',
+		nature: 'CONSTANTE',
+		valeur: { POUVOIR_ADJUDICATEUR: 30, SANTE: 50, ENTREPRISE_PUBLIQUE: 60 },
+		unite: 'jours',
+		source: 'Articles L2192-10, R2192-10, R2192-11 et R2192-12 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'R2192-10 : « Le délai de paiement prévu à l’article L. 2192-10 est fixé à trente jours ' +
+			'pour les pouvoirs adjudicateurs, y compris lorsqu’ils agissent en tant qu’entité ' +
+			'adjudicatrice. » R2192-11 : « 1° Cinquante jours pour les établissements publics de ' +
+			'santé et les établissements du service de santé des armées ; 2° Soixante jours pour les ' +
+			'entreprises publiques au sens du II de l’article 1er de l’ordonnance n° 2004-503 du 7 juin ' +
+			'2004 […], à l’exception de celles ayant la nature d’établissements publics locaux. » Le ' +
+			'délai prévu au marché ne peut pas dépasser ces plafonds (L2192-10). Il court de la ' +
+			'réception de la demande de paiement (R2192-12, relu sur marche-public.fr seulement, pas ' +
+			`encore sur Légifrance). Contrats conclus depuis le 16 mars 2013. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<{
+		readonly POUVOIR_ADJUDICATEUR: number;
+		readonly SANTE: number;
+		readonly ENTREPRISE_PUBLIQUE: number;
+	}>,
+
+	paiementAccessoiresPublics: {
+		cle: 'paiementAccessoiresPublics',
+		nature: 'CONSTANTE',
+		valeur: 45,
+		unite: 'jours',
+		source: 'Article R2192-36 du code de la commande publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Les intérêts moratoires et l’indemnité forfaitaire pour frais de recouvrement sont ' +
+			'payés dans un délai de quarante-cinq jours suivant la mise en paiement du principal. » ' +
+			`En vigueur depuis le 01/04/2019. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	mandatementDOffice: {
+		cle: 'mandatementDOffice',
+		nature: 'CONSTANTE',
+		// Des jours et un mois : chaque délai porte son unité dans son nom.
+		valeur: {
+			apresPaiementDuPrincipalJours: 30,
+			miseEnDemeureJours: 15,
+			executionMois: 1,
+			mandatementJours: 10
+		},
+		unite: 'sans',
+		source:
+			'Article L1612-18 du code général des collectivités territoriales ; article L6145-5 du ' +
+			'code de la santé publique',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'L1612-18 (version du 01/01/2026, ordonnance n° 2025-526) : quand les intérêts moratoires ' +
+			'et l’indemnité « ne sont pas mandatées dans les trente jours suivant la date de paiement ' +
+			'du principal, le représentant de l’Etat dans le département adresse à l’ordonnateur, dans ' +
+			'un délai de quinze jours après signalement par le créancier, le comptable public ou tout ' +
+			'autre tiers, une mise en demeure de mandatement. A défaut d’exécution dans un délai d’un ' +
+			'mois à compter de cette mise en demeure, le représentant de l’Etat procède d’office, dans ' +
+			'un délai de dix jours, au mandatement de la dépense. » Pour un établissement public de ' +
+			'santé, le directeur de l’agence régionale de santé, dans les mêmes délais (L6145-5). ' +
+			'⚠️ CES DEUX ARTICLES RENVOIENT À DES TEXTES QUI N’EXISTENT PLUS (« L. 2192-8 » du code de ' +
+			'la commande publique ; articles 39 et 40 de la loi n° 2013-100) : un courrier ne recopie ' +
+			'jamais leurs renvois, il cite L2192-13, R2192-31, D2192-35 et R2192-36. Le signalement ' +
+			'est une démarche administrative, que le gérant décide. La chambre régionale des comptes ' +
+			'(L1612-15) est une juridiction : le logiciel ne la propose jamais. ' +
+			AVOCAT_ATTENDU
+	} satisfies ParametreLegal<{
+		readonly apresPaiementDuPrincipalJours: number;
+		readonly miseEnDemeureJours: number;
+		readonly executionMois: number;
+		readonly mandatementJours: number;
+	}>,
+
+	// ── La prescription quadriennale (loi n° 68-1250 du 31 décembre 1968) ───
+
+	delaiPrescriptionQuadriennale: {
+		cle: 'delaiPrescriptionQuadriennale',
+		nature: 'CONSTANTE',
+		valeur: 4,
+		unite: 'annees',
+		source: 'Article 1er de la loi n° 68-1250 du 31 décembre 1968',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Sont prescrites, au profit de l’Etat, des départements et des communes, sans préjudice ' +
+			'des déchéances particulières édictées par la loi, et sous réserve des dispositions de la ' +
+			'présente loi, toutes créances qui n’ont pas été payées dans un délai de quatre ans à ' +
+			'partir du premier jour de l’année suivant celle au cours de laquelle les droits ont été ' +
+			'acquis. » Alinéa 2 : « les créances sur les établissements publics dotés d’un comptable ' +
+			'public » (les hôpitaux publics, dont le comptable est un comptable de l’État, L6145-8 du ' +
+			'code de la santé publique ; un EPIC selon ses statuts ; une SEM non, sauf quand elle ' +
+			'contracte au nom d’une collectivité). Les régions ne sont pas nommées. Le point de départ ' +
+			'est l’année où les droits sont ACQUIS, pas celle où ils naissent : pour les intérêts de ' +
+			'factures payées une à une, deux arrêts inédits de la CAA de Lyon (6 février 2020, ' +
+			'n° 18LY01075 et 18LY01078) retiennent l’année des prestations ; pour un marché soldé par ' +
+			'décompte, le délai part plus tard (CE, 11 février 2005, n° 249211 ; CAA Versailles, ' +
+			'6 juillet 2023, n° 20VE02063). Aucune décision du Conseil d’État ne tranche pour les ' +
+			'intérêts moratoires : la date affichée est une LECTURE, dite comme telle. ' +
+			AVOCAT_ATTENDU
+	} satisfies ParametreLegal<number>,
+
+	reclamationEcriteInterruptive: {
+		cle: 'reclamationEcriteInterruptive',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article 2 de la loi n° 68-1250 du 31 décembre 1968',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'La prescription quadriennale est interrompue par « Toute demande de paiement ou toute ' +
+			'réclamation écrite adressée par un créancier à l’autorité administrative, dès lors que la ' +
+			'demande ou la réclamation a trait au fait générateur, à l’existence, au montant ou au ' +
+			'paiement de la créance, alors même que l’administration saisie n’est pas celle qui aura ' +
+			'finalement la charge du règlement », et par « Toute émission de moyen de règlement, même ' +
+			'si ce règlement ne couvre qu’une partie de la créance ». « Un nouveau délai de quatre ans ' +
+			'court à compter du premier jour de l’année suivant celle au cours de laquelle a eu lieu ' +
+			'l’interruption. » ⚠️ C’EST L’INVERSE DU DROIT COMMUN, où une mise en demeure ' +
+			'n’interrompt rien (`miseEnDemeureNonInterruptive`). Le cachet de la poste fait foi devant ' +
+			'une administration (article L112-1 du code des relations entre le public et ' +
+			'l’administration), pas devant un EPIC qui gère un service industriel ou commercial ' +
+			`(L100-3). ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>
 } as const;
 
 /** Utilisable pour CALCULER : une constante sourcée, ou une série résolue par un module. */

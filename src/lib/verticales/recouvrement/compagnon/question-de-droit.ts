@@ -74,6 +74,18 @@ const THEMES: readonly {
 	{
 		motif: /relance|mise en demeure|lettre|recommandé/i,
 		cles: ['modesMiseEnDemeure', 'miseEnDemeureNonInterruptive']
+	},
+	// Un acheteur public : la règle d'interruption est l'inverse de celle d'au-dessus, et
+	// une réponse qui ne citerait que `miseEnDemeureNonInterruptive` dirait faux.
+	{
+		motif:
+			/hôpital|hopital|mairie|commune|collectivit|march[ée] public|acheteur public|moratoire|quadriennal|préfet|personne publique/i,
+		cles: [
+			'interetsMoratoiresDePleinDroit',
+			'tauxInteretsMoratoiresPublics',
+			'delaiPrescriptionQuadriennale',
+			'reclamationEcriteInterruptive'
+		]
 	}
 ];
 

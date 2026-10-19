@@ -134,7 +134,8 @@ export function semestreDe(date: string): Semestre {
 	return `${trouve[1]}-S${mois <= 6 ? 1 : 2}`;
 }
 
-function exigerSemestre<T>(serie: Record<Semestre, T>, semestre: Semestre, quoi: string): T {
+/** Une valeur de série pour un semestre, ou une erreur qui le nomme. Jamais d'extrapolation. */
+export function exigerSemestre<T>(serie: Record<Semestre, T>, semestre: Semestre, quoi: string): T {
 	const valeur = serie[semestre];
 	if (valeur === undefined) {
 		const connus = Object.keys(serie).sort();
@@ -173,7 +174,10 @@ export function plancherContractuel(date: string): Fraction {
 }
 
 /** Le taux d'intérêt légal brut, pour les deux catégories. */
-export function tauxInteretLegal(date: string): { particuliers: Fraction; professionnels: Fraction } {
+export function tauxInteretLegal(date: string): {
+	particuliers: Fraction;
+	professionnels: Fraction;
+} {
 	const legal = exigerSemestre(TAUX_INTERET_LEGAL, semestreDe(date), "Taux d'intérêt légal");
 	return {
 		particuliers: fraction(legal.particuliers, 10000n),

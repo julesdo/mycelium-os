@@ -345,8 +345,9 @@ const ENONCES_JURIDIQUES: readonly RegExp[] = [
 	mot('est\\s+(?:dû|due|éteinte|éteint|prescrite|prescrit)'),
 	mot('ne\\s+se\\s+réclame\\s+plus'),
 	mot('(?:article|art\\.?)\\s*[LRD]\\.?\\s*\\d+'),
-	mot('code\\s+(?:de\\s+commerce|civil|de\\s+la\\s+consommation)'),
-	mot('[LRD]\\d{3}-\\d+')
+	mot('code\\s+(?:de\\s+commerce|civil|de\\s+la\\s+consommation|de\\s+la\\s+commande\\s+publique)'),
+	// Quatre chiffres aussi : le code de la commande publique numérote R2192-31, L2192-13.
+	mot('[LRD]\\d{3,4}-\\d+')
 ];
 
 function estCleConnue(cle: string): boolean {

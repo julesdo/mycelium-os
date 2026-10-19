@@ -256,6 +256,7 @@ export function enregistrementDe(decompte: DecompteCreance) {
 		},
 		lignes: decompte.lignes.map((ligne) => ({
 			reference: ligne.reference,
+			bareme: ligne.bareme,
 			principalRestantDu: enCentimes(ligne.principalRestantDu),
 			interets: enCentimes(ligne.interets),
 			indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
@@ -564,6 +565,7 @@ const vDernierDecompte = v.object({
 	lignes: v.array(
 		v.object({
 			reference: v.string(),
+			bareme: v.optional(v.union(v.literal('COMMERCIAL'), v.literal('COMMANDE_PUBLIQUE'))),
 			principalRestantDu: v.int64(),
 			interets: v.int64(),
 			indemniteForfaitaire: v.int64(),
@@ -658,6 +660,7 @@ export async function abandonsDuDecompte(
 		decompte: {
 			lignes: decompte.lignes.map((ligne) => ({
 				reference: ligne.reference,
+				bareme: ligne.bareme ?? 'COMMERCIAL',
 				principalRestantDu: depuisCentimes(ligne.principalRestantDu),
 				interets: depuisCentimes(ligne.interets),
 				indemniteForfaitaire: depuisCentimes(ligne.indemniteForfaitaire),

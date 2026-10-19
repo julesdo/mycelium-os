@@ -17,7 +17,8 @@ import { PARAMETRES } from '../lib/verticales/recouvrement/parametres';
  * jour où elle disparaît, la page n'affiche rien plutôt qu'un numéro périmé.
  */
 export function articleDe(source: string): string | null {
-	const trouve = source.match(/\b[LRD]\.? ?\d{3}-\d+/);
+	// Quatre chiffres aussi : le code de la commande publique (R2192-31).
+	const trouve = source.match(/\b[LRD]\.? ?\d{3,4}-\d+/);
 	return trouve ? trouve[0] : null;
 }
 

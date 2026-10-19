@@ -73,8 +73,18 @@ export interface PeriodeDeTaux {
 	readonly taux: Fraction;
 }
 
+/**
+ * Le barème légal d'une facture : `COMMERCIAL` entre professionnels (L441-10 II, D441-5),
+ * `COMMANDE_PUBLIQUE` quand le débiteur est un acheteur public (L2192-13, R2192-31,
+ * D2192-35). Le taux, lui, arrive tout fait dans `taux` : le barème décide de
+ * l'indemnité, du point de départ cité, et de ce qu'un document en dira.
+ */
+export type Bareme = 'COMMERCIAL' | 'COMMANDE_PUBLIQUE';
+
 export interface FacturePourDecompte {
 	readonly reference: string;
+	/** Absent : le barème commercial, celui de toutes les factures d'avant le 19/10/2026. */
+	readonly bareme?: Bareme;
 	/** Ce qui était dû à l'échéance, avant tout règlement. */
 	readonly montantExigible: Montant;
 	/**
@@ -128,6 +138,8 @@ export interface ImputationReglement {
 
 export interface LigneDecompte {
 	readonly reference: string;
+	/** Le barème appliqué, toujours écrit : un document ne le devine pas d'après le taux. */
+	readonly bareme: Bareme;
 	readonly principalRestantDu: Montant;
 	/** Ce qui reste dû : la somme des périodes, moins ce que les règlements en ont éteint. */
 	readonly interets: Montant;
@@ -310,8 +322,13 @@ export function decompterFacture(
 	ordre: OrdreImputation
 ): LigneDecompte {
 	// Lus pour être cités : les règles vivent au registre, pas ici.
+	const bareme: Bareme = facture.bareme ?? 'COMMERCIAL';
 	exiger(PARAMETRES.imputationPaiementPartiel);
-	exiger(PARAMETRES.pointDepartPenalitesRetard);
+	exiger(
+		bareme === 'COMMANDE_PUBLIQUE'
+			? PARAMETRES.pointDepartInteretsMoratoires
+			: PARAMETRES.pointDepartPenalitesRetard
+	);
 
 	const reglements = facture.reglements
 		.filter((reglement) => reglement.date <= arreteAu)
@@ -407,11 +424,18 @@ export function decompterFacture(
 		exiger(PARAMETRES.exclusionIndemnitesProcedureCollective);
 	const indemniteForfaitaire =
 		enRetard && !exclueParLaProcedure
-			? depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire))
+			? depuisCentimes(
+					exiger(
+						bareme === 'COMMANDE_PUBLIQUE'
+							? PARAMETRES.indemniteForfaitairePublique
+							: PARAMETRES.indemniteForfaitaire
+					)
+				)
 			: ZERO;
 
 	return {
 		reference: facture.reference,
+		bareme,
 		principalRestantDu: principal,
 		interets: interetsDus,
 		indemniteForfaitaire,

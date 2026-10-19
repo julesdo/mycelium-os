@@ -130,6 +130,7 @@ export const abandonsDeLEtablissement = authedQuery({
 				decompte: {
 					lignes: decompte.lignes.map((ligne) => ({
 						reference: ligne.reference,
+						bareme: ligne.bareme ?? 'COMMERCIAL',
 						principalRestantDu: depuisCentimes(ligne.principalRestantDu),
 						interets: depuisCentimes(ligne.interets),
 						indemniteForfaitaire: depuisCentimes(ligne.indemniteForfaitaire),

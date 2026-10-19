@@ -37,6 +37,18 @@ export const LEXIQUE: readonly EntreeLexique[] = [
 	{ droit: 'Intérêts de retard', interface: 'Pénalités de retard', motif: /int[ée]r[êe]ts/i },
 	{ droit: 'Indemnité forfaitaire', interface: 'Frais de recouvrement', motif: /indemnit[ée]/i },
 	{ droit: 'Prescription', interface: 'Date limite pour agir en justice', motif: /prescri/i },
+	// Les deux mots du barème public : déjà tenus en second par les motifs des intérêts
+	// et de la prescription, ils n'ont pas de motif à eux.
+	{
+		droit: 'Intérêts moratoires',
+		interface: 'Pénalités de retard d’un acheteur public',
+		motif: null
+	},
+	{
+		droit: 'Prescription quadriennale',
+		interface: 'Quatre ans pour agir contre un acheteur public',
+		motif: null
+	},
 	{
 		droit: 'Injonction de payer',
 		interface: 'Demander au tribunal de le faire payer',
