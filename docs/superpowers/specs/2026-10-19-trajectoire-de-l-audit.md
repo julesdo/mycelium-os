@@ -312,6 +312,25 @@ parallèle (fichiers disjoints) ; les dépendances sont nommées.
 
 ### Vague B — après le lot 1
 
+**Lot 1 bis — Le client public dans le produit** (lots 1 et 3). C'est ce qui permet de livrer la
+réclamation clé en main : le fondateur la prépare dans l'application, au nom du client.
+- `debiteurs.categorieJuridique` (optionnel), rempli d'après le SIREN par l'API Recherche
+  d'entreprises (le BODACC ne connaît ni les hôpitaux ni les communes) ; `categorieAcheteurPublic`
+  en déduit le barème ; le gérant peut le corriger (une qualification, pas une déduction cachée).
+- Le décompte d'un débiteur public passe par le barème public (une seule période, indemnité publique,
+  imputation au principal d'abord) ; l'échéance légale (réception + 30 ou 50 jours) quand le marché
+  n'en donne pas, **marquée** comme hypothèse.
+- Les intérêts sur factures **soldées** d'un débiteur public entrent dans le dossier et dans la
+  surveillance (la prescription de quatre ans, la date à afficher le 31 décembre), sans changer le sens
+  de « ce qu'on vous doit » à l'accueil.
+- Un gabarit « Réclamation des intérêts moratoires » (`gabarits/`) : ton de rappel réglementaire,
+  au nom du client, cite L2192-13, R2192-31, D2192-35 et R2192-36 lus au registre, décompose chaque
+  facture (principal, jours, taux, intérêts, indemnité), demande le mandatement, ne menace de rien,
+  ne nomme pas Letikette ; tenu par `gabarits.test.ts` et `relance.test.ts`. Le signalement au préfet
+  ou à l'ARS est un **second** gabarit, déclenché par le gérant seulement ; la chambre régionale des
+  comptes n'est jamais proposée (juridiction).
+- Les procédures inadaptées se taisent pour une personne publique (`injonctionDePayer`, L126).
+
 **Lot 5 — Les fournisseurs publics au CRM** (lots 1 et 2)
 - `crm/decp.ts` : lecteur de l'API tabulaire (encodage UTF-8, `__in`, pagination reconstruite, valeurs
   non normalisées), dédoublonnage par `uid`, attribution initiale, annualisation, exclusion des
