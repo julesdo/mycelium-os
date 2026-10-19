@@ -389,6 +389,7 @@ const FICHE_A_ECRIRE: DonneesFicheProspect = {
 		dirigeant: 'Claire Moreau',
 		fonction: 'Gérante',
 		email: 'contact@transports-moreau.fr',
+		jetonDesinscription: 'jeton-de-demonstration',
 		trouveOu: 'Annuaire des entreprises (data.gouv.fr), le 18/10/2026',
 		creeLe: MAINTENANT - JOUR,
 		creePar: 'jules@letikette.com'

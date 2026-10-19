@@ -1,5 +1,6 @@
 import { jourDeParis } from '../admin/dates';
 import type { Cible } from './statuts';
+import { lienDeDesinscription, piedLegal, sourceDeLAdresse } from './consentement';
 
 /**
  * LES E-MAILS DE PROSPECTION, PRÊTS À ÉCRIRE (18/10/2026).
@@ -14,7 +15,9 @@ import type { Cible } from './statuts';
  * crochets en tête du message. Un e-mail sans elle est un envoi groupé.
  *
  * Les lignes rouges valent ici : jamais le mot interdit, jamais une procédure à
- * engager ; la loi et ce que le logiciel calcule, et la sortie (« stop ») à la fin.
+ * engager ; la loi et ce que le logiciel calcule. Chaque message finit par le pied
+ * légal (`consentement.piedLegal`) : la vraie source de l'adresse, la durée, le lien
+ * de désinscription. LinkedIn est retiré (19/10/2026, la direction n'en veut pas).
  */
 
 export interface ValeursDeLaLoi {
@@ -59,6 +62,9 @@ interface ProspectAEcrire {
 	readonly dirigeant?: string;
 	readonly activite?: string;
 	readonly cible: Cible;
+	/** D'où vient le contact : le pied en tire la source de l'adresse. */
+	readonly trouveOu?: string;
+	readonly jetonDesinscription?: string;
 }
 
 interface Signataire {
@@ -102,13 +108,9 @@ const PAGES_DES_CAMPAGNES: Readonly<Record<string, string>> = {
 };
 
 /** Le lien du calculateur, avec sa source : on saura d'où vient l'inscription. */
-export function lienSuivi(
-	modele: Modele,
-	activite: string | undefined,
-	canal: 'email' | 'linkedin'
-) {
+export function lienSuivi(modele: Modele, activite: string | undefined) {
 	const campagne = campagneDe(modele, activite);
-	return `https://www.letikette.com${PAGES_DES_CAMPAGNES[campagne] ?? '/'}?utm_source=manuel&utm_medium=${canal}&utm_campaign=${campagne}#calcul`;
+	return `https://www.letikette.com${PAGES_DES_CAMPAGNES[campagne] ?? '/'}?utm_source=manuel&utm_medium=email&utm_campaign=${campagne}#calcul`;
 }
 
 export function prenomDe(dirigeant: string | undefined): string | undefined {
@@ -185,9 +187,6 @@ function signature(s: Signataire): string {
 	return `${s.prenom}\n${s.fondateur ? 'Fondateur de Letikette' : 'Letikette'} · www.letikette.com`;
 }
 
-const PIED_LEGAL =
-	'J’ai trouvé vos coordonnées sur l’annuaire public des entreprises. Si vous préférez que je ne vous écrive plus, répondez « stop ».';
-
 function ceQueLaLoiAjoute(loi: ValeursDeLaLoi): string {
 	const indemnite = loi.indemnite === null ? 'une indemnité forfaitaire' : `${loi.indemnite}`;
 	const taux =
@@ -243,7 +242,7 @@ export function composerEmail({
 	readonly loi: ValeursDeLaLoi;
 }): { objet: string; corps: string } {
 	const modele = modeleDe(prospect);
-	const lien = lienSuivi(modele, prospect.activite, 'email');
+	const lien = lienSuivi(modele, prospect.activite);
 	const prenom = prenomDe(prospect.dirigeant);
 	const bonjour = prenom === undefined ? 'Bonjour,' : `Bonjour ${prenom},`;
 	const nom = nomDUsage(prospect.entreprise);
@@ -266,24 +265,19 @@ export function composerEmail({
 
 	return {
 		objet: etape === 'PREMIER' ? objetInitial : `Re : ${objetInitial}`,
-		corps: [bonjour, ...paragraphes, signature(signataire), PIED_LEGAL].join('\n\n')
+		corps: [
+			bonjour,
+			...paragraphes,
+			signature(signataire),
+			piedLegal({
+				source: sourceDeLAdresse(prospect.trouveOu),
+				lienDesinscription:
+					prospect.jetonDesinscription === undefined
+						? null
+						: lienDeDesinscription(prospect.jetonDesinscription)
+			})
+		].join('\n\n')
 	};
-}
-
-/** Le message LinkedIn : 300 caractères au plus, la limite d'une invitation. */
-export function composerLinkedIn({
-	prospect,
-	loi
-}: {
-	readonly prospect: ProspectAEcrire;
-	readonly loi: ValeursDeLaLoi;
-}): string {
-	const prenom = prenomDe(prospect.dirigeant);
-	const bonjour = prenom === undefined ? 'Bonjour,' : `Bonjour ${prenom},`;
-	const indemnite =
-		loi.indemnite === null ? '' : ` (${loi.indemnite} par facture, plus les pénalités)`;
-	const message = `${bonjour} je développe Letikette à Paris : un logiciel qui chiffre ce que la loi ajoute aux factures payées en retard${indemnite} et relance à votre nom. Je serais curieux d’avoir votre avis de dirigeant, sans engagement.`;
-	return message.length <= 300 ? message : `${message.slice(0, 299)}…`;
 }
 
 /** `mailto:` avec l'objet et le corps ; les retours à la ligne en CRLF, comme le veut la RFC 6068. */

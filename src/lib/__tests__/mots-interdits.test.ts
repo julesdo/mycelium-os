@@ -35,7 +35,9 @@ const SURFACES = [
 	join('src', 'marketing'),
 	join('src', 'lib', 'config'),
 	join('src', 'lib', 'convex', 'emails'),
-	join('src', 'lib', 'croissance')
+	join('src', 'lib', 'croissance'),
+	// Les e-mails et les scripts d'appel de la prospection (19/10/2026).
+	join('src', 'lib', 'crm')
 ];
 
 const MOT_INTERDIT = /garanti/i;

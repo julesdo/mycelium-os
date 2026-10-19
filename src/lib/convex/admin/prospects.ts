@@ -3,6 +3,7 @@ import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx } from '../_generated/server';
 import { empreinteDEmail, normaliserEmail } from '../../crm/empreinte';
 import { statutClos, type Cible } from '../../crm/statuts';
+import { aInformer } from '../../crm/consentement';
 import {
 	etapeInitiale,
 	etapeValide,
@@ -104,7 +105,6 @@ export const liste = equipeQuery('LECTURE')({
 	handler: async (ctx, { vue, parcours }) => {
 		const tous = await ctx.db.query('prospects').withIndex('by_cree').order('desc').take(3000);
 		const maintenant = Date.now();
-		const UN_MOIS = 30 * 24 * 60 * 60 * 1000;
 		return tous
 			.filter((p) => parcours === undefined || parcoursDe(p) === parcours)
 			.filter((p) => {
@@ -126,12 +126,7 @@ export const liste = equipeQuery('LECTURE')({
 					case 'A_INFORMER':
 						// Collecté il y a plus d'un mois, adresse nominative, personne jamais
 						// informée (article 14 du RGPD) : à appeler ou à écarter.
-						return (
-							!statutClos(p.statut) &&
-							p.email !== undefined &&
-							p.emailBase === undefined &&
-							maintenant - p.creeLe > UN_MOIS
-						);
+						return aInformer(p, maintenant);
 					default:
 						return true;
 				}

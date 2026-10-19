@@ -66,8 +66,11 @@ function Document() {
 	  de nos clients : rien de lui ne part chez un tiers, pas même la demande du script
 	  (voir `app/analytique.ts`).
 	*/
+	// Ni sur la page de désinscription d'un prospect : son adresse porte son jeton.
 	const pageDuClient = useRouterState({
-		select: (etat) => etat.location.pathname.startsWith('/p/')
+		select: (etat) =>
+			etat.location.pathname.startsWith('/p/') ||
+			etat.location.pathname.startsWith('/desinscription/')
 	});
 	return (
 		// `lang="fr"` en dur : l'interface est en français uniquement, EGalim est

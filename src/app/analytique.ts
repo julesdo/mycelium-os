@@ -12,7 +12,8 @@
  *   · LA PAGE OÙ LE CLIENT PAIE (`/p/<jeton>`). C'est le débiteur de nos clients,
  *     pas notre utilisateur, et rien de lui ne remonte (ligne rouge des surfaces
  *     tierces, CLAUDE.md). Le script ne s'y charge même pas (`routes/__root.tsx`) ;
- *     et si l'on y arrive depuis l'application, l'envoi est annulé ici.
+ *     et si l'on y arrive depuis l'application, l'envoi est annulé ici. De même pour
+ *     la page de désinscription d'un prospect (`/desinscription/<jeton>`).
  *   · UN SECRET DANS UNE ADRESSE : le jeton d'une invitation (`/rejoindre/<jeton>`)
  *     est remplacé, les paramètres (`?token=`, `?_ptxn=`, `?document=`) et le
  *     fragment ne partent pas (`data-exclude-search`, `data-exclude-hash`).
@@ -45,9 +46,10 @@ if(a.origin!==location.origin)return u;
 var s=a.pathname.split('/').map(function(x,i,l){return(l[1]==='rejoindre'&&i===2)?':jeton':(/^[a-z0-9]{20,}$/.test(x)?':id':x)}).join('/');
 return /^https?:/.test(u)?a.origin+s:s};
 var chemin=function(u){try{return new URL(u,location.origin).pathname}catch(e){return ''}};
-if(/^\\/p\\//.test(chemin(p.url))||/^\\/p\\//.test(location.pathname))return false;
+var tu=/^\\/(p|desinscription)\\//;
+if(tu.test(chemin(p.url))||tu.test(location.pathname))return false;
 p.url=nu(p.url);
-if(p.referrer){p.referrer=/^\\/p\\//.test(chemin(p.referrer))&&new URL(p.referrer,location.origin).origin===location.origin?'':nu(p.referrer)}
+if(p.referrer){p.referrer=tu.test(chemin(p.referrer))&&new URL(p.referrer,location.origin).origin===location.origin?'':nu(p.referrer)}
 return p}catch(e){return false}};`;
 
 /** Les attributs du traceur (`docs.umami.is/docs/tracker-configuration`). */

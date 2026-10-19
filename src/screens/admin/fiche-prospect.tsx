@@ -13,12 +13,12 @@ import { dateCourteDeParis, echeanceDeTache, jourDeParis } from '../../lib/admin
 import { ficheALAnnuaire } from '../../lib/crm/annuaire';
 import {
 	composerEmail,
-	composerLinkedIn,
 	etapeDEcriture,
 	modeleDe,
 	type EtapeDEcriture
 } from '../../lib/crm/modeles';
 import { valeursDeLaLoi } from '../../lib/crm/valeurs-loi';
+import { emailPermis, RAISONS_DU_REFUS } from '../../lib/crm/consentement';
 import { LIBELLES_DES_CIBLES, type StatutProspect } from '../../lib/crm/statuts';
 import {
 	REGISTRE_DES_PARCOURS,
@@ -209,19 +209,29 @@ export function EcranFicheProspect({
 	// Le modèle de l'étape, d'après le nombre d'e-mails déjà notés sur la fiche.
 	const etape = etapeDEcriture(historique.filter((e) => e.type === 'EMAIL').length);
 	const modele = modeleDe(fiche);
+	const permission = emailPermis(fiche, maintenant);
+	const enRoutine =
+		actif && signataire !== undefined && EN_PROSPECTION.includes(fiche.statut) && etape !== 'FINI';
 	const redaction =
-		actif && signataire !== undefined && EN_PROSPECTION.includes(fiche.statut) && etape !== 'FINI'
-			? (() => {
-					const loi = valeursDeLaLoi(jourDeParis(maintenant));
-					const { objet, corps } = composerEmail({ prospect: fiche, etape, signataire, loi });
-					return {
+		enRoutine && permission.permis
+			? {
+					etape,
+					base: permission.base,
+					...composerEmail({
+						prospect: fiche,
 						etape,
-						objet,
-						corps,
-						linkedin: etape === 'PREMIER' ? composerLinkedIn({ prospect: fiche, loi }) : undefined
-					};
-				})()
+						signataire,
+						loi: valeursDeLaLoi(jourDeParis(maintenant))
+					})
+				}
 			: null;
+	// La routine voudrait écrire, la règle de l'e-mail l'en empêche : la feuille le dit.
+	const refus =
+		enRoutine && !permission.permis && permission.raison === 'PLUS_D_UN_MOIS' ? (
+			<p className="verre-carte rounded-cladd-xl px-3.5 py-3 text-cladd-2xs">
+				{RAISONS_DU_REFUS.PLUS_D_UN_MOIS}
+			</p>
+		) : null;
 
 	async function confirmerLeStop() {
 		if (gestes === undefined) return;
@@ -460,16 +470,17 @@ export function EcranFicheProspect({
 				finDuJour={finDuJour}
 				{...(actif ? { gestes } : {})}
 				{...(telephone === undefined ? {} : { onAppeler: () => setFeuille('APPEL') })}
+				{...(refus === null ? {} : { avantEmail: refus })}
 				{...(redaction === null || gestes === undefined
 					? {}
 					: {
 							ecrire: (
 								<RedactionDEmail
 									etape={redaction.etape}
+									base={redaction.base}
 									modele={modele}
 									objet={redaction.objet}
 									corps={redaction.corps}
-									{...(redaction.linkedin === undefined ? {} : { linkedin: redaction.linkedin })}
 									{...(fiche.email === undefined ? {} : { email: fiche.email })}
 									entreprise={fiche.entreprise}
 									{...(fiche.ville === undefined ? {} : { ville: fiche.ville })}

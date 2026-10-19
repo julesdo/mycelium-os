@@ -57,7 +57,8 @@ export function CorpsDeFiche({
 	gestes,
 	ecrire,
 	onNoterEmail,
-	onAppeler
+	onAppeler,
+	avantEmail
 }: {
 	readonly nom: string;
 	readonly ligne?: string;
@@ -77,6 +78,8 @@ export function CorpsDeFiche({
 	readonly onNoterEmail?: (texte: string) => Promise<void>;
 	/** Pour un prospect qui a un téléphone : « Appeler » ouvre la feuille d'appel. */
 	readonly onAppeler?: () => void;
+	/** Pour un prospect à qui le modèle est refusé : pourquoi, au-dessus du simple lien. */
+	readonly avantEmail?: ReactNode;
 }) {
 	const [feuille, setFeuille] = useState<Feuille>(null);
 	const [segment, setSegment] = useState<'historique' | 'details'>('historique');
@@ -200,6 +203,8 @@ export function CorpsDeFiche({
 						avant={
 							ecrire !== undefined ? (
 								ecrire
+							) : avantEmail !== undefined ? (
+								avantEmail
 							) : email === undefined ? (
 								<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
 									Aucune adresse connue pour cette fiche.

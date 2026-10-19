@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { SEUIL_APPELER } from '../../croissance/score';
 import { statutClos } from '../../crm/statuts';
 import { estAAppeler } from '../../crm/appels';
+import { aInformer } from '../../crm/consentement';
 import { parcoursDe, type Parcours } from '../../crm/parcours';
 import { bornesDuJourDeParis } from '../../admin/dates';
 import { equipeQuery } from './enveloppe';
@@ -64,7 +65,6 @@ export const compteurs = equipeQuery('LECTURE')({
 		const ouverts = prospects.filter((p) => !statutClos(p.statut));
 		const duParcours = (parcours: Parcours) =>
 			ouverts.filter((p) => parcoursDe(p) === parcours).length;
-		const UN_MOIS = 30 * 24 * 60 * 60 * 1000;
 
 		return {
 			tachesDues: ouvertes.length,
@@ -88,9 +88,7 @@ export const compteurs = equipeQuery('LECTURE')({
 			parcoursExpertComptable: duParcours('EXPERT_COMPTABLE'),
 			parcoursPmeLogiciel: duParcours('PME_LOGICIEL'),
 			parcoursPilote: duParcours('PILOTE'),
-			aInformer: ouverts.filter(
-				(p) => p.email !== undefined && p.emailBase === undefined && maintenant - p.creeLe > UN_MOIS
-			).length,
+			aInformer: ouverts.filter((p) => aInformer(p, maintenant)).length,
 			appelsDuJour: prospects.filter((p) => estAAppeler(p, jour)).length,
 			supportAVous: chezLEquipe.filter(
 				(c) => c.assigneA === undefined || c.assigneA === ctx.equipier.email

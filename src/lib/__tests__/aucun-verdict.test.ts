@@ -25,7 +25,9 @@ const SURFACES = [
 	join('src', 'marketing'),
 	join('src', 'lib', 'config'),
 	join('src', 'lib', 'convex'),
-	join('src', 'lib', 'verticales')
+	join('src', 'lib', 'verticales'),
+	// Les e-mails et les scripts d'appel de la prospection (19/10/2026).
+	join('src', 'lib', 'crm')
 ];
 
 /** Les verdicts, tels qu'ils s'écrivaient. Aucun ne doit plus s'afficher. */

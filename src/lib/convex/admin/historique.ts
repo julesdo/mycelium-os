@@ -2,6 +2,7 @@ import { v, ConvexError } from 'convex/values';
 import { equipeMutation, equipeQuery } from './enveloppe';
 import { vIssueAppel, vTypeEvenementCrm } from './tables';
 import { jourDeRelance, LIBELLES_DES_ETAPES, SUITE_DES_ETAPES } from '../../crm/modeles';
+import { emailPermis, RAISONS_DU_REFUS } from '../../crm/consentement';
 
 /**
  * L'HISTORIQUE D'UNE FICHE (16/10/2026) : les notes, les appels, les e-mails notés,
@@ -120,6 +121,10 @@ export const emailEcrit = equipeMutation('SUPPORT')({
 		if (p === null) throw new ConvexError('Prospect introuvable.');
 		if (p.statut === 'STOP') throw new ConvexError('Ce prospect ne veut plus être contacté.');
 		const maintenant = Date.now();
+		// Le modèle n'est permis qu'à une adresse générique, à une personne informée, ou
+		// au premier contact dans le mois de la collecte (`crm/consentement.ts`).
+		const permission = emailPermis(p, maintenant);
+		if (!permission.permis) throw new ConvexError(RAISONS_DU_REFUS[permission.raison]);
 		const note = texte?.trim().slice(0, 3000);
 		await ctx.db.insert('evenementsCrm', {
 			prospectId: prospect,
@@ -138,6 +143,14 @@ export const emailEcrit = equipeMutation('SUPPORT')({
 		const suite = SUITE_DES_ETAPES[etape];
 		await ctx.db.patch(prospect, {
 			dernierContactLe: maintenant,
+			// Le premier e-mail porte l'information de l'article 14 : la personne est
+			// informée dès qu'il est parti. Une adresse générique se note comme telle.
+			...(permission.base === 'GENERIQUE' && p.emailBase === undefined
+				? { emailBase: 'GENERIQUE' as const }
+				: {}),
+			...(permission.base === 'PREMIER_CONTACT'
+				? { emailBase: 'INFORMEE' as const, emailInformeLe: maintenant }
+				: {}),
 			...(avance === null ? {} : { statut: avance }),
 			...(enCours
 				? {

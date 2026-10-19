@@ -52,6 +52,7 @@ import type * as croissance_releve from "../croissance/releve.js";
 import type * as croissance_tables from "../croissance/tables.js";
 import type * as croissance_umami from "../croissance/umami.js";
 import type * as crons from "../crons.js";
+import type * as desinscription from "../desinscription.js";
 import type * as emails_essai from "../emails/essai.js";
 import type * as emails_events from "../emails/events.js";
 import type * as emails_helpers from "../emails/helpers.js";
@@ -208,6 +209,7 @@ declare const fullApi: ApiFromModules<{
   "croissance/tables": typeof croissance_tables;
   "croissance/umami": typeof croissance_umami;
   crons: typeof crons;
+  "desinscription": typeof desinscription;
   "emails/essai": typeof emails_essai;
   "emails/events": typeof emails_events;
   "emails/helpers": typeof emails_helpers;

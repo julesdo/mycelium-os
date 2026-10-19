@@ -14,14 +14,13 @@ la ligne d'exemple).
 
 ## 1. La routine
 
-| Quand | Quoi | Combien |
-|---|---|---|
-| **Lundi, 30 min** | Lister des entreprises cibles sur [annuaire-entreprises.data.gouv.fr](https://annuaire-entreprises.data.gouv.fr) (filtres : activité, département, effectif ; le dirigeant est sur la fiche). L'e-mail se trouve sur le site de l'entreprise, sa page de contact ou ses mentions légales. | 30 lignes |
-| **Chaque jour, 40 min** | E-mails écrits à la main (modèles ci-dessous, une phrase personnalisée chaque fois) | 10 |
-| | Messages LinkedIn, à la main | 5 |
-| | Appels à des cabinets comptables d’Île-de-France | 2 |
-| **Chaque jour, 10 min** | Relances (J+4, puis J+10), et noter chaque réponse et chaque objection dans le tableur | — |
-| **Vendredi, 15 min** | Relire la semaine : quelle phrase a fait répondre, quelle objection revient. Ajuster un seul élément du modèle pour la semaine suivante. | — |
+| Quand                   | Quoi                                                                                                                                                                                                                                                                                      | Combien   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **Lundi, 30 min**       | Lister des entreprises cibles sur [annuaire-entreprises.data.gouv.fr](https://annuaire-entreprises.data.gouv.fr) (filtres : activité, département, effectif ; le dirigeant est sur la fiche). L'e-mail se trouve sur le site de l'entreprise, sa page de contact ou ses mentions légales. | 30 lignes |
+| **Chaque jour, 40 min** | Appels de la file « Appels du jour » du CRM (`/admin/appels`), avec le script du parcours                                                                                                                                                                                                 | 10        |
+|                         | E-mails écrits depuis la fiche (modèles ci-dessous, une phrase personnalisée chaque fois), quand ils sont permis                                                                                                                                                                          | 10        |
+| **Chaque jour, 10 min** | Relances (J+4, puis J+10), et noter chaque réponse et chaque objection dans le tableur                                                                                                                                                                                                    | —         |
+| **Vendredi, 15 min**    | Relire la semaine : quelle phrase a fait répondre, quelle objection revient. Ajuster un seul élément du modèle pour la semaine suivante.                                                                                                                                                  | —         |
 
 **Les cibles, dans cet ordre :**
 
@@ -37,11 +36,20 @@ la ligne d'exemple).
   de l'entreprise). Jamais d'envoi groupé, jamais de pixel de suivi.
 - **Depuis votre adresse `@letikette.com`**, dix par jour au plus : à ce volume, c'est une
   correspondance, pas une campagne. On s'arrête dès qu'il y a des rebonds.
-- **Le cadre légal B2B** : le message porte sur l'activité de la personne ; il dit qui vous êtes et
-  où vous avez trouvé son contact (l'annuaire public des entreprises) ; il offre un moyen simple de
-  ne plus être contacté. Une personne qui répond « stop » passe en « stop » dans le tableur et ne
-  reçoit plus rien. On n'écrit qu'à une adresse professionnelle. On efface après trois ans sans
-  réponse.
+- **Le cadre légal B2B** (CNIL, recommandations du 12/06/2024 et fiches du 10/06/2026, mis à jour
+  le 19/10/2026) : le message porte sur l'activité de la personne ; il dit qui écrit ; il dit **où
+  l'adresse a été trouvée, vraiment** (le site de l'entreprise, sa page de contact : l'annuaire des
+  entreprises et les données de la commande publique ne publient aucune adresse e-mail) ; il porte
+  un **lien de désinscription**. Une adresse **nominative** n'est permise qu'au premier contact
+  dans le mois de l'entrée au CRM (l'e-mail informe alors la personne) ou après qu'elle a été
+  informée, par exemple au téléphone ; passé ce mois, on l'appelle ou on efface. Une adresse
+  **générique** (contact@, info@) est toujours permise. Jamais d'adresse reconstituée (prénom.nom
+  deviné). Le CRM applique ces règles (`src/lib/crm/consentement.ts`) et refuse le modèle quand
+  elles ne sont pas remplies. On efface trois ans après le dernier contact **venu du prospect**.
+- **Au téléphone aussi**, la personne est informée : qui appelle, pour quelle entreprise, où son
+  numéro a été trouvé, et qu'elle peut demander à ne plus être appelée. Les scripts du CRM le
+  disent (`src/lib/crm/scripts.ts`). **Avant de lancer les appels**, obtenir l'accord écrit de
+  Paddle : la clause 11.1 (xv) de son contrat interdit le télémarketing sortant.
 - **Les lignes rouges** valent ici aussi : jamais « garantie », jamais de promesse de
   recouvrement, jamais « vous devriez engager une procédure ». On montre ce que dit la loi et ce
   que le logiciel calcule.
@@ -52,7 +60,8 @@ la ligne d'exemple).
   dans le registre avant d'envoyer en 2027.**
 - **Les liens portent leur source**, pour savoir d'où vient chaque inscription :
   `https://www.letikette.com/secteurs/transport-routier?utm_source=manuel&utm_medium=email&utm_campaign=transport#calcul`
-  (remplacer `transport` par `batiment`, `services` ou `cabinet`, et `email` par `linkedin`).
+  (remplacer `transport` par `batiment`, `services` ou `cabinet`). LinkedIn n'est plus un
+  canal (décision du 19/10/2026).
 
 ## 3. Les e-mails
 
@@ -84,8 +93,11 @@ comptes du prospect.
 > Jules
 > Fondateur de Letikette · www.letikette.com
 >
-> J'ai trouvé vos coordonnées sur l'annuaire public des entreprises. Si vous préférez que je ne vous
-> écrive plus, répondez « stop ».
+> J'ai trouvé votre adresse {où, vraiment : sur votre site, par exemple}. Letikette utilise vos
+> coordonnées professionnelles pour vous présenter son logiciel, sur la base de son intérêt
+> légitime, et les conserve trois ans au plus après votre dernière réponse.
+> Pour ne plus recevoir de message : {lien de désinscription de la fiche}
+> Vos droits : www.letikette.com/politique-de-confidentialite
 
 ### Modèle 2 — Bâtiment et services
 
@@ -110,8 +122,11 @@ comptes du prospect.
 > Jules
 > Fondateur de Letikette · www.letikette.com
 >
-> J'ai trouvé vos coordonnées sur l'annuaire public des entreprises. Si vous préférez que je ne vous
-> écrive plus, répondez « stop ».
+> J'ai trouvé votre adresse {où, vraiment : sur votre site, par exemple}. Letikette utilise vos
+> coordonnées professionnelles pour vous présenter son logiciel, sur la base de son intérêt
+> légitime, et les conserve trois ans au plus après votre dernière réponse.
+> Pour ne plus recevoir de message : {lien de désinscription de la fiche}
+> Vos droits : www.letikette.com/politique-de-confidentialite
 
 ### Modèle 3 — Cabinet comptable
 
@@ -132,8 +147,11 @@ comptes du prospect.
 > Jules
 > Fondateur de Letikette · www.letikette.com
 >
-> J'ai trouvé vos coordonnées sur l'annuaire public des entreprises. Si vous préférez que je ne vous
-> écrive plus, répondez « stop ».
+> J'ai trouvé votre adresse {où, vraiment : sur votre site, par exemple}. Letikette utilise vos
+> coordonnées professionnelles pour vous présenter son logiciel, sur la base de son intérêt
+> légitime, et les conserve trois ans au plus après votre dernière réponse.
+> Pour ne plus recevoir de message : {lien de désinscription de la fiche}
+> Vos droits : www.letikette.com/politique-de-confidentialite
 
 ### Les relances
 
@@ -143,17 +161,16 @@ comptes du prospect.
 > **J+10 (la dernière) :** Bonjour {Prénom}, je ne vous relancerai plus après ce message. Si le
 > sujet devient d'actualité, le calcul reste là : {lien}. Bonne fin de semaine.
 
-### LinkedIn (300 caractères)
-
-> Bonjour {Prénom}, je développe Letikette à Paris : un logiciel qui chiffre ce que la loi
-> ajoute aux factures payées en retard (40 € par facture, plus les pénalités) et relance à votre
-> nom. Je serais curieux d'avoir votre avis de dirigeant, sans engagement.
+Les relances portent le même pied que le premier e-mail.
 
 ## 4. L'appel aux cabinets (deux minutes)
 
-1. **Qui vous êtes :** « Bonjour, Jules, je développe Letikette à Paris, un logiciel pour les
-   impayés des TPE. Je ne vous vends rien aujourd'hui : je cherche l'avis de cabinets. Vous avez
-   deux minutes ? »
+Les scripts de chaque parcours (fournisseurs publics, transporteurs, cabinets, PME, pilotes) sont
+dans la feuille d'appel du CRM, avec les chiffres du jour. Celui des cabinets :
+
+1. **Qui vous êtes, et d'où vient le numéro :** « Bonjour, Jules, de Letikette, à Paris. Je
+   développe un logiciel pour les impayés des TPE et PME, et j'ai trouvé votre cabinet {où}. Je ne
+   vous vends rien aujourd'hui : je cherche l'avis de cabinets. Vous avez deux minutes ? »
 2. **Trois questions, puis écouter :**
    - « Parmi vos clients, combien ont des impayés qui reviennent ? »
    - « Que leur proposez-vous aujourd'hui quand une facture traîne ? »
@@ -162,27 +179,29 @@ comptes du prospect.
    dû au centime, surveille les délais pour agir et relance à son nom. »
 4. **La demande :** « Je construis l'espace cabinet avec cinq cabinets parisiens, gratuit pour
    vous. Je peux vous le montrer vingt minutes ? »
-5. **Noter** dans le tableur : la réponse, l'objection, la prochaine action.
+5. **Pour finir :** « Si vous préférez que je ne vous rappelle pas, dites-le-moi : je vous retire
+   de ma liste. »
+6. **Noter** l'issue dans la feuille d'appel : elle pose la prochaine action seule.
 
 ## 5. Les objections, et ce qu'on répond
 
-| Objection | Réponse |
-|---|---|
+| Objection                                        | Réponse                                                                                                                                                                   |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | « J'ai déjà les relances de Pennylane / Qonto. » | Elles relancent ; Letikette ajoute le calcul des 40 € et des pénalités, la date limite pour agir, et le suivi jusqu'à l'avocat si besoin. Les deux se branchent ensemble. |
-| « Je ne veux pas froisser mes clients. » | Vous choisissez qui est relancé. Rien ne part sans que vous l'ayez décidé ; chaque relance s'affiche une heure avant de partir et se retient d'un geste. |
-| « Combien ça coûte ? » | Découverte est gratuite (on voit ce qui est dû). Ensuite 12, 59 ou 149 € HT par mois, trente jours d'essai, aucune commission sur ce qui rentre. |
-| « Réclamer 40 €, c'est légal ? » | Oui : c'est dû par tout professionnel qui paie en retard (code de commerce, D441-5), sans démarche préalable. Le logiciel cite la source sur chaque décompte. |
-| « Je n'ai pas le temps. » | Le logiciel lit un export ou une photo de vos factures ; le reste se fait seul. Dix minutes pour voir ce qui vous est dû. |
-| « Mes données ? » | Chaque document est chiffré à son arrivée, sous une clé propre à votre entreprise ; détail sur www.letikette.com/securite. |
+| « Je ne veux pas froisser mes clients. »         | Vous choisissez qui est relancé. Rien ne part sans que vous l'ayez décidé ; chaque relance s'affiche une heure avant de partir et se retient d'un geste.                  |
+| « Combien ça coûte ? »                           | Découverte est gratuite (on voit ce qui est dû). Ensuite 12, 59 ou 149 € HT par mois, trente jours d'essai, aucune commission sur ce qui rentre.                          |
+| « Réclamer 40 €, c'est légal ? »                 | Oui : c'est dû par tout professionnel qui paie en retard (code de commerce, D441-5), sans démarche préalable. Le logiciel cite la source sur chaque décompte.             |
+| « Je n'ai pas le temps. »                        | Le logiciel lit un export ou une photo de vos factures ; le reste se fait seul. Dix minutes pour voir ce qui vous est dû.                                                 |
+| « Mes données ? »                                | Chaque document est chiffré à son arrivée, sous une clé propre à votre entreprise ; détail sur www.letikette.com/securite.                                                |
 
 ## 6. Quand passer à la machine
 
 Chaque dépense se débloque par un seuil mesuré ici, pas par une date.
 
-| Dépense | On l'engage quand… |
-|---|---|
-| Instantly, domaines, boîtes (~100 € par mois) | 50 e-mails écrits à la main obtiennent au moins 10 % de réponses positives, **et** vous n'arrivez plus à suivre à la main |
-| Icypeas ou FullEnrich, MillionVerifier | en même temps qu'Instantly |
-| Le CRM de l'interface admin (du code, 0 €) | plus de 50 prospects actifs dans le tableur |
-| Expériences automatiques, point du lundi écrit par Claude | environ 100 inscrits par mois |
-| Publicité | le coût d'acquisition des autres canaux est connu |
+| Dépense                                                   | On l'engage quand…                                                                                                        |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Instantly, domaines, boîtes (~100 € par mois)             | 50 e-mails écrits à la main obtiennent au moins 10 % de réponses positives, **et** vous n'arrivez plus à suivre à la main |
+| Icypeas ou FullEnrich, MillionVerifier                    | en même temps qu'Instantly                                                                                                |
+| Le CRM de l'interface admin (du code, 0 €)                | plus de 50 prospects actifs dans le tableur                                                                               |
+| Expériences automatiques, point du lundi écrit par Claude | environ 100 inscrits par mois                                                                                             |
+| Publicité                                                 | le coût d'acquisition des autres canaux est connu                                                                         |

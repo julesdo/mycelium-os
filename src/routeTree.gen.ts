@@ -49,6 +49,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogAdresseRouteImport } from './routes/blog/$adresse'
 import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
+import { Route as DesinscriptionJetonRouteImport } from './routes/desinscription.$jeton'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as SecteursSecteurRouteImport } from './routes/secteurs.$secteur'
@@ -284,6 +285,11 @@ const ConnexionVerificationRoute = ConnexionVerificationRouteImport.update({
   path: '/connexion/verification',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesinscriptionJetonRoute = DesinscriptionJetonRouteImport.update({
+  id: '/desinscription/$jeton',
+  path: '/desinscription/$jeton',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PJetonRoute = PJetonRouteImport.update({
   id: '/p/$jeton',
   path: '/p/$jeton',
@@ -483,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion/verification': typeof ConnexionVerificationRoute
+  '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -555,6 +562,7 @@ export interface FileRoutesByTo {
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion/verification': typeof ConnexionVerificationRoute
+  '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -630,6 +638,7 @@ export interface FileRoutesById {
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion_/verification': typeof ConnexionVerificationRoute
+  '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -706,6 +715,7 @@ export interface FileRouteTypes {
     | '/blog/$adresse'
     | '/blog/rss.xml'
     | '/connexion/verification'
+    | '/desinscription/$jeton'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -778,6 +788,7 @@ export interface FileRouteTypes {
     | '/blog/$adresse'
     | '/blog/rss.xml'
     | '/connexion/verification'
+    | '/desinscription/$jeton'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -852,6 +863,7 @@ export interface FileRouteTypes {
     | '/blog/$adresse'
     | '/blog/rss.xml'
     | '/connexion_/verification'
+    | '/desinscription/$jeton'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -913,6 +925,7 @@ export interface RootRouteChildren {
   BlogAdresseRoute: typeof BlogAdresseRoute
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   ConnexionVerificationRoute: typeof ConnexionVerificationRoute
+  DesinscriptionJetonRoute: typeof DesinscriptionJetonRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   SecteursSecteurRoute: typeof SecteursSecteurRoute
@@ -1200,6 +1213,13 @@ declare module '@tanstack/react-router' {
       path: '/connexion/verification'
       fullPath: '/connexion/verification'
       preLoaderRoute: typeof ConnexionVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/desinscription/$jeton': {
+      id: '/desinscription/$jeton'
+      path: '/desinscription/$jeton'
+      fullPath: '/desinscription/$jeton'
+      preLoaderRoute: typeof DesinscriptionJetonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$jeton': {
@@ -1590,6 +1610,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogAdresseRoute: BlogAdresseRoute,
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   ConnexionVerificationRoute: ConnexionVerificationRoute,
+  DesinscriptionJetonRoute: DesinscriptionJetonRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   SecteursSecteurRoute: SecteursSecteurRoute,

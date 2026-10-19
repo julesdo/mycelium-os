@@ -7,6 +7,7 @@ import {
 	type EtapeDEcriture,
 	type Modele
 } from '../../lib/crm/modeles';
+import type { BaseDeLEmail } from '../../lib/crm/consentement';
 
 /**
  * L'E-MAIL PRÊT À ÉCRIRE, DANS LA FEUILLE « E-MAIL » D'UN PROSPECT (18/10/2026).
@@ -27,7 +28,7 @@ export function RedactionDEmail({
 	modele,
 	objet,
 	corps,
-	linkedin,
+	base,
 	email,
 	entreprise,
 	ville
@@ -36,8 +37,8 @@ export function RedactionDEmail({
 	readonly modele: Modele;
 	readonly objet: string;
 	readonly corps: string;
-	/** Le message d'invitation LinkedIn, au premier contact seulement. */
-	readonly linkedin?: string;
+	/** Sur quoi l'e-mail s'appuie : au premier contact, c'est lui qui informe la personne. */
+	readonly base?: BaseDeLEmail;
 	readonly email?: string;
 	readonly entreprise: string;
 	readonly ville?: string;
@@ -67,9 +68,16 @@ export function RedactionDEmail({
 					{corps}
 				</p>
 			</div>
-			{etape === 'PREMIER' && modele !== 'CABINET' ? (
+			{corps.includes('[') ? (
 				<p className="px-1 text-cladd-3xs text-cladd-fg-soft">
-					Remplacez la phrase entre crochets par une phrase écrite pour la personne avant d’envoyer.
+					Remplacez ce qui est entre crochets avant d’envoyer : une phrase écrite pour la personne,
+					et où vous avez trouvé son adresse.
+				</p>
+			) : null}
+			{base === 'PREMIER_CONTACT' ? (
+				<p className="px-1 text-cladd-3xs text-cladd-fg-soft">
+					Cet e-mail est le premier contact : son pied informe la personne (d’où vient son adresse,
+					ses droits, le lien pour ne plus rien recevoir). Gardez-le tel quel.
 				</p>
 			) : null}
 			{email === undefined ? (
@@ -101,13 +109,6 @@ export function RedactionDEmail({
 					affichage="Copier le message"
 					valeur={`${objet}\n\n${corps}`}
 				/>
-				{linkedin === undefined ? null : (
-					<LigneCopiable
-						etiquette="Invitation LinkedIn"
-						affichage="Copier le message"
-						valeur={linkedin}
-					/>
-				)}
 			</div>
 		</div>
 	);

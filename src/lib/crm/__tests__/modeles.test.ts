@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import * as modeles from '../modeles';
 import {
 	adresseMailto,
 	composerEmail,
-	composerLinkedIn,
 	etapeDEcriture,
 	jourDeRelance,
 	modeleDe,
@@ -24,7 +24,9 @@ const TRANSPORTEUR = {
 	entreprise: 'TRANSPORTS MOREAU ET FILS',
 	dirigeant: 'Claire Moreau',
 	activite: 'Transports routiers de fret de proximité (49.41B)',
-	cible: 'PME' as const
+	cible: 'PME' as const,
+	trouveOu: 'Site web de l’entreprise',
+	jetonDesinscription: 'jeton-moreau'
 };
 
 describe('le modèle', () => {
@@ -79,7 +81,22 @@ describe('composerEmail', () => {
 		expect(corps).toContain('Transports Moreau et Fils');
 		expect(corps).toContain('utm_campaign=transport');
 		expect(corps).toContain('Jules\nFondateur de Letikette');
-		expect(corps).toContain('Si vous préférez que je ne vous écrive plus, répondez « stop »');
+		// Le pied dit la vraie source de l'adresse et porte le lien de désinscription.
+		expect(corps).toContain('J’ai trouvé votre adresse par « Site web de l’entreprise »');
+		expect(corps).toContain('https://www.letikette.com/desinscription/jeton-moreau');
+		expect(corps).not.toMatch(/annuaire public/i);
+	});
+
+	it('met le pied légal à chaque message, relances comprises', () => {
+		for (const etape of ['PREMIER', 'RELANCE_1', 'RELANCE_2'] as const) {
+			const { corps } = composerEmail({
+				prospect: TRANSPORTEUR,
+				etape,
+				signataire: { prenom: 'Jules', fondateur: true },
+				loi: LOI
+			});
+			expect(corps, etape).toContain('/desinscription/jeton-moreau');
+		}
 	});
 
 	it('laisse la phrase personnelle à écrire, entre crochets', () => {
@@ -162,12 +179,9 @@ describe('composerEmail', () => {
 	});
 });
 
-describe('composerLinkedIn', () => {
-	it('tient en 300 caractères, prénom et lien compris', () => {
-		const message = composerLinkedIn({ prospect: TRANSPORTEUR, loi: LOI });
-		expect(message.length).toBeLessThanOrEqual(300);
-		expect(message).toMatch(/^Bonjour Claire,/);
-		expect(message).toContain('à Paris');
+describe('LinkedIn', () => {
+	it('n’a plus de modèle : la direction n’en veut pas (19/10/2026)', () => {
+		expect('composerLinkedIn' in modeles).toBe(false);
 	});
 });
 

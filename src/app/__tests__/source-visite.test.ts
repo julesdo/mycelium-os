@@ -44,4 +44,14 @@ describe('l’amorce de la source', () => {
 			executer('/p/abc123', 'https://www.letikette.com/p/abc123', 'https://mail.exemple.fr/')
 		).toBeUndefined();
 	});
+
+	it('ne note rien sur la page de désinscription : son adresse porte un jeton', () => {
+		expect(
+			executer(
+				'/desinscription/9b2f-41c1',
+				'https://www.letikette.com/desinscription/9b2f-41c1',
+				'https://mail.exemple.fr/'
+			)
+		).toBeUndefined();
+	});
 });

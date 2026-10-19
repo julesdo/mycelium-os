@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import { etapeInitiale, parcoursDe } from '../../crm/parcours';
+import { CONSERVATION_MS } from '../../crm/consentement';
 
 /**
  * L'EFFACEMENT LÉGAL DES PROSPECTS (16/10/2026) : chaque nuit, un prospect sans
@@ -17,13 +18,11 @@ import { etapeInitiale, parcoursDe } from '../../crm/parcours';
  * ni un gagné non plus : ce sont des clients.
  */
 
-const TROIS_ANS = 3 * 365 * 24 * 60 * 60 * 1000;
-
 export const effacerLesAnciens = internalMutation({
 	args: {},
 	returns: v.number(),
 	handler: async (ctx): Promise<number> => {
-		const limite = Date.now() - TROIS_ANS;
+		const limite = Date.now() - CONSERVATION_MS;
 		const anciens = (await ctx.db.query('prospects').withIndex('by_cree').take(500)).filter(
 			(p) =>
 				p.statut !== 'INSCRIT' &&
