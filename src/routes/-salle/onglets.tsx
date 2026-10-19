@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { suivreProcedure } from '../../lib/verticales/recouvrement/apres-procedure';
 import { EcranDossiers, type DossierDeLIndex, type DossiersAffiches } from '../../screens/dossiers';
 import { EcranRevelation, type RevelationDuJour } from '../../screens/revelation';
+import { EcranDiagnostic, type DiagnosticDuJour } from '../../screens/diagnostic';
 import {
 	EcranNotifications,
 	type NotificationAffichee,
@@ -171,7 +172,8 @@ function DossiersDemo({ etat }: { etat: EtatDemo }) {
 							? [
 									{
 										debiteur: 'Comptoir Lefèvre',
-										raison: 'Un courrier du même modèle attend déjà votre validation sur ce dossier.'
+										raison:
+											'Un courrier du même modèle attend déjà votre validation sur ce dossier.'
 									}
 								]
 							: []
@@ -327,6 +329,97 @@ const JOUR_SANS_FACTURE_DEMO: RevelationDuJour = {
 	laisseDeCote: { etat: 'pret', valeur: ABANDONS_SANS_DECOMPTE_DEMO }
 };
 
+/** Le diagnostic d'un compte Découverte : trois mois, une payée en retard, une échéance supposée. */
+const DIAGNOSTIC_DEMO: DiagnosticDuJour = {
+	etablissement: 'Ateliers Martin',
+	diagnostic: {
+		du: '2026-07-19',
+		arreteAu: '2026-10-19',
+		impayees: {
+			nombreFactures: 3,
+			principal: 1_842_000n,
+			interets: 41_230n,
+			indemnites: 12_000n,
+			supplement: 53_230n,
+			lignes: [
+				{
+					reference: 'FA-2026-0142',
+					debiteur: 'Fournitures Durand',
+					principalRestantDu: 1_200_000n,
+					supplement: 31_200n
+				},
+				{
+					reference: 'FA-2026-0151',
+					debiteur: 'Garnier Bâtiment',
+					principalRestantDu: 482_000n,
+					supplement: 14_030n
+				},
+				{
+					reference: 'FA-2026-0160',
+					debiteur: 'Clinique des Ormes',
+					principalRestantDu: 160_000n,
+					supplement: 8_000n
+				}
+			]
+		},
+		payeesEnRetard: {
+			nombreFactures: 2,
+			interets: 13_480n,
+			indemnites: 8_000n,
+			supplement: 21_480n,
+			lignes: [
+				{
+					reference: 'FA-2026-0120',
+					debiteur: 'Fournitures Durand',
+					payeeLe: '2026-08-14',
+					joursDeRetard: 44,
+					supplement: 14_430n,
+					echeanceSupposee: false
+				},
+				{
+					reference: 'FA-2026-0127',
+					debiteur: 'Transports Moreau',
+					payeeLe: '2026-09-02',
+					joursDeRetard: 19,
+					supplement: 7_050n,
+					echeanceSupposee: true
+				}
+			]
+		},
+		horsPeriode: { nombre: 7, principal: 640_000n },
+		nonChiffrees: [
+			{
+				reference: 'FA-2026-0133',
+				raison:
+					'Date de paiement inconnue : le logiciel de comptabilité ne la transmet pas, et le jour où le règlement a été lu ne la remplace pas. Les pénalités ne se calculent pas sans elle.'
+			}
+		],
+		supplementTotal: 74_710n,
+		echeancesSupposees: 1
+	}
+};
+
+const DIAGNOSTIC_VIDE_DEMO: DiagnosticDuJour = {
+	etablissement: 'Ateliers Martin',
+	diagnostic: {
+		du: null,
+		arreteAu: '2026-10-19',
+		impayees: {
+			nombreFactures: 0,
+			principal: 0n,
+			interets: 0n,
+			indemnites: 0n,
+			supplement: 0n,
+			lignes: []
+		},
+		payeesEnRetard: { nombreFactures: 0, interets: 0n, indemnites: 0n, supplement: 0n, lignes: [] },
+		horsPeriode: { nombre: 0, principal: 0n },
+		nonChiffrees: [],
+		supplementTotal: 0n,
+		echeancesSupposees: 0
+	}
+};
+
 export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 	/*
 	  ⚠️ L'ACCUEIL N'EST PLUS ICI, ET IL N'EXISTE PLUS. `/app/` rend la file
@@ -357,5 +450,16 @@ export const ECRANS_ONGLETS: readonly EcranDuProduit[] = [
 			const jour = formeDemo(variante, REVELATION_DU_JOUR_DEMO, FORMES_REVELATION_DEMO);
 			return <EcranRevelation donnees={lectureDemo(etat, jour, JOUR_SANS_FACTURE_DEMO)} />;
 		}
+	},
+	{
+		route: '/app/diagnostic',
+		libelle: 'votre diagnostic',
+		vide: true,
+		Demo: ({ etat }) => (
+			<EcranDiagnostic
+				donnees={lectureDemo(etat, DIAGNOSTIC_DEMO, DIAGNOSTIC_VIDE_DEMO)}
+				onTelecharger={() => undefined}
+			/>
+		)
 	}
 ];

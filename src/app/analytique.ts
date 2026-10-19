@@ -88,7 +88,9 @@ export type EvenementProduit =
 	| 'abonnement-souscrit'
 	| 'installation-proposee'
 	| 'installation-acceptee'
-	| 'installation-refusee';
+	| 'installation-refusee'
+	// Le rapport du diagnostic express téléchargé (19/10/2026) : un geste, jamais un montant.
+	| 'diagnostic-telecharge';
 
 /**
  * Note qu'un geste a eu lieu. Sans traceur (développement, « Ne pas me pister »,

@@ -1,6 +1,7 @@
 import { UploadIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
+	CarteLien,
 	CeQuiEstDu,
 	CeQueLesDecomptesLaissentDeCote,
 	Lien,
@@ -140,6 +141,17 @@ export function EcranRevelation({ donnees }: { donnees: Lecture<RevelationDuJour
 	return (
 		<PageEcran entete={entete}>
 			<CeQuiEstDu revelation={revelation} bilan={bilan} arreteAu={arreteAu} />
+
+			{/*
+			  LE DIAGNOSTIC (19/10/2026) : la même période, plus les factures payées en
+			  retard, que cette page ne compte pas (leur montant est rentré), et le rapport
+			  en PDF. Une carte, parce qu'elle mène quelque part.
+			*/}
+			<CarteLien
+				vers="/app/diagnostic"
+				titre="Votre diagnostic"
+				ligne="Payées en retard comprises, en PDF"
+			/>
 
 			{/*
 			  ⚠️ APRÈS CE QUI EST DÛ, ET AVANT RIEN. Le bloc dit ce que les décomptes
