@@ -5,6 +5,7 @@ import type { Id } from '../_generated/dataModel';
 import { deduireEtapes, type EtatDuCompte, type FormuleVue } from '../../croissance/etapes';
 import { SEUIL_APPELER, calculerScore } from '../../croissance/score';
 import { prochainConseil } from '../../croissance/conseils';
+import { estEchue } from '../../verticales/recouvrement/exigibilite';
 
 /**
  * LE RELEVÉ DES ÉTAPES (16/10/2026) — l'état d'un établissement, lu tel qu'il est.
@@ -21,12 +22,14 @@ const FORMULES: readonly string[] = ['solo', 'equipe', 'pro'];
 type Releve = EtatDuCompte & { readonly factures: number; readonly membres: number };
 
 /**
- * Une facture échue et pas soldée existe-t-elle ? ⚠️ L'INDEX EST BORNÉ DES DEUX
- * CÔTÉS : un champ absent se range avant toutes les valeurs, et une borne `lt`
- * seule ramènerait les factures sans échéance. On s'arrête à la première trouvée.
+ * Une facture échue et pas soldée existe-t-elle ? La lecture est celle de tout ce qui
+ * mesure (`verticales/recouvrement/exigibilite.ts`) : une facture sans échéance (un FEC)
+ * est échue trente jours après sa date, comme dans la révélation. ⚠️ L'INDEX EST BORNÉ
+ * DES DEUX CÔTÉS pour les échéances connues ; les factures sans échéance se lisent à part
+ * (`eq(undefined)`). On s'arrête à la première trouvée.
  */
-async function factureEchueImpayee(
-	ctx: MutationCtx,
+export async function factureEchueImpayee(
+	ctx: Pick<MutationCtx, 'db'>,
 	organizationId: Id<'organizations'>,
 	aujourdHui: string
 ): Promise<boolean> {
@@ -36,9 +39,49 @@ async function factureEchueImpayee(
 			q.eq('organizationId', organizationId).gt('dateEcheance', '').lt('dateEcheance', aujourdHui)
 		);
 	for await (const facture of echues) {
-		if (facture.statutPaiement !== 'SOLDEE') return true;
+		if (estEchue(facture, aujourdHui)) return true;
+	}
+	const sansEcheance = ctx.db
+		.query('facturesVente')
+		.withIndex('by_org_and_echeance', (q) =>
+			q.eq('organizationId', organizationId).eq('dateEcheance', undefined)
+		);
+	for await (const facture of sansEcheance) {
+		if (estEchue(facture, aujourdHui)) return true;
 	}
 	return false;
+}
+
+/** La première lecture lancée (un dépôt, une connexion qui lit) et la première facture entrée. */
+async function datesDuDiagnostic(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>
+): Promise<{ lanceLe: number | null; renduLe: number | null }> {
+	const premierDepot = await ctx.db
+		.query('importsRecouvrement')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	const qonto = await ctx.db
+		.query('connexionsQonto')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	const nango = await ctx.db
+		.query('connexionsNango')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	const lancements = [
+		premierDepot?.deposeLe,
+		qonto?.synchroDebuteeLe ?? qonto?.derniereSynchro,
+		nango?.lectureDebuteeLe ?? nango?.derniereSynchro
+	].filter((t): t is number => t !== undefined);
+	const premiereFacture = await ctx.db
+		.query('facturesVente')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	return {
+		lanceLe: lancements.length === 0 ? null : Math.min(...lancements),
+		renduLe: premiereFacture?.creeLe ?? null
+	};
 }
 
 async function etatDuCompte(
@@ -92,10 +135,14 @@ async function etatDuCompte(
 				: org.paddlePlanTier;
 	const relancesActives = pilote?.envoiAutomatique === true;
 
+	const diagnostic = await datesDuDiagnostic(ctx, organizationId);
+
 	return {
 		creeLe: org.createdAt,
 		sirenConnu: (profil?.siren ?? '') !== '',
 		premierDepotLe,
+		diagnosticLanceLe: diagnostic.lanceLe,
+		diagnosticRenduLe: diagnostic.renduLe,
 		factureEchueImpayee: await factureEchueImpayee(ctx, organizationId, aujourdHui),
 		relancesActiveesLe: pilote?.activeLe ?? (relancesActives ? pilote._creationTime : null),
 		relancesActives,

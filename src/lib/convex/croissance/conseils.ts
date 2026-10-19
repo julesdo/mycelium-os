@@ -13,6 +13,7 @@ import {
 import { prochainConseil, type CleConseil } from '../../croissance/conseils';
 import { PLAN_PAR_DEFAUT, prochainCreneauDEnvoi } from '../../verticales/recouvrement/plan-relance';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
+import { estEchue } from '../../verticales/recouvrement/exigibilite';
 import { additionner, depuisCentimes, versEuros, ZERO } from '../../socle/montants';
 import { resteDu } from '../recouvrement/creances';
 
@@ -65,6 +66,11 @@ export function lignesDuPlan(): string[] {
 	);
 }
 
+/** Deux lectures de la base, l'une après l'autre. */
+async function* fusionner<T>(...flux: AsyncIterable<T>[]): AsyncGenerator<T> {
+	for (const f of flux) for await (const element of f) yield element;
+}
+
 /** Ce qui est dû sur les factures échues non soldées, et les frais prévus par la loi. */
 async function ceQuiEstDu(
 	ctx: MutationCtx,
@@ -73,13 +79,20 @@ async function ceQuiEstDu(
 ): Promise<NonNullable<DonneesConseil['du']> | undefined> {
 	let total = ZERO;
 	let factures = 0;
+	// La même lecture que la révélation : une facture sans échéance (un FEC) est échue
+	// trente jours après sa date (`exigibilite.ts`).
 	const echues = ctx.db
 		.query('facturesVente')
 		.withIndex('by_org_and_echeance', (q) =>
 			q.eq('organizationId', organizationId).gt('dateEcheance', '').lt('dateEcheance', aujourdHui)
 		);
-	for await (const facture of echues) {
-		if (facture.statutPaiement === 'SOLDEE') continue;
+	const sansEcheance = ctx.db
+		.query('facturesVente')
+		.withIndex('by_org_and_echeance', (q) =>
+			q.eq('organizationId', organizationId).eq('dateEcheance', undefined)
+		);
+	for await (const facture of fusionner(echues, sansEcheance)) {
+		if (!estEchue(facture, aujourdHui)) continue;
 		const reste = await resteDu(ctx, facture);
 		if ((reste as bigint) <= 0n) continue;
 		total = additionner(total, reste);

@@ -29,7 +29,9 @@ const date = v.optional(v.number());
 export const vEtapes = v.object({
 	INSCRIT: date,
 	ENTREPRISE: date,
+	DIAGNOSTIC_LANCE: date,
 	FACTURES_DEPOSEES: date,
+	DIAGNOSTIC_RENDU: date,
 	MONTANT_REVELE: date,
 	RELANCES_ACTIVEES: date,
 	ESSAI: date,

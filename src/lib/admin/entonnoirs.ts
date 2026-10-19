@@ -90,7 +90,9 @@ export function entonnoirDeProspection(statuts: readonly StatutProspect[]): Etap
 export const ETAPES_DES_COMPTES: readonly Etape[] = [
 	'INSCRIT',
 	'ENTREPRISE',
+	'DIAGNOSTIC_LANCE',
 	'FACTURES_DEPOSEES',
+	'DIAGNOSTIC_RENDU',
 	'MONTANT_REVELE',
 	'RELANCES_ACTIVEES',
 	'ESSAI',

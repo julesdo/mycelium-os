@@ -63,6 +63,8 @@ function etat(partiel: Partial<EtatDuCompte> = {}): EtatDuCompte {
 		creeLe: T0,
 		sirenConnu: false,
 		premierDepotLe: null,
+		diagnosticLanceLe: null,
+		diagnosticRenduLe: null,
 		factureEchueImpayee: false,
 		relancesActiveesLe: null,
 		relancesActives: false,
@@ -93,6 +95,15 @@ describe('deduireEtapes', () => {
 			T0 + 9000
 		);
 		expect(m2.etapes.MONTANT_REVELE).toBe(T0 + 2000);
+	});
+	it('date le diagnostic au moment réel, jamais au moment du relevé', () => {
+		const m = deduireEtapes(
+			etat({ diagnosticLanceLe: T0 + 100, diagnosticRenduLe: T0 + 600 }),
+			{ etapes: {} },
+			T0 + 9000
+		);
+		expect(m.etapes.DIAGNOSTIC_LANCE).toBe(T0 + 100);
+		expect(m.etapes.DIAGNOSTIC_RENDU).toBe(T0 + 600);
 	});
 	it('mesure la montée en gamme contre la formule vue au premier abonnement', () => {
 		const m1 = deduireEtapes(

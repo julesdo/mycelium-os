@@ -38,7 +38,9 @@ export function compterParSource(
 export const LIBELLES_DES_ETAPES: Record<Etape, string> = {
 	INSCRIT: 'Inscrits',
 	ENTREPRISE: 'Entreprise renseignée',
+	DIAGNOSTIC_LANCE: 'Diagnostics lancés',
 	FACTURES_DEPOSEES: 'Factures déposées',
+	DIAGNOSTIC_RENDU: 'Diagnostics rendus',
 	MONTANT_REVELE: 'Factures échues trouvées',
 	RELANCES_ACTIVEES: 'Relances activées',
 	ESSAI: 'Essais',

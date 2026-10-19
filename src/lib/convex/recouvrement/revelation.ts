@@ -14,7 +14,7 @@ import {
 	separerParPeriode,
 	type LigneRevelee
 } from '../../verticales/recouvrement/revelation';
-import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
+import { departDuRetard } from '../../verticales/recouvrement/exigibilite';
 import { plancherDHistorique } from '../../config/tarifs';
 import { limitesDeLOrganisation } from '../limites';
 import type { FacturePourRevelation } from '../../verticales/recouvrement/revelation';
@@ -68,21 +68,9 @@ const CONVENTION = 'ACT_365' as const;
  * qu'un intérêt approximé est un chiffre faux qu'on envoie à un débiteur.
  */
 function departDe(facture: Doc<'facturesVente'>): { depart: string; supposee: boolean } {
-	if (facture.dateExigibilite !== undefined)
-		return { depart: facture.dateExigibilite, supposee: false };
-	if (facture.dateEcheance !== undefined) return { depart: facture.dateEcheance, supposee: false };
-	// ⚠️ NI EXIGIBILITÉ NI ÉCHÉANCE (un FEC n'en porte pas) : le délai supplétif de
-	// L441-10 I, compté depuis la DATE DE LA FACTURE, et marqué comme hypothèse
-	// (19/10/2026). Avant, le retard courait dès l'émission, et une facture pas encore
-	// échue portait déjà ses 40 €. Une date d'émission illisible part telle quelle :
-	// `reveler` la nommera.
-	const jours = exiger(PARAMETRES.delaiDeReglementSuppletif);
-	return {
-		depart: estDateReelle(facture.dateEmission)
-			? ajouterJours(facture.dateEmission, jours)
-			: facture.dateEmission,
-		supposee: true
-	};
+	// La lecture de tout ce qui mesure (`exigibilite.ts`) : l'exigibilité, l'échéance,
+	// sinon le délai supplétif depuis la date de la facture, marqué comme hypothèse.
+	return departDuRetard(facture);
 }
 
 /**

@@ -428,6 +428,13 @@ export const enregistrerImport = internalMutation({
 			reglementsCrees,
 			debiteursTouches: [...debiteursTouches]
 		});
+		// Une lecture Qonto ou Nango relève les étapes tout de suite (le diagnostic rendu,
+		// les factures échues) ; un dépôt le fait à son bilan (`depotMutations.marquerBilan`).
+		if (documentId === undefined && facturesCreees > 0) {
+			await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
+				organizationId
+			});
+		}
 
 		return {
 			debiteursCrees,

@@ -124,3 +124,53 @@ describe('releverLesEtapes', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('le relevé d’un compte venu par un FEC (19/10/2026)', () => {
+	it(
+		'trouve ses factures échues sans échéance, et date le diagnostic rendu à la première facture',
+		async () => {
+			const t = convexTest(schema, modules);
+			const inscritLe = Date.now() - 120_000;
+			const entreeLe = Date.now() - 60_000;
+			const organizationId = await t.run(async (ctx) => {
+				const organizationId = await ctx.db.insert('organizations', {
+					name: 'Transports Moreau',
+					createdAt: inscritLe
+				});
+				const debiteurId = await ctx.db.insert('debiteurs', {
+					organizationId,
+					denomination: 'Client',
+					denominationNormalisee: 'CLIENT',
+					denominationsBrutes: ['Client'],
+					estCommercant: 'ok',
+					santeFinanciere: 'SAINE',
+					creeLe: entreeLe
+				});
+				// Un FEC ne porte pas d'échéance : trente jours après sa date, elle est échue.
+				await ctx.db.insert('facturesVente', {
+					organizationId,
+					debiteurId,
+					reference: 'FEC-0001',
+					montantHT: 0n,
+					montantTTC: 100_00n,
+					dateEmission: '2026-01-01',
+					statutPaiement: 'IMPAYEE',
+					creeLe: entreeLe
+				});
+				return organizationId;
+			});
+
+			await t.mutation(internal.croissance.releve.releverLesEtapes, { organizationId });
+
+			const parcours = await t.run(async (ctx) =>
+				ctx.db
+					.query('parcoursComptes')
+					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+					.unique()
+			);
+			expect(parcours?.etapes.MONTANT_REVELE).toBeTypeOf('number');
+			expect(parcours?.etapes.DIAGNOSTIC_RENDU).toBe(entreeLe);
+		},
+		DELAI_CONVEX
+	);
+});

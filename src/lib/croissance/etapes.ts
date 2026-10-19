@@ -11,7 +11,11 @@
 export const ETAPES = [
 	'INSCRIT',
 	'ENTREPRISE',
+	// Le diagnostic express (19/10/2026) : la première lecture lancée, puis le premier
+	// chiffre rendu. Leur écart avec l'inscription est le délai avant la première valeur.
+	'DIAGNOSTIC_LANCE',
 	'FACTURES_DEPOSEES',
+	'DIAGNOSTIC_RENDU',
 	'MONTANT_REVELE',
 	'RELANCES_ACTIVEES',
 	'ESSAI',
@@ -31,7 +35,9 @@ export type Etape = (typeof ETAPES)[number];
 export const LIBELLES_D_UNE_ETAPE: Record<Etape, string> = {
 	INSCRIT: 'Inscrit',
 	ENTREPRISE: 'Entreprise renseignée',
+	DIAGNOSTIC_LANCE: 'Diagnostic lancé',
 	FACTURES_DEPOSEES: 'Factures déposées',
+	DIAGNOSTIC_RENDU: 'Diagnostic rendu',
 	MONTANT_REVELE: 'Factures échues trouvées',
 	RELANCES_ACTIVEES: 'Relances activées',
 	ESSAI: 'Essai commencé',
@@ -50,6 +56,10 @@ export interface EtatDuCompte {
 	readonly creeLe: number;
 	readonly sirenConnu: boolean;
 	readonly premierDepotLe: number | null;
+	/** La première lecture lancée : un dépôt, ou une connexion qui commence à lire. */
+	readonly diagnosticLanceLe: number | null;
+	/** La première facture entrée : le diagnostic a quelque chose à rendre. */
+	readonly diagnosticRenduLe: number | null;
 	readonly factureEchueImpayee: boolean;
 	readonly relancesActiveesLe: number | null;
 	readonly relancesActives: boolean;
@@ -85,7 +95,10 @@ export function deduireEtapes(
 
 	noter('INSCRIT', etat.creeLe);
 	if (etat.sirenConnu) noter('ENTREPRISE', maintenant);
+	// Datées au moment réel, jamais au moment du relevé : c'est un délai qu'on mesure.
+	if (etat.diagnosticLanceLe !== null) noter('DIAGNOSTIC_LANCE', etat.diagnosticLanceLe);
 	if (etat.premierDepotLe !== null) noter('FACTURES_DEPOSEES', etat.premierDepotLe);
+	if (etat.diagnosticRenduLe !== null) noter('DIAGNOSTIC_RENDU', etat.diagnosticRenduLe);
 	if (etat.factureEchueImpayee) noter('MONTANT_REVELE', maintenant);
 	if (etat.relancesActiveesLe !== null) noter('RELANCES_ACTIVEES', etat.relancesActiveesLe);
 
