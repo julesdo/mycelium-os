@@ -2,7 +2,7 @@ import { majorationLisible } from '../lib/verticales/recouvrement/pays/france/ta
 import { createFileRoute } from '@tanstack/react-router';
 import { articlesPublies } from '../marketing/blog';
 import { indemniteLisible, NOMS_DES_SECTEURS, SECTEURS_PUBLICS } from '../marketing/secteurs';
-import { GRILLE } from '../lib/config/tarifs';
+import { GRILLE, historiqueDeDecouverte, PARTENARIAT_CABINET } from '../lib/config/tarifs';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 
 /**
@@ -33,9 +33,11 @@ Letikette ne manipule aucun fonds, n’exerce aucune activité de recouvrement p
 ## Pages
 
 - [Accueil](${SITE_CANONIQUE}/) : ce que fait le logiciel, le calculateur, Plume (l’assistant qui relance).
-- [Tarifs](${SITE_CANONIQUE}/tarifs) : Découverte gratuite, puis Solo, Équipe ou Pro (${GRILLE.solo.mensuel}, ${GRILLE.equipe.mensuel} ou ${GRILLE.pro.mensuel} € HT par mois).
+- [Tarifs](${SITE_CANONIQUE}/tarifs) : le diagnostic gratuit (Découverte, sur ${historiqueDeDecouverte()}), puis Solo, Équipe ou Pro (${GRILLE.solo.mensuel}, ${GRILLE.equipe.mensuel} ou ${GRILLE.pro.mensuel} € HT par mois).
 - [Sécurité](${SITE_CANONIQUE}/securite) : chiffrement des documents, cloisonnement des données, hébergement.
 - [Taux des pénalités de retard](${SITE_CANONIQUE}/taux-des-penalites-de-retard) : le taux du semestre, le plancher contractuel, l’historique.
+- [Experts-comptables](${SITE_CANONIQUE}/experts-comptables) : le diagnostic à proposer aux clients du cabinet, et ${PARTENARIAT_CABINET.commissionPourcent} % de la première année de ceux qui s’abonnent.
+- [Qui sommes-nous](${SITE_CANONIQUE}/fondateur) : qui édite Letikette, et ce que le logiciel s’interdit.
 ${secteurs.join('\n')}
 
 ## Articles

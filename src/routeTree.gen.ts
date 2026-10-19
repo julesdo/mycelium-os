@@ -16,6 +16,8 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConditionsGeneralesRouteImport } from './routes/conditions-generales'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as ExpertsComptablesRouteImport } from './routes/experts-comptables'
+import { Route as FondateurRouteImport } from './routes/fondateur'
 import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
@@ -117,6 +119,16 @@ const ConditionsGeneralesRoute = ConditionsGeneralesRouteImport.update({
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpertsComptablesRoute = ExpertsComptablesRouteImport.update({
+  id: '/experts-comptables',
+  path: '/experts-comptables',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FondateurRoute = FondateurRouteImport.update({
+  id: '/fondateur',
+  path: '/fondateur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InscriptionRoute = InscriptionRouteImport.update({
@@ -465,6 +477,8 @@ export interface FileRoutesByFullPath {
   '/bienvenue': typeof BienvenueRoute
   '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
+  '/experts-comptables': typeof ExpertsComptablesRoute
+  '/fondateur': typeof FondateurRoute
   '/inscription': typeof InscriptionRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/mentions-legales': typeof MentionsLegalesRoute
@@ -539,6 +553,8 @@ export interface FileRoutesByTo {
   '/bienvenue': typeof BienvenueRoute
   '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
+  '/experts-comptables': typeof ExpertsComptablesRoute
+  '/fondateur': typeof FondateurRoute
   '/inscription': typeof InscriptionRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/mentions-legales': typeof MentionsLegalesRoute
@@ -616,6 +632,8 @@ export interface FileRoutesById {
   '/bienvenue': typeof BienvenueRoute
   '/conditions-generales': typeof ConditionsGeneralesRoute
   '/connexion': typeof ConnexionRoute
+  '/experts-comptables': typeof ExpertsComptablesRoute
+  '/fondateur': typeof FondateurRoute
   '/inscription': typeof InscriptionRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/mentions-legales': typeof MentionsLegalesRoute
@@ -694,6 +712,8 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/conditions-generales'
     | '/connexion'
+    | '/experts-comptables'
+    | '/fondateur'
     | '/inscription'
     | '/llms.txt'
     | '/mentions-legales'
@@ -768,6 +788,8 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/conditions-generales'
     | '/connexion'
+    | '/experts-comptables'
+    | '/fondateur'
     | '/inscription'
     | '/llms.txt'
     | '/mentions-legales'
@@ -844,6 +866,8 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/conditions-generales'
     | '/connexion'
+    | '/experts-comptables'
+    | '/fondateur'
     | '/inscription'
     | '/llms.txt'
     | '/mentions-legales'
@@ -921,6 +945,8 @@ export interface RootRouteChildren {
   BienvenueRoute: typeof BienvenueRoute
   ConditionsGeneralesRoute: typeof ConditionsGeneralesRoute
   ConnexionRoute: typeof ConnexionRoute
+  ExpertsComptablesRoute: typeof ExpertsComptablesRoute
+  FondateurRoute: typeof FondateurRoute
   InscriptionRoute: typeof InscriptionRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
@@ -994,6 +1020,20 @@ declare module '@tanstack/react-router' {
       path: '/connexion'
       fullPath: '/connexion'
       preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/experts-comptables': {
+      id: '/experts-comptables'
+      path: '/experts-comptables'
+      fullPath: '/experts-comptables'
+      preLoaderRoute: typeof ExpertsComptablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fondateur': {
+      id: '/fondateur'
+      path: '/fondateur'
+      fullPath: '/fondateur'
+      preLoaderRoute: typeof FondateurRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inscription': {
@@ -1615,6 +1655,8 @@ const rootRouteChildren: RootRouteChildren = {
   BienvenueRoute: BienvenueRoute,
   ConditionsGeneralesRoute: ConditionsGeneralesRoute,
   ConnexionRoute: ConnexionRoute,
+  ExpertsComptablesRoute: ExpertsComptablesRoute,
+  FondateurRoute: FondateurRoute,
   InscriptionRoute: InscriptionRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,

@@ -2,8 +2,7 @@ import { v } from 'convex/values';
 import { HOUR, RateLimiter } from '@convex-dev/rate-limiter';
 import { mutation } from './_generated/server';
 import { components } from './_generated/api';
-import { OFFRES } from '../config/tarifs';
-import { lireDemande, PARCOURS_DE_L_OFFRE } from '../crm/demande';
+import { cibleDeLOffre, lireDemande, nomDeLOffre, PARCOURS_DE_L_OFFRE } from '../crm/demande';
 import { naissanceDuProspect } from './admin/prospects';
 
 /**
@@ -48,7 +47,7 @@ export const demanderUneOffre = mutation({
 		if (!(await limiteur.limit(ctx, 'demandeParAdresse', { key: d.email })).ok) return { ok: true };
 
 		const maintenant = Date.now();
-		const offre = OFFRES[d.offre].nom;
+		const offre = nomDeLOffre(d.offre);
 		const jour = new Date(maintenant).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
 		const existant = await ctx.db
 			.query('prospects')
@@ -81,7 +80,7 @@ export const demanderUneOffre = mutation({
 				email: d.email,
 				...(d.telephone === undefined ? {} : { telephone: d.telephone }),
 				trouveOu: `Demande sur le site (${offre}), le ${jour}`,
-				cible: 'PME',
+				cible: cibleDeLOffre(d.offre),
 				statut: 'A_REPONDU',
 				prochaineAction: 'Répondre à la demande',
 				prochaineActionLe: maintenant,
@@ -91,7 +90,10 @@ export const demanderUneOffre = mutation({
 				emailInformeLe: maintenant,
 				creePar: 'site',
 				creeLe: maintenant,
-				...naissanceDuProspect({ parcours: PARCOURS_DE_L_OFFRE[d.offre], cible: 'PME' })
+				...naissanceDuProspect({
+					parcours: PARCOURS_DE_L_OFFRE[d.offre],
+					cible: cibleDeLOffre(d.offre)
+				})
 			});
 		}
 		await ctx.db.insert('evenementsCrm', {

@@ -81,6 +81,12 @@ export function Pied() {
 						<Link to="/taux-des-penalites-de-retard" className={LIEN_COLONNE}>
 							Taux des pénalités
 						</Link>
+						<Link to="/experts-comptables" className={LIEN_COLONNE}>
+							Experts-comptables
+						</Link>
+						<Link to="/fondateur" className={LIEN_COLONNE}>
+							Qui sommes-nous
+						</Link>
 						{articlesPublies().length > 0 ? (
 							<Link to="/blog" className={LIEN_COLONNE}>
 								Blog

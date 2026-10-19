@@ -51,7 +51,7 @@ describe('la demande d’une offre', () => {
 
 	it('a une offre demandable pour chaque offre du catalogue vendue sur demande', () => {
 		expect([...OFFRES_DEMANDABLES].sort()).toEqual(
-			['diagnosticComplet', 'fondateurs', 'pilote', 'reclamation'].sort()
+			['diagnosticComplet', 'fondateurs', 'partenariat', 'pilote', 'reclamation'].sort()
 		);
 	});
 });

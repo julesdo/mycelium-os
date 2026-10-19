@@ -1,6 +1,6 @@
 import { majorationPubliqueLisible } from '../verticales/recouvrement/pays/france/commande-publique';
 import { majorationLisible } from '../verticales/recouvrement/pays/france/taux';
-import { GRILLE, OFFRES } from '../config/tarifs';
+import { GRILLE, OFFRES, PARTENARIAT_CABINET } from '../config/tarifs';
 import type { ValeursDeLaLoi } from './modeles';
 import type { Parcours } from './parcours';
 import type { ValeursPubliques } from './valeurs-loi';
@@ -138,7 +138,7 @@ export function scriptDuParcours(parcours: Parcours, c: ContexteDAppel): ScriptD
 				],
 				phrase: `Letikette lit les factures du client, chiffre ce que la loi y ajoute (${penalitesCommerciales(c.loi)}), surveille les délais pour agir et relance à son nom, sans commission sur ce qui rentre.`,
 				demande:
-					'Je construis le partenariat cabinet avec les cinq premiers cabinets : le diagnostic à proposer à vos clients, et 20 % de la première année de ceux qui s’abonnent. Je peux vous le montrer vingt minutes ?',
+					`Je construis le partenariat cabinet avec les ${PARTENARIAT_CABINET.premiersCabinets} premiers cabinets : le diagnostic à proposer à vos clients, et ${PARTENARIAT_CABINET.commissionPourcent} % de la première année de ceux qui s’abonnent. Je peux vous le montrer vingt minutes ?`,
 				objections: [
 					{
 						objection: '« Mes clients ont déjà Pennylane ou Qonto. »',

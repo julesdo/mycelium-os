@@ -1,5 +1,7 @@
 import { normaliserEmail } from './empreinte';
 import type { Parcours } from './parcours';
+import type { Cible } from './statuts';
+import { OFFRES, PARTENARIAT_CABINET } from '../config/tarifs';
 
 /**
  * UNE OFFRE DEMANDÉE SUR LE SITE (19/10/2026, audit stratégique, lot 6).
@@ -17,7 +19,8 @@ export const OFFRES_DEMANDABLES = [
 	'diagnosticComplet',
 	'reclamation',
 	'pilote',
-	'fondateurs'
+	'fondateurs',
+	'partenariat'
 ] as const;
 export type OffreDemandable = (typeof OFFRES_DEMANDABLES)[number];
 
@@ -26,8 +29,19 @@ export const PARCOURS_DE_L_OFFRE: Readonly<Record<OffreDemandable, Parcours>> = 
 	diagnosticComplet: 'PME_LOGICIEL',
 	reclamation: 'FOURNISSEUR_PUBLIC',
 	pilote: 'PILOTE',
-	fondateurs: 'PME_LOGICIEL'
+	fondateurs: 'PME_LOGICIEL',
+	partenariat: 'EXPERT_COMPTABLE'
 };
+
+/** Le nom de l'offre, lu dans la grille. */
+export function nomDeLOffre(offre: OffreDemandable): string {
+	return offre === 'partenariat' ? PARTENARIAT_CABINET.nom : OFFRES[offre].nom;
+}
+
+/** Un cabinet comptable qui demande le partenariat ; une entreprise sinon. */
+export function cibleDeLOffre(offre: OffreDemandable): Cible {
+	return offre === 'partenariat' ? 'CABINET' : 'PME';
+}
 
 export interface Demande {
 	readonly offre: OffreDemandable;

@@ -5,7 +5,7 @@ import { Input, Textarea } from '@cladd-ui/react';
 import { ArrowRightIcon, CheckIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import { JOURS_OFFRE_DE_BIENVENUE, OFFRES } from '../lib/config/tarifs';
-import type { OffreDemandable } from '../lib/crm/demande';
+import { nomDeLOffre, type OffreDemandable } from '../lib/crm/demande';
 import { ANNEES_DE_CONSERVATION } from '../lib/crm/consentement';
 import { suivre } from '../app/analytique';
 import { BoutonPrincipal, FeuillePleinEcran } from '../ui';
@@ -98,7 +98,7 @@ function cartes(): readonly CarteDOffre[] {
 }
 
 /** Le formulaire d'une offre, dans sa feuille : cinq champs, et la mention qui dit à quoi ils servent. */
-function FeuilleDeDemande({
+export function FeuilleDeDemande({
 	offre,
 	onFermer
 }: {
@@ -116,7 +116,7 @@ function FeuilleDeDemande({
 	});
 	const [etat, setEtat] = useState<'saisie' | 'envoi' | 'fait'>('saisie');
 	const [erreur, setErreur] = useState<string | null>(null);
-	const nomDeLOffre = offre === null ? '' : OFFRES[offre].nom;
+	const nom = offre === null ? '' : nomDeLOffre(offre);
 
 	async function envoyer(e: FormEvent) {
 		e.preventDefault();
@@ -148,7 +148,7 @@ function FeuilleDeDemande({
 			ouverte={offre !== null}
 			onFermer={onFermer}
 			titre="Demander"
-			sousTitre={nomDeLOffre}
+			sousTitre={nom}
 			pied={
 				etat === 'fait' ? (
 					<BoutonPrincipal pleineLargeur onClick={onFermer}>
@@ -183,7 +183,9 @@ function FeuilleDeDemande({
 					className="flex flex-col gap-cladd-xs"
 				>
 					<label className="flex flex-col gap-1.5">
-						<span className="text-cladd-sm font-semibold">Votre entreprise</span>
+						<span className="text-cladd-sm font-semibold">
+							{offre === 'partenariat' ? 'Votre cabinet' : 'Votre entreprise'}
+						</span>
 						<Input
 							{...champ('entreprise')}
 							inputComponentProps={{ autoComplete: 'organization' }}
@@ -256,7 +258,7 @@ export function OffresSurDemande() {
 						key={c.cle}
 						className="flex flex-col gap-cladd-2xs rounded-carte-site border-2 border-filet-creme bg-papier p-cladd-xs md:p-cladd-sm"
 					>
-						<span className="text-intertitre font-semibold">{OFFRES[c.cle].nom}</span>
+						<span className="text-intertitre font-semibold">{nomDeLOffre(c.cle)}</span>
 						<p className="text-cladd-md leading-relaxed text-encre-site-douce">{c.pour}</p>
 						<span className="font-serif text-prix-formule leading-none font-medium tracking-titre-section tabular-nums">
 							{c.prix}

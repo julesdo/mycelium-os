@@ -15,6 +15,8 @@ const PAGES_FIXES = [
 	'/tarifs',
 	'/securite',
 	'/taux-des-penalites-de-retard',
+	'/experts-comptables',
+	'/fondateur',
 	...SECTEURS_PUBLICS.map((s) => `/secteurs/${s}`),
 	'/blog',
 	'/inscription',

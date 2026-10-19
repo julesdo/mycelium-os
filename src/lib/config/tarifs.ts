@@ -384,6 +384,19 @@ export const OFFRES = {
 	}
 } as const;
 
+/**
+ * LE PARTENARIAT CABINET (décision 15 de l'audit) : le diagnostic à proposer aux clients
+ * du cabinet, et une part de la première année des clients qui s'abonnent. Construit avec
+ * les premiers cabinets ; la marque blanche n'est pas promise tant qu'elle n'existe pas.
+ */
+export const PARTENARIAT_CABINET = {
+	nom: 'Partenariat cabinet',
+	/** La part de la première année d'abonnement des clients apportés. */
+	commissionPourcent: 20,
+	/** Les cabinets avec qui il se construit. */
+	premiersCabinets: 5
+} as const;
+
 /** Les jours pendant lesquels l'offre de bienvenue reste valable après un diagnostic. */
 export const JOURS_OFFRE_DE_BIENVENUE = 14;
 

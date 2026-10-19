@@ -26,6 +26,8 @@ export { Tarifs } from './tarifs';
 export { OffresSurDemande } from './offres';
 export { Faq, questionsDeFacturation } from './faq';
 export { PageSecurite } from './page-securite';
+export { PageExpertsComptables } from './page-experts';
+export { PageFondateur } from './page-fondateur';
 export { Appel } from './appel';
 export { Pied } from './pied';
 export { DocumentLegal } from './document-legal';

@@ -59,7 +59,8 @@ import { Chapeau, SectionMarketing, TitreSection } from './section';
  * BCE majoré de huit points, UN taux pour tout le retard (R2192-31), l'indemnité publique,
  * et des pénalités qui se prescrivent par quatre ans (loi n° 68-1250), une lecture.
  */
-type Secteur = 'GENERAL' | 'TRANSPORT_MARCHANDISES' | 'PUBLIC';
+export type RegimeDuCalcul = 'GENERAL' | 'TRANSPORT_MARCHANDISES' | 'PUBLIC';
+type Secteur = RegimeDuCalcul;
 
 function aujourdHui(): string {
 	return new Date().toISOString().slice(0, 10);
