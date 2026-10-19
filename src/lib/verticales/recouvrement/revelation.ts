@@ -1,6 +1,7 @@
 import { ZERO, additionner, soustraire, type Montant } from '../../socle/montants';
 import { decompterFacture, joursEntre } from './decompte';
 import { estDateReelle } from './calendrier';
+import { PARAMETRES, exiger } from './parametres';
 import type { ConventionJours, FacturePourDecompte } from './decompte';
 
 /**
@@ -41,6 +42,17 @@ export interface FacturePourRevelation extends FacturePourDecompte {
 	 * `bilanDesPertes` la nomme.
 	 */
 	readonly datePrescription?: string;
+	/**
+	 * `false` : au moins un règlement porte le jour où il a été LU (un connecteur qui ne
+	 * transmet pas la date du paiement), pas celui où il a été payé. Absent : les dates
+	 * sont sûres (un relevé, un FEC, un virement noté à la main).
+	 */
+	readonly datesDeReglementSures?: boolean;
+	/**
+	 * L'échéance est une HYPOTHÈSE (le délai supplétif compté depuis la date de la
+	 * facture, `PARAMETRES.delaiDeReglementSuppletif`), pas une date de la facture.
+	 */
+	readonly echeanceSupposee?: boolean;
 }
 
 export interface LigneRevelee {
@@ -136,6 +148,10 @@ export function reveler(
 			continue;
 		}
 		if (!entreDansLaRevelation(facture, arreteAu)) continue;
+		if (dateDePaiementIncertaine(facture)) {
+			nonChiffrees.push({ reference: facture.reference, raison: RAISON_DATE_DE_PAIEMENT });
+			continue;
+		}
 
 		try {
 			// ⚠️ L'ORDRE PRUDENT. La révélation couvre tout le portefeuille, sans choix du
@@ -182,6 +198,20 @@ export function reveler(
 		nonChiffrees
 	};
 }
+
+/**
+ * ⚠️ UNE DATE DE LECTURE N'EST PAS UNE DATE DE PAIEMENT. Posée à la place, elle fait
+ * courir les pénalités sur un principal que le client avait déjà réduit, ou soldé : le
+ * chiffre serait trop haut, dans le sens qui se retourne contre le gérant. La facture
+ * est nommée, jamais chiffrée sur une date inventée.
+ */
+function dateDePaiementIncertaine(facture: FacturePourRevelation): boolean {
+	return facture.datesDeReglementSures === false && facture.reglements.length > 0;
+}
+
+const RAISON_DATE_DE_PAIEMENT =
+	'Date de paiement inconnue : le logiciel de comptabilité ne la transmet pas, et le jour ' +
+	'où le règlement a été lu ne la remplace pas. Les pénalités ne se calculent pas sans elle.';
 
 /** `additionner` exige au moins un terme ; un jeu vide vaut zéro, pas une erreur. */
 function sommeOuZero(montants: readonly Montant[]): Montant {
@@ -301,5 +331,181 @@ export function bilanDesPertes(
 		// porte sur notre période de travail, et la dater plus tôt s'attribuerait
 		// des mois qu'on n'a pas surveillés.
 		joursSousSurveillance: joursEntre(depuis, aujourdHui)
+	};
+}
+
+/** Ce qui est plus ancien que la période calculée : compté, jamais chiffré. */
+export interface HorsPeriode {
+	readonly nombre: number;
+	/** Ce qui reste dû sur les impayées plus anciennes, en principal. */
+	readonly principal: Montant;
+}
+
+/**
+ * LA PÉRIODE DU DIAGNOSTIC EXPRESS (audit du 19/10/2026) : Découverte calcule les trois
+ * derniers mois, et COMPTE le reste (« N factures plus anciennes »). Une facture est de la
+ * période si son échéance y tombe, ou si elle y a été réglée. `du` à `null` : tout.
+ *
+ * ⚠️ CE QUI EST HORS PÉRIODE N'EST PAS EFFACÉ : il est compté, avec son principal, et
+ * la surveillance de la prescription, elle, ne se borne jamais (`bilanDesPertes`).
+ * Une facture à la date illisible reste dans la période : c'est `reveler` qui la nomme.
+ */
+export function separerParPeriode(
+	factures: readonly FacturePourRevelation[],
+	du: string | null
+): { dansLaPeriode: readonly FacturePourRevelation[]; horsPeriode: HorsPeriode } {
+	if (du === null) return { dansLaPeriode: factures, horsPeriode: { nombre: 0, principal: ZERO } };
+	const dans: FacturePourRevelation[] = [];
+	const restes: Montant[] = [];
+	let nombre = 0;
+	for (const facture of factures) {
+		if (
+			!departLisible(facture) ||
+			facture.dateExigibilite >= du ||
+			facture.reglements.some((r) => r.date >= du)
+		) {
+			dans.push(facture);
+			continue;
+		}
+		if (facture.statutPaiement === 'SOLDEE') {
+			// Payée après son échéance : le diagnostic complet la chiffrerait.
+			if (facture.reglements.some((r) => r.date > facture.dateExigibilite)) nombre++;
+			continue;
+		}
+		const regle = sommeOuZero(facture.reglements.map((r) => r.montant));
+		if ((facture.montantExigible as bigint) > (regle as bigint)) {
+			nombre++;
+			restes.push(soustraire(facture.montantExigible, regle));
+		}
+	}
+	return { dansLaPeriode: dans, horsPeriode: { nombre, principal: sommeOuZero(restes) } };
+}
+
+/** Une facture réglée après son échéance, et ce que la loi y ajoutait jusqu'au paiement. */
+export interface LignePayeeEnRetard {
+	readonly reference: string;
+	/** Le dernier règlement, celui qui la solde. */
+	readonly payeeLe: string;
+	readonly joursDeRetard: number;
+	readonly interets: Montant;
+	readonly indemniteForfaitaire: Montant;
+	readonly supplement: Montant;
+	readonly echeanceSupposee: boolean;
+}
+
+export interface Diagnostic {
+	readonly du: string | null;
+	readonly arreteAu: string;
+	/** Ce qui est encore dû : la révélation, sur la période. */
+	readonly impayees: Revelation;
+	/** Ce que la loi ajoutait aux factures payées en retard : HORS de « ce qu'on vous doit ». */
+	readonly payeesEnRetard: {
+		readonly nombreFactures: number;
+		readonly interets: Montant;
+		readonly indemnites: Montant;
+		readonly supplement: Montant;
+		readonly lignes: readonly LignePayeeEnRetard[];
+	};
+	readonly horsPeriode: HorsPeriode;
+	readonly nonChiffrees: readonly FactureNonChiffree[];
+	/** Le supplément des impayées et des payées en retard : la somme en jeu. */
+	readonly supplementTotal: Montant;
+	/** Combien des factures chiffrées ont une échéance supposée. */
+	readonly echeancesSupposees: number;
+}
+
+/**
+ * LE DIAGNOSTIC EXPRESS : la révélation sur la période, plus les factures PAYÉES EN
+ * RETARD. Le registre le fonde (`sommesRegleesApresLEcheance`, L441-10 II : l'indemnité
+ * est due « dans le cas où les sommes dues sont réglées après cette date ») ; le calcul
+ * est celui de `decompterFacture`, dont les segments s'arrêtent au paiement.
+ *
+ * ⚠️ LES PAYÉES EN RETARD NE SE MÉLANGENT JAMAIS AUX IMPAYÉES : leur principal est
+ * rentré, et l'accueil range « ce qu'on vous doit » par ancienneté.
+ */
+export function diagnostiquer(
+	factures: readonly FacturePourRevelation[],
+	du: string | null,
+	arreteAu: string,
+	convention: ConventionJours
+): Diagnostic {
+	exiger(PARAMETRES.sommesRegleesApresLEcheance);
+	const { dansLaPeriode, horsPeriode } = separerParPeriode(factures, du);
+	const impayees = reveler(
+		dansLaPeriode.filter((f) => f.statutPaiement !== 'SOLDEE'),
+		arreteAu,
+		convention
+	);
+
+	const lignes: LignePayeeEnRetard[] = [];
+	const nonChiffrees: FactureNonChiffree[] = [...impayees.nonChiffrees];
+	for (const facture of dansLaPeriode) {
+		if (facture.statutPaiement !== 'SOLDEE') continue;
+		if (!departLisible(facture)) {
+			nonChiffrees.push({
+				reference: facture.reference,
+				raison:
+					'Date d’exigibilité inexploitable, donc ni le retard ni les pénalités ne ' +
+					`peuvent être établis : ${JSON.stringify(facture.dateExigibilite)}.`
+			});
+			continue;
+		}
+		const payeeLe = facture.reglements
+			.filter((r) => r.date <= arreteAu)
+			.reduce<
+				string | null
+			>((dernier, r) => (dernier === null || r.date > dernier ? r.date : dernier), null);
+		// Payée à temps, ou pas encore réglée à la date d'arrêté : rien à chiffrer ici.
+		if (payeeLe === null || payeeLe <= facture.dateExigibilite) continue;
+		if (dateDePaiementIncertaine(facture)) {
+			nonChiffrees.push({ reference: facture.reference, raison: RAISON_DATE_DE_PAIEMENT });
+			continue;
+		}
+		try {
+			const decompte = decompterFacture(facture, arreteAu, convention, 'PRINCIPAL_DABORD');
+			const interets = sommeOuZero(decompte.segments.map((seg) => seg.interets));
+			const supplement = additionner(interets, decompte.indemniteForfaitaire);
+			if ((supplement as bigint) <= 0n) continue;
+			lignes.push({
+				reference: facture.reference,
+				payeeLe,
+				joursDeRetard: joursEntre(facture.dateExigibilite, payeeLe),
+				interets,
+				indemniteForfaitaire: decompte.indemniteForfaitaire,
+				supplement,
+				echeanceSupposee: facture.echeanceSupposee === true
+			});
+		} catch (erreur) {
+			nonChiffrees.push({
+				reference: facture.reference,
+				raison: erreur instanceof Error ? erreur.message : String(erreur)
+			});
+		}
+	}
+
+	const interets = sommeOuZero(lignes.map((l) => l.interets));
+	const indemnites = sommeOuZero(lignes.map((l) => l.indemniteForfaitaire));
+	const supplementPayees = additionner(interets, indemnites);
+	const chiffrees = new Set([
+		...impayees.lignes.map((l) => l.reference),
+		...lignes.map((l) => l.reference)
+	]);
+	return {
+		du,
+		arreteAu,
+		impayees,
+		payeesEnRetard: {
+			nombreFactures: lignes.length,
+			interets,
+			indemnites,
+			supplement: supplementPayees,
+			lignes
+		},
+		horsPeriode,
+		nonChiffrees,
+		supplementTotal: additionner(impayees.supplement, supplementPayees),
+		echeancesSupposees: dansLaPeriode.filter(
+			(f) => f.echeanceSupposee === true && chiffrees.has(f.reference)
+		).length
 	};
 }

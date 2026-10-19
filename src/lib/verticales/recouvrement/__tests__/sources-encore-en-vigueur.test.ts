@@ -84,6 +84,9 @@ describe('les sources citées sont encore la version en vigueur', () => {
 			'formulationPointDepartPenalites',
 			'penalitesExigiblesSansRappel',
 			'indemniteDuePleinDroit',
+			// Le diagnostic express (19/10/2026) : même page, même bandeau « AU 01/01/2027 ».
+			'sommesRegleesApresLEcheance',
+			'delaiDeReglementSuppletif',
 			'indemnisationComplementaireSurJustification'
 		]);
 	});
@@ -112,12 +115,14 @@ describe('les sources citées sont encore la version en vigueur', () => {
 				'sur la source — un bandeau « version en vigueur du … AU … », ou une abrogation datée. ' +
 				'Si elle vient d’un raisonnement plutôt que d’une page, elle est inventée.'
 		).toEqual([
+			'delaiDeReglementSuppletif',
 			'exclusionIndemnitesProcedureCollective',
 			'formulationPointDepartPenalites',
 			'indemnisationComplementaireSurJustification',
 			'indemniteDuePleinDroit',
 			'penalitesExigiblesSansRappel',
 			'pointDepartPenalitesRetard',
+			'sommesRegleesApresLEcheance',
 			'tauxInteretLegalDefaut',
 			'tauxInteretMinimalLegal'
 		]);

@@ -818,6 +818,49 @@ export const PARAMETRES = {
 			`D441-5 (\`indemniteForfaitaire\`). ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<boolean>,
 
+	// ── Le diagnostic express (audit du 19/10/2026) : les factures payées en retard ──
+
+	sommesRegleesApresLEcheance: {
+		cle: 'sommesRegleesApresLEcheance',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L441-10 II du code de commerce',
+		verifieLe: LE_19_10,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'Les conditions de règlement précisent « le taux d’intérêt des pénalités de retard ' +
+			'exigibles le jour suivant la date de règlement figurant sur la facture ainsi que le ' +
+			'montant de l’indemnité forfaitaire pour frais de recouvrement due au créancier dans le ' +
+			'cas où les sommes dues sont réglées après cette date ». Une facture payée en retard, ' +
+			'même soldée, porte donc ses pénalités et son indemnité. LECTURE, pas texte : les ' +
+			'pénalités courent du lendemain de l’échéance au jour du paiement, où le retard cesse. ' +
+			`Relevé sur Légifrance (LEGIARTI000038414392) le 19/10/2026. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	delaiDeReglementSuppletif: {
+		cle: 'delaiDeReglementSuppletif',
+		nature: 'CONSTANTE',
+		valeur: 30,
+		unite: 'jours',
+		source: 'Article L441-10 I, premier alinéa, du code de commerce',
+		verifieLe: LE_19_10,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Sauf dispositions contraires figurant aux conditions de vente ou convenues entre les ' +
+			'parties, le délai de règlement des sommes dues ne peut dépasser trente jours après la ' +
+			'date de réception des marchandises ou d’exécution de la prestation demandée. » Sert ' +
+			'quand une facture n’a pas d’échéance connue (un FEC n’en porte pas) : le logiciel compte ' +
+			'les trente jours depuis la DATE DE LA FACTURE, qui suit en général la livraison, donc ' +
+			'une échéance plus tardive et des pénalités plus faibles que le texte. L’échéance ainsi ' +
+			'posée est marquée comme une hypothèse, jamais comme une date de la facture. Relevé sur ' +
+			`Légifrance (LEGIARTI000038414392) le 19/10/2026. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
 	indemnisationComplementaireSurJustification: {
 		cle: 'indemnisationComplementaireSurJustification',
 		nature: 'CONSTANTE',
