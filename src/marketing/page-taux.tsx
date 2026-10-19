@@ -4,7 +4,8 @@ import {
 	plancherContractuel,
 	semestreDe,
 	tauxInteretLegal,
-	tauxPenaliteParDefaut
+	tauxPenaliteParDefaut,
+	majorationLisible
 } from '../lib/verticales/recouvrement/pays/france/taux';
 import { tauxLisible } from '../lib/verticales/recouvrement/taux-lisible';
 import { Calcul } from './calcul';
@@ -119,8 +120,8 @@ export function PageTaux({ jour }: { jour: string }) {
 							{penalites}
 						</p>
 						<p className="text-cladd-md leading-relaxed text-encre-site-douce">
-							Le taux de la BCE au {debutDuSemestre(semestre)} ({bceLisible(bce)}), majoré de dix
-							points.
+							Le taux de la BCE au {debutDuSemestre(semestre)} ({bceLisible(bce)}), majoré de{' '}
+							{majorationLisible()}.
 						</p>
 						<p className="text-cladd-sm text-encre-site-douce opacity-80">
 							{PARAMETRES.tauxInteretLegalDefaut.source}

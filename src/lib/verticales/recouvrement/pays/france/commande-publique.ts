@@ -2,7 +2,7 @@ import { fraction, type Fraction } from '../../../../socle/montants';
 import { ajouterJours } from '../../calendrier';
 import type { Bareme, PeriodeDeTaux } from '../../decompte';
 import { PARAMETRES, exiger } from '../../parametres';
-import { TAUX_BCE_PAR_SEMESTRE, exigerSemestre, semestreDe } from './taux';
+import { TAUX_BCE_PAR_SEMESTRE, exigerSemestre, pointsEnLettres, semestreDe } from './taux';
 
 /**
  * LE BARÈME PUBLIC : CE QUE DOIT UN ACHETEUR PUBLIC QUI PAIE EN RETARD (19/10/2026).
@@ -28,6 +28,11 @@ import { TAUX_BCE_PAR_SEMESTRE, exigerSemestre, semestreDe } from './taux';
 
 /** Les dix points commerciaux et les huit points publics, en centièmes de point. */
 const MAJORATION_COMMANDE_PUBLIQUE = 800n;
+
+/** « huit points » : la majoration du taux public (R2192-31), en clair. */
+export function majorationPubliqueLisible(): string {
+	return pointsEnLettres(MAJORATION_COMMANDE_PUBLIQUE);
+}
 
 /** Le jour où les intérêts commencent à courir : le lendemain de la fin du délai (R2192-32). */
 export function premierJourDInterets(finDuDelai: string): string {

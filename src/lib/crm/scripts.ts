@@ -1,3 +1,5 @@
+import { majorationPubliqueLisible } from '../verticales/recouvrement/pays/france/commande-publique';
+import { majorationLisible } from '../verticales/recouvrement/pays/france/taux';
 import { GRILLE, OFFRES } from '../config/tarifs';
 import type { ValeursDeLaLoi } from './modeles';
 import type { Parcours } from './parcours';
@@ -56,7 +58,7 @@ function bonjour(c: ContexteDAppel): string {
 function penalitesCommerciales(loi: ValeursDeLaLoi): string {
 	const taux =
 		loi.taux === null
-			? 'au taux de la BCE majoré de dix points'
+			? `au taux de la BCE majoré de ${majorationLisible()}`
 			: `à ${loi.taux} par an ce semestre`;
 	return `${loi.indemnite ?? 'une indemnité forfaitaire'} par facture payée en retard, plus des pénalités ${taux}`;
 }
@@ -73,7 +75,7 @@ export function scriptDuParcours(parcours: Parcours, c: ContexteDAppel): ScriptD
 			const p = c.publiques;
 			const taux =
 				p.taux === null
-					? 'au taux de la BCE majoré de huit points'
+					? `au taux de la BCE majoré de ${majorationPubliqueLisible()}`
 					: `à ${p.taux} par an pour un retard qui commence ce semestre`;
 			return {
 				ouverture: `${qui} Je vous appelle parce que ${c.entreprise} est titulaire de marchés publics : ${trouvee(c)}. C’est au sujet des intérêts de retard que les acheteurs publics doivent sur leurs factures payées en retard. Vous avez deux minutes ?`,

@@ -1,3 +1,4 @@
+import { majorationLisible } from '../verticales/recouvrement/pays/france/taux';
 import { jourDeParis } from '../admin/dates';
 import type { Cible } from './statuts';
 import { lienDeDesinscription, piedLegal, sourceDeLAdresse } from './consentement';
@@ -191,7 +192,7 @@ function ceQueLaLoiAjoute(loi: ValeursDeLaLoi): string {
 	const indemnite = loi.indemnite === null ? 'une indemnité forfaitaire' : `${loi.indemnite}`;
 	const taux =
 		loi.taux === null
-			? 'des pénalités au taux de la BCE majoré de dix points'
+			? `des pénalités au taux de la BCE majoré de ${majorationLisible()}`
 			: `des pénalités au taux de ${loi.taux} par an ce semestre`;
 	return `${indemnite} par facture, plus ${taux}`;
 }

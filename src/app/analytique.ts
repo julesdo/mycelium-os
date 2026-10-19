@@ -90,7 +90,13 @@ export type EvenementProduit =
 	| 'installation-acceptee'
 	| 'installation-refusee'
 	// Le rapport du diagnostic express téléchargé (19/10/2026) : un geste, jamais un montant.
-	| 'diagnostic-telecharge';
+	| 'diagnostic-telecharge'
+	// Le site (19/10/2026, audit) : un calcul fait par le visiteur, l'inscription pour le
+	// diagnostic, une offre demandée, une inscription sur une liste d'attente.
+	| 'calcul-fait'
+	| 'diagnostic-lance'
+	| 'offre-demandee'
+	| 'attente-inscrite';
 
 /**
  * Note qu'un geste a eu lieu. Sans traceur (développement, « Ne pas me pister »,

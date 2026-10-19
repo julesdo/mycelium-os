@@ -6,16 +6,24 @@ import { BoutonAffiche, PictoPrescription } from '../ui';
 import { eurosCentimes, tauxLisible } from '../ui/format';
 import { decompterFacture, joursEntre } from '../lib/verticales/recouvrement/decompte';
 import {
+	majorationLisible,
 	periodesDeTauxParDefaut,
 	tauxPenaliteParDefaut
 } from '../lib/verticales/recouvrement/pays/france/taux';
 import {
 	REGIMES_PRESCRIPTION,
-	dateDePrescription
+	dateDePrescription,
+	datePrescriptionQuadriennale
 } from '../lib/verticales/recouvrement/pays/france/prescription';
-import { ajouterMois } from '../lib/verticales/recouvrement/calendrier';
+import {
+	majorationPubliqueLisible,
+	periodesDeTauxPublics
+} from '../lib/verticales/recouvrement/pays/france/commande-publique';
+import { PARAMETRES } from '../lib/verticales/recouvrement/parametres';
+import { ajouterJours, ajouterMois } from '../lib/verticales/recouvrement/calendrier';
 import { depuisCentimes } from '../lib/socle/montants';
-import { ARTICLES_DU_SOCLE } from './articles';
+import { suivre } from '../app/analytique';
+import { ARTICLES_DU_SOCLE, articleDe } from './articles';
 import { Chapeau, SectionMarketing, TitreSection } from './section';
 
 /**
@@ -46,7 +54,12 @@ import { Chapeau, SectionMarketing, TitreSection } from './section';
  * calcul ; elle ne dit pas qu'il faut agir (ligne rouge n° 3).
  */
 
-type Secteur = 'GENERAL' | 'TRANSPORT_MARCHANDISES';
+/**
+ * `PUBLIC` (19/10/2026, audit) : un acheteur public. Son barème n'est pas le commercial :
+ * BCE majoré de huit points, UN taux pour tout le retard (R2192-31), l'indemnité publique,
+ * et des pénalités qui se prescrivent par quatre ans (loi n° 68-1250), une lecture.
+ */
+type Secteur = 'GENERAL' | 'TRANSPORT_MARCHANDISES' | 'PUBLIC';
 
 function aujourdHui(): string {
 	return new Date().toISOString().slice(0, 10);
@@ -110,26 +123,35 @@ function calculer(montant: string, echeance: string, secteur: Secteur, jour: str
 		};
 	try {
 		const principal = depuisCentimes(centimes);
+		const publique = secteur === 'PUBLIC';
 		const ligne = decompterFacture(
 			{
 				reference: 'votre facture',
+				...(publique ? { bareme: 'COMMANDE_PUBLIQUE' as const } : {}),
 				montantExigible: principal,
 				dateExigibilite: echeance,
 				reglements: [],
-				taux: periodesDeTauxParDefaut(echeance, jour)
+				taux: publique ? periodesDeTauxPublics(echeance) : periodesDeTauxParDefaut(echeance, jour)
 			},
 			jour,
 			'ACT_365',
-			'PENALITES_DABORD'
+			publique ? 'PRINCIPAL_DABORD' : 'PENALITES_DABORD'
 		);
-		const limite = dateDePrescription(echeance, secteur);
+		// Pour un acheteur public, la date est une LECTURE : quatre ans après le 1er janvier
+		// qui suit l'année des prestations, que le calculateur ne connaît pas. Il prend
+		// l'année de l'échéance moins le délai public le plus long (soixante jours), la
+		// plus ancienne possible : le doute ne profite jamais au produit.
+		const limite = publique
+			? datePrescriptionQuadriennale(Number(ajouterJours(echeance, -60).slice(0, 4)))
+					.dernierJourPourAgir
+			: dateDePrescription(echeance, secteur);
 		return {
 			genre: 'calcul',
 			principal: centimes,
 			ligne,
 			jours: joursEntre(echeance, jour),
 			limite,
-			depassee: limite <= jour
+			depassee: publique ? limite < jour : limite <= jour
 		};
 	} catch {
 		// Un semestre absent de la série FAIT LEVER, et ne s'extrapole jamais.
@@ -156,6 +178,16 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 	const [montant, setMontant] = useState('12 400');
 	const [echeance, setEcheance] = useState(() => ajouterMois(jour, -7));
 	const [secteur, setSecteur] = useState<Secteur>(secteurInitial);
+	const [mesure, setMesure] = useState(false);
+
+	/** Le premier calcul que le visiteur fait lui-même se compte, une fois : jamais un montant. */
+	function apresSaisie(m: string, e: string, s: Secteur) {
+		if (mesure || calculer(m, e, s, jour).genre !== 'calcul') return;
+		setMesure(true);
+		suivre('calcul-fait', {
+			regime: s === 'PUBLIC' ? 'public' : s === 'GENERAL' ? 'general' : 'transport'
+		});
+	}
 
 	// Le taux du semestre en cours doit être relevé : sans lui, aucun calcul du
 	// jour ne serait juste, et la section se tait.
@@ -172,7 +204,7 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 	return (
 		<SectionMarketing id="calcul" ton="profond" className="light cladd-color-brand gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
-				<TitreSection>Combien vous doit-on, vraiment ?</TitreSection>
+				<TitreSection>Ce que vaut une facture en retard</TitreSection>
 				<Chapeau>
 					Les pénalités de retard et les frais de recouvrement sont dus de plein droit, sans clause
 					au contrat. Tapez une facture en retard : le moteur de Letikette fait le calcul.
@@ -185,36 +217,54 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 					<Champ etiquette="Montant de la facture">
 						<Input
 							value={montant}
-							onChange={setMontant}
+							onChange={(m) => {
+								setMontant(m);
+								apresSaisie(m, echeance, secteur);
+							}}
 							inputMode="decimal"
 							suffix={<span className="mr-3 text-cladd-fg-softer">€</span>}
 							valid={lireMontant(montant) !== null}
 						/>
 					</Champ>
 					<Champ etiquette="Date d’échéance">
-						<Input type="date" value={echeance} onChange={setEcheance} max={jour} />
+						<Input
+							type="date"
+							value={echeance}
+							onChange={(e) => {
+								setEcheance(e);
+								apresSaisie(montant, e, secteur);
+							}}
+							max={jour}
+						/>
 					</Champ>
 					<div className="flex flex-col gap-1.5">
 						<span className="text-cladd-sm font-semibold">Ce que vous facturez</span>
 						<SurfaceCut outline className="w-fit max-w-full rounded-full" contentClassName="p-1">
 							<Segmented activeColor="brand" activeVariant="solid-fill">
-								<SegmentedButton
-									active={secteur === 'GENERAL'}
-									onClick={() => setSecteur('GENERAL')}
-								>
-									En général
-								</SegmentedButton>
-								<SegmentedButton
-									active={secteur === 'TRANSPORT_MARCHANDISES'}
-									onClick={() => setSecteur('TRANSPORT_MARCHANDISES')}
-								>
-									Transport
-								</SegmentedButton>
+								{(
+									[
+										['GENERAL', 'En général'],
+										['TRANSPORT_MARCHANDISES', 'Transport'],
+										['PUBLIC', 'Public']
+									] as const
+								).map(([cle, libelle]) => (
+									<SegmentedButton
+										key={cle}
+										active={secteur === cle}
+										onClick={() => {
+											setSecteur(cle);
+											apresSaisie(montant, echeance, cle);
+										}}
+									>
+										{libelle}
+									</SegmentedButton>
+								))}
 							</Segmented>
 						</SurfaceCut>
 						<span className="text-cladd-sm leading-relaxed text-encre-site-douce">
-							Une facture se réclame en justice pendant {general} ans, {transport} an pour le
-							transport de marchandises.
+							{secteur === 'PUBLIC'
+								? `Un hôpital, une commune, un service de l’État : le taux de la BCE majoré de ${majorationPubliqueLisible()}, fixé pour tout le retard, et quatre ans pour réclamer les pénalités (« intérêts moratoires »).`
+								: `Une facture se réclame en justice pendant ${general} ans, ${transport} an pour le transport de marchandises.`}
 						</span>
 					</div>
 				</div>
@@ -272,7 +322,22 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 									<PictoPrescription className="size-5 text-encre-site" />
 								</span>
 								<p className="text-cladd-md leading-relaxed">
-									{resultat.depassee ? (
+									{secteur === 'PUBLIC' ? (
+										resultat.depassee ? (
+											<>
+												Ces pénalités pouvaient se réclamer jusqu’au{' '}
+												<strong className="font-semibold">{dateLongue(resultat.limite)}</strong>,
+												d’après la lecture de la loi : la date limite pour les demander peut être
+												passée (« prescription quadriennale »).
+											</>
+										) : (
+											<>
+												Date limite pour demander ces pénalités, d’après la lecture de la loi :{' '}
+												<strong className="font-semibold">{dateLongue(resultat.limite)}</strong>.
+												Une demande écrite envoyée avant ce jour interrompt ce délai.
+											</>
+										)
+									) : resultat.depassee ? (
 										<>
 											Le délai pour agir en justice est dépassé depuis le{' '}
 											<strong className="font-semibold">{dateLongue(resultat.limite)}</strong> :
@@ -305,7 +370,9 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 											className="flex items-baseline justify-between gap-cladd-xs"
 										>
 											<span className="flex flex-col">
-												<span className="text-cladd-sm font-medium">{semestre(segment.debut)}</span>
+												<span className="text-cladd-sm font-medium">
+													{secteur === 'PUBLIC' ? 'Tout le retard' : semestre(segment.debut)}
+												</span>
 												<span className="text-cladd-sm text-encre-site-douce tabular-nums">
 													{eurosCentimes(segment.principal)} × {tauxLisible(segment.taux)} ×{' '}
 													{segment.jours} j ÷ {segment.baseAnnuelle}
@@ -320,7 +387,12 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 							</details>
 
 							<div className="pt-cladd-3xs">
-								<BoutonAffiche as={Link} to="/inscription" fond="jour">
+								<BoutonAffiche
+									as={Link}
+									to="/inscription"
+									search={{ pour: 'diagnostic' } as never}
+									fond="jour"
+								>
 									Faire ce calcul sur toutes mes factures
 									<ArrowRightIcon />
 								</BoutonAffiche>
@@ -331,10 +403,25 @@ export function Calcul({ secteurInitial = 'GENERAL' }: { secteurInitial?: Secteu
 			</div>
 
 			{/* LA SOURCE, en une ligne sous le calcul : l'endroit où un lecteur la cherche. */}
-			{ARTICLES_DU_SOCLE.length > 0 ? (
+			{secteur === 'PUBLIC' ? (
+				<p className="text-cladd-sm text-encre-site-claire">
+					Code de la commande publique, art.{' '}
+					{[
+						articleDe(PARAMETRES.tauxInteretsMoratoiresPublics.source),
+						articleDe(PARAMETRES.indemniteForfaitairePublique.source)
+					]
+						.filter(Boolean)
+						.join(', ')}
+					{' ; '}
+					{PARAMETRES.delaiPrescriptionQuadriennale.source}. Sans aucun paiement depuis l’échéance,
+					au taux de la Banque centrale européenne majoré de {majorationPubliqueLisible()}, sur 365
+					jours.
+				</p>
+			) : ARTICLES_DU_SOCLE.length > 0 ? (
 				<p className="text-cladd-sm text-encre-site-claire">
 					Code de commerce, art. {ARTICLES_DU_SOCLE.join(', ')}. Sans aucun paiement depuis
-					l’échéance, au taux de la Banque centrale européenne majoré de dix points, sur 365 jours.
+					l’échéance, au taux de la Banque centrale européenne majoré de {majorationLisible()}, sur
+					365 jours.
 				</p>
 			) : null}
 		</SectionMarketing>

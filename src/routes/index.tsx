@@ -1,3 +1,4 @@
+import { majorationLisible } from '../lib/verticales/recouvrement/pays/france/taux';
 import { createFileRoute } from '@tanstack/react-router';
 import {
 	Navbar,
@@ -67,8 +68,7 @@ export const Route = createFileRoute('/')({
 			{ property: 'og:image:height', content: '630' },
 			{
 				property: 'og:image:alt',
-				content:
-					'Letikette, logiciel de recouvrement pour les PME. Pénalités au taux BCE majoré de dix points, frais forfaitaires par facture, délai pour agir en justice.'
+				content: `Letikette, logiciel de recouvrement pour les PME. Pénalités au taux BCE majoré de ${majorationLisible()}, frais forfaitaires par facture, délai pour agir en justice.`
 			},
 
 			{ name: 'twitter:card', content: 'summary_large_image' },
@@ -98,10 +98,11 @@ function Accueil() {
 		<main className="flex w-full flex-col bg-creme">
 			<Navbar />
 			<Hero />
-			<BandeLogiciels />
 			{/* LE CALCULATEUR remplace la loi et la frise (14/10/2026) : le visiteur fait
-			    lui-même, sur SA facture, ce que les deux sections énonçaient. */}
+			    lui-même, sur SA facture, ce que les deux sections énonçaient. Il monte juste
+			    sous le héros (19/10/2026, audit) : la réponse à sa question, avant les logos. */}
 			<Calcul />
+			<BandeLogiciels />
 			{/* PLUME, juste après ce qu'on vous doit : celui qui va le réclamer. */}
 			<SectionPlume />
 			<Etapes />

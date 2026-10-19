@@ -13,7 +13,8 @@ import {
 	RAPPELS_AVANT_PRELEVEMENT_JOURS,
 	moisOfferts,
 	type Formule,
-	type Rythme
+	type Rythme,
+	historiqueDeDecouverte
 } from '../lib/config/tarifs';
 import { getLegalEmailAddress } from '../lib/config/legal';
 import { Chapeau, SectionMarketing, TitreSection } from './section';
@@ -115,9 +116,9 @@ export function Tarifs({ complet = false }: { complet?: boolean }) {
 						<div className="flex flex-col gap-cladd-3xs rounded-carte-site border-2 border-dashed border-filet-creme p-cladd-xs">
 							<span className="text-intertitre font-semibold">Découverte, gratuite</span>
 							<p className="text-cladd-md leading-relaxed text-encre-site-douce">
-								Pas encore prêt ? Déposez vos factures : vous voyez ce qu’on vous doit, pénalités et
-								frais de recouvrement compris. Sans carte, sans limite de temps. Rien ne part tant
-								que vous n’avez pas choisi.
+								Pas encore prêt ? Déposez vos factures : vous voyez ce qu’on vous doit sur{' '}
+								{historiqueDeDecouverte()}, pénalités et frais de recouvrement compris. Sans carte.
+								Rien ne part tant que vous n’avez pas choisi.
 							</p>
 							<Link
 								to="/inscription"
@@ -153,8 +154,8 @@ export function Tarifs({ complet = false }: { complet?: boolean }) {
 				<div className="flex flex-col gap-cladd-3xs md:flex-row md:items-center md:justify-between md:gap-cladd-sm">
 					<p className="max-w-2xl text-cladd-md leading-relaxed text-encre-site-douce">
 						<span className="font-semibold text-encre-site">Découverte, gratuite.</span> Déposez vos
-						factures : vous voyez ce qu’on vous doit, sans carte et sans limite de temps. Rien ne
-						part tant que vous n’avez pas choisi.
+						factures : vous voyez ce qu’on vous doit sur {historiqueDeDecouverte()}, sans carte.
+						Rien ne part tant que vous n’avez pas choisi.
 					</p>
 					<Link
 						to="/tarifs"

@@ -36,7 +36,7 @@ export function Appel() {
 					</LienAffiche>
 				</div>
 				<p className="text-cladd-sm text-encre-site-douce">
-					Découverte gratuite, sans carte. Puis {DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui,
+					Diagnostic gratuit, sans carte. Puis {DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui,
 					sans engagement.
 				</p>
 			</div>

@@ -36,8 +36,12 @@ import { EcranBureau, EcranProduit } from './section';
  * démonstration, et la page le dit sous « Comment ça marche ».
  */
 
+/**
+ * ⚠️ « DIAGNOSTIC GRATUIT », PAS « DÉCOUVERTE GRATUITE » (19/10/2026, audit) : la formule
+ * gratuite est devenue le diagnostic express, trois mois de factures au calcul.
+ */
 const LEVEES = [
-	'Découverte gratuite',
+	'Diagnostic gratuit',
 	`${DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui`,
 	'Sans engagement'
 ];
@@ -123,8 +127,15 @@ export function Hero() {
 					{/* ⚠️ UNE SEULE PILULE, ET UN LIEN. Deux boutons pleins côte à côte
 					    annulent l'action principale. */}
 					<div className="leve flex w-full flex-col items-stretch gap-cladd-3xs pt-cladd-3xs sm:w-auto sm:flex-row sm:items-center">
-						<BoutonAffiche as={Link} to="/inscription" fond="jour">
-							Essayer gratuitement
+						{/* « COMBIEN VOUS DOIT-ON ? » (19/10/2026, audit) : la question du gérant,
+						    et le diagnostic express derrière elle, plutôt qu'« essayer ». */}
+						<BoutonAffiche
+							as={Link}
+							to="/inscription"
+							search={{ pour: 'diagnostic' } as never}
+							fond="jour"
+						>
+							Combien vous doit-on ?
 							<ArrowRightIcon />
 						</BoutonAffiche>
 						<LienAffiche href="#comment" className="justify-center text-encre-site">

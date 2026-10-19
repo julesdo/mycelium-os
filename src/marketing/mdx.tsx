@@ -1,7 +1,10 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
-import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
+import {
+	tauxPenaliteParDefaut,
+	majorationLisible
+} from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
 import { eurosCentimesCourts, tauxLisible } from '../ui/format';
 import { cn } from '../ui';
@@ -50,7 +53,7 @@ function tauxDuJour(): string {
 		return tauxLisible(tauxPenaliteParDefaut(new Date().toISOString().slice(0, 10)));
 	} catch {
 		// Un semestre absent de la série fait lever : on dit la règle plutôt qu'un nombre.
-		return 'le taux de la BCE majoré de dix points';
+		return `le taux de la BCE majoré de ${majorationLisible()}`;
 	}
 }
 

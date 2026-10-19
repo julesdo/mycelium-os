@@ -1,9 +1,12 @@
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
-import { tauxPenaliteParDefaut } from '../lib/verticales/recouvrement/pays/france/taux';
+import {
+	tauxPenaliteParDefaut,
+	majorationLisible
+} from '../lib/verticales/recouvrement/pays/france/taux';
 import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
 import { tauxLisible } from '../lib/verticales/recouvrement/taux-lisible';
 import { dureePourRetenir } from '../lib/config/produit';
-import { DUREE_ESSAI_JOURS, GRILLE } from '../lib/config/tarifs';
+import { DUREE_ESSAI_JOURS, GRILLE, historiqueDeDecouverte } from '../lib/config/tarifs';
 import type { QuestionReponse } from './faq';
 
 /**
@@ -110,8 +113,7 @@ function pointPenalites(jour: string): PointDeLoi {
 	const taux = tauxDuJour(jour);
 	return {
 		titre: taux === null ? 'Des pénalités de retard' : `${taux} par an de pénalités`,
-		texte:
-			'Le taux de la BCE majoré de dix points, si le contrat n’en prévoit pas d’autre. Il change le 1er janvier et le 1er juillet.',
+		texte: `Le taux de la BCE majoré de ${majorationLisible()}, si le contrat n’en prévoit pas d’autre. Il change le 1er janvier et le 1er juillet.`,
 		source: PARAMETRES.tauxInteretLegalDefaut.source
 	};
 }
@@ -137,7 +139,9 @@ export function questionClause(): QuestionReponse {
 	return {
 		question: 'Faut-il une clause au contrat pour réclamer les pénalités ?',
 		reponse:
-			'Entre professionnels, les pénalités de retard et les frais de recouvrement sont dus de plein droit, même si vos documents n’en parlent pas. Sans taux prévu au contrat, c’est celui de la BCE majoré de dix points.'
+			'Entre professionnels, les pénalités de retard et les frais de recouvrement sont dus de plein droit, même si vos documents n’en parlent pas. Sans taux prévu au contrat, c’est celui de la BCE majoré de ' +
+			majorationLisible() +
+			'.'
 	};
 }
 
@@ -146,7 +150,7 @@ export function pageDuSecteur(secteur: SecteurPublic, jour: string): PageDeSecte
 	const taux = tauxDuJour(jour);
 	const penalites =
 		taux === null
-			? 'des pénalités au taux de la BCE majoré de dix points'
+			? `des pénalités au taux de la BCE majoré de ${majorationLisible()}`
 			: `des pénalités au taux de ${taux} par an ce semestre`;
 
 	if (secteur === 'transport-routier') {
@@ -226,7 +230,7 @@ export function pageDuSecteur(secteur: SecteurPublic, jour: string): PageDeSecte
 			},
 			{
 				question: 'Combien ça coûte ?',
-				reponse: `Découverte est gratuite : vous voyez ce qu’on vous doit. Ensuite ${GRILLE.solo.mensuel}, ${GRILLE.equipe.mensuel} ou ${GRILLE.pro.mensuel} € HT par mois, ${DUREE_ESSAI_JOURS} jours d’essai, aucune commission sur ce qui rentre.`
+				reponse: `Découverte est gratuite : vous voyez ce qu’on vous doit sur ${historiqueDeDecouverte()}. Ensuite ${GRILLE.solo.mensuel}, ${GRILLE.equipe.mensuel} ou ${GRILLE.pro.mensuel} € HT par mois, ${DUREE_ESSAI_JOURS} jours d’essai, aucune commission sur ce qui rentre.`
 			},
 			questionClause()
 		]

@@ -14,7 +14,7 @@ import type { PageDeSecteur } from './secteurs';
  */
 
 const LEVEES = [
-	'Découverte gratuite',
+	'Diagnostic gratuit',
 	`${DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui`,
 	'Sans engagement'
 ];

@@ -133,6 +133,21 @@ export interface Limites {
 	readonly historiqueMois: number | null;
 }
 
+const MOIS_EN_LETTRES: Readonly<Record<number, string>> = {
+	1: 'votre dernier mois',
+	2: 'vos deux derniers mois',
+	3: 'vos trois derniers mois',
+	6: 'vos six derniers mois',
+	12: 'vos douze derniers mois'
+};
+
+/** « vos trois derniers mois de factures » : ce que chiffre Découverte, lu dans la grille. */
+export function historiqueDeDecouverte(): string {
+	const mois = LIMITES.decouverte.historiqueMois;
+	if (mois === null) return 'toutes vos factures';
+	return `${MOIS_EN_LETTRES[mois] ?? `vos ${mois} derniers mois`} de factures`;
+}
+
 /** Les logiciels qu'une liste peut ouvrir, par leur lecteur (`socle/connecteurs`). */
 export type LogicielOuvert = 'qonto' | 'pennylane';
 

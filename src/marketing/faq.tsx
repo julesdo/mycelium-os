@@ -1,3 +1,4 @@
+import { majorationLisible } from '../lib/verticales/recouvrement/pays/france/taux';
 import { PlusIcon } from 'lucide-react';
 import { PARAMETRES, estUtilisable } from '../lib/verticales/recouvrement/parametres';
 import {
@@ -62,7 +63,7 @@ export function questionsDeLAccueil(): readonly QuestionReponse[] {
 		},
 		{
 			question: 'Comment les montants sont-ils calculés ?',
-			reponse: `Selon le code de commerce : des pénalités au taux de la BCE majoré de dix points${montant}. Chaque montant est détaillé période par période.`
+			reponse: `Selon le code de commerce : des pénalités au taux de la BCE majoré de ${majorationLisible()}${montant}. Chaque montant est détaillé période par période.`
 		},
 		{
 			question: 'Quels logiciels se branchent ?',

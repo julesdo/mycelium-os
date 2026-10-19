@@ -1,3 +1,4 @@
+import { majorationLisible } from '../../verticales/recouvrement/pays/france/taux';
 import { v, ConvexError } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import type { MutationCtx } from '../_generated/server';
@@ -92,7 +93,7 @@ async function poserLeTaux(
 			plancherConnu: true,
 			constat:
 				'Le taux contractuel est retiré. Les intérêts repartent sur le taux légal — ' +
-				'BCE majoré de dix points, recalculé à chaque semestre.'
+				`BCE majoré de ${majorationLisible()}, recalculé à chaque semestre.`
 		};
 	}
 

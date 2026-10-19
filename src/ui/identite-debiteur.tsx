@@ -1,3 +1,4 @@
+import { majorationLisible } from '../lib/verticales/recouvrement/pays/france/taux';
 import { useState } from 'react';
 import { Button, Chip, Input, Select, Surface } from '@cladd-ui/react';
 import { FileTextIcon } from 'lucide-react';
@@ -616,7 +617,7 @@ function ChampTauxStipule({
 				placeholder="Taux de retard stipulé"
 				inputMode="decimal"
 				suffix={<span className="mr-2 text-cladd-fg-softer">%</span>}
-				infoMessage="Celui de vos conditions générales. Vide = taux légal, BCE majoré de dix points."
+				infoMessage={`Celui de vos conditions générales. Vide = taux légal, BCE majoré de ${majorationLisible()}.`}
 			/>
 			{/* Le constat du serveur, tel quel : il dit si le taux passe sous le
 			    plancher légal et combien vaut ce plancher, pour que le créancier

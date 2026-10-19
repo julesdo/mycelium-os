@@ -3,7 +3,8 @@ import {
 	GRILLE,
 	JOURS_DE_REMBOURSEMENT,
 	LIMITES,
-	RAPPELS_AVANT_PRELEVEMENT_JOURS
+	RAPPELS_AVANT_PRELEVEMENT_JOURS,
+	historiqueDeDecouverte
 } from '../config/tarifs';
 import { HEURES_D_ENVOI, PLAN_PAR_DEFAUT } from '../verticales/recouvrement/plan-relance';
 import { dureePourRetenir, FORMATS_LUS, LOGICIELS_BRANCHES } from '../config/produit';
@@ -187,7 +188,7 @@ export const ARTICLES: readonly ArticleDAide[] = [
 			'pro',
 			'découverte'
 		],
-		reponse: `Découverte est gratuite : vous voyez ce qu’on vous doit, rien ne part. Puis ${formule('solo')}, ${formule('equipe')} et ${formule('pro')} ; l’année se paie dix mois. Les formules diffèrent par le nombre de clients relancés en même temps (${LIMITES.solo.clientsSuivis} en Solo, ${LIMITES.equipe.clientsSuivis} en Équipe, sans limite en Pro) et de personnes dans l’établissement (${LIMITES.solo.utilisateurs}, ${LIMITES.equipe.utilisateurs}, ${LIMITES.pro.utilisateurs}).`,
+		reponse: `Découverte est gratuite : vous voyez ce qu’on vous doit sur ${historiqueDeDecouverte()}, rien ne part. Puis ${formule('solo')}, ${formule('equipe')} et ${formule('pro')} ; l’année se paie dix mois. Les formules diffèrent par le nombre de clients relancés en même temps (${LIMITES.solo.clientsSuivis} en Solo, ${LIMITES.equipe.clientsSuivis} en Équipe, sans limite en Pro) et de personnes dans l’établissement (${LIMITES.solo.utilisateurs}, ${LIMITES.equipe.utilisateurs}, ${LIMITES.pro.utilisateurs}).`,
 		ecran: 'FORMULE'
 	},
 	{

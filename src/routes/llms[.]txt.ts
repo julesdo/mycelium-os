@@ -1,3 +1,4 @@
+import { majorationLisible } from '../lib/verticales/recouvrement/pays/france/taux';
 import { createFileRoute } from '@tanstack/react-router';
 import { articlesPublies } from '../marketing/blog';
 import { indemniteLisible, NOMS_DES_SECTEURS, SECTEURS_PUBLICS } from '../marketing/secteurs';
@@ -25,7 +26,7 @@ function texte(): string {
 	);
 	return `# Letikette
 
-> Logiciel de recouvrement de créances entre entreprises, pour les TPE et PME françaises. Il lit les factures, calcule ce que chaque client doit (pénalités de retard au taux de la BCE majoré de dix points, ${frais} par facture payée en retard), surveille les délais pour agir en justice et relance les clients au nom du gérant, quand il l’a décidé.
+> Logiciel de recouvrement de créances entre entreprises, pour les TPE et PME françaises. Il lit les factures, calcule ce que chaque client doit (pénalités de retard au taux de la BCE majoré de ${majorationLisible()}, ${frais} par facture payée en retard), surveille les délais pour agir en justice et relance les clients au nom du gérant, quand il l’a décidé.
 
 Letikette ne manipule aucun fonds, n’exerce aucune activité de recouvrement pour compte de tiers et ne délivre aucun conseil juridique. Chaque montant réclamé se décompose période par période, avec sa source.
 

@@ -16,8 +16,15 @@ import { suivre } from '../app/analytique';
  * l'écran d'acceptation, et jamais par `/bienvenue`.
  */
 export const Route = createFileRoute('/inscription')({
-	validateSearch: (search: Record<string, unknown>): { invitation?: string } => ({
-		invitation: typeof search.invitation === 'string' ? search.invitation : undefined
+	/**
+	 * `pour` (19/10/2026, audit) : « Combien vous doit-on ? » et le calculateur y mènent
+	 * avec `pour=diagnostic`. Il ne change rien au parcours ; il se mesure.
+	 */
+	validateSearch: (
+		search: Record<string, unknown>
+	): { invitation?: string; pour?: 'diagnostic' } => ({
+		invitation: typeof search.invitation === 'string' ? search.invitation : undefined,
+		pour: search.pour === 'diagnostic' ? 'diagnostic' : undefined
 	}),
 	component: Inscription
 });
@@ -48,7 +55,7 @@ const FORME_D_ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 function Inscription() {
 	const navigate = useNavigate();
-	const { invitation } = Route.useSearch();
+	const { invitation, pour } = Route.useSearch();
 	const [etape, setEtape] = useState<'adresse' | 'acces'>('adresse');
 	const [nom, setNom] = useState('');
 	const [email, setEmail] = useState('');
@@ -90,6 +97,7 @@ function Inscription() {
 			return;
 		}
 		suivre('inscription', { invitation: Boolean(invitation) });
+		if (pour === 'diagnostic') suivre('diagnostic-lance');
 		if (invitation) {
 			await navigate({ to: '/rejoindre/$token', params: { token: invitation } });
 			return;

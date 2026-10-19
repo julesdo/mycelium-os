@@ -60,6 +60,31 @@ export type Semestre = string;
 /** Les dix points de majoration de l'article L441-10 II, en centièmes de point. */
 const MAJORATION_L441_10 = 1000n;
 
+const POINTS_EN_LETTRES: Readonly<Record<number, string>> = {
+	5: 'cinq',
+	6: 'six',
+	7: 'sept',
+	8: 'huit',
+	9: 'neuf',
+	10: 'dix',
+	11: 'onze',
+	12: 'douze'
+};
+
+/** « dix points », « huit points » : une majoration en centièmes de point, écrite en lettres. */
+export function pointsEnLettres(centiemes: bigint): string {
+	const points = Number(centiemes) / 100;
+	return `${POINTS_EN_LETTRES[points] ?? String(points).replace('.', ',')} points`;
+}
+
+/**
+ * « dix points » : la majoration du taux de la BCE à défaut de taux au contrat (L441-10 II),
+ * pour l'écrire en clair sans la taper à la main (19/10/2026).
+ */
+export function majorationLisible(): string {
+	return pointsEnLettres(MAJORATION_L441_10);
+}
+
 /** Le multiplicateur du plancher contractuel : « trois fois le taux légal ». */
 const MULTIPLICATEUR_PLANCHER = 3n;
 
