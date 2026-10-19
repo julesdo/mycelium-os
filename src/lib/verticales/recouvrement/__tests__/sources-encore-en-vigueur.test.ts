@@ -87,7 +87,10 @@ describe('les sources citées sont encore la version en vigueur', () => {
 			// Le diagnostic express (19/10/2026) : même page, même bandeau « AU 01/01/2027 ».
 			'sommesRegleesApresLEcheance',
 			'delaiDeReglementSuppletif',
-			'indemnisationComplementaireSurJustification'
+			'indemnisationComplementaireSurJustification',
+			// Le blog des métiers (19/10/2026) : L441-10 I et L441-11, même bandeau « AU 01/01/2027 ».
+			'delaiDeReglementConvenuMaximal',
+			'delaiPaiementTransportRoutier'
 		]);
 	});
 
@@ -115,7 +118,9 @@ describe('les sources citées sont encore la version en vigueur', () => {
 				'sur la source — un bandeau « version en vigueur du … AU … », ou une abrogation datée. ' +
 				'Si elle vient d’un raisonnement plutôt que d’une page, elle est inventée.'
 		).toEqual([
+			'delaiDeReglementConvenuMaximal',
 			'delaiDeReglementSuppletif',
+			'delaiPaiementTransportRoutier',
 			'exclusionIndemnitesProcedureCollective',
 			'formulationPointDepartPenalites',
 			'indemnisationComplementaireSurJustification',

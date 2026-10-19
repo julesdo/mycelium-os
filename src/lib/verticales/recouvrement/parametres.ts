@@ -1354,6 +1354,135 @@ export const PARAMETRES = {
 			'une administration (article L112-1 du code des relations entre le public et ' +
 			'l’administration), pas devant un EPIC qui gère un service industriel ou commercial ' +
 			`(L100-3). ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	// ── Les règles des métiers, relevées pour le blog (19/10/2026) ──────────
+
+	delaiDeReglementConvenuMaximal: {
+		cle: 'delaiDeReglementConvenuMaximal',
+		nature: 'CONSTANTE',
+		valeur: { apresFacture: 60, finDeMois: 45, facturePeriodique: 45 },
+		unite: 'jours',
+		source: 'Article L441-10 I, deuxième à quatrième alinéas, du code de commerce',
+		verifieLe: LE_19_10,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le délai convenu entre les parties pour régler les sommes dues ne peut dépasser ' +
+			'soixante jours après la date d’émission de la facture. Par dérogation, un délai maximal ' +
+			'de quarante-cinq jours fin de mois après la date d’émission de la facture peut être ' +
+			'convenu entre les parties, sous réserve que ce délai soit expressément stipulé par ' +
+			'contrat et qu’il ne constitue pas un abus manifeste à l’égard du créancier. En cas de ' +
+			'facture périodique […], le délai convenu entre les parties ne peut dépasser ' +
+			'quarante-cinq jours après la date d’émission de la facture. » Relevé sur Légifrance ' +
+			'(LEGIARTI000038414392) le 19/10/2026. La version qui entre en vigueur le 1er janvier ' +
+			'2027 (ordonnance n° 2026-671 du 27 juillet 2026, LEGIARTI000054567689) garde les trois ' +
+			'délais : seul le renvoi de la facture périodique passe du code général des impôts au ' +
+			`code des impositions sur les biens et services. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<{
+		apresFacture: number;
+		finDeMois: number;
+		facturePeriodique: number;
+	}>,
+
+	delaiPaiementTransportRoutier: {
+		cle: 'delaiPaiementTransportRoutier',
+		nature: 'CONSTANTE',
+		valeur: 30,
+		unite: 'jours',
+		source: 'Article L441-11, II, 5°, du code de commerce',
+		verifieLe: LE_19_10,
+		sourceValableJusqua: '2027-01-01',
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le délai de paiement, par tout producteur, revendeur ou prestataire de services, ne ' +
+			'peut dépasser : […] 5° Trente jours après la date d’émission de la facture pour le ' +
+			'transport routier de marchandises, pour la location de véhicules avec ou sans ' +
+			'conducteur, pour la commission de transport ainsi que pour les activités de transitaire, ' +
+			'd’agent maritime et de fret aérien, de courtier de fret et de commissionnaire en ' +
+			'douane ». Un plafond, pas un délai par défaut : un accord ne peut pas l’allonger. Relevé ' +
+			'sur Légifrance (sous-section « Délais de paiement », version en vigueur au 19/10/2026, ' +
+			'issue de l’ordonnance n° 2023-1210) le 19/10/2026 ; une version de l’article entre en ' +
+			`vigueur le 1er janvier 2027 (ordonnance n° 2025-1247), à relire ce jour-là. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	actionDirecteDuTransporteur: {
+		cle: 'actionDirecteDuTransporteur',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article L132-8 du code de commerce',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« La lettre de voiture forme un contrat entre l’expéditeur, le voiturier et le ' +
+			'destinataire ou entre l’expéditeur, le destinataire, le commissionnaire et le voiturier. ' +
+			'Le voiturier a ainsi une action directe en paiement de ses prestations à l’encontre de ' +
+			'l’expéditeur et du destinataire, lesquels sont garants du paiement du prix du transport. ' +
+			'Toute clause contraire est réputée non écrite. » Version en vigueur depuis le 21/09/2000, ' +
+			'relevée sur Légifrance (LEGIARTI000006220236) le 19/10/2026. La Cour de cassation ' +
+			'(chambre commerciale, 25 novembre 2020, n° 18-25.768, publié) l’a appliqué à un transport ' +
+			'international soumis à la CMR, que la convention ne règle pas sur ce point. Le blog cite ' +
+			`la règle sans recopier le mot « garants ». ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	acceptationDuSousTraitant: {
+		cle: 'acceptationDuSousTraitant',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article 3 de la loi n° 75-1334 du 31 décembre 1975 relative à la sous-traitance',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« L’entrepreneur qui entend exécuter un contrat ou un marché en recourant à un ou ' +
+			'plusieurs sous-traitants doit, au moment de la conclusion et pendant toute la durée du ' +
+			'contrat ou du marché, faire accepter chaque sous-traitant et agréer les conditions de ' +
+			'paiement de chaque contrat de sous-traitance par le maître de l’ouvrage […]. » Version en ' +
+			'vigueur depuis le 03/01/1976, relevée sur Légifrance (JORFTEXT000000889241) le ' +
+			`19/10/2026. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<boolean>,
+
+	actionDirecteDuSousTraitant: {
+		cle: 'actionDirecteDuSousTraitant',
+		nature: 'CONSTANTE',
+		valeur: 1,
+		unite: 'mois',
+		source: 'Article 12 de la loi n° 75-1334 du 31 décembre 1975 relative à la sous-traitance',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« Le sous-traitant a une action directe contre le maître de l’ouvrage si l’entrepreneur ' +
+			'principal ne paie pas, un mois après en avoir été mis en demeure, les sommes qui sont ' +
+			'dues en vertu du contrat de sous-traitance ; copie de cette mise en demeure est adressée ' +
+			'au maître de l’ouvrage. Toute renonciation à l’action directe est réputée non écrite. ' +
+			'Cette action directe subsiste même si l’entrepreneur principal est en état de ' +
+			'liquidation des biens, de règlement judiciaire ou de suspension provisoire des ' +
+			'poursuites. » La valeur est le délai d’un mois. Version en vigueur depuis le 01/10/1994 ' +
+			`(loi n° 94-475), relevée sur Légifrance (JORFTEXT000000889241) le 19/10/2026. ${AVOCAT_ATTENDU}`
+	} satisfies ParametreLegal<number>,
+
+	limiteDeLActionDirecte: {
+		cle: 'limiteDeLActionDirecte',
+		nature: 'CONSTANTE',
+		valeur: true,
+		unite: 'sans',
+		source: 'Article 13 de la loi n° 75-1334 du 31 décembre 1975 relative à la sous-traitance',
+		verifieLe: LE_19_10,
+		verifie: true,
+		valideParAvocat: false,
+		note:
+			'« L’action directe ne peut viser que le paiement correspondant aux prestations prévues ' +
+			'par le contrat de sous-traitance et dont le maître de l’ouvrage est effectivement ' +
+			'bénéficiaire. Les obligations du maître de l’ouvrage sont limitées à ce qu’il doit ' +
+			'encore à l’entrepreneur principal à la date de la réception de la copie de la mise en ' +
+			'demeure prévue à l’article précédent. » Version en vigueur depuis le 03/01/1976, relevée ' +
+			`sur Légifrance (JORFTEXT000000889241) le 19/10/2026. ${AVOCAT_ATTENDU}`
 	} satisfies ParametreLegal<boolean>
 } as const;
 
