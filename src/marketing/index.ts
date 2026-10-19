@@ -23,6 +23,7 @@ export { Etapes } from './etapes';
 export { BandeLogiciels } from './logiciels';
 export { Securite } from './securite';
 export { Tarifs } from './tarifs';
+export { OffresSurDemande } from './offres';
 export { Faq, questionsDeFacturation } from './faq';
 export { PageSecurite } from './page-securite';
 export { Appel } from './appel';

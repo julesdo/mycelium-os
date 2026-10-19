@@ -1,5 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Appel, Faq, Navbar, Pied, Tarifs, questionsDeFacturation } from '../marketing';
+import {
+	Appel,
+	Faq,
+	Navbar,
+	OffresSurDemande,
+	Pied,
+	Tarifs,
+	questionsDeFacturation
+} from '../marketing';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
 
@@ -10,7 +18,7 @@ import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
  * de `config/tarifs.ts`, comme partout.
  */
 const TITRE = 'Tarifs · Letikette';
-const RESUME = `Découverte gratuite, puis Solo, Équipe ou Pro, au mois ou à l’année. ${DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui, sans engagement.`;
+const RESUME = `Diagnostic gratuit, puis Solo, Équipe ou Pro, au mois ou à l’année. ${DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui, sans engagement.`;
 
 export const Route = createFileRoute('/tarifs')({
 	head: () => ({
@@ -31,6 +39,8 @@ function Page() {
 		<main className="flex w-full flex-col bg-creme pt-barre-publique">
 			<Navbar />
 			<Tarifs complet />
+			{/* LES OFFRES SUR DEMANDE (19/10/2026, audit) : un devis, jamais un paiement en ligne. */}
+			<OffresSurDemande />
 			<Faq
 				id="questions-facturation"
 				titre="Avant de payer."
