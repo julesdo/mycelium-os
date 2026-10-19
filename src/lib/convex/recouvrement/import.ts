@@ -182,7 +182,15 @@ export const enregistrerImport = internalMutation({
 		 * la même dette.
 		 */
 		reglementsCumules: v.optional(
-			v.array(v.object({ reference: v.string(), date: v.string(), montantCumule: v.int64() }))
+			v.array(
+				v.object({
+					reference: v.string(),
+					date: v.string(),
+					montantCumule: v.int64(),
+					/** `false` : la date est celle de la lecture (voir `reglements.dateSource`). */
+					dateSure: v.optional(v.boolean())
+				})
+			)
 		),
 		/**
 		 * LE FICHIER DONT CES FACTURES SONT ISSUES.
@@ -331,7 +339,8 @@ export const enregistrerImport = internalMutation({
 				date: reglement.date,
 				montant: reglement.montant,
 				nature: reglement.nature ?? 'CREDIT',
-				creeLe: Date.now()
+				creeLe: Date.now(),
+				dateSource: 'REELLE'
 			});
 			reglementsCrees++;
 		}
@@ -371,7 +380,8 @@ export const enregistrerImport = internalMutation({
 				// ou les deux. Il entre comme crédit comptable, imputé sur le principal —
 				// la lecture qui réclame le moins (voir `natureDuCredit`).
 				nature: 'CREDIT',
-				creeLe: Date.now()
+				creeLe: Date.now(),
+				dateSource: cumul.dateSure === false ? 'LECTURE' : 'REELLE'
 			});
 			reglementsCrees++;
 		}

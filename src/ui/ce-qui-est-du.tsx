@@ -5,6 +5,7 @@ import {
 	BilanPertes,
 	ChocRevelation,
 	FacturesNonChiffrees,
+	HorsDeLaPeriode,
 	type BilanPertesAffiche,
 	type RevelationAffichee
 } from './revelation';
@@ -108,6 +109,7 @@ function RienDeChiffrable({ revelation }: { revelation: RevelationAffichee }) {
 				</p>
 			</Surface>
 			<FacturesNonChiffrees lignes={revelation.nonChiffrees} />
+			<HorsDeLaPeriode du={revelation.du} horsPeriode={revelation.horsPeriode} />
 		</section>
 	);
 }

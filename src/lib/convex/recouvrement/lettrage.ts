@@ -257,7 +257,9 @@ export const appliquerInterne = internalMutation({
 				// solde de plusieurs factures, et c'est ce que le décompte doit lire.
 				montant: reste,
 				nature: 'PAIEMENT',
-				creeLe: Date.now()
+				creeLe: Date.now(),
+				// Le jour que le gérant a donné : une date réelle.
+				dateSource: 'REELLE'
 			});
 			await ctx.db.patch(facture._id, { statutPaiement: 'SOLDEE' });
 		}
@@ -343,7 +345,9 @@ export async function appliquerLaRepartition(
 			date,
 			montant: ligne.montant,
 			nature: 'PAIEMENT',
-			creeLe: Date.now()
+			creeLe: Date.now(),
+			// Le jour que le gérant a donné : une date réelle.
+			dateSource: 'REELLE'
 		});
 		await ctx.db.patch(facture._id, {
 			statutPaiement: ligne.solde ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE'

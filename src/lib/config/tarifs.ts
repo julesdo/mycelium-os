@@ -121,8 +121,40 @@ export interface Limites {
 	readonly utilisateurs: number;
 	/** Les analyses de santé client par mois, relecture mensuelle comprise. */
 	readonly analysesParMois: number;
-	/** Les logiciels qui se branchent : Qonto seul, ou tous. */
-	readonly logiciels: 'qonto' | 'tous';
+	/** Les logiciels qui se branchent : une liste, ou tous. */
+	readonly logiciels: 'tous' | readonly LogicielOuvert[];
+	/**
+	 * Les mois d'historique que les CHIFFRES de l'établissement couvrent (19/10/2026,
+	 * audit : Découverte devient le diagnostic express). `null` : tout. Le reste est
+	 * gardé et COMPTÉ (« N factures plus anciennes »), et la surveillance de la
+	 * prescription ne se borne jamais : une limite arrête ce que Découverte CALCULE,
+	 * jamais ce qu'elle SURVEILLE.
+	 */
+	readonly historiqueMois: number | null;
+}
+
+/** Les logiciels qu'une liste peut ouvrir, par leur lecteur (`socle/connecteurs`). */
+export type LogicielOuvert = 'qonto' | 'pennylane';
+
+/** Ce palier ouvre-t-il ce logiciel ? `fournisseur` : celui du lecteur (« pennylane », « xero »…). */
+export function logicielOuvert(limites: Pick<Limites, 'logiciels'>, fournisseur: string): boolean {
+	return (
+		limites.logiciels === 'tous' || (limites.logiciels as readonly string[]).includes(fournisseur)
+	);
+}
+
+/**
+ * La date d'où partent les chiffres : aujourd'hui moins N mois du calendrier, au
+ * dernier jour du mois quand le jour manque (le 31 mai moins trois mois donne le
+ * 28 février). `null` : aucun plancher.
+ */
+export function plancherDHistorique(mois: number | null, aujourdHui: string): string | null {
+	if (mois === null) return null;
+	const [a, m, j] = aujourdHui.split('-').map(Number);
+	const annee = a ?? 1970;
+	const rang = (m ?? 1) - 1 - mois;
+	const dernierJour = new Date(Date.UTC(annee, rang + 1, 0)).getUTCDate();
+	return new Date(Date.UTC(annee, rang, Math.min(j ?? 1, dernierJour))).toISOString().slice(0, 10);
 }
 
 export const LIMITES: Readonly<Record<Palier, Limites>> = {
@@ -131,22 +163,32 @@ export const LIMITES: Readonly<Record<Palier, Limites>> = {
 		clientsSuivis: 0,
 		utilisateurs: 1,
 		analysesParMois: 1,
-		logiciels: 'qonto'
+		logiciels: ['qonto', 'pennylane'],
+		historiqueMois: 3
 	},
-	solo: { agir: true, clientsSuivis: 10, utilisateurs: 1, analysesParMois: 10, logiciels: 'qonto' },
+	solo: {
+		agir: true,
+		clientsSuivis: 10,
+		utilisateurs: 1,
+		analysesParMois: 10,
+		logiciels: ['qonto', 'pennylane'],
+		historiqueMois: null
+	},
 	equipe: {
 		agir: true,
 		clientsSuivis: 50,
 		utilisateurs: 3,
 		analysesParMois: 50,
-		logiciels: 'tous'
+		logiciels: 'tous',
+		historiqueMois: null
 	},
 	pro: {
 		agir: true,
 		clientsSuivis: null,
 		utilisateurs: 10,
 		analysesParMois: 300,
-		logiciels: 'tous'
+		logiciels: 'tous',
+		historiqueMois: null
 	}
 };
 
@@ -165,7 +207,8 @@ export function limitesDe(tier: PlanTier): Limites {
 			clientsSuivis: null,
 			utilisateurs: 9999,
 			analysesParMois: 300,
-			logiciels: 'tous'
+			logiciels: 'tous',
+			historiqueMois: null
 		};
 	}
 	return LIMITES[tier === 'none' ? 'decouverte' : tier];
@@ -186,7 +229,7 @@ export const CE_QUI_EST_INCLUS: readonly {
 }[] = [
 	{
 		libelle: 'Vos factures lues, ce qu’on vous doit, pénalités et frais de recouvrement compris',
-		valeurs: { decouverte: true, solo: true, equipe: true, pro: true }
+		valeurs: { decouverte: '3 derniers mois', solo: true, equipe: true, pro: true }
 	},
 	{
 		libelle: 'Relances automatiques et lettre officielle, à votre nom',
@@ -221,7 +264,12 @@ export const CE_QUI_EST_INCLUS: readonly {
 	},
 	{
 		libelle: 'Vos logiciels branchés (Pennylane, QuickBooks…)',
-		valeurs: { decouverte: 'Qonto', solo: 'Qonto', equipe: true, pro: true }
+		valeurs: {
+			decouverte: 'Qonto, Pennylane',
+			solo: 'Qonto, Pennylane',
+			equipe: true,
+			pro: true
+		}
 	}
 ];
 

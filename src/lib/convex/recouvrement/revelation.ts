@@ -9,8 +9,14 @@ import type { PeriodeDeTaux, Reglement } from '../../verticales/recouvrement/dec
 import {
 	reveler,
 	interetsCourusEntre,
-	bilanDesPertes
+	bilanDesPertes,
+	diagnostiquer,
+	separerParPeriode,
+	type LigneRevelee
 } from '../../verticales/recouvrement/revelation';
+import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
+import { plancherDHistorique } from '../../config/tarifs';
+import { limitesDeLOrganisation } from '../limites';
 import type { FacturePourRevelation } from '../../verticales/recouvrement/revelation';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
 import { prescriptionDe } from '../../verticales/recouvrement/pays/france/prescription';
@@ -61,9 +67,22 @@ const CONVENTION = 'ACT_365' as const;
  * une incohérence : une prescription approximée reste une surveillance, alors
  * qu'un intérêt approximé est un chiffre faux qu'on envoie à un débiteur.
  */
-function departDe(facture: Doc<'facturesVente'>): string {
-	if (facture.dateExigibilite !== undefined) return facture.dateExigibilite;
-	return facture.dateEcheance ?? facture.dateEmission;
+function departDe(facture: Doc<'facturesVente'>): { depart: string; supposee: boolean } {
+	if (facture.dateExigibilite !== undefined)
+		return { depart: facture.dateExigibilite, supposee: false };
+	if (facture.dateEcheance !== undefined) return { depart: facture.dateEcheance, supposee: false };
+	// ⚠️ NI EXIGIBILITÉ NI ÉCHÉANCE (un FEC n'en porte pas) : le délai supplétif de
+	// L441-10 I, compté depuis la DATE DE LA FACTURE, et marqué comme hypothèse
+	// (19/10/2026). Avant, le retard courait dès l'émission, et une facture pas encore
+	// échue portait déjà ses 40 €. Une date d'émission illisible part telle quelle :
+	// `reveler` la nommera.
+	const jours = exiger(PARAMETRES.delaiDeReglementSuppletif);
+	return {
+		depart: estDateReelle(facture.dateEmission)
+			? ajouterJours(facture.dateEmission, jours)
+			: facture.dateEmission,
+		supposee: true
+	};
 }
 
 /**
@@ -141,7 +160,7 @@ async function facturesPour(
 
 	for (const facture of brutes) {
 		if (facture.creanceId !== undefined && classes.has(facture.creanceId)) continue;
-		const depart = departDe(facture);
+		const { depart, supposee } = departDe(facture);
 		const debiteur = debiteurs.get(facture.debiteurId);
 		const secteur: SecteurCreance = debiteur?.secteur ?? 'INDETERMINE';
 
@@ -180,12 +199,33 @@ async function facturesPour(
 			),
 			taux,
 			statutPaiement: facture.statutPaiement,
+			...(reglements.some((r) => r.dateSource === 'LECTURE')
+				? { datesDeReglementSures: false }
+				: {}),
+			...(supposee ? { echeanceSupposee: true } : {}),
 			...prescriptionDe([facture.dateExigibilite, facture.dateEcheance], secteur)
 		});
 	}
 
 	return preparees;
 }
+
+/**
+ * LE PLANCHER D'HISTORIQUE DE L'ÉTABLISSEMENT (19/10/2026) : d'où partent ses chiffres.
+ * Découverte calcule les trois derniers mois ; toute formule, et la facturation fermée,
+ * calculent tout (`null`). La SEULE fonction qui le dit : la révélation, « Ce qui est
+ * dû » et le diagnostic la lisent toutes trois, et ne peuvent donc pas diverger.
+ */
+export async function plancherDe(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	arreteAu: string
+): Promise<string | null> {
+	const { historiqueMois } = await limitesDeLOrganisation(ctx, organizationId);
+	return estDateReelle(arreteAu) ? plancherDHistorique(historiqueMois, arreteAu) : null;
+}
+
+const vHorsPeriode = v.object({ nombre: v.number(), principal: v.int64() });
 
 const vRevelation = v.object({
 	nombreFactures: v.number(),
@@ -228,8 +268,27 @@ const vRevelation = v.object({
 			exigibleDepuis: v.optional(v.string())
 		})
 	),
-	nonChiffrees: v.array(v.object({ reference: v.string(), raison: v.string() }))
+	nonChiffrees: v.array(v.object({ reference: v.string(), raison: v.string() })),
+	/** D'où partent les chiffres ; `null` : de toujours. */
+	du: v.union(v.string(), v.null()),
+	/** Ce qui est plus ancien que `du` : compté, jamais chiffré. */
+	horsPeriode: vHorsPeriode
 });
+
+function ligneAffichee(ligne: LigneRevelee, reperes: ReadonlyMap<string, RepereFacture>) {
+	const repere = reperes.get(ligne.reference);
+	return {
+		reference: ligne.reference,
+		_id: repere?._id,
+		debiteurId: repere?.debiteurId,
+		debiteur: repere?.debiteur ?? null,
+		principalRestantDu: enCentimes(ligne.principalRestantDu),
+		interets: enCentimes(ligne.interets),
+		indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
+		supplement: enCentimes(ligne.supplement),
+		exigibleDepuis: repere?.exigibleDepuis
+	};
+}
 
 async function composerRevelation(
 	ctx: QueryCtx,
@@ -237,7 +296,11 @@ async function composerRevelation(
 	arreteAu: string
 ) {
 	const reperes = new Map<string, RepereFacture>();
-	const factures = await facturesPour(ctx, organizationId, arreteAu, reperes);
+	const du = await plancherDe(ctx, organizationId, arreteAu);
+	const { dansLaPeriode: factures, horsPeriode } = separerParPeriode(
+		await facturesPour(ctx, organizationId, arreteAu, reperes),
+		du
+	);
 	const revelation = reveler(factures, arreteAu, CONVENTION);
 
 	// LE COMPTEUR VIVANT. La veille se calcule ici plutôt que d'être demandée à
@@ -253,21 +316,95 @@ async function composerRevelation(
 		supplement: enCentimes(revelation.supplement),
 		total: enCentimes(revelation.total),
 		interetsCourusDepuisHier: enCentimes(interetsCourusEntre(factures, hier, arreteAu, CONVENTION)),
-		lignes: revelation.lignes.map((ligne) => {
-			const repere = reperes.get(ligne.reference);
-			return {
-				reference: ligne.reference,
-				_id: repere?._id,
-				debiteurId: repere?.debiteurId,
-				debiteur: repere?.debiteur ?? null,
-				principalRestantDu: enCentimes(ligne.principalRestantDu),
-				interets: enCentimes(ligne.interets),
-				indemniteForfaitaire: enCentimes(ligne.indemniteForfaitaire),
-				supplement: enCentimes(ligne.supplement),
-				exigibleDepuis: repere?.exigibleDepuis
-			};
-		}),
-		nonChiffrees: revelation.nonChiffrees.map((n) => ({ ...n }))
+		lignes: revelation.lignes.map((ligne) => ligneAffichee(ligne, reperes)),
+		nonChiffrees: revelation.nonChiffrees.map((n) => ({ ...n })),
+		du,
+		horsPeriode: { nombre: horsPeriode.nombre, principal: enCentimes(horsPeriode.principal) }
+	};
+}
+
+const vDiagnostic = v.object({
+	du: v.union(v.string(), v.null()),
+	arreteAu: v.string(),
+	impayees: v.object({
+		nombreFactures: v.number(),
+		principal: v.int64(),
+		interets: v.int64(),
+		indemnites: v.int64(),
+		supplement: v.int64(),
+		lignes: vRevelation.fields.lignes
+	}),
+	payeesEnRetard: v.object({
+		nombreFactures: v.number(),
+		interets: v.int64(),
+		indemnites: v.int64(),
+		supplement: v.int64(),
+		lignes: v.array(
+			v.object({
+				reference: v.string(),
+				_id: v.optional(v.id('facturesVente')),
+				debiteur: v.union(v.string(), v.null()),
+				payeeLe: v.string(),
+				joursDeRetard: v.number(),
+				interets: v.int64(),
+				indemniteForfaitaire: v.int64(),
+				supplement: v.int64(),
+				echeanceSupposee: v.boolean()
+			})
+		)
+	}),
+	horsPeriode: vHorsPeriode,
+	nonChiffrees: v.array(v.object({ reference: v.string(), raison: v.string() })),
+	supplementTotal: v.int64(),
+	echeancesSupposees: v.number()
+});
+
+/**
+ * LE DIAGNOSTIC EXPRESS (19/10/2026) : la révélation sur la période, plus ce que la loi
+ * ajoutait aux factures payées en retard. La règle vit dans `diagnostiquer` ; ici, on lit
+ * et on met en forme.
+ */
+async function composerDiagnostic(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	arreteAu: string
+) {
+	const reperes = new Map<string, RepereFacture>();
+	const du = await plancherDe(ctx, organizationId, arreteAu);
+	const factures = await facturesPour(ctx, organizationId, arreteAu, reperes);
+	const d = diagnostiquer(factures, du, arreteAu, CONVENTION);
+	return {
+		du: d.du,
+		arreteAu: d.arreteAu,
+		impayees: {
+			nombreFactures: d.impayees.nombreFactures,
+			principal: enCentimes(d.impayees.principal),
+			interets: enCentimes(d.impayees.interets),
+			indemnites: enCentimes(d.impayees.indemnites),
+			supplement: enCentimes(d.impayees.supplement),
+			lignes: d.impayees.lignes.map((ligne) => ligneAffichee(ligne, reperes))
+		},
+		payeesEnRetard: {
+			nombreFactures: d.payeesEnRetard.nombreFactures,
+			interets: enCentimes(d.payeesEnRetard.interets),
+			indemnites: enCentimes(d.payeesEnRetard.indemnites),
+			supplement: enCentimes(d.payeesEnRetard.supplement),
+			lignes: d.payeesEnRetard.lignes.map((l) => ({
+				reference: l.reference,
+				_id: reperes.get(l.reference)?._id,
+				debiteur: reperes.get(l.reference)?.debiteur ?? null,
+				payeeLe: l.payeeLe,
+				joursDeRetard: l.joursDeRetard,
+				interets: enCentimes(l.interets),
+				indemniteForfaitaire: enCentimes(l.indemniteForfaitaire),
+				supplement: enCentimes(l.supplement),
+				echeanceSupposee: l.echeanceSupposee
+			}))
+		},
+		horsPeriode: { nombre: d.horsPeriode.nombre, principal: enCentimes(d.horsPeriode.principal) },
+		nonChiffrees: d.nonChiffrees.map((n) => ({ ...n })),
+		supplementTotal: enCentimes(d.supplementTotal),
+		echeancesSupposees: d.echeancesSupposees
 	};
 }
 
@@ -334,6 +471,23 @@ export const revelation = authedQuery({
 	handler: async (ctx, { arreteAu }) => {
 		const { organizationId } = await getUserOrg(ctx);
 		return composerRevelation(ctx, organizationId, arreteAu);
+	}
+});
+
+/** Le diagnostic, sans authentification — pour les tests et le relevé des étapes. */
+export const diagnosticInterne = internalQuery({
+	args: { organizationId: v.id('organizations'), arreteAu: v.string() },
+	returns: vDiagnostic,
+	handler: async (ctx, { organizationId, arreteAu }) =>
+		composerDiagnostic(ctx, organizationId, arreteAu)
+});
+
+export const diagnostic = authedQuery({
+	args: { arreteAu: v.string() },
+	returns: vDiagnostic,
+	handler: async (ctx, { arreteAu }) => {
+		const { organizationId } = await getUserOrg(ctx);
+		return composerDiagnostic(ctx, organizationId, arreteAu);
 	}
 });
 

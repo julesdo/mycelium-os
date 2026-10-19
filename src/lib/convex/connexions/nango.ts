@@ -15,6 +15,7 @@ import { signatureNangoValide } from '../../socle/connecteurs/nango/signature';
 import type { FactureDepuisConnecteur } from '../../socle/connecteurs/facture-connecteur';
 import { REGIMES_PRESCRIPTION } from '../../verticales/recouvrement/pays/france/prescription';
 import { estSirenValide } from '../../verticales/recouvrement/pays/france/siren';
+import { logicielOuvert } from '../../config/tarifs';
 
 /**
  * LA CONNEXION NANGO : brancher un logiciel, le lire, le débrancher (13/10/2026).
@@ -181,7 +182,8 @@ async function ecrireFactures(
 						{
 							reference: facture.reference,
 							date: facture.regleCumule.date,
-							montantCumule: facture.regleCumule.montant
+							montantCumule: facture.regleCumule.montant,
+							dateSure: facture.regleCumule.dateSure
 						}
 					]
 		),
@@ -261,6 +263,22 @@ async function rattacher(
 // CE QUE L'ÉCRAN APPELLE
 // ─────────────────────────────────────────────────────────────────────────
 
+/** Le lecteur d'une intégration du tableau de bord de Nango, ou `undefined`. */
+async function fournisseurDeLIntegration(
+	config: ConfigNango,
+	integrationId: string
+): Promise<string | undefined> {
+	try {
+		const { data } = await appelNango<{
+			data: readonly { unique_key: string; provider: string }[];
+		}>(config, 'GET', '/integrations');
+		const integration = data.find((i) => i.unique_key === integrationId);
+		return integration === undefined ? undefined : FOURNISSEURS_LUS[integration.provider];
+	} catch {
+		return undefined;
+	}
+}
+
 const vLogicielConfigure = v.object({
 	integrationId: v.string(),
 	fournisseur: v.string(),
@@ -325,12 +343,17 @@ export const ouvrirSessionNango = authedAction({
 			internal.connexions.nangoDonnees.organisationAdministree,
 			{ userId: ctx.user._id }
 		);
-		// Solo et Découverte branchent Qonto ; les autres logiciels, Équipe et Pro.
+		// Découverte et Solo branchent Qonto et Pennylane ; les autres logiciels, Équipe et
+		// Pro. Le fournisseur se lit chez Nango : l'identifiant de l'intégration se choisit
+		// dans son tableau de bord, il ne dit pas quel logiciel il ouvre.
 		const limites = await ctx.runQuery(internal.limites._limitesInterne, { organizationId });
-		if (limites.logiciels === 'qonto') {
-			throw new ConvexError(
-				'Pennylane, QuickBooks et les autres logiciels se branchent avec Équipe ou Pro : Compte, puis Abonnement.'
-			);
+		if (limites.logiciels !== 'tous') {
+			const fournisseur = await fournisseurDeLIntegration(config, integrationId);
+			if (fournisseur === undefined || !logicielOuvert(limites, fournisseur)) {
+				throw new ConvexError(
+					'QuickBooks, Xero et les autres logiciels se branchent avec Équipe ou Pro : Compte, puis Abonnement.'
+				);
+			}
 		}
 		try {
 			const { data } = await appelNango<{ data: { token: string } }>(

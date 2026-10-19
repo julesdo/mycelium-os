@@ -722,7 +722,14 @@ export const recouvrementTables = {
 		montant: v.int64(),
 		nature: vNatureReglement,
 		pieceId: v.optional(v.id('pieces')),
-		creeLe: v.number()
+		creeLe: v.number(),
+		/**
+		 * D'où vient la date (19/10/2026). `LECTURE` : la source ne dit pas quand la
+		 * facture a été payée, et la date est celle où on l'a lue ; le calcul nomme alors
+		 * la facture au lieu de chiffrer des pénalités sur une date inventée. Absent : une
+		 * date réelle (relevé, FEC, virement noté), comme tout ce qui précède ce champ.
+		 */
+		dateSource: v.optional(v.union(v.literal('REELLE'), v.literal('LECTURE')))
 	})
 		.index('by_facture', ['factureId'])
 		.index('by_org', ['organizationId'])

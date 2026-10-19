@@ -84,7 +84,7 @@ describe('Pennylane', () => {
 			montantTTC: 120_000n,
 			dateEmission: '2026-07-01',
 			dateEcheance: '2026-07-31',
-			regleCumule: { montant: 75_000n, date: '2026-10-13' }
+			regleCumule: { montant: 75_000n, date: '2026-10-13', dateSure: false }
 		});
 	});
 
@@ -119,7 +119,8 @@ describe('Pennylane', () => {
 		const payee = pennylane({ paid: true, status: 'paid', remaining_amount_with_tax: '0.0' });
 		expect(facture(factureDepuisPennylane(payee, client, CONTEXTE)).regleCumule).toEqual({
 			montant: 120_000n,
-			date: '2026-10-13'
+			date: '2026-10-13',
+			dateSure: false
 		});
 		expect(factureDepuisPennylane({ ...payee, date: '2019-03-01' }, client, CONTEXTE).genre).toBe(
 			'HORS_CHAMP'
@@ -189,7 +190,7 @@ describe('Xero', () => {
 			EmailAddress: 'a@durand.fr'
 		};
 		const lue = facture(factureDepuisXero(base, contact, CONTEXTE));
-		expect(lue.regleCumule).toEqual({ montant: 60_000n, date: '2026-10-13' });
+		expect(lue.regleCumule).toEqual({ montant: 60_000n, date: '2026-10-13', dateSure: false });
 		expect(lue.debiteurSiren).toBe('732829320');
 		expect(factureDepuisXero({ ...base, Type: 'ACCPAY' }, contact, CONTEXTE).genre).toBe(
 			'HORS_CHAMP'
@@ -228,7 +229,7 @@ describe('Zoho', () => {
 			)
 		);
 		expect(lue.debiteur).toBe('Bowman & Co SAS');
-		expect(lue.regleCumule).toEqual({ montant: 3_000n, date: '2026-06-20' });
+		expect(lue.regleCumule).toEqual({ montant: 3_000n, date: '2026-06-20', dateSure: true });
 		expect(lue.debiteurSiren).toBe('732829320');
 	});
 });

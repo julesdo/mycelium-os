@@ -20,6 +20,14 @@ export interface FactureDepuisConnecteur {
 	 * Ce que la source dit avoir été réglé AU TOTAL, et le jour où on le constate.
 	 * `null` : rien de réglé, ou rien qu'on sache attribuer. Un cumul, jamais un
 	 * règlement : voir `complementDeReglement`.
+	 *
+	 * ⚠️ `dateSure` À `false` : la source ne dit pas QUAND la facture a été payée, et la
+	 * date est celle de la lecture. Elle sert à dater l'écriture, jamais à calculer des
+	 * pénalités : le calcul nomme la facture au lieu de la chiffrer (19/10/2026).
 	 */
-	readonly regleCumule: { readonly montant: bigint; readonly date: string } | null;
+	readonly regleCumule: {
+		readonly montant: bigint;
+		readonly date: string;
+		readonly dateSure: boolean;
+	} | null;
 }

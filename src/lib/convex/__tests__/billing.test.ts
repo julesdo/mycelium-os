@@ -7,7 +7,9 @@ import {
 	LIMITES,
 	formuleRecommandee,
 	limitesDe,
-	moisOfferts
+	logicielOuvert,
+	moisOfferts,
+	plancherDHistorique
 } from '../../config/tarifs';
 
 describe('la grille', () => {
@@ -36,7 +38,26 @@ describe('la grille', () => {
 
 	it('ne borne rien en développement', () => {
 		expect(limitesDe('dev').clientsSuivis).toBeNull();
+		expect(limitesDe('dev').historiqueMois).toBeNull();
 		expect(limitesDe('none')).toBe(LIMITES.decouverte);
+	});
+
+	it('fait de Découverte le diagnostic express : trois mois chiffrés, Qonto et Pennylane', () => {
+		expect(LIMITES.decouverte.historiqueMois).toBe(3);
+		for (const f of FORMULES) expect(LIMITES[f].historiqueMois).toBeNull();
+		expect(logicielOuvert(LIMITES.decouverte, 'pennylane')).toBe(true);
+		expect(logicielOuvert(LIMITES.decouverte, 'qonto')).toBe(true);
+		expect(logicielOuvert(LIMITES.decouverte, 'xero')).toBe(false);
+		// Une formule payante n'ouvre jamais moins que Découverte.
+		expect(logicielOuvert(LIMITES.solo, 'pennylane')).toBe(true);
+		expect(logicielOuvert(LIMITES.equipe, 'xero')).toBe(true);
+	});
+
+	it('compte les trois mois en mois du calendrier, au dernier jour quand il manque', () => {
+		expect(plancherDHistorique(3, '2026-10-19')).toBe('2026-07-19');
+		expect(plancherDHistorique(3, '2026-05-31')).toBe('2026-02-28');
+		expect(plancherDHistorique(3, '2026-01-15')).toBe('2025-10-15');
+		expect(plancherDHistorique(null, '2026-10-19')).toBeNull();
 	});
 
 	it('propose Solo à une entreprise individuelle, Équipe sinon', () => {

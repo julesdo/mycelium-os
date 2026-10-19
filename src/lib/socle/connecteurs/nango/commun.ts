@@ -141,11 +141,12 @@ export function jourDepuisUnix(secondes: number | null | undefined): string | un
 export function regleDepuisLeReste(
 	montantTTC: bigint,
 	reste: bigint,
-	date: string
-): { readonly montant: bigint; readonly date: string } | null {
+	date: string,
+	dateSure: boolean
+): { readonly montant: bigint; readonly date: string; readonly dateSure: boolean } | null {
 	const paye = montantTTC - reste;
 	const borne = paye < 0n ? 0n : paye > montantTTC ? montantTTC : paye;
-	return borne > 0n ? { montant: borne, date } : null;
+	return borne > 0n ? { montant: borne, date, dateSure } : null;
 }
 
 /**
@@ -204,12 +205,15 @@ export function factureLue(lu: {
 	if (lu.dateEmission === undefined) return { genre: 'ILLISIBLE', raison: 'facture sans date' };
 	if (lu.reste === null) return { genre: 'ILLISIBLE', raison: 'reste à payer illisible' };
 
+	// Sans date de paiement transmise (Pennylane, QuickBooks, Sellsy), le jour de la
+	// lecture date l'écriture, et le dit : il ne sert jamais à calculer des pénalités.
+	const dateSure = lu.datePaiement !== undefined;
 	const datePaiement = lu.datePaiement ?? lu.aujourdHui;
 	const regleCumule =
 		lu.reste !== undefined
-			? regleDepuisLeReste(lu.montantTTC, lu.reste, datePaiement)
+			? regleDepuisLeReste(lu.montantTTC, lu.reste, datePaiement, dateSure)
 			: lu.soldee === true
-				? { montant: lu.montantTTC, date: datePaiement }
+				? { montant: lu.montantTTC, date: datePaiement, dateSure }
 				: null;
 
 	if (horsDeLHorizon(lu.dateEmission, lu.horizon, lu.montantTTC, regleCumule)) {

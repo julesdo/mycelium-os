@@ -64,6 +64,10 @@ export interface RevelationAffichee {
 	readonly interetsCourusDepuisHier: bigint;
 	readonly lignes: readonly LigneRevelationAffichee[];
 	readonly nonChiffrees: readonly { readonly reference: string; readonly raison: string }[];
+	/** D'où partent les chiffres (Découverte : trois mois) ; absent ou `null` : de toujours. */
+	readonly du?: string | null;
+	/** Ce qui est plus ancien que `du` : compté, jamais chiffré. */
+	readonly horsPeriode?: { readonly nombre: number; readonly principal: bigint };
 }
 
 export interface BilanPertesAffiche {
@@ -127,6 +131,35 @@ export function FacturesNonChiffrees({
 				))}
 			</div>
 		</Surface>
+	);
+}
+
+/**
+ * CE QUI EST PLUS ANCIEN QUE LA PÉRIODE CALCULÉE (19/10/2026, audit : Découverte devient
+ * le diagnostic express). Même règle que `FacturesNonChiffrees` : un total borné se dit
+ * borné, à côté de lui, jamais en note. Rien n'est effacé : ces factures sont gardées,
+ * et leur date limite pour agir reste surveillée.
+ */
+export function HorsDeLaPeriode({
+	du,
+	horsPeriode
+}: {
+	du: string | null | undefined;
+	horsPeriode: { readonly nombre: number; readonly principal: bigint } | undefined;
+}) {
+	if (du === null || du === undefined) return null;
+	const n = horsPeriode?.nombre ?? 0;
+	return (
+		<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+			Calculé sur les factures depuis le {dateCourte(du)}.
+			{n === 0
+				? null
+				: ` ${n} facture${pluriel(n)} plus ancienne${pluriel(n)}${
+						horsPeriode !== undefined && horsPeriode.principal > 0n
+							? `, ${eurosCentimes(horsPeriode.principal)} encore dus,`
+							: ''
+					} n’y ${n > 1 ? 'entrent' : 'entre'} pas : elles sont gardées, et se chiffrent avec une formule.`}
+		</p>
 	);
 }
 
@@ -239,6 +272,7 @@ export function ChocRevelation({
 			</section>
 
 			<FacturesNonChiffrees lignes={revelation.nonChiffrees} />
+			<HorsDeLaPeriode du={revelation.du} horsPeriode={revelation.horsPeriode} />
 		</div>
 	);
 }

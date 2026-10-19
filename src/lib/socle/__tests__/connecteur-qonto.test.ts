@@ -48,12 +48,12 @@ describe('factureDepuisQonto', () => {
 			}),
 			AUJOURDHUI
 		);
-		expect(payee?.regleCumule).toEqual({ montant: 120000n, date: '2026-08-12' });
+		expect(payee?.regleCumule).toEqual({ montant: 120000n, date: '2026-08-12', dateSure: true });
 	});
 
 	it('solde une facture « payée » dont le montant réglé manque', () => {
 		const payee = factureDepuisQonto(facture({ status: 'paid', amount_paid: null }), AUJOURDHUI);
-		expect(payee?.regleCumule).toEqual({ montant: 120000n, date: AUJOURDHUI });
+		expect(payee?.regleCumule).toEqual({ montant: 120000n, date: AUJOURDHUI, dateSure: false });
 	});
 
 	it('lit un règlement partiel écrit en décimal', () => {
@@ -61,7 +61,7 @@ describe('factureDepuisQonto', () => {
 			facture({ amount_paid: { value: '300.10', currency: 'EUR' } }),
 			AUJOURDHUI
 		);
-		expect(partielle?.regleCumule).toEqual({ montant: 30010n, date: AUJOURDHUI });
+		expect(partielle?.regleCumule).toEqual({ montant: 30010n, date: AUJOURDHUI, dateSure: false });
 	});
 
 	it('écarte un brouillon, une facture annulée et une facture en devise', () => {
@@ -122,7 +122,8 @@ describe('signatureQontoValide', () => {
 	const secret = 'secret-de-test-assez-long-pour-qonto-00000';
 	const corps = '{"id":"f-1","status":"paid"}';
 	const t = 1_790_000_000;
-	const signe = (texte: string) => createHmac('sha256', secret).update(`${t}.${texte}`).digest('hex');
+	const signe = (texte: string) =>
+		createHmac('sha256', secret).update(`${t}.${texte}`).digest('hex');
 
 	it('accepte une signature exacte et fraîche', async () => {
 		expect(await signatureQontoValide(corps, `t=${t},v1=${signe(corps)}`, secret, t + 10)).toBe(

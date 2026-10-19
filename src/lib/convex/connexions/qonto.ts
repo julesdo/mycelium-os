@@ -344,7 +344,8 @@ export const synchroniser = internalAction({
 										{
 											reference: facture.reference,
 											date: facture.regleCumule.date,
-											montantCumule: facture.regleCumule.montant
+											montantCumule: facture.regleCumule.montant,
+											dateSure: facture.regleCumule.dateSure
 										}
 									]
 						),

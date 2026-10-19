@@ -113,8 +113,16 @@ export function factureDepuisQonto(
 		montantTTC,
 		dateEmission,
 		...(facture.due_date ? { dateEcheance: facture.due_date } : {}),
+		// `paid_at` n'existe que pour une facture entièrement payée : sans lui, la date
+		// est celle de la lecture, et elle le dit.
 		regleCumule:
-			cumul > 0n ? { montant: cumul, date: facture.paid_at?.slice(0, 10) ?? aujourdHui } : null
+			cumul > 0n
+				? {
+						montant: cumul,
+						date: facture.paid_at?.slice(0, 10) ?? aujourdHui,
+						dateSure: Boolean(facture.paid_at)
+					}
+				: null
 	};
 }
 
