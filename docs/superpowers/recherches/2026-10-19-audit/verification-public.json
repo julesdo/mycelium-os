@@ -1,0 +1,187 @@
+{
+ "verdicts": [
+  {
+   "affirmation": "(a) Taux des intérêts moratoires en commande publique (R2192-31 CCP) : taux BCE des opérations principales de refinancement en vigueur au premier jour du semestre où les intérêts ont commencé à courir, plus 8 points, et ce taux reste le même pendant tout le retard.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037729653",
+   "citation_exacte": "Le taux des intérêts moratoires mentionnés à l'article L. 2192-13 est égal au taux d'intérêt appliqué par la Banque centrale européenne à ses opérations principales de refinancement les plus récentes, en vigueur au premier jour du semestre de l'année civile au cours duquel les intérêts moratoires ont commencé à courir, majoré de huit points de pourcentage.",
+   "correction": "Texte reconstitué à partir de quatre segments relus un par un. Page : « En vigueur depuis le 01/04/2019 », article créé par le décret n° 2018-1075, sans version à venir. Le texte ne dit pas en toutes lettres « pour toute la durée ». Le taux unique découle de l'ancrage au semestre de départ. Point utile pour le moteur : le semestre retenu est celui du PREMIER JOUR D'INTÉRÊTS, c'est-à-dire le lendemain de l'expiration du délai (R2192-32). Ce n'est pas le semestre du dernier jour du délai."
+  },
+  {
+   "affirmation": "(a) En B2B privé (L441-10 II), le taux est recalé au 1er janvier et au 1er juillet. En commande publique, il reste celui du semestre de départ. Reprendre telle quelle la segmentation semestrielle de taux.ts pour le barème public donnerait un résultat faux.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038414392",
+   "citation_exacte": "Dans ce cas, le taux applicable pendant le premier semestre de l'année concernée est le taux en vigueur au 1er janvier de l'année en question. Pour le second semestre de l'année concernée, il est le taux en vigueur au 1er juillet de l'année en question.",
+   "correction": "Relu : « Version en vigueur du 26/04/2019 au 01/01/2027 ». La version du 01/01/2027 existe bien (statut « A venir ») : « Modifié par Ordonnance n°2026-671 du 27 juillet 2026 - art. 2 », entrée en vigueur « Conformément à l'article 49 de l'ordonnance n° 2025-1247 du 17 décembre 2025 ». Elle garde la formule (« majoré de 10 points de pourcentage »), les deux semestres et l'indemnité forfaitaire. Elle renvoie à « l'article L. 216-34 du code des impositions sur les biens et services ». Le recalage semestriel ne vaut que pour le taux par défaut : « sauf disposition contraire », le contrat peut fixer un autre taux, d'au moins trois fois le taux légal. Dans le code, src/lib/verticales/recouvrement/pays/france/taux.ts, ligne 194, découpe « Une période par semestre traversé ». Il ne peut donc pas servir tel quel au barème public."
+  },
+  {
+   "affirmation": "(a) Les intérêts courent du lendemain de l'expiration du délai jusqu'à la date de mise en paiement du principal, ce jour compris (R2192-32).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038808532",
+   "citation_exacte": "Les intérêts moratoires courent à compter du lendemain de l'expiration du délai de paiement ou de l'échéance prévue par le marché jusqu'à la date de mise en paiement du principal incluse.",
+   "correction": "« En vigueur depuis le 22 juillet 2019 », modifié par le décret n° 2019-748, art. 4. Aucune version à venir."
+  },
+  {
+   "affirmation": "(a) Les intérêts se calculent sur le montant TTC de l'acompte ou du solde, moins la retenue de garantie, après actualisation, révision et pénalités (R2192-33).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000037701019/LEGISCTA000037725047/",
+   "citation_exacte": "Les intérêts moratoires appliqués aux acomptes ou au solde sont calculés sur le montant total de l'acompte ou du solde toutes taxes comprises, diminué de la retenue de garantie, et après application des clauses d'actualisation, de révision et de pénalisation.",
+   "correction": "En vigueur depuis le 01/04/2019 (décret n° 2018-1075), sans modification. La sous-section compte R2192-31 à R2192-34, D2192-35 et R2192-36."
+  },
+  {
+   "affirmation": "(d) Le retard fait courir de plein droit les intérêts moratoires et ouvre droit à l'indemnité forfaitaire, sans aucune formalité. Des frais plus élevés peuvent s'y ajouter, sur justification (L2192-13).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037703787",
+   "citation_exacte": "Dès le lendemain de l'expiration du délai de paiement ou de l'échéance prévue par le marché, le retard de paiement fait courir, de plein droit et sans autre formalité, des intérêts moratoires dont le taux est fixé par voie réglementaire. […] Le retard de paiement donne lieu, de plein droit et sans autre formalité, au versement d'une indemnité forfaitaire pour frais de recouvrement, dont le montant est fixé par voie réglementaire.",
+   "correction": "En vigueur depuis le 01/04/2019 (ordonnance n° 2018-1074). Deuxième alinéa : « versés au créancier par le pouvoir adjudicateur ». À noter : le complément, lui, n'est PAS de plein droit. Il faut le demander : « le créancier peut demander une indemnisation complémentaire, sur justification »."
+  },
+  {
+   "affirmation": "(d) Une renonciation aux intérêts moratoires est réputée non écrite (L2192-14).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/id/LEGISCTA000037703783",
+   "citation_exacte": "Toute renonciation au paiement des intérêts moratoires est réputée non écrite.",
+   "correction": "En vigueur depuis le 01/04/2019. Le texte ne vise que les intérêts moratoires. Il ne dit rien de l'indemnité forfaitaire."
+  },
+  {
+   "affirmation": "(d) Le retard est constitué quand le pouvoir adjudicateur ne verse pas à l'échéance ce qu'il doit à un créancier qui a rempli ses obligations (L2192-12).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/id/LEGISCTA000037703783",
+   "citation_exacte": "Le retard de paiement est constitué lorsque les sommes dues au créancier, qui a rempli ses obligations légales et contractuelles, ne sont pas versées par le pouvoir adjudicateur à l'échéance prévue au marché ou à l'expiration du délai de paiement.",
+   "correction": "Le « pouvoir adjudicateur » ne se limite pas aux personnes publiques. D'après L1211-1, il comprend aussi des personnes morales de droit privé (2° et 3°)."
+  },
+  {
+   "affirmation": "(d) Le site Entreprendre (DILA) écrit que les intérêts et l'indemnité sont dus sans que le titulaire ait à les demander.",
+   "verdict": "CONFIRME",
+   "source_url": "https://entreprendre.service-public.gouv.fr/simulateur/calcul/interets-moratoires",
+   "citation_exacte": "Les intérêts moratoires, et l’indemnité forfaitaire pour frais de recouvrement le cas échéant, sont dus sans que le titulaire du marché n’ait besoin de les demander.",
+   "correction": "Page « Vérifié le 01 Juillet 2026 », relue en deux segments. Source officielle mais pas normative : c'est L2192-13 qui fait foi. F23386 dit aussi, relu mot pour mot : « Ils sont dus automatiquement et sont appliqués d'office sans qu'un rappel soit nécessaire. »"
+  },
+  {
+   "affirmation": "(b) L'indemnité forfaitaire pour frais de recouvrement vaut 40 €. L'article est le D2192-35 (et non un R).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037729645",
+   "citation_exacte": "Le montant de l'indemnité forfaitaire pour frais de recouvrement est fixé à 40 euros.",
+   "correction": "En vigueur depuis le 01/04/2019 (décret n° 2018-1075), sans version à venir. Le texte ne dit pas « par facture ». L2192-13 rattache l'indemnité au « retard de paiement » : son unité (une par demande de paiement en retard ?) reste à faire valider."
+  },
+  {
+   "affirmation": "(b)(d) Les intérêts et l'indemnité se paient dans les 45 jours qui suivent la mise en paiement du principal (R2192-36).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037729643",
+   "citation_exacte": "Les intérêts moratoires et l'indemnité forfaitaire pour frais de recouvrement sont payés dans un délai de quarante-cinq jours suivant la mise en paiement du principal.",
+   "correction": "En vigueur depuis le 01/04/2019. F23386 dit aussi, relu : « Le dépassement de ce délai de 45 jours peut donner lieu au versement d'intérêts au taux de l'intérêt légal ». Le fondement normatif de cette phrase n'a pas été relu."
+  },
+  {
+   "affirmation": "(c) Le délai de paiement est celui du marché, plafonné par le délai réglementaire, ou à défaut ce délai réglementaire. Il peut varier selon la catégorie de pouvoir adjudicateur (L2192-10).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000037701019/LEGISCTA000037703775/",
+   "citation_exacte": "Les pouvoirs adjudicateurs, y compris lorsqu'ils agissent en tant qu'entités adjudicatrices, paient les sommes dues en principal en exécution d'un marché dans un délai prévu par le marché ou, à défaut, dans un délai fixé par voie réglementaire et qui peut être différent selon les catégories de pouvoirs adjudicateurs. Lorsqu'un délai de paiement est prévu par le marché, celui-ci ne peut excéder le délai prévu par voie réglementaire.",
+   "correction": "En vigueur depuis le 01/04/2019 (ordonnance n° 2018-1074)."
+  },
+  {
+   "affirmation": "(c) 30 jours pour les pouvoirs adjudicateurs (État, collectivités, établissements publics), y compris quand ils agissent comme entité adjudicatrice (R2192-10). Le délai court à compter de la réception de la demande de paiement (R2192-12).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037729711",
+   "citation_exacte": "Le délai de paiement prévu à l'article L. 2192-10 est fixé à trente jours pour les pouvoirs adjudicateurs, y compris lorsqu'ils agissent en tant qu'entité adjudicatrice.",
+   "correction": "Les 30 jours sont confirmés (en vigueur depuis le 01/04/2019). La parenthèse est incomplète : d'après L1211-1, les pouvoirs adjudicateurs comprennent aussi des personnes de droit privé (organismes d'intérêt général financés ou contrôlés par un pouvoir adjudicateur, organismes communs). Second alinéa : applicable « aux contrats conclus à compter du 16 mars 2013 ». R2192-12 n'a été relu que sur marche-public.fr, pas sur Légifrance. Il commence par « Sous réserve des dispositions prévues aux articles R2192-13, R2192-17 et R2192-18 » et admet la réception par le maître d'œuvre « si le marché le prévoit »."
+  },
+  {
+   "affirmation": "(c) 50 jours pour les établissements publics de santé et ceux du service de santé des armées. 60 jours pour les entreprises publiques au sens de l'ordonnance n° 2004-503, sauf celles qui sont des établissements publics locaux (R2192-11).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037729709",
+   "citation_exacte": "Par dérogation à l'article R. 2192-10, le délai de paiement est fixé à : 1° Cinquante jours pour les établissements publics de santé et les établissements du service de santé des armées ; 2° Soixante jours pour les entreprises publiques au sens du II de l'article 1er de l'ordonnance n° 2004-503 du 7 juin 2004 […], à l'exception de celles ayant la nature d'établissements publics locaux.",
+   "correction": "En vigueur depuis le 01/04/2019. Règle transitoire relue : contrats conclus à compter du 16 mars 2013, pour les créances dont le délai a commencé à courir après l'entrée en vigueur du décret. Le « 71 jours » des hôpitaux, cité par l'audit, n'est pas un délai légal : le délai légal est de 50 jours."
+  },
+  {
+   "affirmation": "(c) Les entités adjudicatrices « privées » (2° et 3° de L1212-1) relèvent du code de commerce (L441-10 et suivants), donc a priori de BCE + 10 points et des 40 € de D441-5.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000037701019/LEGISCTA000037703775/",
+   "citation_exacte": "Les entités adjudicatrices mentionnées aux 2° et 3° de l'article L. 1212-1 paient les sommes dues en principal en exécution d'un marché dans les conditions prévues à l'article L. 441-10, au 5° du II de l'article L. 441-11 et à l'article L. 441-13 du code de commerce.",
+   "correction": "L2192-11 est bien en vigueur depuis le 05/07/2019 (ordonnance n° 2019-698). Mais « privées » est inexact. Le 2° de L1212-1 (relu, https://www.legifrance.gouv.fr/codes/id/LEGISCTA000037703310/) vise « les entreprises publiques » qui ne sont pas des pouvoirs adjudicateurs. Le 3° vise « les organismes de droit privé qui bénéficient […] de droits spéciaux ou exclusifs ». La catégorie à retenir : les entités adjudicatrices qui ne sont pas des pouvoirs adjudicateurs. La suite (BCE + 10 et 40 € par D441-5) se défend, puisque L441-10 porte le taux et l'indemnité, et que L2192-12 et L2192-13 ne nomment que le « pouvoir adjudicateur ». Mais L2192-11 ne vise que le paiement « en principal ». C'est une lecture, pas le texte."
+  },
+  {
+   "affirmation": "(e) Intérêts et indemnité non mandatés dans les 30 jours qui suivent le paiement du principal : sur signalement, le préfet met l'ordonnateur en demeure dans les 15 jours, puis mandate d'office dans les 10 jours si rien n'est fait dans le mois. En cas d'insuffisance de crédits, il saisit d'abord la chambre régionale des comptes (L1612-18 CGCT).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037739166",
+   "citation_exacte": "Lorsque les sommes dues au titre des intérêts moratoires et de l'indemnité forfaitaire pour frais de recouvrement mentionnés aux articles L. 2192-8 et L. 3133-8 du code de la commande publique ne sont pas mandatées dans les trente jours suivant la date de paiement du principal, le représentant de l'Etat dans le département adresse à l'ordonnateur, dans un délai de quinze jours après signalement par le créancier, le comptable public ou tout autre tiers, une mise en demeure de mandatement. A défaut d'exécution dans un délai d'un mois à compter de cette mise en demeure, le représentant de l'Etat procède d'office, dans un délai de dix jours, au mandatement de la dépense.",
+   "correction": "« Version en vigueur depuis le 01/01/2026 », « Modifié par Ordonnance n°2025-526 du 12 juin 2025 - art. 1 ». Second alinéa confirmé : saisine de la chambre régionale des comptes dans les 15 jours, puis mandatement dans les 15 jours qui suivent le budget rectifié. Une nuance sur « Il ne reste aucun seuil » : la version de 2019 à 2026, relue, n'en portait pas non plus. Aucun seuil n'a donc été supprimé."
+  },
+  {
+   "affirmation": "(e) L1612-18 renvoie à un article L2192-8 qui n'existe pas dans le CCP. Le chapitre passe de L2192-7 à L2192-10, aujourd'hui comme le 01/04/2019. La version du CGCT de 2019 à 2026 portait déjà ce renvoi.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000037701019/LEGISCTA000037703769/2019-04-01",
+   "citation_exacte": "Chapitre II : Modalités de facturation et de paiement (Articles L2192-10 à L2192-15)",
+   "correction": "Le fond est confirmé : aucun L2192-8 ni L2192-9, ni aujourd'hui ni au 01/04/2019, et la version du CGCT « En vigueur du 01/04/2019 au 01/01/2026 » cite déjà « L. 2192-8 et L. 3133-8 ». Le détail est faux pour 2019. Au 01/04/2019, Légifrance n'affiche AUCUN article dans la « Section 1 : Facturation électronique » : le chapitre porte « (Articles L2192-10 à L2192-15) », d'où la citation. Le chapitre ne « passe » donc de L2192-7 à L2192-10 qu'aujourd'hui, sous le titre « (Articles L2192-1 à L2192-15) », avec une Section 1 qui va de L2192-1 à L2192-7. L3133-8 n'a pas été vérifié."
+  },
+  {
+   "affirmation": "(e) Pour un établissement public de santé, c'est le directeur de l'ARS qui suit le même mécanisme : mise en demeure, mandatement d'office, et modification de l'EPRD si les crédits manquent (L6145-5 CSP).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000027012255",
+   "citation_exacte": "[…] ne sont pas mandatées dans les trente jours suivant la date de paiement du principal, le directeur de l'agence régionale de santé adresse à l'ordonnateur, dans un délai de quinze jours après signalement par le créancier, le comptable public ou tout autre tiers, une mise en demeure de mandatement. A défaut d'exécution dans un délai d'un mois à compter de cette mise en demeure, le directeur de l'agence régionale de santé procède d'office, dans un délai de dix jours, au mandatement de la dépense.",
+   "correction": "En vigueur depuis le 16/03/2013 (loi n° 2013-100, art. 41). Le texte dit « état des prévisions de recettes et de dépenses » : le sigle EPRD n'y figure pas. Les remarques sont confirmées sur https://www.legifrance.gouv.fr/loda/id/LEGITEXT000027005478. Les articles 39 et 40 de la loi n° 2013-100 sont en vigueur depuis le 01/04/2019 et traitent désormais du remboursement récursoire par l'État. Les articles 37, 38, 41, 42 et aussi 43 sont « Abrogé par Ordonnance n° 2018-1074 du 26 novembre 2018 - art. 18 (V) ». Le renvoi de L6145-5 est donc périmé, comme celui de L1612-18."
+  },
+  {
+   "affirmation": "(e) Pour le principal, la voie est celle de la dépense obligatoire. La chambre régionale des comptes peut être saisie par toute personne qui y a intérêt. Le préfet met en demeure puis mandate d'office, avec un délai porté à deux mois si la dépense atteint au moins 5 % de la section de fonctionnement (L1612-15 et L1612-16).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006389571",
+   "citation_exacte": "Ne sont obligatoires pour les collectivités territoriales que les dépenses nécessaires à l'acquittement des dettes exigibles et les dépenses pour lesquelles la loi l'a expressément décidé. La chambre régionale des comptes saisie, soit par le représentant de l'Etat dans le département, soit par le comptable public concerné, soit par toute personne y ayant intérêt, constate qu'une dépense obligatoire n'a pas été inscrite au budget ou l'a été pour une somme insuffisante.",
+   "correction": "Les deux articles sont en vigueur depuis le 01/01/2026 (ordonnance n° 2025-526). Texte de L1612-16 relu : « Le délai prévu à l'alinéa précédent est porté à deux mois si la dépense est égale ou supérieure à 5 % de la section de fonctionnement du budget primitif. »"
+  },
+  {
+   "affirmation": "(e) D'après le Conseil d'État, le mandatement d'office suppose une dette échue, certaine, liquide et non sérieusement contestée (CE, 5 juillet 2018, n° 406671).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000037158701/",
+   "citation_exacte": "qu'une dépense ne peut être regardée comme obligatoire et faire l'objet d'un mandatement d'office que si elle correspond à une dette échue, certaine, liquide, non sérieusement contestée dans son principe et son montant et découlant d'une loi, d'un contrat ou de toute autre source d'obligations.",
+   "correction": "3e et 8e chambres réunies. La décision cite L1612-16 au point 2 et L1612-15 au point 6. L1612-18 n'y apparaît pas : son application au mandatement des intérêts reste à établir."
+  },
+  {
+   "affirmation": "(f) Le taux BCE des opérations principales de refinancement valait 2,15 % au 1er janvier 2026 : en vigueur depuis le 11 juin 2025, maintenu le 18 décembre 2025.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.ecb.europa.eu/press/pr/date/2025/html/ecb.mp251218~58b0e415a6.en.html",
+   "citation_exacte": "The Governing Council today decided to keep the three key ECB interest rates unchanged. […] will remain unchanged at 2.00%, 2.15% and 2.40% respectively.",
+   "correction": "Tableau officiel relu : « 11 juin 2025 | 2,00 | 2,15 | 2,40 », puis la ligne suivante au 17 juin 2026. Le registre (taux.ts) porte '2026-S1': 215n, ce qui est juste."
+  },
+  {
+   "affirmation": "(f) Le taux BCE valait 2,40 % au 1er juillet 2026 : en vigueur depuis le 17 juin 2026, inchangé le 23 juillet.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260611~4d41bd5e83.en.html",
+   "citation_exacte": "will be increased to 2.25%, 2.40% and 2.65% respectively, with effect from 17 June 2026.",
+   "correction": "Communiqué du 11 juin 2026. Le communiqué du 23 juillet n'a pas été relu, mais le tableau ne porte aucune ligne entre le 17 juin et le 16 septembre 2026, ce qui confirme qu'il n'y a pas eu de changement. Le registre porte '2026-S2': 240n, ce qui est juste."
+  },
+  {
+   "affirmation": "(f) Le taux BCE est de 2,65 % depuis le 16 septembre 2026. Sans nouvelle décision, il servira d'ancrage au 1er janvier 2027 : 10,65 % en commande publique, 12,65 % en B2B privé.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260910~314e508016.en.html",
+   "citation_exacte": "will be increased to 2.50%, 2.65% and 2.90% respectively, with effect from 16 September 2026.",
+   "correction": "Communiqué du 10 septembre 2026. C'est la dernière ligne du tableau au 19/10/2026. La projection est conditionnelle : les réunions de la BCE d'ici la fin de 2026 peuvent changer le taux. L'arithmétique est juste. La version de L441-10 au 01/01/2027 garde « BCE + 10 points ». Il faudra relever la ligne '2027-S1' au 1er janvier, comme le veut la règle de taux.ts : un semestre absent fait lever une erreur."
+  },
+  {
+   "affirmation": "(f) Un retard qui commence au 1er semestre 2026 porte 10,15 % jusqu'au paiement, un retard qui commence au 2nd semestre 10,40 %. Le service public publie les mêmes chiffres.",
+   "verdict": "CONFIRME",
+   "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F23386",
+   "citation_exacte": "Entre le 1er juillet 2026 et le 31 décembre 2026 | Taux de la BCE (2,4 % au 1er juillet 2026) + 8 | 10,4 % ; Entre le 1er janvier 2026 et le 30 juin 2026 | Taux de la BCE (2,15 % au 1er janvier 2025) + 8 | 10,15 %",
+   "correction": "Page relue moi-même (« Vérifié le 25 juin 2026 »). La coquille « au 1er janvier 2025 » est bien là. Sont aussi confirmés : 10,15 % pour le S2 2025, 11,15 % pour le S1 2025 (BCE à 3,15 % au 1er janvier 2025), et la formule « Montant TTC dû x (nombre de jours de retard / 365) x taux des intérêts moratoires applicable ». Une nuance pour le moteur : la colonne de la DILA s'intitule « Fin du délai de paiement », alors que R2192-31 retient le semestre où les intérêts COMMENCENT à courir, c'est-à-dire le lendemain. Les deux divergent quand le délai expire un 30 juin ou un 31 décembre. Il faut suivre R2192-31."
+  },
+  {
+   "affirmation": "Les créances sur l'État, les départements, les communes et les établissements publics dotés d'un comptable public se prescrivent par quatre ans à compter du 1er janvier de l'année qui suit l'acquisition des droits (loi n° 68-1250, art. 1).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000006528553",
+   "citation_exacte": "Sont prescrites, au profit de l'Etat, des départements et des communes, sans préjudice des déchéances particulières édictées par la loi, et sous réserve des dispositions de la présente loi, toutes créances qui n'ont pas été payées dans un délai de quatre ans à partir du premier jour de l'année suivant celle au cours de laquelle les droits ont été acquis.",
+   "correction": "En vigueur depuis le 01/01/1969. Second alinéa : « les créances sur les établissements publics dotés d'un comptable public ». Les régions ne sont pas nommées. Point non vérifié, qui commande le slogan de l'audit « Vos intérêts de 2022 se perdent le 31 décembre » : l'année où le droit aux intérêts moratoires est « acquis » (au fil du retard, ou au paiement du principal). Une décision existe, CE 13 novembre 2025, n° 496679, sur la prescription et les intérêts complémentaires. Elle n'a pas été lue."
+  },
+  {
+   "affirmation": "Une demande de paiement ou une réclamation écrite interrompt la prescription. Un nouveau délai de quatre ans court alors à compter du 1er janvier suivant (loi n° 68-1250, art. 2).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000006528554",
+   "citation_exacte": "La prescription est interrompue par : Toute demande de paiement ou toute réclamation écrite adressée par un créancier à l'autorité administrative, dès lors que la demande ou la réclamation a trait au fait générateur, à l'existence, au montant ou au paiement de la créance, alors même que l'administration saisie n'est pas celle qui aura finalement la charge du règlement.",
+   "correction": "Sont aussi relus : « Toute émission de moyen de règlement, même si ce règlement ne couvre qu'une partie de la créance » et « Un nouveau délai de quatre ans court à compter du premier jour de l'année suivant celle au cours de laquelle a eu lieu l'interruption. » Pour un recours juridictionnel, le délai court à partir de la décision passée en force de chose jugée."
+  },
+  {
+   "affirmation": "Les articles 8 (taux), 9 (indemnité) et 10 (délai) du décret n° 2013-269 sont abrogés depuis le 01/04/2019 et codifiés au CCP. Les articles 12 à 16, sur l'intervention du comptable public, restent en vigueur.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000027248487/",
+   "citation_exacte": "Abrogé par Décret n°2018-1075 du 3 décembre 2018 - art. 14",
+   "correction": "Relu sur la version du jour et sur celle du 28/05/2026, par le résumé de la page, comme le premier chercheur. Les articles 1 à 5, 7 et 11 sont abrogés de la même façon. Les articles 12 à 16 (« en vigueur depuis le 01/05/2013 ») forment le Titre II, « Dispositions spécifiques aux pouvoirs adjudicateurs dotés d'un comptable public ». Leur objet dépasse le seul comptable : 12 et 13 portent son délai propre (10 jours, 15 pour les établissements publics de santé) et sa suspension, 14 l'information du comptable et la liquidation des intérêts par l'ordonnateur, 15 la suspension en cas de cession, de nantissement ou de saisie, 16 l'action récursoire. L'article qui reprend chacun d'eux au CCP n'a pas été vérifié un par un."
+  }
+ ],
+ "synthese": "J'ai relu moi-même, une par une, les 26 affirmations sur Légifrance, la BCE et la DILA. Légifrance ne laisse citer que de courts passages : j'ai donc reconstitué chaque article à partir de segments relus séparément. Résultat : 24 sont confirmées et 2 corrigées. Aucune n'est réfutée, et toutes les valeurs chiffrées tiennent.\n\nLes valeurs : BCE (taux de refinancement) + 8 points, figé au semestre où les intérêts commencent ; base TTC moins la retenue de garantie ; du lendemain de l'échéance jusqu'à la mise en paiement, ce jour compris ; 40 € au titre de D2192-35 ; paiement dans les 45 jours ; délais de 30, 50 et 60 jours ; mandatement d'office en 30, 15, un mois et 10 jours ; prescription de quatre ans ; taux BCE de 2,15 %, puis 2,40 %, puis 2,65 %. Le registre `taux.ts` est juste ('2026-S1' 215n, '2026-S2' 240n).\n\n**Les deux corrections**\n- L2192-11 : les entités adjudicatrices visées ne sont pas « privées ». Ce sont les entreprises publiques qui ne sont pas des pouvoirs adjudicateurs (2° de L1212-1) et les organismes privés titulaires de droits spéciaux ou exclusifs (3°). Les soumettre à BCE + 10 et aux 40 € de D441-5 reste une lecture, pas le texte.\n- Structure du CCP au 01/04/2019 : la section « Facturation électronique » n'y affichait aucun article. Le fond reste vrai : L2192-8 n'existe pas.\n\n**Points à retenir pour le moteur et pour les courriers**\n1. Le barème public ne peut pas réutiliser le découpage semestriel de `src/lib/verticales/recouvrement/pays/france/taux.ts`, qui crée « une période par semestre traversé » (ligne 194). Il faut un taux unique, ancré au semestre du premier jour d'intérêts, c'est-à-dire le lendemain de l'échéance. Le tableau de la DILA, classé par « fin du délai de paiement », diverge de R2192-31 quand le délai expire un 30 juin ou un 31 décembre.\n2. Deux renvois légaux sont périmés et ne doivent jamais être recopiés dans un courrier. L1612-18 du CGCT vise « L. 2192-8 », qui n'existe pas. L6145-5 du code de la santé publique vise les articles 39 et 40 de la loi n° 2013-100, qui traitent désormais du remboursement récursoire par l'État. Il faut citer L2192-13, R2192-31, D2192-35 et R2192-36.\n3. La version de L441-10 au 01/01/2027 existe bien (ordonnance n° 2026-671, art. 2). Elle garde BCE + 10, les deux semestres et l'indemnité. Une ligne '2027-S1' sera à relever au 1er janvier.\n\n**Ligne rouge n° 1**\nLe signalement au préfet (L1612-18) ou au directeur de l'ARS (L6145-5) est une démarche administrative. En revanche, la chambre régionale des comptes (L1612-15) est une juridiction financière : sa saisine relève de « rien ne part vers un tribunal » et doit passer par le gérant ou son avocat. Le Conseil d'État exige d'ailleurs une dette « non sérieusement contestée » (n° 406671), mais seulement pour L1612-15 et L1612-16.\n\n**Restent ouverts**\n- Les 40 € : le texte ne dit pas « par facture ».\n- La date à laquelle le droit aux intérêts est « acquis », qui fixe le départ de la prescription de quatre ans. Le slogan de l'audit « Vos intérêts de 2022 se perdent le 31 décembre » en dépend. Une décision existe (CE, 13/11/2025, n° 496679) ; je ne l'ai pas lue.\n- La loi n° 68-1250 ne nomme pas les régions.\n- Le « 71 jours » des hôpitaux cité par l'audit ne correspond à aucun délai légal (le délai légal est de 50 jours).\n- L3133-8 et R2192-12 n'ont pas été relus sur Légifrance (R2192-12 seulement sur marche-public.fr).\n\nAucun fichier n'a été modifié. Seul fichier du dépôt cité : `C:\\Users\\jules\\Desktop\\mycelium-chat\\src\\lib\\verticales\\recouvrement\\pays\\france\\taux.ts`."
+}

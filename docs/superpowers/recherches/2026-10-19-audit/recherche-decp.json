@@ -1,0 +1,233 @@
+{
+ "faits": [
+  {
+   "sujet": "Point d'accès retenu",
+   "affirmation": "Le meilleur point d'accès gratuit et sans clé est l'API tabulaire de data.gouv.fr, appliquée à la ressource decp.csv du jeu « DECP consolidées (format tabulaire) » publié par Colmo (Colin Maudry). Identifiant de ressource : 22847056-61df-452d-837d-8b8ceadbfc52.",
+   "valeur": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/",
+   "source_url": "https://www.data.gouv.fr/api/1/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/",
+   "citation_exacte": "22847056-61df-452d-837d-8b8ceadbfc52 | decp.csv | csv | 2621498474 | 2026-10-19T05:20:32",
+   "relu_sur_source_primaire": true,
+   "remarques": "Identifiant stable depuis la création de la ressource, le 14/09/2025 : le fichier est remplacé en place chaque jour. Licence Ouverte v2 (« lov2 »), couverture du 01/01/2018 au 31/12/2026."
+  },
+  {
+   "sujet": "Volume et structure",
+   "affirmation": "La table compte 3 306 573 lignes et 66 colonnes. Une ligne correspond à une version d'un marché pour un titulaire : les titulaires sont « explosés » en lignes et chaque avenant ajoute une version.",
+   "valeur": "3 306 573 lignes, dont 2 115 007 avec donneesActuelles=true",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/profile/",
+   "citation_exacte": "lf = lf.explode(\"titulaires\").unnest(\"titulaires\")",
+   "relu_sur_source_primaire": true,
+   "remarques": "Le code vient de src/tasks/clean.py dans github.com/ColinMaudry/decp-processing. Le montant n'est pas réparti entre cotitulaires : il est recopié sur chaque ligne."
+  },
+  {
+   "sujet": "Noms exacts des champs",
+   "affirmation": "Les champs utiles au sourcing sont les suivants. Acheteur : acheteur_id (SIRET), acheteur_nom, acheteur_categorie, acheteur_commune_code, acheteur_departement_code, acheteur_region_code, acheteur_population. Titulaire : titulaire_id, titulaire_typeIdentifiant, titulaire_nom, titulaire_categorie (PME/ETI/GE), titulaire_activite_code (NAF), titulaire_departement_code, titulaire_distance. Marché : uid, id, montant, montant_rationalise, montant_anomalie, dateNotification, datePublicationDonnees, dureeMois, dureeRestanteMois, nature, type (Fournitures/Services/Travaux), objet, codeCPV, procedure, lieuExecution_code, lieuExecution_typeCode, idAccordCadre, modification_id, donneesActuelles, sourceDataset.",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/profile/",
+   "citation_exacte": "acheteur_id => string ... titulaire_typeIdentifiant => string ... dateNotification => date",
+   "relu_sur_source_primaire": true,
+   "remarques": "Descriptions officielles dans schema.json (ressource 9a4144c0-ee44-4dec-bee5-bbef38191d9a)."
+  },
+  {
+   "sujet": "Sens du montant",
+   "affirmation": "Le montant publié est le montant attribué, forfaitaire ou maximum estimé, hors taxes. Ce n'est ni le montant facturé ni le montant payé. Pour additionner, il faut prendre montant_rationalise, qui remplace les montants aberrants par la médiane des marchés comparables.",
+   "source_url": "https://static.data.gouv.fr/resources/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/20261019-052033/schema.json",
+   "citation_exacte": "Montant forfaitaire ou montant maximum estimé hors-taxes, en euros.",
+   "relu_sur_source_primaire": true,
+   "remarques": "Le schéma ajoute que le montant payé peut évoluer à l'exécution. Pour un accord-cadre, c'est un plafond sur plusieurs années."
+  },
+  {
+   "sujet": "Modifications et dates",
+   "affirmation": "Sur une ligne d'avenant, dateNotification est la date de l'avenant, et le titulaire peut changer d'une version à l'autre. La date d'attribution initiale est celle de la ligne modification_id=0. donneesActuelles=true désigne la dernière version.",
+   "valeur": "uid 2669002570004620250286_45233142 : version 0 notifiée le 2025-05-26 à ENTREPRISE COIRO (95950213900030), version 2 le 2026-10-15 à COIRO CALADE (82388258400019), 2 200 000 € sur les trois lignes",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/?uid__exact=2669002570004620250286_45233142",
+   "citation_exacte": "\"modification_id\":0,\"donneesActuelles\":false,\"titulaire_id\":\"95950213900030\"",
+   "relu_sur_source_primaire": true
+  },
+  {
+   "sujet": "Exemple de requête : acheteurs hospitaliers",
+   "affirmation": "Ce filtre rend les marchés actuels passés par un établissement hospitalier depuis 2022, du plus récent au plus ancien : 83 550 lignes, en 3,8 s.",
+   "valeur": "/data/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&donneesActuelles__exact=true&dateNotification__greater=2022-01-01&dateNotification__sort=desc&page_size=200&columns=uid,acheteur_id,acheteur_nom,titulaire_id,titulaire_typeIdentifiant,titulaire_nom,montant,montant_rationalise,dateNotification,dureeMois,nature,objet,lieuExecution_code",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&donneesActuelles__exact=true&dateNotification__greater=2022-01-01&page_size=1",
+   "citation_exacte": "\"meta\": {\"page\": 1, \"page_size\": 2, \"total\": 83550}",
+   "relu_sur_source_primaire": true,
+   "remarques": "Les accents doivent partir encodés en UTF-8 (%C3%89). Depuis Git Bash sous Windows, curl --data-urlencode envoyait du Latin-1, et l'API répondait 500. URLSearchParams en TypeScript encode correctement."
+  },
+  {
+   "sujet": "Exemple de requête : collectivités",
+   "affirmation": "L'opérateur __in accepte plusieurs catégories d'acheteurs à la fois. Le test avec Commune, Département et Région rend 940 161 lignes actuelles.",
+   "valeur": "/data/?acheteur_categorie__in=Commune,D%C3%A9partement,D%C3%A9partement%20outre-mer,R%C3%A9gion,Groupement%20de%20communes,Syndicat%20mixte&donneesActuelles__exact=true",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/?acheteur_categorie__in=Commune,R%C3%A9gion,D%C3%A9partement&donneesActuelles__exact=true&page_size=1",
+   "citation_exacte": "\"meta\": {\"page\": 1, \"page_size\": 1, \"total\": 940161}",
+   "relu_sur_source_primaire": true
+  },
+  {
+   "sujet": "Exemple de requête : titulaire par SIRET et par SIREN",
+   "affirmation": "Un SIRET se filtre par titulaire_id__exact. Il n'existe pas d'opérateur « commence par » ; un SIREN se filtre donc par bornes de chaîne, de SIREN+00000 à SIREN+99999. Pour EUROBIO SCIENTIFIC, le SIRET seul donne 262 lignes, le SIREN 345.",
+   "valeur": "titulaire_id__exact=41448817100045 ; titulaire_id__greater=41448817100000&titulaire_id__less=41448817199999",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/?titulaire_id__greater=41448817100000&titulaire_id__less=41448817199999&page_size=1",
+   "citation_exacte": "\"meta\": {\"page\": 1, \"page_size\": 1, \"total\": 345}",
+   "relu_sur_source_primaire": true,
+   "remarques": "titulaire_id__contains=414488171 marche aussi (262 lignes actuelles), mais peut trouver le motif ailleurs que dans les neuf premiers chiffres."
+  },
+  {
+   "sujet": "Opérateurs",
+   "affirmation": "Opérateurs de filtre : exact, differs, isnull, isnotnull, contains, notcontains, in, notin, less, greater, strictly_less, strictly_greater. Tri : colonne__sort=asc|desc. Agrégats : groupby, count, sum, avg, min, max. On choisit les colonnes rendues avec columns=.",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/swagger/",
+   "citation_exacte": "name: titulaire_id__groupby ... name: montant_rationalise__sum",
+   "relu_sur_source_primaire": true,
+   "remarques": "Un tri descendant place les valeurs nulles en tête : il faut ajouter colonne__isnotnull. On ne peut pas trier sur un agrégat (erreur 42703 « montant_rationalise__sum does not exist »)."
+  },
+  {
+   "sujet": "Agrégation",
+   "affirmation": "Le regroupement par titulaire avec somme des montants fonctionne sur cette ressource, en 4,2 s pour les hôpitaux de Paris depuis 2022. La réponse ne donne pas de total et ne se trie pas. Or la ressource ne figure pas dans la liste /api/aggregation-exceptions/, et le README d'api-tabular dit l'agrégation désactivée par défaut.",
+   "valeur": "titulaire_id__groupby&titulaire_nom__groupby&montant_rationalise__sum&titulaire_id__count",
+   "source_url": "https://tabular-api.data.gouv.fr/api/aggregation-exceptions/",
+   "citation_exacte": "{\"allowed\": [\"b8703c69-...\", ...], \"exceptions\": [\"dddddddd-7777-eeee-8888-ffffffffffff\", ...]}",
+   "relu_sur_source_primaire": true,
+   "remarques": "Il vaut mieux ne pas s'appuyer sur l'agrégation : on regroupe côté Letikette ce que rend l'export JSON."
+  },
+  {
+   "sujet": "Pagination",
+   "affirmation": "La pagination se fait par page et page_size : 20 lignes par défaut, 200 au plus (mesuré). La réponse porte meta.total, ainsi que links.next et links.prev. La pagination profonde marche : page 5000 de 200 lignes en 1,1 s.",
+   "valeur": "page_size max = 200",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/?page_size=500&columns=uid",
+   "citation_exacte": "Page size exceeds allowed maximum: 200",
+   "relu_sur_source_primaire": true,
+   "remarques": "Le README GitHub d'api-tabular indique 50 ; la production accepte 200. Le lien next contient « É » non encodé : il faut le reconstruire plutôt que le suivre tel quel."
+  },
+  {
+   "sujet": "Export sans pagination",
+   "affirmation": "Les routes /data/csv/ et /data/json/ acceptent les mêmes filtres et rendent tout le résultat en un seul appel. Mesures : 1 054 lignes (hôpitaux du 75, attributions initiales depuis 2022) en 4,6 s, et 6 277 lignes pour la requête de sourcing francilienne.",
+   "valeur": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/json/?<filtres>&columns=<colonnes>",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/csv/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&acheteur_departement_code__exact=75&modification_id__exact=0&dateNotification__greater=2022-01-01&columns=acheteur_id,acheteur_nom,titulaire_id,titulaire_nom,montant,dateNotification",
+   "citation_exacte": "26750045200672,\"ASSISTANCE PUBLIQUE HOPITAUX DE PARIS (AGENCE GENERALE EQUIPEMENTS PRODUITS SANTE - AGEPS)\",88004277500036,\"ORGANON FRANCE\",100000000,2026-10-14",
+   "relu_sur_source_primaire": true
+  },
+  {
+   "sujet": "Limite de débit de l'API tabulaire",
+   "affirmation": "La fiche officielle de l'API tabulaire annonce 100 appels par seconde. Aucun en-tête X-RateLimit n'a été observé dans les réponses. L'API est en version beta.",
+   "valeur": "100 req/s",
+   "source_url": "https://www.data.gouv.fr/api/1/dataservices/673b0e6774a23d9eac2af8ce/",
+   "citation_exacte": "Il est aujourd'hui limité à 100 appels par seconde.",
+   "relu_sur_source_primaire": true,
+   "remarques": "La même fiche fixe à 100 Mo la taille d'un CSV servi par défaut : le fichier de 2,6 Go est donc servi au titre d'une exception de taille."
+  },
+  {
+   "sujet": "Fraîcheur",
+   "affirmation": "Le jeu est mis à jour chaque jour. Dernière mise à jour : 19/10/2026 à 05:20 UTC. La table de l'API a été reconstruite à 07:27 heure de Paris le même jour. Le marché le plus récent est notifié le 2026-10-19 (France Télévisions) ; côté hôpitaux, le 2026-10-16.",
+   "valeur": "frequency=daily ; created_at table = 2026-10-19T07:27:35+02:00",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/",
+   "citation_exacte": "{\"created_at\": \"2026-10-19T07:27:35.986993+02:00\"",
+   "relu_sur_source_primaire": true,
+   "remarques": "La table est reconstruite chaque matin vers 05:20-05:30 UTC. Il vaut mieux interroger hors de cette fenêtre."
+  },
+  {
+   "sujet": "Profondeur historique",
+   "affirmation": "Attributions initiales (modification_id=0) par année de notification, hôpitaux / collectivités : 2019 : 9 251 / 88 304 ; 2020 : 10 863 / 132 651 ; 2021 : 15 161 / 189 565 ; 2022 : 16 699 / 216 096 ; 2023 : 15 236 / 213 130 ; 2024 : 16 269 / 217 027 ; 2025 : 19 086 / 204 748 ; 2026, au 19/10 : 13 562 / 110 541.",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/",
+   "citation_exacte": "2022 hopitaux=16699 collectivites=216096",
+   "relu_sur_source_primaire": true,
+   "remarques": "Qualité des données : 22 337 lignes sans dateNotification, une date « -infinity » (commune de Poiroux), et des valeurs non normalisées (nature : « Marché »/« MARCHE »/« marché » ; titulaire_typeIdentifiant : « SIRET »/« Siret »/« siret »)."
+  },
+  {
+   "sujet": "Extrait réel de réponse (deux lignes)",
+   "affirmation": "Premières lignes rendues par le filtre hospitalier, actuelles, depuis 2022, triées par date décroissante.",
+   "valeur": "1) CHU DE DIJON (HOPITAL LE BOCAGE) 26210007600013 -> SOCIETE DU BATIMENT MAUCHAMP 01575059900035 (SIRET, PME), 10 893,96 €, notifié le 2026-10-16, 22 mois, Travaux, « Lot n°12 : Contre-cloison », dépt 21. 2) CTRE HOSPITALIER UNIVERS PONTCHAILLOU 26350007600017 -> EUROBIO SCIENTIFIC 41448817100045 (SIRET, ETI), 1 600 000 €, notifié le 2026-10-16, 48 mois, Fournitures, dépt 35.",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&donneesActuelles__exact=true&dateNotification__greater=2022-01-01&dateNotification__sort=desc&page_size=2",
+   "citation_exacte": "\"acheteur_id\": \"26210007600013\", ... \"titulaire_id\": \"01575059900035\", \"titulaire_typeIdentifiant\": \"SIRET\"",
+   "relu_sur_source_primaire": true
+  },
+  {
+   "sujet": "Reconnaître un acheteur hospitalier",
+   "affirmation": "acheteur_categorie = « Établissement hospitalier » correspond exactement à la catégorie juridique INSEE 7364 de l'unité légale de l'acheteur. 178 906 lignes au total.",
+   "valeur": "7364",
+   "source_url": "https://raw.githubusercontent.com/ColinMaudry/decp-processing/main/src/tasks/enrich.py",
+   "citation_exacte": "\"Établissement hospitalier\": pl.col(\"categorieJuridiqueUniteLegale\") == \"7364\"",
+   "relu_sur_source_primaire": true,
+   "remarques": "Vérifié par Recherche d'entreprises : AP-HP (267500452) et CHU de Dijon (262100076) sont en 7364, NAF 86.10Z, est_finess=true."
+  },
+  {
+   "sujet": "Ce que la catégorie hospitalière laisse de côté",
+   "affirmation": "Restent hors de « Établissement hospitalier » : les syndicats inter-hospitaliers (7365, 110 unités), les groupements de coopération de droit public (7470, 583 unités, dont RESAH-LR), le RESAH (7410), le médico-social public (7366, 2 116 unités) et les GCS de droit privé (9970). Au total, 480 417 lignes DECP n'ont aucune catégorie d'acheteur.",
+   "source_url": "https://recherche-entreprises.api.gouv.fr/search?nature_juridique=7365&per_page=3",
+   "citation_exacte": "260100326 SYNDICAT INTERHOSPITALIER NANTUA OYONNAX nj=7365",
+   "relu_sur_source_primaire": true,
+   "remarques": "Compté par nature_juridique=7365/7366/7470 dans Recherche d'entreprises, et par acheteur_categorie__isnull dans l'API tabulaire."
+  },
+  {
+   "sujet": "Reconnaître une collectivité",
+   "affirmation": "Correspondances codées dans le pipeline : Commune = 7210 ou 7312 ; Groupement de communes = 734x ; Syndicat mixte = 7354 ou 7355 ; Département = 7220 ; Département outre-mer = 7225 ; Région = 7230 ; État = 71xx ; EPIC = 4110, 4120 ou 4140. Sept collectivités sont classées à la main par leur SIREN : Ville de Paris, Métropole de Lyon, Corse, Guyane, Martinique, Mayotte et TAAF.",
+   "valeur": "Commune 1 125 773 lignes ; Groupement de communes 623 045 ; Département 412 425 ; Syndicat mixte 143 434 ; Région 88 680 ; Département outre-mer 13 183",
+   "source_url": "https://raw.githubusercontent.com/ColinMaudry/decp-processing/main/src/tasks/enrich.py",
+   "citation_exacte": "\"Commune\": pl.col(\"categorieJuridiqueUniteLegale\").is_in([\"7210\", \"7312\"])",
+   "relu_sur_source_primaire": true,
+   "remarques": "Ville de Paris est en catégorie juridique 7229 dans Sirene, d'où le cas particulier."
+  },
+  {
+   "sujet": "Recherche d'entreprises pour qualifier l'acheteur",
+   "affirmation": "Recherche d'entreprises aide en complément, pas en source principale. Le filtre nature_juridique=7364 rend 1 311 unités, dont 21 dans le 75. La réponse porte complements.est_finess, liste_finess_juridique et est_administration, et, pour une collectivité, collectivite_territoriale {code, code_insee, niveau}. Les filtres est_collectivite_territoriale et code_collectivite_territoriale existent. Limite : 7 requêtes par seconde par IP.",
+   "valeur": "7 req/s par IP, 30 req/s par ASN",
+   "source_url": "https://recherche-entreprises.api.gouv.fr/openapi.json",
+   "citation_exacte": "L'API accepte **au maximum 7 requêtes par seconde** par adresse IP",
+   "relu_sur_source_primaire": true,
+   "remarques": "La DECP porte déjà la catégorie : l'API ne sert que pour les 480 417 lignes sans catégorie, ou pour confirmer un FINESS. Attention : pour une collectivité, la réponse publie les élus avec leur mois de naissance, à ne pas stocker."
+  },
+  {
+   "sujet": "Code du projet",
+   "affirmation": "src/lib/crm/annuaire.ts écarte toute entreprise de catégorie juridique 7, 8 ou 9 : c'est juste pour les prospects (les titulaires), mais ce lecteur rejetterait tout acheteur public. Qualifier un acheteur demande donc un lecteur distinct.",
+   "source_url": "file:///C:/Users/jules/Desktop/mycelium-chat/src/lib/crm/annuaire.ts",
+   "citation_exacte": "if (typeof brute.nature_juridique === 'string' && /^[789]/.test(brute.nature_juridique)) {",
+   "relu_sur_source_primaire": true,
+   "remarques": "Le module écarte aussi statut_diffusion ≠ « O ». La DECP marque de même les titulaires non diffusibles : « [Données personnelles non-diffusibles] »."
+  },
+  {
+   "sujet": "Requête de sourcing type (Paris et petite couronne)",
+   "affirmation": "PME titulaires (SIRET) dont l'établissement est en 75, 92, 93 ou 94, avec des marchés hospitaliers notifiés depuis 2022 (attributions initiales) : 6 277 lignes et 1 067 SIRET distincts en un appel d'export. Six sont non diffusibles. Le label PME vient de l'INSEE : COOK FRANCE, filiale d'un groupe, y figure en tête (358 marchés, 41 hôpitaux).",
+   "valeur": "/data/json/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&titulaire_categorie__exact=PME&titulaire_departement_code__in=75,92,93,94&titulaire_typeIdentifiant__exact=SIRET&modification_id__exact=0&dateNotification__greater=2022-01-01",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/json/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&titulaire_categorie__exact=PME&titulaire_departement_code__in=75,92,93,94&titulaire_typeIdentifiant__exact=SIRET&modification_id__exact=0&dateNotification__greater=2022-01-01",
+   "citation_exacte": "lignes 6277 SIRET distincts 1067",
+   "relu_sur_source_primaire": true,
+   "remarques": "titulaire_departement_code est le département de l'établissement titulaire, pas forcément du siège. La règle « siège dans la zone » du CRM reste à appliquer par Recherche d'entreprises."
+  },
+  {
+   "sujet": "Exemple de chiffrage brut",
+   "affirmation": "EUROBIO SCIENTIFIC (SIREN 414488171) : 131 attributions initiales depuis 2022 auprès de 38 hôpitaux, dont 15 accords-cadres, pour 28 489 267 € de montant_rationalise cumulé. Ce sont des montants maximums sur des durées de 3 à 50 mois, pas un chiffre d'affaires annuel.",
+   "source_url": "https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/data/json/?titulaire_id__greater=41448817100000&titulaire_id__less=41448817199999&acheteur_categorie__exact=%C3%89tablissement%20hospitalier&modification_id__exact=0&dateNotification__greater=2022-01-01",
+   "citation_exacte": "marches 131 acheteurs distincts 38 dont accords-cadres 15 somme montant_rationalise 28489267",
+   "relu_sur_source_primaire": true
+  },
+  {
+   "sujet": "Alternative écartée : data.economie.gouv.fr (Opendatasoft)",
+   "affirmation": "Le jeu decp-2022-marches-valides compte 720 384 lignes, la dernière modifiée le 12/10/2026. Il ne donne ni nom ni catégorie d'acheteur, ni nom de titulaire ; ses titulaires sont répartis en titulaire_id_1 à _3, avec des cases « CDL ». Limites : 100 lignes par appel, 10 000 lignes au plus par requête (offset+limit), 50 000 appels par jour.",
+   "valeur": "X-RateLimit-Limit: 50000, remis à zéro à 00:00 UTC",
+   "source_url": "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp-2022-marches-valides/records?limit=1&order_by=datenotification%20desc",
+   "citation_exacte": "Invalid value for sum of offset + limit API parameter: 10050 was found but <= 10000 is expected.",
+   "relu_sur_source_primaire": true,
+   "remarques": "La description du jeu consolidé dit lui-même être plus exhaustif que les données du ministère. L'API de colibre.fr est sur abonnement : elle n'est pas gratuite."
+  },
+  {
+   "sujet": "Repli hors ligne",
+   "affirmation": "Le même jeu est publié en fichiers : decp.parquet (249 Mo), decp.csv (2,6 Go) et un parquet dérivé du CSV (316 Mo, sur hydra.s3). Ils conviennent à un traitement nocturne hors de Convex (DuckDB), pas à une requête à la demande.",
+   "source_url": "https://www.data.gouv.fr/api/1/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/",
+   "citation_exacte": "decp.parquet | parquet | 248926042 | 2026-10-19T05:16:59",
+   "relu_sur_source_primaire": true
+  }
+ ],
+ "synthese": "Recommandation : interroger l'API tabulaire de data.gouv.fr sur la ressource decp.csv du jeu « DECP consolidées (format tabulaire) ». Elle est gratuite et sans clé.\n\n**Ce qui a été vérifié en direct le 19/10/2026**\n\n- **URL de base :** https://tabular-api.data.gouv.fr/api/resources/22847056-61df-452d-837d-8b8ceadbfc52/ — routes /data/ (paginée), /data/json/ et /data/csv/ (export complet filtré, sans pagination), /profile/ et /swagger/.\n- **Volume :** 3 306 573 lignes et 66 colonnes. Une ligne correspond à une version d'un marché pour un titulaire.\n- **Fraîcheur :** mise à jour chaque jour, table reconstruite ce matin à 07:27 heure de Paris, dernier marché notifié aujourd'hui.\n- **Limites :** 100 appels par seconde (fiche officielle), page_size de 200 au plus (mesuré), pagination profonde possible.\n- **Licence :** Licence Ouverte v2, couverture 2018-2026.\n\n**Exemples de requêtes**\n\n- Acheteurs hospitaliers : `/data/?acheteur_categorie__exact=%C3%89tablissement%20hospitalier&donneesActuelles__exact=true&dateNotification__greater=2022-01-01&dateNotification__sort=desc&page_size=200` (83 550 lignes).\n- Collectivités : `acheteur_categorie__in=Commune,D%C3%A9partement,D%C3%A9partement%20outre-mer,R%C3%A9gion,Groupement%20de%20communes,Syndicat%20mixte`.\n- Titulaire par SIRET : `titulaire_id__exact=<SIRET>`.\n- Titulaire par SIREN, faute d'opérateur « commence par » : `titulaire_id__greater=<SIREN>00000&titulaire_id__less=<SIREN>99999`.\n- Sourcing type, en un appel d'export : PME de 75/92/93/94 titulaires de marchés hospitaliers depuis 2022, soit 1 067 SIRET distincts.\n\n**Champs utiles**\n\n- Acheteur : acheteur_id (SIRET), acheteur_nom, acheteur_categorie, acheteur_departement_code.\n- Titulaire : titulaire_id, titulaire_typeIdentifiant, titulaire_nom, titulaire_categorie, titulaire_activite_code, titulaire_departement_code.\n- Marché : montant, montant_rationalise, dateNotification, dureeMois, nature, type, objet, lieuExecution_code, lieuExecution_typeCode, modification_id, donneesActuelles, uid.\n\n**Extrait réel (deux lignes)**\n\n- CHU DE DIJON 26210007600013 → SOCIETE DU BATIMENT MAUCHAMP 01575059900035 (SIRET, PME) : 10 893,96 €, notifié le 2026-10-16, 22 mois, Travaux.\n- CHU PONTCHAILLOU 26350007600017 → EUROBIO SCIENTIFIC 41448817100045 (ETI) : 1 600 000 €, notifié le 2026-10-16, 48 mois, Fournitures.\n\n**Reconnaître l'acheteur**\n\n- « Établissement hospitalier » correspond exactement à la catégorie juridique INSEE 7364 (vérifié dans le code du pipeline, et sur AP-HP et le CHU de Dijon).\n- Collectivités : Commune (7210/7312), Groupement de communes (734x), Syndicat mixte (7354/7355), Département (7220/7225), Région (7230), plus sept collectivités classées à la main par SIREN.\n- Restent hors de la catégorie hospitalière : 7365 (syndicats inter-hospitaliers), 7470 (GCS publics), 7410 (RESAH), 7366 (médico-social). 480 417 lignes n'ont aucune catégorie d'acheteur.\n\n**Le rôle de Recherche d'entreprises**\n\nElle sert en complément : nature_juridique, est_finess, est_collectivite_territoriale, niveau de la collectivité. Limite : 7 requêtes par seconde.\n\n- Le lecteur actuel du CRM (src/lib/crm/annuaire.ts) rejette toute catégorie juridique 7/8/9. C'est juste pour les prospects, mais qualifier un acheteur demande un lecteur distinct.\n- Les élus publiés avec leur mois de naissance ne doivent pas être stockés.\n\n**Pièges relevés**\n\n- Encoder les accents en UTF-8. Le lien `next` contient un « É » non encodé : le reconstruire.\n- Un tri descendant place les valeurs nulles en tête : ajouter `__isnotnull`.\n- On ne peut pas trier sur un agrégat. L'agrégation marche aujourd'hui, mais la ressource n'est pas dans la liste des exceptions : regrouper côté Letikette.\n- Plusieurs champs ont des valeurs non normalisées (SIRET/Siret/siret, Marché/MARCHE) : filtrer avec `__in`.\n- Une date « -infinity » existe dans les données.\n\n**Pour chiffrer**\n\nLe montant est un plafond attribué : il est recopié pour chaque cotitulaire et dans chaque avenant, et un accord-cadre s'étale sur plusieurs années. Pour obtenir un ordre de grandeur annuel, il faut :\n\n1. dédoublonner par uid ;\n2. prendre la date d'attribution sur modification_id=0 ;\n3. prendre le montant à jour sur donneesActuelles=true ;\n4. annualiser par dureeMois ;\n5. traiter le résultat comme un majorant.\n\n**Alternative écartée**\n\ndata.economie.gouv.fr (Opendatasoft) : 720 000 lignes, sans nom ni catégorie d'acheteur, 10 000 lignes au plus par requête, 50 000 appels par jour. L'API de colibre.fr est payante.",
+ "contradictions_avec_audit": [
+  "L'audit écrit que « la prospection part d'un fichier ». Ce fichier fait 2,6 Go et 3,3 millions de lignes : aucun tableur ne l'ouvre. En pratique, la prospection part d'une requête filtrée sur l'API tabulaire (export /data/json/), pas d'un fichier qu'on télécharge.",
+  "L'audit dit que les DECP, croisées avec le retard moyen des acheteurs, donnent « un ordre de grandeur de ce qu'on doit au fournisseur ». Or les DECP ne donnent ni factures, ni dates de paiement, ni chiffre d'affaires. Le montant est un plafond attribué (forfaitaire ou maximum estimé), recopié pour chaque cotitulaire et dans chaque avenant, sur des durées pluriannuelles. Exemple : 28,5 M€ de maximums cumulés pour un seul fournisseur. L'estimation est un majorant fragile, à annualiser et à dédoublonner.",
+  "L'exemple de l'audit, « un fournisseur qui facture 500 000 € par an à des hôpitaux payés 21 jours en retard », suppose un chiffre facturé et un retard par acheteur. Les DECP ne contiennent ni l'un ni l'autre : le retard doit venir d'une autre source (l'ODP ne donne qu'une moyenne sectorielle).",
+  "« Hôpitaux » au sens de la DECP veut dire catégorie juridique 7364 seulement. Les GCS (7470), les syndicats inter-hospitaliers (7365) et les centrales comme le RESAH (7410) y échappent. Et quand l'acheteur publié est une centrale d'achat, ce n'est pas lui qui paie : le débiteur des intérêts est l'établissement membre."
+ ],
+ "questions_ouvertes": [
+  "L'agrégation (groupby/sum) marche sur cette ressource alors qu'elle n'est pas dans /api/aggregation-exceptions/ : est-ce durable ? Faut-il construire le classement côté Letikette par défaut ?",
+  "La ressource de 2,6 Go est servie au titre d'une exception à la limite de 100 Mo. Si data.gouv la retire, le repli est decp.parquet traité la nuit hors de Convex. Qui surveille ce risque ?",
+  "Exhaustivité : AP-HP n'a que 1 454 attributions initiales depuis 2022 dans la DECP. Quel est le seuil légal de publication des données essentielles, à relever sur Légifrance avant d'écrire « tous les marchés » ?",
+  "D'où viendra le retard de paiement PAR acheteur ? Existe-t-il une donnée publique par hôpital ou par collectivité (DGFiP, délai global de paiement) ? À rechercher séparément.",
+  "Le taux des intérêts moratoires publics et l'indemnité forfaitaire (l'audit avance « BCE + 8 points et 40 € ») doivent entrer dans parametres.ts avec leur source Légifrance. Rien n'a été vérifié ici.",
+  "Faut-il inclure dans la cible hospitalière les GCS (7470), les syndicats inter-hospitaliers (7365) et le médico-social public (7366) ? Le délai de paiement applicable à chacun est à vérifier juridiquement.",
+  "Centrales d'achat (RESAH, UGAP, UniHA) publiées comme acheteur : comment rattacher un marché à l'établissement qui paie réellement ?",
+  "RGPD : titulaire_nom contient des noms de personnes physiques (entrepreneurs individuels diffusibles). Quelle règle de prospection appliquer, et faut-il écarter les entrepreneurs individuels comme le fait déjà le CRM pour la diffusion restreinte ?",
+  "Le label PME de l'INSEE classe des filiales de groupes (COOK FRANCE) : faut-il filtrer par effectif et dirigeants via Recherche d'entreprises avant de retenir un prospect ?"
+ ]
+}

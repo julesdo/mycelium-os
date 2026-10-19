@@ -1,0 +1,201 @@
+{
+ "verdicts": [
+  {
+   "affirmation": "Page CNIL « règles d'or » du 16 juin 2009, toujours en ligne : la prospection électronique est interdite à partir d'adresses collectées dans les espaces publics d'Internet.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/les-regles-dor-de-la-prospection-par-courrier-electronique-0",
+   "citation_exacte": "1. Ne faites pas de prospection électronique à partir d’adresses de courriers électroniques collectées dans les espaces publics de l'internet (site web, annuaire, forum discussion,…). C'est interdit !",
+   "correction": "Page relue le 19/10/2026 (HTTP 200), datée « 16 juin 2009 ». C'est bien la source de la phrase de l'audit (section 13). Les pages de 2024 et 2026 relues plus bas la rendent dépassée pour le B2B."
+  },
+  {
+   "affirmation": "En 2009, la CNIL donnait trois cas de prospection B2B sans accord préalable, sans dire si ces conditions se cumulent ou non.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/les-regles-dor-de-la-prospection-par-courrier-electronique-0",
+   "citation_exacte": "Il n’est pas nécessaire d’obtenir l’accord du destinataire lorsque : | l’adresse électronique est de type générique (par ex : info@…, contact@…, commande@… ) | le professionnel a été informé lorsqu’il a communiqué son adresse électronique de la possibilité de s’opposer gratuitement à toute utilisation commerciale de ses coordonnées, | l’objet de la sollicitation soit en rapport avec les fonctions exercées à titre professionnel par le destinataire du message",
+   "correction": "Les trois puces ne sont reliées ni par « et » ni par « ou ». La deuxième finit par une virgule et la troisième est au subjonctif (« soit »), ce qui laisse penser à des conditions qui se suivent, mais le texte ne tranche pas."
+  },
+  {
+   "affirmation": "Fiche CNIL du 10/06/2026 : la prospection B2B peut reposer sur l'intérêt légitime si l'objet est en rapport avec la profession ; si les données viennent d'ailleurs que de la personne, celle-ci doit être informée et pouvoir s'opposer.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/la-prospection-commerciale-par-courrier-electronique-sms-mms-et-automate-dappel",
+   "citation_exacte": "La prospection à l’égard de professionnels peut être fondée sur l’intérêt légitime de l’organisme lorsque l'objet de la sollicitation est en rapport avec la profession de la personne démarchée (par exemple, un appel présentant les mérites d’un logiciel au directeur informatique d’une entreprise). Lorsque les données sont déjà en possession de la société ou acquises auprès de tiers, il faut s’assurer que la personne concernée a été informée de la possible utilisation de son adresse électronique ou son numéro de téléphone (par SMS-MMS ou automate d’appel) pour de la prospection et est en mesure de s’y opposer.",
+   "correction": "Date « 10 juin 2026 » confirmée. Règles listées confirmées : « Information (par exemple, lors de la collecte de leur numéro de téléphone ou de leur adresse électronique) ; Opposition simple et gratuite. »"
+  },
+  {
+   "affirmation": "Les adresses génériques (info@, contact@, commande@) sont celles de personnes morales et échappent aux règles d'information et d'opposition ; une adresse nominative y reste soumise.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/la-prospection-commerciale-par-courrier-electronique-sms-mms-et-automate-dappel",
+   "citation_exacte": "Rappel : Les adresses génériques de type info[@]nomsociete.fr, contact[@]nomsociete.fr ou commande[@]nomsociete.fr, qui concernent de personnes morales, ne sont pas soumises aux principes rappelés ci-dessus.",
+   "correction": "Le paragraphe « Dans tous les cas » vient juste après ce rappel. Il impose toujours, même pour une adresse générique, de dire qui envoie le message et d'offrir un moyen simple de refuser."
+  },
+  {
+   "affirmation": "Chaque sollicitation, B2B compris, doit dire qui l'envoie et permettre de refuser simplement les suivantes.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/la-prospection-commerciale-par-courrier-electronique-sms-mms-et-automate-dappel",
+   "citation_exacte": "Par ailleurs, chaque sollicitation doit obligatoirement permettre à la personne concernée de prendre connaissance de l’identité de l’organisation qui l’émet ainsi que d’exprimer, si elle le souhaite et par un moyen simple, son refus de recevoir de nouvelles sollicitations.",
+   "correction": "Paragraphe « Dans tous les cas ». L34-5 al. 5 dit la même chose dans la loi (« Dans tous les cas, il est interdit d'émettre… sans indiquer de coordonnées valables… Il est également interdit de dissimuler l'identité… »)."
+  },
+  {
+   "affirmation": "Page CNIL « Communications par voie électronique » du 10/06/2026 : trois conditions B2B rédigées comme cumulatives, dont l'information sur l'origine des données.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/communication-electronique-quelles-regles",
+   "citation_exacte": "Le consentement préalable n’est pas systématiquement requis pour la prospection B to B si : elle est en lien avec l’activité professionnelle de la personne contactée ; la personne est informée de l’origine de ses données et de la finalité du message ; elle peut s’opposer simplement à la réception de nouvelles sollicitations.",
+   "correction": "Titre exact : « Communications par voie électronique aux prospects et clients : quelles règles respecter ? », daté du 10 juin 2026. Section « Un régime spécifique pour la prospection entre professionnels (B to B) »."
+  },
+  {
+   "affirmation": "Recommandations CNIL de 2024 : la prospection électronique B2B à partir de données publiquement accessibles peut reposer sur l'intérêt légitime, sous réserve des attentes raisonnables.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/sites/cnil/files/2024-06/recommandations_reutilisateurs_donnees_publiees_sur_internet.pdf#page=45",
+   "citation_exacte": "Sous réserve qu’elle entre bien dans le champ des attentes raisonnables des personnes concernées (voir le point 3 suivant), la collecte comme l’exploitation des coordonnées postales et téléphoniques à des fins de prospection par voie non électronique (envois de courriers postaux et appels téléphoniques hors automates d’appel), y compris la transmission de ces données à de telles fins, pourra se fonder sur la base légale de l’intérêt légitime du responsable du traitement. Il en va de même des opérations de prospection par voie électronique visant exclusivement des personnes sollicitées au titre de leur activité professionnelle spécifique (prospection dite « entreprises vers entreprises »).",
+   "correction": "PDF relu : couverture « Publié le 12/06/2024 », encadré « À noter », p. 45, dans la fiche cas d'usage n° 2 (qui va jusqu'à la p. 49). Le texte dit « pourra se fonder », pas « repose ». La p. 44 donne la contrepartie : la prospection électronique « sans lien direct avec la profession » est « systématiquement soumise au recueil d'un consentement préalable ». La p. 2 rappelle que ces recommandations « ne sont pas contraignantes »."
+  },
+  {
+   "affirmation": "Recommandations 2024 : si la mise en balance échoue, il faut s'abstenir de collecter, même pour un premier e-mail ; sinon, collecte et usage reposent sur l'intérêt légitime pour une prospection en lien direct avec la profession.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/sites/cnil/files/2024-06/recommandations_reutilisateurs_donnees_publiees_sur_internet.pdf#page=48",
+   "citation_exacte": "l’organisme doit s’abstenir de procéder à la collecte des données publiées en ligne, y compris aux fins d’envoyer un premier courriel pour solliciter un consentement. […] les collecter et les exploiter sur la base légale de son intérêt légitime, lorsque la licéité de leur utilisation n’est pas assujettie au recueil d’un consentement préalable (cas de la prospection par voie non électronique ou effectuée en lien direct avec la profession des personnes concernées).",
+   "correction": "P. 48 confirmée. Le paragraphe se termine ainsi : « Dans tous les cas, ces opérations devront être effectuées dans le respect des autres dispositions du RGPD, en particulier de celles relatives à l’information et aux droits des personnes concernées. »"
+  },
+  {
+   "affirmation": "Recommandations 2024 : ne pas collecter quand les CGU ou la politique du site source interdisent la récupération à des fins de prospection, ni quand la personne a dit d'elle-même refuser le démarchage.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/sites/cnil/files/2024-06/recommandations_reutilisateurs_donnees_publiees_sur_internet.pdf#page=47",
+   "citation_exacte": "La collecte des données publiées pour réaliser des opérations de démarchage est susceptible de ne pas entrer dans les attentes raisonnables des personnes lorsque la politique de confidentialité ou les CGU de l’éditeur : interdisent le moissonnage automatisé ou la récupération manuelle des données à des fins de prospection commerciale ; ou subordonnent la transmission de données au consentement préalable des personnes concernées.",
+   "correction": "P. 47 confirmée, dans les termes « est susceptible de » : c'est un indice, pas une interdiction absolue. Même page, encadré « Attention » : « Il en va de même, en l’absence de mécanisme d’opposition mis à leur disposition par l’éditeur, lorsque les personnes ont manifesté d’elles-mêmes leur refus à être démarchées par des sociétés ». Collecter malgré une opposition exprimée est qualifié de « traitement déloyal… interdit par le RGPD (article 5.1.a) »."
+  },
+  {
+   "affirmation": "Recommandations 2024 : l'information (art. 14 RGPD) est due au plus tard au premier contact et dans le mois qui suit la collecte, et doit nommer la source, y compris le site web quand il est connu.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/sites/cnil/files/2024-06/recommandations_reutilisateurs_donnees_publiees_sur_internet.pdf#page=49",
+   "citation_exacte": "aussi tôt que possible, au plus tard lors de la première prise de contact avec les intéressés ou, le cas échéant, de la communication des données à des tiers, et, dans tous les cas, dans un délai ne dépassant pas un mois après la collecte […] la ou les sources d’où elles proviennent (lorsque plusieurs sources ont été exploitées et qu’il n’est pas possible d’attribuer les données d’une personne à une source en particulier, des informations générales sur ces sources doivent être fournies ; ces informations générales doivent toutefois préciser, lorsqu’ils sont connus, les noms des différents sites web sur lesquels les données auront été collectées)",
+   "correction": "P. 48 à 49 confirmées (« en principe de manière individuelle » ; finalités, base légale avec l'intérêt légitime mobilisé, catégories, destinataires, sources, droits). Conséquence que le premier chercheur n'a pas relevée : le délai d'un mois court aussi pour un prospect ajouté au CRM et resté « À contacter ». Au-delà d'un mois sans information individuelle, l'art. 14 n'est plus respecté."
+  },
+  {
+   "affirmation": "Fiche CNIL du 16/10/2026 sur la reconstitution : deviner une adresse prénom.nom@ peut reposer sur la même base que la prospection B2B, mais pas pour quelqu'un qui protège ses coordonnées ; préférer un formulaire de contact à une adresse directe est cité comme un tel signe.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.cnil.fr/fr/reconstitution-adresses-professionnelles-quel-cadre",
+   "citation_exacte": "Par exemple, si une adresse est reconstituée pour permettre une prospection commerciale B to B fondée sur l’intérêt légitime, la reconstitution peut elle-même être fondée sur cette même base légale. Cette règle n’est toutefois ni automatique ni systématique. […] Ainsi, les personnes ne disposant d’aucune présence identifiable en ligne ou entreprenant des actions concrètes pour dissimuler ou protéger leurs coordonnées ne peuvent, a priori, pas s’attendre raisonnablement à la reconstitution de leur adresse électronique.",
+   "correction": "Le « mais pas » est trop absolu. La CNIL écrit « a priori » et ajoute que la règle n'est « ni automatique ni systématique ». La page sœur « vos droits » précise que, dans ce cas, « la reconstitution ne serait possible que si l’organisme met des garanties en œuvre pour protéger vos droits ». Les deux garanties citées : ne garder l'adresse que si un premier contact effectif a lieu dans un délai raisonnable, et exclure la personne aussitôt qu'elle s'oppose. Sans ces garanties : « l’organisme doit s’abstenir ». Le formulaire de contact est bien cité comme un signe (« usage de formulaires de contact plutôt que d’une adresse directe… peuvent signaler une volonté de maîtriser la diffusion »). Date du 16 octobre 2026 confirmée."
+  },
+  {
+   "affirmation": "Il faut expliquer à la personne comment son adresse reconstituée a été obtenue.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/reconstitution-adresses-professionnelles-vos-droits",
+   "citation_exacte": "Les organismes qui reconstituent vos adresses électroniques doivent vous informer, aussitôt que possible et de manière claire, notamment des objectifs poursuivis (prospection, etc.) et vous expliquer comment votre adresse a été obtenue.",
+   "correction": "Page datée du 16 octobre 2026. La phrase suivante : « Ils doivent également vous informer de vos droits et de la manière de les exercer. »"
+  },
+  {
+   "affirmation": "La CNIL recommande de garder l'opposition au moins 3 ans et admet une liste réduite aux empreintes, ce que fait déjà le CRM (SHA-256).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/fr/comment-utiliser-une-liste-repoussoir-pour-respecter-lopposition-la-prospection",
+   "citation_exacte": "La CNIL recommande que les informations permettant de prendre en compte l’opposition d’une personne soient conservées au minimum 3 ans.",
+   "correction": "Même page (10 juin 2026) : « ne conserver que les empreintes de l’adresse ou du numéro utilisé pour la prospection ». Elle prévient : « ces données hachées restent des données personnelles et doivent donc être sécurisées ». Côté code : src/lib/crm/empreinte.ts calcule bien un SHA-256 de l'adresse normalisée (trim et minuscules), et importer.ts et prospects.ts écrivent dans la table oppositions. Rien n'est sel­é, ce que la CNIL n'exige pas."
+  },
+  {
+   "affirmation": "Le délai de trois ans part de la collecte ou du dernier contact VENU DU PROSPECT ; un e-mail que nous envoyons ne le relance pas. Le code fait autrement.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.cnil.fr/sites/default/files/atoms/files/referentiel_traitements-donnees-caractere-personnel_gestion-activites-commerciales.pdf",
+   "citation_exacte": "Les données à caractère personnel relatives à un prospect non client peuvent être conservées pendant un délai de trois ans à compter de leur collecte par le responsable de traitement ou du dernier contact émanant du prospect (par exemple, une demande de documentation ou un clic sur un lien hypertexte contenu dans un courriel renvoyant vers le produit promu ; en revanche, la simple ouverture d'un courriel ne devrait pas être considérée comme un contact émanant du prospect).",
+   "correction": "Texte confirmé. Le référentiel le dit lui-même (« n’a pas de caractère contraignant », on peut « s’écarter » en le justifiant). Le code fait bien autrement, et à TROIS endroits, pas deux : src/lib/convex/admin/historique.ts l. 86 (événements APPEL et EMAIL) et l. 133 (emailEcrit), plus src/lib/convex/admin/prospects.ts l. 249 (passage au statut CONTACTE ou RELANCE). La purge, src/lib/convex/admin/entretien.ts l. 18, compare `dernierContactLe ?? creeLe` à trois ans. Deux écritures, en revanche, sont légitimes parce qu'elles viennent du prospect : historique.ts l. 91 (REPONSE) et support/entrant.ts l. 241."
+  },
+  {
+   "affirmation": "Depuis le 11 août 2026, il faut le consentement pour appeler un particulier ; pour un professionnel, le droit d'opposition suffit toujours.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.cnil.fr/fr/prospection-commerciale-par-telephone-hors-automate-dappel-quelles-sont-les-regles",
+   "citation_exacte": "Les règles concernant la prospection commerciale par téléphone ont évolué depuis le 11 août 2026. Pour prospecter des particuliers, il faut d’abord recueillir leur consentement. Les professionnels disposent quant à eux de la possibilité de s’y opposer. Dans les deux cas, une information doit leur être délivrée.",
+   "correction": "Le droit d'opposition ne suffit pas seul : la phrase suivante impose aussi une INFORMATION dans les deux cas. La partie B2B liste « Information… ; Opposition simple et gratuite », demande un objet en rapport avec la profession et ajoute : « Lorsque les données sont déjà en possession de la société ou acquises auprès de tiers, il faut s’assurer que la personne concernée a été informée ». La règle B2C vise les « consommateurs » (art. L. 223-1 du code de la consommation, loi du 30 juin 2025), même si l'en-tête de la page dit « particuliers ». La page porte la date du 10 juin 2026."
+  },
+  {
+   "affirmation": "Article L34-5 du CPCE : l'interdiction sans consentement vise les personnes physiques ; version en vigueur du 26 juillet 2020 (loi n° 2020-901).",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.conseil-constitutionnel.fr/decision/2026/20261210QPC.htm",
+   "citation_exacte": "Est interdite la prospection directe au moyen de système automatisé de communications électroniques au sens du 6 ° de l'article L. 32, d'un télécopieur ou de courriers électroniques utilisant les coordonnées d'une personne physique, abonné ou utilisateur, qui n'a pas exprimé préalablement son consentement à recevoir des prospections directes par ce moyen.",
+   "correction": "Le texte intégral a été relu, cité par le Conseil constitutionnel. La page Légifrance LEGIARTI000042155961, lue en extraits courts, confirme « Version en vigueur depuis le 26 juillet 2020 » et « Modifié par LOI n°2020-901 du 24 juillet 2020 - art. 8 ». Trois corrections : (1) le texte dit « d'une personne physique, abonné ou utilisateur », que le Conseil lit comme « d'une personne physique, d'un abonné ou d'un utilisateur ». (2) Une adresse nominative prénom.nom@société EST la coordonnée d'une personne physique : le texte ne prévoit aucune dérogation B2B. La tolérance B2B par opposition vient de la doctrine de la CNIL, non contraignante, pas de la loi. (3) Le premier chercheur n'avait rien relevé de la décision n° 2026-1210 QPC du 25 juin 2026 (Orange SA). Elle déclare contraires à la Constitution les 6e, 8e et avant-dernier alinéas, c'est-à-dire la compétence de la CNIL, l'amende de la DGCCRF et le cumul avec l'Arcep, pour cumul de sanctions. L'abrogation est reportée au 31 octobre 2027 (§ 19), et en attendant une réserve interdit de poursuivre deux fois les mêmes faits (§ 20). Au 19/10/2026, l'interdiction du 1er alinéa et l'obligation « Dans tous les cas » restent entières. Seul le régime des sanctions va changer."
+  },
+  {
+   "affirmation": "Le pied de chaque e-mail du CRM attribue l'adresse à l'annuaire public des entreprises, qui ne publie aucune adresse e-mail ; trouveOu n'est pas transmis à composerEmail.",
+   "verdict": "CONFIRME",
+   "source_url": "C:\\Users\\jules\\Desktop\\mycelium-chat\\src\\lib\\crm\\modeles.ts",
+   "citation_exacte": "J’ai trouvé vos coordonnées sur l’annuaire public des entreprises. Si vous préférez que je ne vous écrive plus, répondez « stop ».",
+   "correction": "`const PIED_LEGAL =` est à la l. 188, la chaîne à la l. 189. Elle est collée en fin de tout corps (l. 269). Le type ProspectAEcrire (l. 57-62) ne contient que entreprise, dirigeant, activite et cible : trouveOu n'arrive jamais jusqu'au pied. src/lib/crm/annuaire.ts l. 362 pose `Annuaire des entreprises (data.gouv.fr), le …`. Son en-tête (l. 18-19) dit même qu'il « ne cherche aucune adresse e-mail : elle se lit sur le site de l'entreprise ». Une réponse réelle de recherche-entreprises.api.gouv.fr ne porte aucun champ mail, téléphone ni site. La section 8 bis de la politique (docs/juridique/03-politique-de-confidentialite.md l. 379 et suivantes) cite elle-même le « site de l'entreprise » parmi les sources : le pied la contredit. Le pied n'a aucun lien vers la 8 bis."
+  },
+  {
+   "affirmation": "Paddle exclut les prestations humaines sans lien avec une offre logicielle (conseil pur, juridique, coaching, services informatiques, communauté d'experts) et se dit mal adapté à une entreprise dont l'offre principale est une prestation humaine.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle",
+   "citation_exacte": "Human services that are not related to a software offering (e.g., pure consulting or advisory services, including but not limited to legal advice, coaching, IT services, and access to a community of experts)",
+   "correction": "« Last Updated 13 April 2026 » confirmé. Introduction : « If your company’s primary offering is human services (such as consultation, support, or design services) or the sale of physical goods, Paddle is not a good fit ». paddle.com/support/aup (l'adresse du contrat) redirige bien vers cette page."
+  },
+  {
+   "affirmation": "Restrictions générales de l'AUP : offres vendues par télémarketing sortant, offres contraires aux règles de consentement du RGPD ; Paddle garde la liberté de juger, et la liste n'est pas exhaustive.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle",
+   "citation_exacte": "Is marketed through the use of outbound telemarketing.",
+   "correction": "Également : « Contravenes the requirements for the provision of consent under the EU General Data Protection Regulation (GDPR) » ; « Paddle reserves the right to exercise judgment » ; « This is not an exhaustive list »."
+  },
+  {
+   "affirmation": "L'AUP exclut tout service financier réglementé où que ce soit, les services de paiement, le conseil en crédit, et la décision automatisée ou la catégorisation de personnes (sous « Content generation ») ; le recouvrement n'est pas nommé.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle",
+   "citation_exacte": "Any product or service that is considered a regulated financial product or service in any jurisdiction",
+   "correction": "Confirmé : « Payment services, whether regulated or not », « Credit advice or consulting… », et « Automated decision-making or categorization of people », rangé sous « Content generation ». Le recouvrement de créances n'apparaît nulle part sur la page."
+  },
+  {
+   "affirmation": "Le « Product » du contrat Paddle est le logiciel ou le contenu numérique, frais d'intégration ou de mise en place compris ; cela couvre un rapport produit par le logiciel et la mise en place de connecteurs.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.paddle.com/legal/terms",
+   "citation_exacte": "\"Product\" means the Supplier's software product(s) and/or digital content agreed to be resold and distributed, and any subsequent updates and upgrades thereto and includes any associated integration or implementation costs and / or service fees;",
+   "correction": "La définition est confirmée (MSA « Last updated: 6 October 2026 »), tout comme la clause 2.1 « non-exclusive reseller ». La seconde phrase, en revanche, est une déduction : Paddle ne l'écrit nulle part. Les frais doivent être « associated » à un logiciel revendu. La clause 9.6 laisse Paddle refuser « in its absolute discretion » un produit nouveau ou modifié. La catégorie fiscale digital-goods ne vise que les « Non-customizable digital files or media (not software) », et un diagnostic sur mesure n'y entre pas. Les catégories implementation-services et professional-services demandent l'approbation de Paddle. La mise en place de connecteurs a des chances de passer, le rapport isolé est incertain."
+  },
+  {
+   "affirmation": "Clause 11.1 (xv) : aucun télémarketing sortant, même hors produits revendus par Paddle ; défini comme un appel lancé par quelqu'un d'autre que le « consumer » ; 16.3 (iii) permet une résiliation immédiate sur simple soupçon.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/legal/terms",
+   "citation_exacte": "(xv) you do not and will not engage or instruct/engage others on your behalf to engage in Outbound Telemarketing of any kind, regardless of whether the relevant products or services are or will be resold through Paddle;",
+   "correction": "Définition : « any plan, program, or campaign that is conducted to induce the purchase of products or services by use of one or more telephones, and which involves a telephone call initiated by a person other than the consumer ». 16.3 (iii) : « Paddle has reasonable suspicion, or knows, that any of the representations or warrants given in clause 11 was or has become incorrect or false ». Le mot « consumer » laisse bien un doute pour le B2B. Les appels aux cabinets sont bien dans docs/croissance/phase-manuelle.md, aux l. 22, 32 et 152."
+  },
+  {
+   "affirmation": "Clauses 9.5 et 9.6 : 30 jours de préavis écrit pour tout changement matériel des informations données à Paddle ; Paddle peut refuser ou suspendre un produit nouveau ou modifié.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/legal/terms",
+   "citation_exacte": "undertakes to provide Paddle with at least thirty (30) calendar days' prior written notice of any material change to the information provided.",
+   "correction": "9.6 (i) : « Paddle determines (in its absolute discretion) that the Product falls outside of the Acceptable Use Policy or is otherwise outside of Paddle’s risk tolerance ». La 9.4 prévoit qu'on peut ajouter des produits « from time-to-time », aux mêmes obligations."
+  },
+  {
+   "affirmation": "Commission de 5 % + 0,50 $ en caisse et 3,5 % par Paddle Invoicing réglé par virement ; Paddle peut fixer le prix ; le vendeur ne facture pas, et un remboursement passe par Paddle.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/legal/terms",
+   "citation_exacte": "(i) Paddle Checkout: 5% of SRP plus $0.50; (ii) Paddle Invoicing (where payment is made by bank transfer): 3.5% of SRP.",
+   "correction": "3.4 et 10.1 confirmées mot pour mot. Deux clauses à ajouter : 3.3, Checkout Recovery à 10 %, et 3.5, une « Alternative Discount » que Paddle peut imposer ou retirer seul. La phrase de la doc développeur vient de la page « Refund or credit a transaction » (developer.paddle.com/build/transactions/create-transaction-adjustments) : « Most refunds for live accounts have to be approved by Paddle. »"
+  },
+  {
+   "affirmation": "Revue du domaine : description, prix, ce qui est livré, conditions, remboursement, confidentialité ; ne soumettre que des domaines liés à ce qu'on vend par Paddle ; 5 à 7 jours ouvrés en revue manuelle.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.paddle.com/help/start/account-verification/what-is-domain-verification",
+   "citation_exacte": "Only submit domains that are directly related to the product you’re selling via Paddle. If the domain includes unrelated products not sold through Paddle, it may lead to buyer confusion and a higher risk of chargebacks, which can impact approval.",
+   "correction": "Exigence de plus : le nom de la société ou de l'entrepreneur individuel dans les CGV (« legal name preferred for sole proprietors »). La plupart des domaines sont approuvés automatiquement, la revue manuelle prend « typically… 5-7 business days ». La grille sur mesure est demandée « (if applicable) », en PDF « on request »."
+  },
+  {
+   "affirmation": "Catégories fiscales implementation-services, professional-services, training-services et digital-goods ; seules standard et saas sont approuvées d'office.",
+   "verdict": "CONFIRME",
+   "source_url": "https://developer.paddle.com/api-reference/products/create-product",
+   "citation_exacte": "`implementation-services` — Remote configuration, set-up, and integrating software on behalf of a customer.",
+   "correction": "Page d'erreur relue : « `standard` and `saas` are always approved. » La liste en compte plus : ebooks, software-programming-services, website-hosting. digital-goods ne couvre que des fichiers « Non-customizable… (not software) »."
+  },
+  {
+   "affirmation": "Une transaction peut porter un prix hors catalogue, rattaché ou non à un produit, créé côté serveur par l'API, de type « custom », puis ouvert en caisse : un montant calculé est faisable.",
+   "verdict": "CONFIRME",
+   "source_url": "https://developer.paddle.com/build/transactions/bill-create-custom-items-prices-products",
+   "citation_exacte": "This is useful for one-off or bespoke items that are specific to that transaction.",
+   "correction": "Confirmé : « Non-catalog price and product entities have a `type` of `custom` ». La transaction créée est « draft », puis « Pass it to a checkout ». Prérequis : un « default payment link » approuvé. C'est faisable techniquement, mais le produit reste soumis à l'AUP (prestations humaines) et Paddle garde le droit de fixer le prix (MSA 3.4)."
+  },
+  {
+   "affirmation": "Remises : expires_at, recur + maximum_recurring_intervals, restrict_to ; usage_limit est global ; une seule remise par transaction ; avec un essai, une remise récurrente ne démarre qu'après l'essai.",
+   "verdict": "CONFIRME",
+   "source_url": "https://developer.paddle.com/api-reference/discounts/create-discount",
+   "citation_exacte": "This is an overall limit for this discount, rather than a per-customer limit.",
+   "correction": "Create transaction : « Send one of `discount_id` or `discount`. » Guide des remises : « The discount isn't applied to the trial, whether it's free or paid. It's applied after the trial period ends. » Le compteur d'usage monte quand la transaction aboutit, pas quand on applique la remise. Une remise hors catalogue ne s'applique que par l'API (« can't be applied at checkout by customers »)."
+  }
+ ],
+ "synthese": "J'ai relu les 28 faits sur leur source primaire : 24 sont confirmés, 4 corrigés, aucun n'est réfuté. Aucun fichier du dépôt n'a été modifié. Tout ce qui a été téléchargé est dans le scratchpad (…\\scratchpad\\src).\n\nPour L34-5, Légifrance renvoie une page Cloudflare (403) à curl. WebFetch l'a ouverte, mais en extraits courts seulement. J'ai lu le texte intégral dans la décision du Conseil constitutionnel, qui le cite en entier.\n\n**Les quatre corrections**\n\n1. **L34-5 du CPCE : une décision QPC manquait.** Le texte vise « les coordonnées d'une personne physique, abonné ou utilisateur ».\n   - Une adresse nominative de professionnel est la coordonnée d'une personne physique. La loi ne prévoit aucune dérogation B2B : la tolérance B2B par opposition vient de la doctrine de la CNIL, qui n'est pas contraignante.\n   - La version de 2020 est confirmée (loi n° 2020-901).\n   - Le premier chercheur n'avait pas relevé la décision n° 2026-1210 QPC du 25 juin 2026. Elle déclare contraires à la Constitution les 6e, 8e et avant-dernier alinéas, qui organisent les sanctions par la CNIL, la DGCCRF et l'Arcep. L'abrogation est reportée au 31 octobre 2027, avec une réserve qui interdit de poursuivre deux fois les mêmes faits.\n   - L'interdiction du 1er alinéa et les mentions « Dans tous les cas » restent entières.\n\n2. **Reconstitution d'adresses (fiche du 16/10/2026) : ce n'est pas un « jamais ».** Pour une personne qui protège ses coordonnées, la reconstitution est exclue « a priori ». La page « vos droits » la permet si des garanties sont en place : ne garder l'adresse que si un premier contact a lieu, et exclure la personne dès qu'elle s'oppose.\n\n3. **Téléphone B2B : l'opposition ne suffit pas seule.** La CNIL exige aussi une information dans les deux cas, B2C comme B2B.\n\n4. **« Product » chez Paddle : la définition est exacte, la conclusion non.** Que le terme couvre un rapport ou la mise en place de connecteurs est une déduction, pas un texte de Paddle.\n   - La clause 9.6 lui laisse un pouvoir discrétionnaire sur tout nouveau produit.\n   - La catégorie digital-goods exclut le contenu personnalisé.\n   - Les catégories implementation-services et professional-services demandent son approbation.\n\n**Ce qui touche l'audit et le code**\n\n- **La phrase de l'audit sur la CNIL est dépassée.** Elle dit que la CNIL « proscrit les adresses collectées sur des sites ou des annuaires », d'après une page de 2009. Les recommandations du 12/06/2024 (p. 44 à 49) et les fiches du 10/06/2026 admettent l'intérêt légitime pour une prospection électronique en lien avec la profession. Les conditions :\n  - l'objet est lié au métier de la personne ;\n  - elle peut raisonnablement s'y attendre (pas de mention « pas de démarchage », pas de CGU qui l'interdisent) ;\n  - l'information de l'article 14 lui est donnée, source comprise ;\n  - elle peut s'opposer simplement ;\n  - chaque message dit qui l'envoie.\n- **Le pied légal du CRM est faux.** `src/lib/crm/modeles.ts` (l. 188-189) attribue toute adresse à « l'annuaire public des entreprises ». Cet annuaire ne publie aucune adresse e-mail : la réponse de l'API n'en contient pas, et `annuaire.ts` le dit lui-même. Le champ trouveOu n'arrive jamais jusqu'à composerEmail. La politique de confidentialité (section 8 bis) cite d'ailleurs le « site de l'entreprise » comme source.\n- **La durée de conservation est rallongée à chaque envoi.** Le délai de trois ans du référentiel part du dernier contact venu du prospect. Le code repousse `dernierContactLe` à chaque envoi, à trois endroits : `historique.ts` l. 86 et l. 133, et `prospects.ts` l. 249. La purge (`entretien.ts`) suit ce champ.\n- **Problème que le premier chercheur n'avait pas vu : le délai d'un mois.** L'article 14 impose d'informer la personne dans le mois qui suit la collecte. Un prospect ajouté par « Trouver » et laissé « À contacter » plus d'un mois sans information individuelle n'est plus en règle.\n- **Paddle : le contrat va plus loin que la CNIL.** La clause 11.1 (xv) interdit tout télémarketing sortant, même pour des produits que Paddle ne vend pas. La clause 16.3 (iii) lui permet de résilier sur simple soupçon. Le « téléphone en premier » de l'audit et les appels aux cabinets de `docs/croissance/phase-manuelle.md` (l. 22, 32 et 152) sont donc un risque pour le compte, quoi qu'en dise la CNIL. Le mot « consumer » dans la définition laisse un doute pour le B2B, à faire lever par écrit par Paddle.\n- **Paddle : l'AUP exclut aussi** les prestations humaines sans lien avec un logiciel, le conseil en crédit, les services financiers réglementés et les services de paiement. La « réclamation clé en main », le Mandat et le courtage IOBSP sont donc à soumettre à Paddle, avec 30 jours de préavis (clause 9.5), ou à facturer hors Paddle : il n'est revendeur qu'à titre non exclusif.\n- **Paddle : les faits techniques tiennent.** Prix hors catalogue par l'API, remises bornées dans le temps, une remise par transaction, commission de 5 % + 0,50 $, remboursements approuvés par Paddle : tout est confirmé."
+}

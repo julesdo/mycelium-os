@@ -1,0 +1,128 @@
+{
+ "faits": [
+  {
+   "sujet": "Registre des transports : la page source",
+   "affirmation": "Le ministère de la Transition écologique publie trois listes nationales en téléchargement libre : les transporteurs de marchandises et les transporteurs de voyageurs ayant une licence valide, et les entreprises inscrites au registre des commissionnaires de transport. Ces listes sont mises à jour deux fois par semaine.",
+   "source_url": "https://www.ecologie.gouv.fr/politiques-publiques/liste-entreprises-inscrites-registre-electronique-national-entreprises",
+   "citation_exacte": "Les listes nationales téléchargeables ci-dessous sont mises à jour les lundis et jeudis",
+   "relu_sur_source_primaire": true,
+   "remarques": "La page en ligne répondait 503 (Varnish) le 19/10/2026, en curl comme en WebFetch. Je l'ai lue dans la copie de web.archive.org du 11/05/2026 (http://web.archive.org/web/20260511174350/...). Les fichiers eux-mêmes ont été téléchargés en direct (voir le fait suivant). La page renvoie aussi vers une carte uMap (umap.openstreetmap.fr/fr/map/registre-des-transporteurs-routiers_136978) et vers des PDF par département (ex. https://www2.transports.developpement-durable.gouv.fr/registres/marchandises/75.pdf, Last-Modified 19/10/2026 07:23).",
+   "valeur": "3 listes, mises à jour lundi et jeudi"
+  },
+  {
+   "sujet": "Registre des transports : les fichiers, téléchargés en direct le 19/10/2026",
+   "affirmation": "Il n'y a pas d'API : chaque liste est un ZIP qui contient un seul CSV en UTF-8, séparé par des virgules, sans filtre côté serveur. Les trois ZIP répondent en HTTP 200 sur l'ancien domaine (http) et sur https://www2.transports.developpement-durable.gouv.fr/registres/<type>/SITR_Liste_des_entreprises_<Type>_sortie_CSV.zip.",
+   "source_url": "http://www2.transports.equipement.gouv.fr/registres/marchandises/SITR_Liste_des_entreprises_Marchandises_sortie_CSV.zip",
+   "citation_exacte": "\"Situation au : 19/10/2026\"",
+   "relu_sur_source_primaire": true,
+   "remarques": "Marchandises : ZIP de 3,07 Mo, CSV de 13,9 Mo, Last-Modified le lundi 19/10/2026 à 03:03 GMT. Voyageurs (…/voyageurs/SITR_Liste_des_entreprises_Voyageurs_sortie_CSV.zip) : 0,75 Mo, Last-Modified le 18/10/2026. Commissionnaires (…/commissionnaires/SITR_Liste_des_entreprises_Commissionnaires_sortie_CSV.zip) : 0,61 Mo, Last-Modified le 18/10/2026. Il n'y a de fiche ni sur data.gouv.fr ni sur transport.data.gouv.fr : l'API de data.gouv.fr ne renvoie rien sur « SITR », « commissionnaires », « registre des transporteurs », « licence transport » ou « entreprises transport routier ». Aucune licence n'est affichée.",
+   "valeur": "3 ZIP/CSV, environ 18 Mo de CSV au total"
+  },
+  {
+   "sujet": "Registre des transports : les champs de la liste « marchandises »",
+   "affirmation": "La liste « marchandises » compte 19 colonnes, une ligne par ÉTABLISSEMENT (SIRET). Elle donne le SIRET, la raison sociale, la forme juridique, le code postal, la commune, un indicateur siège, le gestionnaire de transport (une personne physique, nommée), le numéro, les dates et le nombre de copies valides de la licence de transport intérieur (LTI) et de la licence communautaire (LC), dont les copies LC pour véhicules de 3,5 t au plus. Elle ne donne ni adresse de rue, ni téléphone, ni e-mail, ni code NAF.",
+   "source_url": "http://www2.transports.equipement.gouv.fr/registres/marchandises/SITR_Liste_des_entreprises_Marchandises_sortie_CSV.zip",
+   "citation_exacte": "\"Code_departement\",\"Nom_departement\",\"SIRET\",\"Raison_sociale\",\"Categorie_juridique\",\"Code_Postal\",\"Commune\",\"Siege_O_N\",\"Gestionnaire_de_transport\",\"Numero_LTI\",\"Date_debut_validite_LTI\",\"Date_fin_validite_LTI\",\"Nombre_de_copies_LTI_valides\",\"Numero_LC\",\"Date_debut_validite_LC\",\"Date_fin_validite_LC\",\"Nombre_de_copies_LC_valides\",\"dont Nombre_de_copies_LC_VUL_valides <= 3,5t\"",
+   "relu_sur_source_primaire": true,
+   "remarques": "Ligne réelle, nom du gestionnaire masqué par moi : \"\",\"75\",\"PARIS\",\"83352779900021\",\"2.T.M.\",\"Société par actions simplifiée (SAS)\",\"75011\",\"PARIS 11\",\"O\",\"[gestionnaire]\",\"2021 11 0002489\",\"20/07/2021\",\"03/12/2027\",\"3\",\"2017 11 0003598\",\"04/12/2017\",\"03/12/2027\",\"6\",\"0\". La liste voyageurs a 18 colonnes, de même schéma, sans la colonne « ≤ 3,5t ». La liste commissionnaires a 10 colonnes : département, SIRET, raison sociale, forme juridique, code postal, commune, siège O/N et Attestataire_de_capacité_professionnelle. Pour obtenir l'adresse et le code NAF, il faut une jointure par SIREN avec l'API Recherche d'entreprises, que le CRM utilise déjà (src/lib/crm/annuaire.ts filtre déjà les codes NAF 49.41A/B/C). Le nom du gestionnaire est une donnée personnelle.",
+   "valeur": "19 colonnes (marchandises), 18 (voyageurs), 10 (commissionnaires)"
+  },
+  {
+   "sujet": "Registre des transports : les volumes comptés dans les CSV du 18-19/10/2026",
+   "affirmation": "Marchandises : 62 758 établissements, 47 392 SIREN distincts et 47 399 lignes de siège. On compte 12 825 sièges en Île-de-France et 7 666 à Paris et en petite couronne (75, 92, 93, 94), dont 5 017 avec 3 à 49 copies de licence valides. Voyageurs : 15 572 établissements et 12 578 SIREN, dont 946 sièges à Paris et en petite couronne. Commissionnaires : 20 183 établissements, 9 777 SIREN et 9 776 sièges, dont 1 302 à Paris et en petite couronne. 6 809 SIREN sont à la fois transporteur de marchandises et commissionnaire.",
+   "source_url": "http://www2.transports.equipement.gouv.fr/registres/marchandises/SITR_Liste_des_entreprises_Marchandises_sortie_CSV.zip",
+   "citation_exacte": "\"Situation au : 19/10/2026\"",
+   "relu_sur_source_primaire": true,
+   "remarques": "Comptages faits par mon script (scratchpad/analyse-registre.mjs). Sièges « marchandises » par nombre de copies LTI + LC : 67 n'en ont aucune, 8 978 en ont 1, 17 593 en ont 2 à 5, 8 109 en ont 6 à 10, 10 180 en ont 11 à 49 et 2 472 en ont 50 ou plus. 5 099 sièges ont au moins une copie LC « ≤ 3,5t ». Une ligne a un SIRET à 13 chiffres (SLOOP, Lyon) : une saisie défectueuse à écarter. Les filtres utiles (département, siège, nombre de copies, date de fin de validité, forme juridique) s'appliquent après le téléchargement.",
+   "valeur": "47 392 transporteurs de marchandises ; 9 777 commissionnaires"
+  },
+  {
+   "sujet": "Registre des transports : ce que dit une copie conforme",
+   "affirmation": "La page du ministère précise que la liste « marchandises » distingue les licences et leurs copies conformes, avec leurs dates de validité, y compris les copies de licence communautaire limitées aux véhicules de 3,5 t au plus. Une copie conforme accompagne un véhicule : le nombre de copies donne donc à peu près la taille de la flotte que l'entreprise peut faire rouler en même temps.",
+   "source_url": "https://www.ecologie.gouv.fr/politiques-publiques/liste-entreprises-inscrites-registre-electronique-national-entreprises",
+   "citation_exacte": "La liste des entreprises de transport de marchandises par route est complétée pour préciser le type de documents de transport (licences et copies conformes de licence) détenus par l'entreprise ainsi que leurs dates de validité",
+   "relu_sur_source_primaire": true,
+   "remarques": "La règle « une copie par véhicule » ne vient PAS de la page du ministère. Elle vient d'un résumé de recherche : Bulletin officiel du ministère, arrêté du 28/12/2011 publié par la DREAL Normandie, règlement CE 1072/2009. Je ne l'ai pas relue sur un texte en vigueur. Le seuil de 3,5 t est à recouper sur Légifrance.",
+   "valeur": "copies conformes ≈ véhicules (à confirmer)"
+  },
+  {
+   "sujet": "Délais des hôpitaux publics : le communiqué de la Banque de France (rapport 2025 de l'Observatoire des délais de paiement)",
+   "affirmation": "Le communiqué du 24/09/2026 attribue 71,3 jours de délai moyen aux hôpitaux publics « en métropole », jusqu'à 130,6 jours en outre-mer, pour un délai réglementaire de 50 jours. Il donne 15,9 jours pour l'État et 19,3 jours pour les collectivités.",
+   "source_url": "https://www.banque-france.fr/fr/communiques-de-presse/le-rapport-annuel-2025-de-lobservatoire-des-delais-de-paiement-des-resultats-contrastes-selon-les",
+   "citation_exacte": "les établissements publics de santé voient leurs délais se détériorer, atteignant 71,3 jours en moyenne en métropole, et jusqu'à 130,6 jours en Outre-mer, bien au-delà du délai réglementaire de 50 jours.",
+   "relu_sur_source_primaire": true,
+   "remarques": "Le communiqué se trompe sur le périmètre : dans le rapport lui-même, 71,3 jours est le chiffre NATIONAL et la métropole est à 70,2 jours (voir le fait suivant). Le même communiqué confirme d'autres chiffres de l'audit : 13,4 jours de retard en fin 2025, 13 Md€ de trésorerie retenue, moins d'une grande entreprise sur deux sous 60 jours, et 882 établissements contrôlés avec 54,2 % d'anomalies.",
+   "valeur": "71,3 j (affiché « métropole ») ; 130,6 j en outre-mer ; plafond de 50 j"
+  },
+  {
+   "sujet": "Délais des hôpitaux publics : le rapport lui-même (tableaux T21 à T23)",
+   "affirmation": "En 2025, le délai global moyen des hôpitaux publics est de 70,2 jours en métropole (62,3 en 2024), 130,6 en outre-mer (121,5) et 71,3 au niveau national (63,4). En métropole, 50,7 % des paiements dépassent les 50 jours (43,9 % en 2024). Le délai varie avec la taille, mesurée en recettes annuelles : 53,7 jours sous 20 M€, 82,9 jours de 20 à 70 M€, 85,1 jours de 70 à 150 M€, 67,2 jours au-dessus de 150 M€ (AP-HP comprise). Les paiements au-delà de 50 jours suivent : 37,1 %, 59,1 %, 62,3 % et 49,5 %.",
+   "source_url": "https://www.banque-france.fr/system/files/2026-09/Rapport%20de%20l%27Observatoire%20des%20d%C3%A9lais%20de%20paiement%202025.pdf",
+   "citation_exacte": "Au 31 décembre 2025, le délai de paiement moyen des établissements publics de santé (EPS) connaît une augmentation de 12,7 % par rapport à l'année 2024 et s'élève désormais à 70,2 jours, résultat qui demeure supérieur au délai maximal réglementaire de 50 jours",
+   "relu_sur_source_primaire": true,
+   "remarques": "Les données viennent de la DGFiP. L'éditorial dit bien « des délais atteignant 71,3 jours au niveau national » (p. 4). Le comptable public ne prend que 13,2 jours sur ses 15 : presque tout le retard est du côté de l'ordonnateur, c'est-à-dire l'hôpital, qui a 35 jours. Phrase du rapport : « En matière de dépenses de santé, l'ordonnateur dispose de 35 jours, et le comptable de 15 jours. »",
+   "valeur": "métropole 70,2 j ; national 71,3 j ; 50,7 % des paiements après 50 j"
+  },
+  {
+   "sujet": "Délais des acheteurs publics : la méthode de calcul",
+   "affirmation": "Le délai global de paiement des collectivités et des hôpitaux est une moyenne par ligne de mandat, calculée par Hélios (DGFiP), sans pondération par le montant. Pour les collectivités, il part de la réception de la facture par l'ordonnateur et se partage en 20 jours pour l'ordonnateur et 10 jours pour le comptable.",
+   "source_url": "https://www.banque-france.fr/system/files/2026-09/Rapport%20de%20l%27Observatoire%20des%20d%C3%A9lais%20de%20paiement%202025.pdf",
+   "citation_exacte": "Toutes les lignes de mandats prises en compte dans le calcul du délai de paiement ont donc le même poids statistique, indépendamment de leur enjeu financier.",
+   "relu_sur_source_primaire": true,
+   "remarques": "Cette phrase figure dans la section sur les collectivités (source Delphes/Hélios). Les tableaux des hôpitaux citent aussi la DGFiP comme source. Conséquence : passer de cette moyenne à des euros d'intérêts, comme le fait l'audit, reste une approximation.",
+   "valeur": "moyenne non pondérée par ligne de mandat"
+  },
+  {
+   "sujet": "Délais des collectivités et de l'État par catégorie (rapport 2025, tableaux T15 à T17 et T5)",
+   "affirmation": "Collectivités en 2025 : 19,3 jours au niveau national, 18,9 en métropole, 39,9 en outre-mer. En métropole, 15,0 % des paiements dépassent 30 jours. Par catégorie (métropole) : régions 29,1 j, départements 19,2, communes 18,0 (12,3 sous 500 habitants, 26,7 de 50 000 à 99 999), communautés urbaines 24,2, communautés d'agglomération 23,7, communautés de communes 17,9, métropoles 22,9, Corse 21,6. Part des paiements au-delà de 30 jours : régions 24,8 %, communes de 50 000 à 99 999 habitants 25,5 %. État : 15,9 jours en 2025 (14,1 en 2024), dont 37,9 pour la Justice.",
+   "source_url": "https://www.banque-france.fr/system/files/2026-09/Rapport%20de%20l%27Observatoire%20des%20d%C3%A9lais%20de%20paiement%202025.pdf",
+   "citation_exacte": "Au 31 décembre 2025, le délai de paiement moyen national, dans le secteur public local, est inférieur au plafond réglementaire de 30 jours et s'est amélioré pour passer de 19,7 jours en 2024 à 19,3 jours en 2025",
+   "relu_sur_source_primaire": true,
+   "remarques": "La mise en page du PDF mélange les colonnes des tableaux. Je les ai réalignés valeur par valeur et recoupés avec le texte du rapport (communes 18 j, groupements à fiscalité propre 20,5, départements 19,2, Corse 21,6, régions 29,1, communautés urbaines 24,2, communes de moins de 500 habitants 12,3 contre 26,7 de 50 000 à 99 000). Plafonds cités par le rapport : 30 j (art. R. 2192-10 CCP) et 50 j pour les hôpitaux (R. 2192-11), non relus sur Légifrance.",
+   "valeur": "collectivités 19,3 j (national) ; État 15,9 j"
+  },
+  {
+   "sujet": "Données ouvertes : le délai de paiement de CHAQUE collectivité",
+   "affirmation": "Oui, ces données existent. La DGFiP publie chaque année, sous Licence Ouverte v2.0, le délai global de paiement moyen de chaque budget de collectivité : 90 545 budgets en 2025, toutes tailles de collectivités. L'API Opendatasoft permet de filtrer côté serveur (where, refine, group_by, order_by). L'export complet en CSV (séparateur ;) pèse 6,5 Mo.",
+   "source_url": "https://www.data.gouv.fr/datasets/delais-de-paiement-2025-des-collectivites-territoriales",
+   "citation_exacte": "Il présente la moyenne annuelle pour 2025 du délai global de paiement de chaque budget collectivité, arrêté au 31/12/2025.",
+   "relu_sur_source_primaire": true,
+   "remarques": "API : https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/delai-paiement-moyen-collectivites-2025/records. Export : …/exports/csv?use_labels=true. Champs : code_departement_bc, libelle_departement_bc, libelle_budget_collectivite, code_insee, type_budget_collectivite, type_bc (BP/BA/BR), dgp_annuel_moyen. Le fichier de structure (.ods) précise que CODE_INSEE est en réalité un SIRET (« Composé de 14 chiffres et correspond au SIRET »). Les millésimes 2024 et 2023 existent aussi ; celui de 2023 ne couvre que les collectivités de plus de 3 500 habitants. Fondement cité par la fiche : CRPA L. 321-1-1 et loi 2019-486, non relu.",
+   "valeur": "90 545 budgets ; 9 873 au-delà de 30 j ; 2 838 au-delà de 50 j"
+  },
+  {
+   "sujet": "Données ouvertes par collectivité : jointure avec les marchés publics (DECP) et exemples réels",
+   "affirmation": "Le SIRET de l'acheteur dans les DECP est le même identifiant que le SIRET du budget dans le fichier des délais : la jointure est exacte. Vérifié sur la Région Île-de-France : 1 449 lignes DECP avec acheteur_id commençant par 2375000790, budget principal 23750007900312, délai de 85,24 j en 2023, 78,21 en 2024 et 70,98 en 2025. Autres exemples de 2025 : Nouvelle-Aquitaine 48,88 j, PACA 43,21, département de Seine-Saint-Denis 39,17 (43,94 en 2024), Le Raincy 66,42, Bondy 60,67, Aulnay-sous-Bois 57,9. À Paris et en petite couronne, 102 budgets principaux sur 429 dépassent 30 jours ; au niveau national, 4 268 budgets principaux sur 58 170.",
+   "source_url": "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/delai-paiement-moyen-collectivites-2025/records",
+   "citation_exacte": "{\"code_departement_bc\":\"75\",\"libelle_departement_bc\":\"PARIS\",\"libelle_budget_collectivite\":\"REGION ILE DE FRANCE - PRINCIPAL\",\"code_insee\":23750007900312,\"type_budget_collectivite\":\"Région\",\"type_bc\":\"BP\",\"dgp_annuel_moyen\":70.98}",
+   "relu_sur_source_primaire": true,
+   "remarques": "DECP utilisées : data.economie.gouv.fr/…/decp-2022-marches-valides (720 384 lignes ; champs acheteur_id, titulaire_id_1, montant, datenotification). Le délai publié est une moyenne annuelle par budget, pas par fournisseur : il donne un ordre de grandeur. L'audit déconseille de nommer un acheteur public dans la communication : réserver ces données au ciblage interne.",
+   "valeur": "jointure SIRET exacte ; Région IDF à 70,98 j en 2025"
+  },
+  {
+   "sujet": "Données ouvertes : le délai de paiement de CHAQUE hôpital",
+   "affirmation": "Je n'ai trouvé aucune donnée ouverte du délai global de paiement par hôpital. Le fichier de la DGFiP sur les collectivités ne contient aucun hôpital : les 35 types de budget sont communes, CCAS, syndicats, SDIS, etc. Le rapport de l'Observatoire ne publie les hôpitaux que par tranche de taille. Recherches sans résultat : data.gouv.fr, data.economie.gouv.fr et data.ofgl.fr. Le plus proche est l'indicateur Hospi Diag F12_D « Dettes fournisseurs en nombre de jours d'exploitation », calculé par établissement, mais il s'arrête aux données 2015 sur data.gouv.fr (fiche publiée en 2017). Sur ScanSanté, Hospi Diag est remplacé par RepèrES, sans téléchargement en masse.",
+   "source_url": "https://static.data.gouv.fr/resources/hospi-diag/20170718-153946/Hospi-Diag_Fiches_techniques.pdf",
+   "citation_exacte": "Ce ratio permet de mesurer le délai moyen de paiement des dettes fournisseurs.",
+   "relu_sur_source_primaire": true,
+   "remarques": "Fiche data.gouv.fr : https://www.data.gouv.fr/datasets/hospi-diag (ANAP, fichiers xlsx de 2010 à 2015). F12_D se calcule comme le solde des dettes fournisseurs au 31/12 divisé par les achats et services extérieurs, multiplié par 365 : c'est un ratio de bilan, pas le délai global de paiement de la DGFiP. hospidiag.atih.sante.fr redirige vers scansante.fr/applications/hospidiag_supp, qui renvoie aux applications RepèrES et « Suivi financier ».",
+   "valeur": "aucune donnée par hôpital ; seulement 4 tranches de taille"
+  }
+ ],
+ "synthese": "Deux sondages, faits le 19/10/2026 sans rien modifier dans le dépôt.\n\n(1) Transport. Le registre des transports n'a ni API ni fiche sur data.gouv.fr. Le ministère publie en revanche trois ZIP/CSV nationaux, mis à jour le lundi et le jeudi, que j'ai téléchargés en direct : celui des marchandises est daté du 19/10. On y compte 47 392 transporteurs de marchandises, 12 578 de voyageurs et 9 777 commissionnaires. Chaque ligne donne le SIRET, la raison sociale, le code postal, la commune, le siège, le gestionnaire de transport, les licences et le nombre de copies conformes. Le nombre de copies donne à peu près la taille de la flotte. À Paris et en petite couronne, 5 017 transporteurs de marchandises ont entre 3 et 49 copies. Ce qui manque : l'adresse, le téléphone, le code NAF, la licence de réutilisation, et surtout le lien entre un sous-traitant et son commissionnaire. Il faudra donc joindre par SIREN avec l'API Recherche d'entreprises, que le CRM utilise déjà, et avec le BODACC pour repérer les commissionnaires en faillite.\n\n(2) Acheteurs publics. Le rapport 2025 de l'Observatoire des délais de paiement donne pour les hôpitaux publics 70,2 jours en métropole, 71,3 au niveau national et 130,6 en outre-mer, pour un plafond de 50. Le communiqué de la Banque de France présente à tort 71,3 comme le chiffre métropolitain. En métropole, 50,7 % des paiements des hôpitaux dépassent 50 jours ; les hôpitaux de 20 à 150 M€ de recettes paient en 83 à 85 jours. Les collectivités, elles, paient en moyenne dans les règles : 19,3 jours au niveau national, 18,9 en métropole, et 15 % de paiements au-delà de 30 jours. L'État est à 15,9 jours, la Justice à 37,9. Il existe une donnée ouverte précieuse : le délai de paiement de chacun des 90 545 budgets de collectivité (DGFiP, Licence Ouverte, API Opendatasoft), qui se joint exactement aux DECP par SIRET. 9 873 budgets dépassent 30 jours ; la Région Île-de-France est à 70,98 jours en 2025, après 78,21 en 2024 et 85,24 en 2023. Aucune donnée ouverte par hôpital n'existe : seulement quatre tranches de taille, et l'ancien indicateur Hospi Diag F12_D qui s'arrête en 2015.\n\nFichiers de travail : C:\\Users\\jules\\AppData\\Local\\Temp\\claude\\C--Users-jules-Desktop-mycelium-chat\\86a29069-2d77-49e2-9723-98bd001bb051\\scratchpad\\transport\\ (CSV du registre, rapport de l'Observatoire en PDF et en texte, CSV des délais 2025) et ...\\scratchpad\\analyse-registre.mjs.",
+ "contradictions_avec_audit": [
+  "« Les hôpitaux paient en 71 jours en moyenne » (sections 2 et 13) : le chiffre est juste au niveau NATIONAL (71,3 j). En métropole, le rapport donne 70,2 j, et le communiqué cité par l'audit se trompe en appelant 71,3 le chiffre métropolitain. L'outre-mer est à 130,6 j. Pour le titre d'article « Hôpitaux : 71 jours pour payer », préciser « au niveau national » ou écrire « 70 jours en métropole ».",
+  "« Ce que vaut un client public » : l'audit applique 21 jours de retard (71 − 50) et 40 € à CHACUNE des 200 factures, soit 8 000 €. Or le délai publié est une moyenne non pondérée, et seuls 50,7 % des paiements des hôpitaux de métropole dépassent 50 jours. Avec la même hypothèse, l'indemnité tombe à environ 200 × 50,7 % × 40 € ≈ 4 060 €, la moitié du chiffre de l'audit. Pour les intérêts, le retard moyen réel sur l'ensemble des factures n'est pas publié : la moyenne seule ne permet ni de confirmer ni d'infirmer les 3 000 €.",
+  "« Extraire des DECP 50 titulaires de marchés d'hôpitaux et de collectivités » et « croisés avec le retard moyen de ces acheteurs » : en moyenne, les collectivités ne sont PAS en retard (18,9 j en métropole, sous le plafond de 30 j, et 15 % de paiements tardifs). Le croisement ne vaut donc qu'avec la donnée par budget de la DGFiP (9 873 budgets au-delà de 30 j). Pour les hôpitaux, aucune donnée par établissement n'existe : on ne peut croiser qu'avec la moyenne de la tranche de taille (53,7 à 85,1 j).",
+  "« Les annuaires du transport alimentent la prospection » et « lister 50 transporteurs sous-traitants » : le registre ne dit pas qui est sous-traitant de qui, et ne publie ni téléphone ni e-mail. Comme l'audit interdit lui-même les e-mails collectés dans des annuaires (règle CNIL qu'il cite), le registre sert à cibler, pas à contacter : téléphone à trouver ailleurs, et données personnelles (gestionnaire nommé) soumises au RGPD.",
+  "Le moteur de l'audit cite « l'hôpital ou la mairie » côte à côte. Les données placent le retard massif chez les hôpitaux (70 j pour 50 autorisés) et chez quelques collectivités repérables nommément (Région Île-de-France, communes de Seine-Saint-Denis, outre-mer), pas chez la collectivité moyenne."
+ ],
+ "questions_ouvertes": [
+  "Sous quelle licence se réutilisent les CSV du registre des transports ? La page ne l'affiche pas, elle répondait 503 le 19/10, et les fichiers ne sont pas sur data.gouv.fr. Le nom du gestionnaire de transport est une donnée personnelle, à traiter avec la DGITM ou un avocat avant tout import au CRM.",
+  "Une copie conforme correspond-elle toujours à un véhicule, avec le seuil de 3,5 t entre licence de transport intérieur et licence communautaire ? À relire sur un texte en vigueur (arrêté du 28/12/2011 modifié, règlement 1071/2009 révisé).",
+  "Le délai de paiement PAR hôpital peut-il s'obtenir ? Par une demande à la DGFiP, qui le calcule dans Hélios ligne par ligne, ou par un accès à « Suivi financier » ou RepèrES sur ScanSanté. À instruire : aucun jeu ouvert n'a été trouvé.",
+  "Faut-il pondérer par le montant ? La DGFiP fait une moyenne par ligne de mandat, quel que soit son montant. Si les grosses factures sont payées plus lentement ou plus vite, l'ordre de grandeur en euros de l'audit se décale ; les premiers dossiers réels trancheront.",
+  "Avant toute séquence, vérifier sur Légifrance le taux des intérêts moratoires (BCE + 8 points) et l'indemnité de 40 € dans la commande publique, ainsi que les articles R. 2192-10/11 et L. 2193-13 du CCP cités par le rapport, comme l'exige la règle « aucune valeur juridique en dur » du projet.",
+  "Le fichier de 2025 publie un délai par budget de collectivité, pas par facture. Prévoir dans le moteur la mention qu'il s'agit d'une moyenne annuelle de l'acheteur, pour ne pas présenter une estimation comme le retard réel d'un fournisseur."
+ ]
+}

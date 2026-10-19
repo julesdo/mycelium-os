@@ -1,0 +1,194 @@
+{
+ "verdicts": [
+  {
+   "affirmation": "(a) Article 1er, alinéa 1 de la loi 68-1250 : les créances sur l'État, les départements et les communes se prescrivent par quatre ans, à compter du 1er janvier de l'année qui suit celle où les droits ont été acquis (droits acquis en 2022 : délai du 1er janvier 2023 au 31 décembre 2026).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "toutes créances qui n'ont pas été payées dans un délai de quatre ans à partir du premier jour de l'année suivant celle au cours de laquelle les droits ont été acquis.",
+   "correction": "Relu sur Légifrance, page « EN VIGUEUR AU 19/10/2026 », article 1 « VERSION EN VIGUEUR DEPUIS LE 01/01/1969 ». Le texte dit « droits acquis ». L'audit écrit « naissance » (section 2) : ce n'est pas le mot de la loi. Le calcul 2023-2026 est juste."
+  },
+  {
+   "affirmation": "(a)/(e) Article 1er, alinéa 2 : la prescription ne couvre que les établissements publics dotés d'un comptable public.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "Sont prescrites, dans le même délai et sous la même réserve, les créances sur les établissements publics dotés d'un comptable public.",
+   "correction": ""
+  },
+  {
+   "affirmation": "(b) Article 2 : une demande de paiement ou une réclamation écrite adressée à l'autorité administrative interrompt la prescription si elle porte sur le fait générateur, l'existence, le montant ou le paiement de la créance, même adressée à une autre administration que celle qui paiera. Arrêt cité : CAA Lyon 18LY01075.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "Toute demande de paiement ou toute réclamation écrite adressée par un créancier à l'autorité administrative, dès lors que la demande ou la réclamation a trait au fait générateur, à l'existence, au montant ou au paiement de la créance, alors même que l'administration saisie n'est pas celle qui aura finalement la charge du règlement.",
+   "correction": "Les trois autres actes interruptifs sont relus à l'identique (recours même devant un juge incompétent, communication écrite de l'administration, émission d'un moyen de règlement). L'extrait de la CAA Lyon est exact, point 10 : « a rappelé à l'établissement qu'il lui devait encore, au mépris du délai de paiement prévu par la convention, des sommes importantes dont elle lui avait demandé le paiement à plusieurs reprises ». La lettre parlait du principal, et la cour l'a jugée interruptive pour les intérêts."
+  },
+  {
+   "affirmation": "(b) Article 2 : tout moyen de règlement émis par l'administration interrompt la prescription, même s'il ne paie qu'une partie de la créance.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "Toute émission de moyen de règlement, même si ce règlement ne couvre qu'une partie de la créance ou si le créancier n'a pas été exactement désigné.",
+   "correction": "Je n'ai pas non plus trouvé de décision qui dise si le paiement du principal interrompt la prescription des intérêts moratoires de la même facture. Ce point reste ouvert."
+  },
+  {
+   "affirmation": "(b) Article 2 : après une interruption, un nouveau délai de quatre ans court du 1er janvier de l'année suivante. Après un recours en justice, il court du 1er janvier de l'année qui suit la décision passée en force de chose jugée. Réclamation envoyée en 2026 : nouveau délai du 1er janvier 2027 au 31 décembre 2030.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "Un nouveau délai de quatre ans court à compter du premier jour de l'année suivant celle au cours de laquelle a eu lieu l'interruption. Toutefois, si l'interruption résulte d'un recours juridictionnel, le nouveau délai court à partir du premier jour de l'année suivant celle au cours de laquelle la décision est passée en force de chose jugée.",
+   "correction": "Le calcul 2027-2030 découle bien du texte."
+  },
+  {
+   "affirmation": "(b) Article 2-1 : une médiation suspend la prescription, six mois au plus. Seules les médiations du code de justice administrative sont concernées.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "La suspension de la prescription ne peut excéder une durée de six mois.",
+   "correction": "Version en vigueur depuis le 20/11/2016 (loi n° 2016-1547, art. 5). Le dernier alinéa le limite au « chapitre III du titre Ier du livre II du code de justice administrative ». L'article ajoute ceci : à la fin de la médiation, le délai recourt pour six mois au moins."
+  },
+  {
+   "affirmation": "(c) Article 3 : la prescription ne court pas contre le créancier qui ne peut pas agir, ni contre celui qui peut être légitimement regardé comme ignorant l'existence de sa créance.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "La prescription ne court ni contre le créancier qui ne peut agir, soit par lui-même ou par l'intermédiaire de son représentant légal, soit pour une cause de force majeure, ni contre celui qui peut être légitimement regardé comme ignorant l'existence de sa créance ou de la créance de celui qu'il représente légalement.",
+   "correction": "Je n'ai pas non plus trouvé de décision sur l'ignorance du droit aux intérêts moratoires."
+  },
+  {
+   "affirmation": "(b) Article 6 : l'administration ne peut pas renoncer à la prescription. Les collectivités et les établissements publics peuvent relever le créancier par une délibération motivée.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "Les autorités administratives ne peuvent renoncer à opposer la prescription qui découle de la présente loi.",
+   "correction": "Version en vigueur depuis le 22/03/2015 (loi n° 2013-403, art. 1). L'État peut lui aussi relever un créancier, par décision des autorités compétentes (alinéa 2). Pour les collectivités et les établissements publics (alinéa 3), les délibérations « doivent être motivées et être approuvées par l'autorité compétente pour approuver le budget de la collectivité intéressée »."
+  },
+  {
+   "affirmation": "(b) Article 7 : l'administration doit invoquer la prescription avant que le juge de première instance se soit prononcé sur le fond.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000878035",
+   "citation_exacte": "L'Administration doit, pour pouvoir se prévaloir, à propos d'une créance litigieuse, de la prescription prévue par la présente loi, l'invoquer avant que la juridiction saisie du litige au premier degré se soit prononcée sur le fond.",
+   "correction": "L'alinéa 2 ajoute que la prescription ne peut jamais être opposée à l'exécution d'une décision passée en force de chose jugée."
+  },
+  {
+   "affirmation": "(b) La date d'envoi fait foi : le Conseil d'État retient le cachet de la poste et non la date de réception. Une demande postée le 29 décembre 2006 et reçue le 2 janvier 2007 a interrompu le délai à temps (CE, 5 octobre 2015, n° 384884, publié au Lebon).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000031274355",
+   "citation_exacte": "d'après le cachet de la poste, l'intéressé avait adressé sa demande au ministre chargé de l'agriculture le 29 décembre 2006, la cour administrative d'appel de Bordeaux n'a pas commis d'erreur de droit en se fondant sur les dispositions de l'article 16 de la loi du 12 avril 2000 pour écarter l'exception de prescription quadriennale opposée par l'administration à cette demande, qu'elle n'avait reçue que le 2 janvier 2007",
+   "correction": "Point oublié : l'arrêt applique l'ancien article 16, que le Conseil d'État cite et qui excluait « les procédures régies par le code des marchés publics », donc plus que la seule attribution. La décision de 2015 ne peut pas être transposée telle quelle à un fournisseur. Pour une réclamation d'aujourd'hui, c'est l'article L112-1 du CRPA qui s'applique (fait suivant). L'affaire était une demande d'indemnité d'un agent."
+  },
+  {
+   "affirmation": "(b) Article L112-1 du CRPA : le cachet de la poste fait foi pour une demande envoyée à une administration. Seules les procédures d'attribution des contrats et celles qui exigent la présence du demandeur sont exclues.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000031366350/LEGISCTA000031367329",
+   "citation_exacte": "Toute personne tenue de respecter une date limite ou un délai pour présenter une demande, déposer une déclaration, exécuter un paiement ou produire un document auprès d'une administration peut satisfaire à cette obligation au plus tard à la date prescrite au moyen d'un envoi de correspondance, le cachet apposé par les prestataires de services postaux autorisés au titre de l'article L. 3 du code des postes et des communications électroniques faisant foi.",
+   "correction": "Version en vigueur depuis le 01/01/2016. L'exclusion 1° vise mot pour mot « Aux procédures d'attribution des contrats administratifs ayant pour objet l'exécution de travaux, la livraison de fournitures ou la prestation de services [...] ». Limite oubliée : l'article L100-3 du CRPA (https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000031367308) réserve le mot « administration » à l'État, aux collectivités, à « leurs établissements publics administratifs » et aux organismes « chargés d'une mission de service public administratif ». Un EPIC qui agit pour un service industriel ou commercial peut donc échapper à la règle du cachet de la poste. Pour un hôpital ou une commune, elle s'applique. Je n'ai pas vérifié le régime des envois électroniques."
+  },
+  {
+   "affirmation": "(d) Article R2192-32 du code de la commande publique : les intérêts moratoires d'un marché public courent jusqu'à la mise en paiement du principal, ce jour inclus.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038808532",
+   "citation_exacte": "Les intérêts moratoires courent à compter du lendemain de l'expiration du délai de paiement ou de l'échéance prévue par le marché jusqu'à la date de mise en paiement du principal incluse.",
+   "correction": "Version en vigueur depuis le 22/07/2019 (décret n° 2019-748). Dire que le montant n'est connu qu'au paiement est une déduction du texte. Aucune décision ne s'en sert pour fixer l'année où les droits sont acquis, et la CAA Lyon retient au contraire l'année des prestations."
+  },
+  {
+   "affirmation": "Barème public, article R2192-31 du code de la commande publique : taux BCE majoré de huit points, le taux BCE étant celui du premier jour du semestre où les intérêts ont commencé à courir.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037729653",
+   "citation_exacte": "Le taux des intérêts moratoires mentionnés à l'article L. 2192-13 est égal au taux d'intérêt appliqué par la Banque centrale européenne à ses opérations principales de refinancement les plus récentes, en vigueur au premier jour du semestre de l'année civile au cours duquel les intérêts moratoires ont commencé à courir, majoré de huit points de pourcentage.",
+   "correction": "Version en vigueur depuis le 01/04/2019 (décret n° 2018-1075). Je n'ai relu ni l'indemnité de 40 € ni le délai de 50 jours des établissements publics de santé."
+  },
+  {
+   "affirmation": "(d) CAA Lyon, 4e ch., 6 février 2020, n° 18LY01075 (CH d'Avallon) : pour les intérêts de factures payées en retard, la prescription se rattache à l'année des prestations. La lettre du 31 juillet 2015 interrompt le délai pour 2011, déjà échu pour 2010. Les intérêts de 2011 sont dus sans demande préalable. Arrêt jumeau : n° 18LY01078 (CH de Clamecy).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000041569282",
+   "citation_exacte": "Ainsi, contrairement à ce qu'a jugé le tribunal, le délai de prescription pour les prestations réalisées en 2011 a été interrompu par ce courrier qui en revanche n'a pas eu pour effet de proroger ce délai, déjà échu, pour les prestations réalisées en 2010.",
+   "correction": "Le point 11 dit bien « alors même que cette dernière n'en avait pas fait la demande préalable ». L'arrêt jumeau 18LY01078 (CETATEXT000041569284, point 9) porte le même motif mot pour mot. Ce sont deux arrêts inédits, et la cour n'explique pas pourquoi elle choisit l'année des prestations. Ils jugent l'ancien régime : article 98 de l'ancien code des marchés publics, taux légal majoré de deux points."
+  },
+  {
+   "affirmation": "(d) Le tribunal administratif de Dijon avait accordé les seuls intérêts échus à partir du 1er janvier 2012, c'est-à-dire une prescription des intérêts période par période. La CAA Lyon a réformé ce jugement.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000041569282",
+   "citation_exacte": "les intérêts moratoires échus entre le 1er janvier 2012 et la date de règlement des prestations réalisées par la société",
+   "correction": "La phrase figure dans la procédure antérieure et au point 1 de l'arrêt. Le jugement lui-même n'est pas lu."
+  },
+  {
+   "affirmation": "(d) CE, 11 février 2005, n° 249211, mentionné aux Tables : pour une maîtrise d'œuvre à rémunération forfaitaire, les droits sont acquis quand l'architecte établit son projet de décompte. Le délai part du 1er janvier suivant, même si le décompte général vient plus tard.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000008225658",
+   "citation_exacte": "s'agissant d'une créance résultant d'un marché de maîtrise d'oeuvre comportant une rémunération forfaitaire, la cour a pu juger, sans commettre d'erreur de droit, que le délai de prescription avait commencé à courir dès le 1er janvier 1987",
+   "correction": "Le Conseil d'État juge en cassation (« la cour a pu juger ») : le projet de décompte final du 31 octobre 1986 fait courir le délai, même si le décompte général n'a été établi que le 28 novembre 1996."
+  },
+  {
+   "affirmation": "(d) CAA Versailles, 5e ch., 6 juillet 2023, n° 20VE02063 (Bagnolet) : les intérêts sur des notes d'honoraires payées en retard depuis 2010 ne sont pas prescrits. Les droits étaient acquis au projet de décompte du 30 septembre 2015, le délai partait du 1er janvier 2016, et 63 759,58 € ont été accordés.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000047800282",
+   "citation_exacte": "Alors même que cette note d'honoraires ne faisait pas mention des intérêts moratoires sur les acomptes, le droit au paiement des sommes dues par la commune en exécution du marché de maîtrise d'œuvre qui comportait une rémunération forfaitaire était acquis au 30 septembre 2015 et le délai de prescription quadriennale a commencé à courir le 1er janvier 2016.",
+   "correction": "Le montant de 63 759,58 € figure aux points 14 et 15 et à l'article 3. La commune soutenait que les intérêts des factures du 25 septembre 2012 et d'avant étaient prescrits, et la cour l'a écarté. Cette solution vaut pour un marché soldé par décompte (maîtrise d'œuvre forfaitaire). Elle ne s'étend pas d'elle-même aux fournitures payées facture par facture."
+  },
+  {
+   "affirmation": "(d) CAA Douai, 3e ch., 1er octobre 2026, n° 24DA01235 (CH de Cambrai) : toutes les opérations d'exécution d'un marché entrent dans un compte unique, et seul le décompte général et définitif fixe les droits des parties.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000054946440",
+   "citation_exacte": "L'ensemble des opérations auxquelles donne lieu l'exécution d'un marché public est compris dans un compte dont aucun élément ne peut être isolé et dont seul le solde arrêté lors de l'établissement du décompte général et définitif détermine les droits et obligations définitifs des parties.",
+   "correction": "La remarque du chercheur est incomplète. Le tribunal datait bien les droits du 11 mars 2019 et faisait courir le délai au 1er janvier 2020 (point 6). La cour, elle, raisonne autrement (point 27) : payer des acomptes ne fait pas courir le délai, les travaux s'achèvent en 2015, et la prescription « n'était donc échue qu'au 31 décembre 2019 ». Elle a été interrompue par le mémoire en réclamation du 5 août 2019 et le référé-provision du 28 octobre 2019. Le point 26 reprend la règle du CE de 2005. La phrase citée parle de tout « marché public » : la réserver aux travaux est une lecture du chercheur."
+  },
+  {
+   "affirmation": "(d) CAA Douai, 3e ch., 23 mars 2023, n° 21DA00966 : une créance se rattache à l'année où le créancier a pu la chiffrer, ce qui la rend liquide et exigible.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000047370788",
+   "citation_exacte": "Il résulte de ces stipulations que la créance de la société SNCF Réseau doit être regardée comme se rattachant à l'exercice au cours duquel elle a été en mesure d'établir le relevé de dépenses final en fonction des dépenses réellement engagées, rendant ainsi la créance liquide et exigible.",
+   "correction": "La citation est exacte, mais l'affirmation en tire une règle générale que l'arrêt ne pose pas. La cour déduit ce rattachement « de ces stipulations », c'est-à-dire de l'article 8.2.1 d'une convention de financement (relevé de dépenses final après achèvement), puis fixe le point de départ « au plus tôt au 1er janvier 2016 ». C'est une interprétation du contrat, pas un principe. L'appliquer aux intérêts moratoires reste une déduction, comme le chercheur le reconnaît."
+  },
+  {
+   "affirmation": "(d) CE, 7e-2e ch. réunies, 13 novembre 2025, n° 496679 (SIMOUV) : les intérêts moratoires complémentaires sont l'accessoire de la demande d'intérêts moratoires. L'administration qui n'a pas opposé la prescription en première instance ne peut plus le faire en appel.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000052574351",
+   "citation_exacte": "cette demande de versement des intérêts moratoires complémentaires doit être regardée comme ne constituant que l'accessoire de la demande de versement des intérêts moratoires formulée par le groupement d'entreprises devant les premiers juges.",
+   "correction": "Décision inédite. Elle ne dit pas en quelle année les intérêts sont acquis. Le commentaire du cabinet Landot (10/12/2025) n'en dit pas plus."
+  },
+  {
+   "affirmation": "(d) CE Section, 25 juin 2004, n° 234687 (Filippini), publié au Lebon : la prescription quadriennale opposée aux intérêts moratoires antérieurs au 31 décembre 1989 est validée, sans que la décision dise comment se fixe l'année d'acquisition. Elle peut être opposée dans un mémoire en référé-provision.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000008194250",
+   "citation_exacte": "la cour, en jugeant que le syndicat avait valablement opposé la prescription quadriennale pour les créances d'intérêts moratoires antérieures au 31 décembre 1989 dans un mémoire produit devant le tribunal administratif de Bastia, le 1er mars 1995 dans le cadre de l'instruction d'une requête en référé",
+   "correction": "Le Conseil d'État ne contrôle que la manière dont l'exception a été opposée (article 7), pas le fond de la prescription. Il précise qu'elle n'a pas à figurer dans un mémoire de l'instance au fond."
+  },
+  {
+   "affirmation": "(e) Les comptables des établissements publics de santé sont des comptables publics de l'État : ces établissements remplissent la condition de l'article 1er, alinéa 2.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000045404735",
+   "citation_exacte": "Les comptables des établissements publics de santé sont des comptables publics de l'Etat ayant qualité de comptable principal.",
+   "correction": "Article L6145-8 du code de la santé publique, version en vigueur depuis le 01/01/2023 (ordonnance n° 2022-408). Que la loi de 1968 s'applique aux hôpitaux publics se déduit des deux textes, et les arrêts relus l'appliquent à des centres hospitaliers (Avallon, Clamecy, Cambrai)."
+  },
+  {
+   "affirmation": "(e) Le décret GBCP applique son titre Ier aux personnes publiques qui ne sont pas des administrations publiques (EPIC notamment), sauf si leurs statuts en disposent autrement. Un EPIC n'est donc couvert que s'il a un comptable public, ce qui se vérifie dans ses statuts.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000026597003",
+   "citation_exacte": "6° Les personnes morales de droit public ne relevant pas de la catégorie des administrations publiques, sauf si leurs statuts en disposent autrement ;",
+   "correction": "Article 1er en vigueur depuis le 01/01/2024 (décret n° 2023-14). L'article 5 écarte le décret entier pour certains organismes, dont les chambres de commerce et d'industrie, l'INA et la Monnaie de Paris. Juridiquement, cette dérogation porte sur le 4° de l'article 1er et sur l'article 3, pas sur le 6°. Je n'ai lu aucune décision sur un EPIC en particulier."
+  },
+  {
+   "affirmation": "(e) Une chambre de commerce et d'industrie sans comptable public ne peut pas opposer la prescription quadriennale (CAA Marseille, 11 janvier 2010, n° 07MA01971).",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000021924510",
+   "citation_exacte": "la chambre de commerce et d'industrie de Marseille-Provence, qui n'est pas dotée d'un comptable public et ne peut par suite opposer la prescription quadriennale prévue à l'article 1er de la loi du 31 décembre 1968, peut, même pour la première fois en appel, opposer la prescription décennale",
+   "correction": "Arrêt inédit, dans une affaire de responsabilité extracontractuelle (nuisances d'aéroport), pas de marché."
+  },
+  {
+   "affirmation": "(e) Une SEM locale est une société anonyme de droit commercial. N'étant ni l'État, ni une collectivité, ni un établissement public, elle échappe à la loi de 1968.",
+   "verdict": "CORRIGE",
+   "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000045213755",
+   "citation_exacte": "1° La société revêt la forme de société anonyme régie par le livre II du code de commerce, sous réserve des dispositions du présent titre ;",
+   "correction": "Seule la forme de société anonyme est établie par le texte (L1522-1 du CGCT, en vigueur depuis le 23/02/2022). Que la loi de 1968 ne s'applique pas reste une déduction : aucune décision trouvée. Surtout, elle ne vaut pas quand la SEM passe le marché « au nom et pour le compte » d'une collectivité, par mandat. La dette est alors celle de la collectivité, à qui la prescription quadriennale profite. Exemple : CAA Bordeaux, ordonnance du 15 mai 2019, n° 18BX04367 (https://www.legifrance.gouv.fr/ceta/id/CETATEXT000038481441), points 1 et 3. La Semsamar, « mandataire de la commune de Sainte-Rose », y oppose la prescription quadriennale, et le juge la retient. Avant d'appliquer le droit commun, il faut donc regarder qui est maître d'ouvrage."
+  },
+  {
+   "affirmation": "Le lien Weka de l'audit renvoie à une brève du 19/06/2019 : un solde et des intérêts éteints faute d'acte interruptif. Elle cite une ordonnance de la CAA de Bordeaux et ne dit rien de l'année d'acquisition des intérêts.",
+   "verdict": "CONFIRME",
+   "source_url": "https://www.weka.fr/actualite/execution-des-marches/breve_juridique/la-prescription-quadriennale-eteint-les-demandes-de-paiement-du-titulaire-d-un-marche-84579/",
+   "citation_exacte": "Texte de référence : CAA de Bordeaux, 15 mai 2019, n° 18BX04367, Inédit au recueil Lebon",
+   "correction": "Le lien de l'audit (weka.fr/actualite/?p=84579) mène bien à cette brève, « Publiée le 19/06/19 ». J'ai relu son texte brut : elle ne parle d'aucune année d'acquisition ni d'intérêts « nés en » une année. Sur Légifrance (CETATEXT000038481441), la décision est une ordonnance du juge des référés (« ORDONNE », « la présente ordonnance »). Elle juge seulement que la créance « ne peut pas être regardée comme non sérieusement contestable » : elle ne la déclare pas éteinte, et la brève force le trait. La prescription y est opposée par une SEM mandataire de la commune. Cette source ne fonde pas l'affirmation de l'audit sur les intérêts de 2022."
+  },
+  {
+   "affirmation": "État du dépôt : le code de Letikette ne contient aucune référence à la loi 68-1250, à la prescription quadriennale ni à « 1968 ».",
+   "verdict": "CONFIRME",
+   "source_url": "C:\\Users\\jules\\Desktop\\mycelium-chat\\src",
+   "citation_exacte": "No matches found",
+   "correction": "Recherche refaite sans tenir compte de la casse (68-1250|quadriennal|1968) : rien dans src/, rien non plus dans tout le dépôt hors node_modules. Rien non plus sur le barème public : aucune occurrence de R2192, « commande publique » ni « personne publique » dans src/lib/verticales/recouvrement/. Le seul « intérêts moratoires » est un mot de parametres.ts (l. 916), sans lien avec le secteur public."
+  }
+ ],
+ "synthese": "J'ai relu les 27 faits sur la source primaire, au 19/10/2026 : Légifrance par le navigateur intégré (curl y renvoie une erreur 403), et la brève Weka en texte brut. Rien n'est réfuté. 25 faits sont confirmés et 2 sont corrigés.\n\n**Les deux corrections :**\n- **CAA Douai, 21DA00966 :** la cour ne pose pas une règle générale. Elle interprète une convention de financement (« Il résulte de ces stipulations »).\n- **SEM :** que la loi de 1968 ne s'applique pas aux SEM n'est qu'une déduction. Elle tombe quand la SEM contracte au nom d'une collectivité, par mandat : la commune peut alors opposer la prescription quadriennale (CAA Bordeaux, ordonnance 18BX04367).\n\n**Des faits confirmés, mais à nuancer :**\n- **CE 384884 :** il applique l'ancien article 16 de la loi de 2000, qui excluait toutes les procédures du code des marchés publics. Il ne se transpose donc pas tel quel à un fournisseur.\n- **Cachet de la poste (article L112-1 du CRPA) :** l'article L100-3 limite le mot « administration ». Un EPIC qui gère un service industriel ou commercial peut y échapper. La règle s'applique aux hôpitaux publics et aux collectivités.\n- **CAA Douai, 24DA01235 :** la cour date elle-même la fin du délai au 31/12/2019, autrement que le tribunal (11/03/2019, puis délai à partir du 1er janvier 2020).\n- **CAA Bordeaux, ordonnance 18BX04367 (la source Weka) :** c'est une ordonnance de référé-provision. Elle juge la créance « sérieusement contestable », elle ne la déclare pas éteinte.\n\n**Ce que cela change pour l'audit :**\n- **Le point de départ :** la loi dit « droits acquis », pas « naissance ».\n- **Le 31/12/2026 pour les intérêts de 2022 :** cette date ne tient que dans une lecture, celle de deux arrêts inédits de la CAA Lyon, qui rattachent le délai à l'année des prestations pour des factures payées une à une. Aucune décision du Conseil d'État ne la tranche.\n- **Les marchés soldés par décompte :** la jurisprudence fait partir le délai plus tard (CE 2005, CAA Versailles 2023).\n- **L'argument de clôture tient :** une réclamation écrite avant le 31 décembre interrompt bien la prescription (article 2). Le cachet de la poste fait foi devant les hôpitaux et les collectivités.\n\nLe dépôt ne contient encore rien sur cette loi ni sur le barème public."
+}
