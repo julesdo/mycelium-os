@@ -15,7 +15,11 @@ import {
 } from '../../screens/admin/prospects';
 import { EcranFicheProspect, type DonneesFicheProspect } from '../../screens/admin/fiche-prospect';
 import { ParcoursImport } from '../../screens/admin/import';
-import { ParcoursTrouver, type EntrepriseAffichee } from '../../screens/admin/trouver';
+import {
+	ParcoursTrouver,
+	type EntrepriseAffichee,
+	type PageDecpTrouvee
+} from '../../screens/admin/trouver';
 import { EcranTaches } from '../../screens/admin/taches';
 import { EcranAppels, type FileDAppels } from '../../screens/admin/appels';
 import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
@@ -452,12 +456,46 @@ const TROUVEES_DEMO: readonly EntrepriseAffichee[] = [
 	}
 ];
 
+const TITULAIRES_DEMO: PageDecpTrouvee['titulaires'] = [
+	{
+		siren: '812698512',
+		siret: '81269851200041',
+		nom: 'NETTOYAGE DU VAL',
+		departement: '93',
+		marches: 7,
+		nombreDAcheteurs: 3,
+		acheteurs: ['CH DE SAINT-DENIS', 'AP-HP', 'CHI DE MONTREUIL'],
+		plafondCentimes: 184_000_000n,
+		dernierMarche: '2026-09-14',
+		connue: false
+	},
+	{
+		siren: '414488171',
+		siret: '41448817100045',
+		nom: 'SANTE LOGISTIQUE',
+		departement: '92',
+		marches: 2,
+		nombreDAcheteurs: 1,
+		acheteurs: ['CH DE NANTERRE'],
+		plafondCentimes: 32_000_000n,
+		dernierMarche: '2026-06-02',
+		connue: true
+	}
+];
+
 function DemoTrouver() {
 	return (
 		<ParcoursTrouver
 			onFermer={RIEN}
 			onChercher={async () => ({ pages: 90, derniere: 1, entreprises: TROUVEES_DEMO })}
 			onAjouter={async (_s, _z, e) => ({ importes: e.length, ecartes: 0 })}
+			onChercherDecp={async () => ({
+				pages: 32,
+				derniere: 3,
+				nonDiffusibles: 2,
+				titulaires: TITULAIRES_DEMO
+			})}
+			onAjouterDecp={async (_a, _z, t) => ({ importes: t.length, ecartes: 0, horsZone: 0 })}
 		/>
 	);
 }

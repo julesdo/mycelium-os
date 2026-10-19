@@ -19,6 +19,8 @@ import type * as admin_brouillon from "../admin/brouillon.js";
 import type * as admin_brouillonLecture from "../admin/brouillonLecture.js";
 import type * as admin_comptes from "../admin/comptes.js";
 import type * as admin_compteurs from "../admin/compteurs.js";
+import type * as admin_decp from "../admin/decp.js";
+import type * as admin_decpEcriture from "../admin/decpEcriture.js";
 import type * as admin_entretien from "../admin/entretien.js";
 import type * as admin_enveloppe from "../admin/enveloppe.js";
 import type * as admin_equipe from "../admin/equipe.js";
@@ -180,6 +182,8 @@ declare const fullApi: ApiFromModules<{
   "admin/brouillonLecture": typeof admin_brouillonLecture;
   "admin/comptes": typeof admin_comptes;
   "admin/compteurs": typeof admin_compteurs;
+  "admin/decp": typeof admin_decp;
+  "admin/decpEcriture": typeof admin_decpEcriture;
   "admin/entretien": typeof admin_entretien;
   "admin/enveloppe": typeof admin_enveloppe;
   "admin/equipe": typeof admin_equipe;

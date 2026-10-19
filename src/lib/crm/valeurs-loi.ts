@@ -58,6 +58,7 @@ export function valeursDeLaLoi(jour: string): ValeursDeLaLoi {
 		taux,
 		delaiTransport: REGIMES_PRESCRIPTION.TRANSPORT_MARCHANDISES.dureeAnnees,
 		delaiGeneral: REGIMES_PRESCRIPTION.GENERAL.dureeAnnees,
+		publiques: valeursPubliques(jour),
 		exemple
 	};
 }

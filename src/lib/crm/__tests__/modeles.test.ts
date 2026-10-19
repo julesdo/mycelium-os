@@ -246,3 +246,49 @@ describe('le lien', () => {
 		expect(batiment.corps).toContain('/secteurs/batiment?utm_source=manuel');
 	});
 });
+
+describe('le fournisseur public (19/10/2026, audit, lot 5)', () => {
+	const FOURNISSEUR = {
+		entreprise: 'NETTOYAGE DU VAL',
+		dirigeant: 'Karim Benali',
+		cible: 'PME' as const,
+		parcours: 'FOURNISSEUR_PUBLIC' as const,
+		trouveOu: 'Données de la commande publique (data.gouv.fr), le 19/10/2026',
+		jetonDesinscription: 'jeton-val'
+	};
+	const SIGNE = { prenom: 'Jules', fondateur: true };
+	const loi = valeursDeLaLoi('2026-10-19');
+
+	it('se choisit sur le parcours', () => {
+		expect(modeleDe(FOURNISSEUR)).toBe('FOURNISSEUR_PUBLIC');
+	});
+
+	it('dit la date butoir comme une lecture, et ce qui l’interrompt, sans rien enjoindre', () => {
+		const { objet, corps } = composerEmail({
+			prospect: FOURNISSEUR,
+			etape: 'PREMIER',
+			signataire: SIGNE,
+			loi
+		});
+		const p = loi.publiques!;
+		expect(objet).toContain(String(p.anneeQuiSePrescrit));
+		expect(corps).toContain('peuvent se prescrire');
+		expect(corps).toContain(p.dernierJour);
+		expect(corps).toMatch(/interrompt/);
+		expect(corps).toContain('/secteurs/fournisseurs-publics');
+		expect(corps).not.toMatch(/il faut|vous devez|vous devriez|vous allez perdre/i);
+		// Les données de la commande publique nomment l'entreprise, pas son adresse e-mail.
+		expect(corps).toContain('[où vous avez trouvé son adresse');
+	});
+
+	it('relance deux fois, puis se tait', () => {
+		const relance = composerEmail({
+			prospect: FOURNISSEUR,
+			etape: 'RELANCE_1',
+			signataire: SIGNE,
+			loi
+		});
+		expect(relance.objet.startsWith('Re : ')).toBe(true);
+		expect(relance.corps).toMatch(/acheteurs publics/);
+	});
+});

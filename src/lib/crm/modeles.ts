@@ -1,6 +1,9 @@
 import { majorationLisible } from '../verticales/recouvrement/pays/france/taux';
 import { jourDeParis } from '../admin/dates';
 import type { Cible } from './statuts';
+import type { Parcours } from './parcours';
+import type { ValeursPubliques } from './valeurs-loi';
+import { majorationPubliqueLisible } from '../verticales/recouvrement/pays/france/commande-publique';
 import { lienDeDesinscription, piedLegal, sourceDeLAdresse } from './consentement';
 
 /**
@@ -31,9 +34,11 @@ export interface ValeursDeLaLoi {
 	readonly delaiGeneral: number;
 	/** « 6 000 € » : l'exemple des 100 factures, calculé par le moteur. */
 	readonly exemple: string | null;
+	/** Le barème public du jour, pour un fournisseur d'hôpitaux ou de collectivités. */
+	readonly publiques?: ValeursPubliques;
 }
 
-export type Modele = 'TRANSPORT' | 'BATIMENT_SERVICES' | 'CABINET';
+export type Modele = 'TRANSPORT' | 'BATIMENT_SERVICES' | 'CABINET' | 'FOURNISSEUR_PUBLIC';
 export type EtapeDEcriture = 'PREMIER' | 'RELANCE_1' | 'RELANCE_2' | 'FINI';
 
 export const LIBELLES_DES_ETAPES: Record<Exclude<EtapeDEcriture, 'FINI'>, string> = {
@@ -45,7 +50,8 @@ export const LIBELLES_DES_ETAPES: Record<Exclude<EtapeDEcriture, 'FINI'>, string
 export const LIBELLES_DES_MODELES: Record<Modele, string> = {
 	TRANSPORT: 'Transport',
 	BATIMENT_SERVICES: 'Bâtiment et services',
-	CABINET: 'Cabinet comptable'
+	CABINET: 'Cabinet comptable',
+	FOURNISSEUR_PUBLIC: 'Fournisseur public'
 };
 
 /** Après chaque envoi, la prochaine action et dans combien de jours (§ 1 de la routine). */
@@ -63,6 +69,8 @@ interface ProspectAEcrire {
 	readonly dirigeant?: string;
 	readonly activite?: string;
 	readonly cible: Cible;
+	/** Le parcours de prospection : un fournisseur public a son modèle. */
+	readonly parcours?: Parcours;
 	/** D'où vient le contact : le pied en tire la source de l'adresse. */
 	readonly trouveOu?: string;
 	readonly jetonDesinscription?: string;
@@ -79,7 +87,12 @@ function codeDActivite(activite: string | undefined): string {
 	return m?.[1] ?? '';
 }
 
-export function modeleDe(p: { readonly cible: Cible; readonly activite?: string }): Modele {
+export function modeleDe(p: {
+	readonly cible: Cible;
+	readonly activite?: string;
+	readonly parcours?: Parcours;
+}): Modele {
+	if (p.parcours === 'FOURNISSEUR_PUBLIC') return 'FOURNISSEUR_PUBLIC';
 	const code = codeDActivite(p.activite);
 	if (p.cible === 'CABINET' || code === '69.20Z') return 'CABINET';
 	if (code.startsWith('49.41')) return 'TRANSPORT';
@@ -97,6 +110,7 @@ export function etapeDEcriture(emailsEcrits: number): EtapeDEcriture {
 function campagneDe(modele: Modele, activite: string | undefined): string {
 	if (modele === 'TRANSPORT') return 'transport';
 	if (modele === 'CABINET') return 'cabinet';
+	if (modele === 'FOURNISSEUR_PUBLIC') return 'public';
 	return /^4[123]\./.test(codeDActivite(activite)) ? 'batiment' : 'services';
 }
 
@@ -105,7 +119,8 @@ const PAGES_DES_CAMPAGNES: Readonly<Record<string, string>> = {
 	transport: '/secteurs/transport-routier',
 	batiment: '/secteurs/batiment',
 	services: '/secteurs/services-aux-entreprises',
-	cabinet: '/'
+	cabinet: '/',
+	public: '/secteurs/fournisseurs-publics'
 };
 
 /** Le lien du calculateur, avec sa source : on saura d'où vient l'inscription. */
@@ -179,6 +194,11 @@ function objetPremier(modele: Modele, loi: ValeursDeLaLoi): string {
 		return `Vos factures de transport et le délai ${delaiDe(loi.delaiTransport)}`;
 	}
 	if (modele === 'CABINET') return 'Les impayés de vos clients';
+	if (modele === 'FOURNISSEUR_PUBLIC') {
+		return loi.publiques === undefined
+			? 'Les pénalités de retard de vos acheteurs publics'
+			: `Vos factures publiques de ${loi.publiques.anneeQuiSePrescrit} payées en retard`;
+	}
 	return loi.indemnite === null
 		? 'Ce que la loi ajoute à chaque facture payée en retard'
 		: `Les ${loi.indemnite} de chaque facture payée en retard`;
@@ -215,6 +235,7 @@ function corpsPremier(modele: Modele, p: ProspectAEcrire, loi: ValeursDeLaLoi, l
 			`Est-ce un sujet chez ${nom} ?`
 		];
 	}
+	if (modele === 'FOURNISSEUR_PUBLIC') return corpsPublic(p, loi, lien);
 	if (modele === 'CABINET') {
 		return [
 			`Vous voyez passer les retards de paiement de vos clients dans leurs balances, sans avoir grand-chose à leur proposer. Je développe Letikette, à Paris : le logiciel lit leurs factures, chiffre ce que la loi y ajoute (${loi.indemnite ?? 'une indemnité forfaitaire'} par facture payée en retard et les pénalités), surveille les délais pour agir et envoie les relances au nom de votre client, sans commission sur ce qui rentre.`,
@@ -228,6 +249,41 @@ function corpsPremier(modele: Modele, p: ProspectAEcrire, loi: ValeursDeLaLoi, l
 		'Je développe Letikette, à Paris : le logiciel lit vos factures, chiffre ce qui vous est dû au centime, et envoie les relances à votre nom quand vous l’avez décidé. Sans commission sur ce qui rentre : tout est à vous.',
 		`Le calcul sur vos chiffres prend une minute, sans inscription : ${lien}`,
 		'Avez-vous en ce moment des factures qui tardent à être payées ?'
+	];
+}
+
+/**
+ * LE FOURNISSEUR D'HÔPITAUX OU DE COLLECTIVITÉS (19/10/2026, audit, lot 5) : le barème
+ * public, la date butoir comme une LECTURE (« peuvent se prescrire ») et ce qui
+ * l'interrompt, comme un texte ; jamais une injonction (décision 9). Les données de la
+ * commande publique nomment l'entreprise, jamais l'acheteur dans le message.
+ */
+function corpsPublic(p: ProspectAEcrire, loi: ValeursDeLaLoi, lien: string): string[] {
+	const nom = nomDUsage(p.entreprise);
+	const phrase = `[Une phrase pour ${nom} : ce que vous avez vu de ses marchés.]`;
+	const pub = loi.publiques;
+	if (pub === undefined) {
+		return [
+			phrase,
+			`Quand un hôpital ou une collectivité paie après le délai, le code de la commande publique ajoute de plein droit des pénalités de retard (« intérêts moratoires ») au taux de la BCE majoré de ${majorationPubliqueLisible()}, plus des frais de recouvrement forfaitaires.`,
+			`Je développe Letikette, à Paris : le logiciel calcule ces pénalités facture par facture et prépare les courriers de réclamation à votre nom, que vous relisez et envoyez vous-même. Le calcul est gratuit : ${lien}`,
+			`${nom} a-t-elle des factures publiques payées en retard ?`
+		];
+	}
+	const taux =
+		pub.taux === null
+			? `au taux de la BCE majoré de ${majorationPubliqueLisible()}`
+			: `au taux de ${pub.taux} par an pour un retard qui commence ce semestre`;
+	const frais =
+		pub.indemnite === null
+			? 'des frais de recouvrement forfaitaires'
+			: `${pub.indemnite} de frais de recouvrement`;
+	return [
+		phrase,
+		`Quand un hôpital ou une collectivité paie après le délai (${pub.delaiCollectivite} jours, ${pub.delaiHopital} pour un hôpital), le code de la commande publique ajoute de plein droit des pénalités de retard (« intérêts moratoires ») ${taux}, plus ${frais} par facture. Elles se paient à part, dans les ${pub.joursPourLesAccessoires} jours qui suivent le paiement de la facture.`,
+		`Les pénalités d’une prestation de ${pub.anneeQuiSePrescrit} peuvent se prescrire le ${pub.dernierJour} ; une réclamation écrite envoyée avant cette date interrompt le délai.`,
+		`Je développe Letikette, à Paris : le logiciel calcule ces pénalités facture par facture et prépare les courriers de réclamation à votre nom, que vous relisez et envoyez vous-même. Le calcul est gratuit : ${lien}`,
+		`${nom} a-t-elle des factures publiques payées en retard depuis ${pub.anneeQuiSePrescrit} ?`
 	];
 }
 
@@ -253,15 +309,21 @@ export function composerEmail({
 		etape === 'PREMIER'
 			? corpsPremier(modele, prospect, loi, lien)
 			: etape === 'RELANCE_1'
-				? modele === 'CABINET'
+				? modele === 'FOURNISSEUR_PUBLIC'
 					? [
-							'Je me permets de remonter mon message. Une question simple : vos clients réclament-ils les pénalités de retard quand une facture traîne ?'
+							'Je me permets de remonter mon message. Une question simple : vos acheteurs publics vous ont-ils versé les pénalités de leurs paiements en retard ?'
 						]
-					: [
-							`Je me permets de remonter mon message. Une question simple : ${nom} a-t-elle des factures payées en retard en ce moment ?`
-						]
+					: modele === 'CABINET'
+						? [
+								'Je me permets de remonter mon message. Une question simple : vos clients réclament-ils les pénalités de retard quand une facture traîne ?'
+							]
+						: [
+								`Je me permets de remonter mon message. Une question simple : ${nom} a-t-elle des factures payées en retard en ce moment ?`
+							]
 				: [
-						`Je ne vous relancerai plus après ce message. Si le sujet devient d’actualité, le calcul reste là : ${lien}. Bonne fin de semaine.`
+						modele === 'FOURNISSEUR_PUBLIC' && loi.publiques !== undefined
+							? `Je ne vous relancerai plus après ce message. Pour mémoire, les pénalités de ${loi.publiques.anneeQuiSePrescrit} peuvent se prescrire le ${loi.publiques.dernierJour}. Le calcul reste là : ${lien}. Bonne fin de semaine.`
+							: `Je ne vous relancerai plus après ce message. Si le sujet devient d’actualité, le calcul reste là : ${lien}. Bonne fin de semaine.`
 					];
 
 	return {
