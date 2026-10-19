@@ -952,3 +952,39 @@ describe('la ligne rouge 3, sur TOUS les événements', () => {
 		expect(eteinte!.explication).not.toMatch(/est prescrite/i);
 	});
 });
+
+describe('les pénalités d’une facture publique soldée (19/10/2026, audit, lot 1 bis)', () => {
+	const soldee = (datePrescription: string) => ({
+		reference: 'F-HOP-2022',
+		debiteurId: 'debiteur-hopital',
+		montantExigible: depuisEuros('18000,00'),
+		dateEcheance: '2022-05-31',
+		statutPaiement: 'SOLDEE' as const,
+		penalitesPubliques: { montant: depuisEuros('412,40'), datePrescription }
+	});
+
+	it('remontent à l’approche de la date des quatre ans, au montant des pénalités', () => {
+		const evenements = detecterEvenements(etat({ factures: [soldee('2026-12-31')] }), '2026-10-19');
+		expect(evenements).toHaveLength(1);
+		const e = evenements[0]!;
+		expect(e.type).toBe('PRESCRIPTION_PROCHE');
+		expect(versEuros(e.montant!)).toBe('412,40');
+		expect(e.explication).toMatch(/pourraient ne plus se réclamer après le 31 décembre 2026/);
+		expect(e.explication).toMatch(/interrompt/);
+		expect(e.cible).toEqual({ genre: 'DEBITEUR', id: 'debiteur-hopital' });
+	});
+
+	it('se taisent loin de la date, et une fois la date passée', () => {
+		expect(detecterEvenements(etat({ factures: [soldee('2027-12-31')] }), '2026-10-19')).toEqual(
+			[]
+		);
+		expect(detecterEvenements(etat({ factures: [soldee('2025-12-31')] }), '2026-10-19')).toEqual(
+			[]
+		);
+	});
+
+	it('ne changent pas ce qui est identifié comme dû', () => {
+		const evenements = detecterEvenements(etat({ factures: [soldee('2026-12-31')] }), '2026-10-19');
+		expect(montantIdentifie(evenements)).toEqual(ZERO);
+	});
+});

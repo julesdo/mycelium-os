@@ -26,6 +26,7 @@ import {
 } from '../../verticales/recouvrement/pays/france/prescription';
 import { getUserOrg } from '../lib/auth';
 import { dossiersClasses } from './classement';
+import { penalitesPubliquesSoldees } from './revelation';
 import { lireEcheancier } from '../../verticales/recouvrement/parole';
 
 /**
@@ -313,6 +314,22 @@ async function assembler(
 			dateEcheance: facture.dateEcheance ?? facture.dateEmission,
 			statutPaiement: facture.statutPaiement,
 			...prescriptionDe([facture.dateExigibilite, facture.dateEcheance], secteur)
+		});
+	}
+
+	// Les pénalités des factures publiques soldées en retard, à l'approche des quatre ans
+	// (audit, lot 1 bis) : elles se surveillent, hors de « ce qu'on vous doit ».
+	for (const p of await penalitesPubliquesSoldees(ctx, organizationId, aujourdHui)) {
+		factures.push({
+			reference: p.facture.reference,
+			debiteurId: p.facture.debiteurId as string,
+			montantExigible: depuisCentimes(p.facture.montantTTC),
+			dateEcheance: p.facture.dateEcheance ?? p.facture.dateEmission,
+			statutPaiement: 'SOLDEE',
+			penalitesPubliques: {
+				montant: depuisCentimes(p.montant),
+				datePrescription: p.datePrescription
+			}
 		});
 	}
 

@@ -215,3 +215,64 @@ describe('les courriers d’un client public', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('la surveillance des pénalités publiques soldées (lot 1 bis)', () => {
+	it(
+		'remonte une facture d’hôpital de 2022 payée en retard avant ses quatre ans, hors de ce qui est dû',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await t.run(async (ctx) => {
+				const organizationId = await ctx.db.insert('organizations', {
+					name: 'Nettoyage du Val',
+					createdAt: Date.now()
+				});
+				const debiteurId = await ctx.db.insert('debiteurs', {
+					organizationId,
+					denomination: 'Centre hospitalier de Créteil',
+					denominationNormalisee: 'CENTRE HOSPITALIER DE CRETEIL',
+					denominationsBrutes: ['Centre hospitalier de Créteil'],
+					estCommercant: 'ko',
+					santeFinanciere: 'SAINE',
+					categorieJuridique: '7364',
+					creeLe: Date.now()
+				});
+				const factureId = await ctx.db.insert('facturesVente', {
+					organizationId,
+					debiteurId,
+					reference: 'FA-2022-031',
+					montantHT: 0n,
+					montantTTC: 1_800_000n,
+					dateEmission: '2022-03-10',
+					dateEcheance: '2022-04-29',
+					dateExigibilite: '2022-04-29',
+					statutPaiement: 'SOLDEE',
+					creeLe: Date.now()
+				});
+				await ctx.db.insert('reglements', {
+					organizationId,
+					factureId,
+					date: '2022-07-15',
+					montant: 1_800_000n,
+					nature: 'PAIEMENT',
+					creeLe: Date.now()
+				});
+				return organizationId;
+			});
+			const flux = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: '2026-10-19'
+			});
+			const alerte = flux.evenements.find((e) => e.reference === 'FA-2022-031');
+			expect(alerte?.type).toBe('PRESCRIPTION_PROCHE');
+			expect(alerte?.montant !== null && alerte!.montant > 0n).toBe(true);
+			expect(alerte?.explication).toMatch(/31 décembre 2026/);
+			// Plus tard dans l'année suivante, la date est passée : rien ne remonte.
+			const apres = await t.query(internal.recouvrement.surveillance.fluxInterne, {
+				organizationId,
+				aujourdHui: '2027-02-01'
+			});
+			expect(apres.evenements.some((e) => e.reference === 'FA-2022-031')).toBe(false);
+		},
+		DELAI_CONVEX
+	);
+});

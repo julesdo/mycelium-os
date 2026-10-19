@@ -139,6 +139,13 @@ export interface Evenement {
 	 * avant : un événement sans échéance connue n'est pas le plus urgent.
 	 */
 	readonly dateDuFait?: string;
+	/**
+	 * UNE SOMME QUI N'EST PAS « CE QU'ON VOUS DOIT » (19/10/2026) : les pénalités d'une
+	 * facture publique soldée. L'événement porte bien son montant, mais
+	 * `montantIdentifie` ne l'additionne pas : le principal est rentré, et l'accueil
+	 * range ce qui est dû par ancienneté (lot 1 bis de l'audit).
+	 */
+	readonly horsDeCeQuiEstDu?: true;
 }
 
 /**
@@ -215,6 +222,17 @@ export interface FactureSurveillee {
 	 * donnée qu'on n'a pas relevée.
 	 */
 	readonly motifPrescriptionInconnue?: MotifPrescriptionInconnue;
+	/**
+	 * UNE FACTURE PUBLIQUE SOLDÉE EN RETARD (19/10/2026, audit, lot 1 bis) : les pénalités
+	 * que la loi y ajoutait (barème public), et la date après laquelle elles peuvent se
+	 * prescrire, calculée EN AMONT (la lecture de la loi de 1968 : quatre ans à partir du
+	 * 1er janvier qui suit l'année des prestations). Le principal est rentré : elles
+	 * n'entrent jamais dans « ce qu'on vous doit ».
+	 */
+	readonly penalitesPubliques?: {
+		readonly montant: Montant;
+		readonly datePrescription: string;
+	};
 }
 
 export interface CreanceSurveillee {
@@ -516,6 +534,37 @@ function detecter(etat: EtatSurveille, aujourdHui: string): Evenement[] {
 			// qu'une créance perdue n'a plus d'écran à ouvrir — c'est l'inverse :
 			// c'est là qu'on va constater la perte, et c'est le seul endroit où
 			// « ne plus engager de frais » devient vérifiable.
+			...(facture.debiteurId === undefined
+				? {}
+				: { cible: { genre: 'DEBITEUR' as const, id: facture.debiteurId } })
+		});
+	}
+
+	// ── Les pénalités d'une facture publique soldée, avant les quatre ans ──────
+	//
+	// Le principal est rentré, les pénalités restent dues et ne se paient qu'à part. Elles
+	// remontent à l'approche de leur date (une LECTURE de la loi, dite au conditionnel), et
+	// se taisent une fois la date passée : le calcul ne voit pas les réclamations envoyées.
+	for (const facture of etat.factures) {
+		const penalites = facture.penalitesPubliques;
+		if (facture.statutPaiement !== 'SOLDEE' || penalites === undefined) continue;
+		if (penalites.datePrescription <= aujourdHui) continue;
+		const restant = joursEntre(aujourdHui, penalites.datePrescription);
+		if (restant > PREAVIS.PRESCRIPTION) continue;
+		evenements.push({
+			type: 'PRESCRIPTION_PROCHE',
+			reference: facture.reference,
+			montant: penalites.montant,
+			urgence: 'HAUTE',
+			explication:
+				`Les pénalités de retard de la facture ${facture.reference}, payée en retard par un ` +
+				`acheteur public, pourraient ne plus se réclamer après le ` +
+				`${dateLisible(penalites.datePrescription)}, dans ${restant} jour${pluriel(restant)}, ` +
+				`d’après la lecture de la loi (« prescription quadriennale »). Une réclamation écrite ` +
+				`envoyée avant cette date interrompt ce délai.`,
+			action: `Ouvrir votre diagnostic : la réclamation de ces pénalités s’y prépare, facture par facture.`,
+			dateDuFait: penalites.datePrescription,
+			horsDeCeQuiEstDu: true,
 			...(facture.debiteurId === undefined
 				? {}
 				: { cible: { genre: 'DEBITEUR' as const, id: facture.debiteurId } })
@@ -896,6 +945,7 @@ export function montantIdentifie(evenements: readonly Evenement[]): Montant {
 			continue;
 		}
 		if (evenement.montant === null) continue;
+		if (evenement.horsDeCeQuiEstDu === true) continue;
 		if (referencesVues.has(evenement.reference)) continue;
 
 		referencesVues.add(evenement.reference);

@@ -25,7 +25,10 @@ import { plancherDHistorique } from '../../config/tarifs';
 import { limitesDeLOrganisation } from '../limites';
 import type { FacturePourRevelation } from '../../verticales/recouvrement/revelation';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
-import { prescriptionDe } from '../../verticales/recouvrement/pays/france/prescription';
+import {
+	datePrescriptionQuadriennale,
+	prescriptionDe
+} from '../../verticales/recouvrement/pays/france/prescription';
 import type { SecteurCreance } from '../../verticales/recouvrement/pays/france/prescription';
 import { estDateReelle } from '../../verticales/recouvrement/calendrier';
 import { dossiersClasses } from './classement';
@@ -190,7 +193,23 @@ async function facturesPour(
 
 	for (const facture of brutes) {
 		if (facture.creanceId !== undefined && classes.has(facture.creanceId)) continue;
-		const debiteur = debiteurs.get(facture.debiteurId);
+		preparees.push(
+			await preparerFacture(ctx, facture, debiteurs.get(facture.debiteurId), arreteAu, reperes)
+		);
+	}
+
+	return preparees;
+}
+
+/** Une facture prête pour la révélation et le diagnostic : son départ, ses taux, ses règlements. */
+async function preparerFacture(
+	ctx: QueryCtx,
+	facture: Doc<'facturesVente'>,
+	debiteur: Doc<'debiteurs'> | undefined,
+	arreteAu: string,
+	reperes?: Map<string, RepereFacture>
+): Promise<FacturePourRevelation> {
+	{
 		const { bareme, delaiSupposeJours } = baremeEtDelai(debiteur);
 		const { depart, supposee } = departDe(facture, delaiSupposeJours);
 		const secteur: SecteurCreance = debiteur?.secteur ?? 'INDETERMINE';
@@ -217,7 +236,7 @@ async function facturesPour(
 			.withIndex('by_facture', (q) => q.eq('factureId', facture._id))
 			.collect();
 
-		preparees.push({
+		return {
 			reference: facture.reference,
 			montantExigible: depuisCentimes(facture.montantTTC),
 			dateExigibilite: depart,
@@ -236,10 +255,69 @@ async function facturesPour(
 				: {}),
 			...(supposee ? { echeanceSupposee: true } : {}),
 			...prescriptionDe([facture.dateExigibilite, facture.dateEcheance], secteur)
-		});
+		};
 	}
+}
 
-	return preparees;
+/**
+ * LES PÉNALITÉS DES FACTURES PUBLIQUES SOLDÉES EN RETARD, pour la surveillance (19/10/2026,
+ * audit, lot 1 bis). Seulement les clients publics, et JAMAIS BORNÉES par la formule : la
+ * surveillance ne l'est jamais. Le calcul est celui du diagnostic (`diagnostiquer`) ; la
+ * date est la lecture de la loi de 1968 sur l'année de la facture
+ * (`datePrescriptionQuadriennale`), qu'on cite au conditionnel.
+ */
+export async function penalitesPubliquesSoldees(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	aujourdHui: string
+): Promise<
+	{
+		facture: Doc<'facturesVente'>;
+		montant: bigint;
+		datePrescription: string;
+	}[]
+> {
+	const publics = (
+		await ctx.db
+			.query('debiteurs')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect()
+	).filter((d) => baremeEtDelai(d).bareme === 'COMMANDE_PUBLIQUE');
+	if (publics.length === 0) return [];
+	const classes = await dossiersClasses(ctx, organizationId);
+	const soldees: Doc<'facturesVente'>[] = [];
+	const preparees: FacturePourRevelation[] = [];
+	for (const debiteur of publics) {
+		for (const facture of await ctx.db
+			.query('facturesVente')
+			.withIndex('by_debiteur', (q) => q.eq('debiteurId', debiteur._id))
+			.collect()) {
+			if (facture.organizationId !== organizationId || facture.statutPaiement !== 'SOLDEE')
+				continue;
+			if (facture.creanceId !== undefined && classes.has(facture.creanceId)) continue;
+			soldees.push(facture);
+			preparees.push(await preparerFacture(ctx, facture, debiteur, aujourdHui));
+		}
+	}
+	const parReference = new Map(soldees.map((f) => [f.reference, f]));
+	return diagnostiquer(preparees, null, aujourdHui, CONVENTION).payeesEnRetard.lignes.flatMap(
+		(ligne) => {
+			const facture = parReference.get(ligne.reference);
+			if (facture === undefined) return [];
+			try {
+				const annee = Number(facture.dateEmission.slice(0, 4));
+				return [
+					{
+						facture,
+						montant: enCentimes(ligne.supplement),
+						datePrescription: datePrescriptionQuadriennale(annee).dernierJourPourAgir
+					}
+				];
+			} catch {
+				return [];
+			}
+		}
+	);
 }
 
 /**
