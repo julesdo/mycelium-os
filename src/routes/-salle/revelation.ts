@@ -11,6 +11,7 @@ import {
 	type SecteurCreance
 } from '../../lib/verticales/recouvrement/pays/france/prescription';
 import { periodesDeTauxParDefaut } from '../../lib/verticales/recouvrement/pays/france/taux';
+import { periodesDeTauxPublics } from '../../lib/verticales/recouvrement/pays/france/commande-publique';
 import {
 	bilanDesPertes,
 	interetsCourusEntre,
@@ -411,3 +412,58 @@ export const ABANDONS_SANS_DECOMPTE_DEMO: AbandonsAffiches = {
 	decomptesControles: 0,
 	decomptesIncomplets: 0
 };
+
+/*
+   ═════════════════════════════════════════════════════════════════════════
+   LA TÊTE D'UNE SCÈNE DE MÉTIER (19/10/2026), CHIFFRÉE PAR LE DOMAINE AUSSI
+   ═════════════════════════════════════════════════════════════════════════
+
+   Les pages métier montrent l'écran « Aujourd'hui » d'un transporteur, d'un menuisier,
+   d'une entreprise de services et d'un fournisseur d'hôpitaux (`marketing/scenes-metiers.ts`).
+   Leur montant de tête passe par `reveler`, comme celui de la salle : écrit à la main, il
+   serait une seconde vérité. Une facture publique se chiffre au barème de la commande
+   publique (`periodesDeTauxPublics`, un seul taux), jamais à la série commerciale. */
+
+export interface FactureDeTete {
+	readonly reference: string;
+	readonly montantTTC: bigint;
+	readonly dateEmission: string;
+	readonly dateEcheance: string;
+	readonly secteur: SecteurCreance;
+	readonly publique?: true;
+}
+
+export function teteDesFactures(factures: readonly FactureDeTete[]): {
+	readonly revelation: RevelationAffichee;
+	readonly anciennete: readonly LigneDAnciennete[];
+} {
+	const preparees = factures.map((facture): FacturePourRevelation => {
+		const base = preparer({
+			reference: facture.reference,
+			montantTTC: facture.montantTTC,
+			dateEmission: facture.dateEmission,
+			dateEcheance: facture.dateEcheance,
+			statutPaiement: 'IMPAYEE',
+			secteurDuDebiteur: facture.secteur,
+			reglements: []
+		});
+		return facture.publique === true
+			? {
+					...base,
+					taux: periodesDeTauxPublics(facture.dateEcheance),
+					bareme: 'COMMANDE_PUBLIQUE'
+				}
+			: base;
+	});
+	const revelation = revelationDe(preparees);
+	return {
+		revelation,
+		anciennete: revelation.lignes.map((ligne) => {
+			const depart = preparees.find((f) => f.reference === ligne.reference)?.dateExigibilite;
+			return {
+				montant: ligne.principalRestantDu + ligne.supplement,
+				...(depart === undefined ? {} : { exigibleDepuis: depart })
+			};
+		})
+	};
+}

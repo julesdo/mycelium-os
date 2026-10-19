@@ -31,11 +31,20 @@ import sharp from 'sharp';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BASE = 'http://localhost:20173/showroom';
+// `SALLE=http://localhost:20067/showroom` pour la salle d'un worktree (port de `scripts/dev-ports.ts`).
+const BASE = process.env.SALLE ?? 'http://localhost:20173/showroom';
 const SORTIE = join(import.meta.dirname, '..', 'public', 'ecrans');
 
 const TELEPHONE = { width: 393, height: 852 } as const;
 const BUREAU = { width: 1280, height: 800 } as const;
+
+/** Les métiers des pages `/secteurs/<métier>` : `SECTEURS_PUBLICS`, recopiés (Node ne lit pas le registre). */
+const METIERS = [
+	'transport-routier',
+	'batiment',
+	'services-aux-entreprises',
+	'fournisseurs-publics'
+] as const;
 
 interface Capture {
 	/** Le nom du fichier, sans extension. */
@@ -88,7 +97,18 @@ const CAPTURES: readonly Capture[] = [
 	{ nom: 'coffre', ecran: 'le coffre-fort', variante: 'principale' },
 	{ nom: 'sante', ecran: 'sa santé', variante: 'principale' },
 	{ nom: 'defense', ecran: 'votre défense', variante: 'avec une équipe' },
-	{ nom: 'paiement', ecran: 'le client paie', variante: 'principale', sansBarre: true }
+	{ nom: 'paiement', ecran: 'le client paie', variante: 'principale', sansBarre: true },
+	// Les pages métier (19/10/2026) : l'écran « Aujourd'hui » de chaque métier, en tête puis
+	// descendu jusqu'à ses cartes. Données : `src/marketing/scenes-metiers.ts`.
+	...METIERS.flatMap((metier): Capture[] => [
+		{ nom: `metier-${metier}`, ecran: 'aujourd’hui', variante: `métier : ${metier}` },
+		{
+			nom: `metier-${metier}-cartes`,
+			ecran: 'aujourd’hui',
+			variante: `métier : ${metier}`,
+			defilement: 640
+		}
+	])
 ];
 
 async function prendre(page: Page, capture: Capture): Promise<Buffer> {

@@ -6,6 +6,7 @@ import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './de
 import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/propositions';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
 import { DemoLogiciels, VARIANTES_LOGICIELS } from './logiciels';
+import { formesDesMetiers } from './metiers';
 import {
 	CarteConnexion,
 	DeclencheurRecherche,
@@ -564,7 +565,9 @@ const FORMES_FILE: Readonly<Record<string, FileAffichee>> = {
 			variante,
 			{ ...VIERGE, connexion: connexionsDemo(variante) }
 		])
-	)
+	),
+	// Les pages métier du site : le même écran, les données d'un transporteur, d'un menuisier…
+	...formesDesMetiers(GARNIE)
 };
 
 function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
