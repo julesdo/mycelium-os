@@ -10,6 +10,12 @@ import {
 import { Champ } from './cadre-auth';
 import { dateCourte } from './format';
 import {
+	baremeDuDebiteur,
+	delaiDePaiementPublic,
+	type CategorieAcheteurPublic,
+	type QualificationAcheteur
+} from '../lib/verticales/recouvrement/pays/france/commande-publique';
+import {
 	REGIMES_PRESCRIPTION,
 	secteurLePlusCourt
 } from '../lib/verticales/recouvrement/pays/france/prescription';
@@ -225,6 +231,74 @@ export function ChoixSecteur({
 	);
 }
 
+/** Ce que chaque catégorie veut dire, délai compris, lu au registre. */
+function libelleDeCategorie(categorie: CategorieAcheteurPublic): string {
+	const jours = delaiDePaiementPublic(categorie);
+	switch (categorie) {
+		case 'SANTE':
+			return `Établissement public de santé, paie sous ${jours} jours`;
+		case 'ENTREPRISE_PUBLIQUE':
+			return `Entreprise publique, paie sous ${jours} jours`;
+		case 'POUVOIR_ADJUDICATEUR':
+			return `Collectivité, État, établissement public : paie sous ${jours} jours`;
+	}
+}
+
+const QUALIFICATIONS: readonly (QualificationAcheteur | 'REGISTRE')[] = [
+	'REGISTRE',
+	'PRIVE',
+	'POUVOIR_ADJUDICATEUR',
+	'SANTE',
+	'ENTREPRISE_PUBLIQUE'
+];
+
+/**
+ * LE BARÈME DE RETARD DU CLIENT (19/10/2026, lot 1 bis). Un hôpital ou une commune ne
+ * paie pas au barème commercial : la catégorie juridique lue au registre le dit, et le
+ * gérant peut corriger. Une déduction se montre comme une déduction (« Lu au registre »),
+ * une qualification comme la sienne.
+ */
+function ChoixAcheteur({
+	categorieJuridique,
+	acheteurPublic,
+	onQualifier
+}: {
+	categorieJuridique: string | undefined;
+	acheteurPublic: QualificationAcheteur | undefined;
+	onQualifier: (qualification: QualificationAcheteur | null) => void;
+}) {
+	const lu = baremeDuDebiteur(categorieJuridique === undefined ? {} : { categorieJuridique });
+	const duRegistre =
+		categorieJuridique === undefined
+			? 'Pas lu au registre : barème commercial'
+			: lu.bareme === 'COMMERCIAL'
+				? 'Lu au registre : entreprise, barème commercial'
+				: lu.categorie === null
+					? 'Lu au registre : personne publique, catégorie à préciser'
+					: `Lu au registre : ${libelleDeCategorie(lu.categorie).toLowerCase()}`;
+	const libelle = (q: QualificationAcheteur | 'REGISTRE'): string =>
+		q === 'REGISTRE'
+			? duRegistre
+			: q === 'PRIVE'
+				? 'Entreprise privée : barème commercial'
+				: libelleDeCategorie(q);
+	return (
+		<Select
+			className="w-full"
+			surface="cut"
+			size="lg"
+			title="Son barème de retard"
+			options={[...QUALIFICATIONS]}
+			value={acheteurPublic ?? 'REGISTRE'}
+			onChange={(q) => onQualifier(q === 'REGISTRE' ? null : (q as QualificationAcheteur))}
+			renderOption={({ value }) => libelle(value)}
+			keyboardHints={false}
+		>
+			{libelle(acheteurPublic ?? 'REGISTRE')}
+		</Select>
+	);
+}
+
 /**
  * L'ADRESSE OÙ LA RELANCE PARTIRA — depuis la messagerie du gérant, jamais d'ici.
  *
@@ -305,6 +379,9 @@ export function IdentiteDebiteur({
 	erreurSiren,
 	onEnregistrerSiren,
 	onChoisirSecteur,
+	categorieJuridique,
+	acheteurPublic,
+	onQualifierAcheteur,
 	tauxContractuel,
 	propositionTaux,
 	constatTaux,
@@ -332,6 +409,12 @@ export function IdentiteDebiteur({
 	erreurSiren: string | null;
 	onEnregistrerSiren: (saisi: string) => void;
 	onChoisirSecteur: (cle: string) => void;
+	/** Lue au registre (lot 1 bis). */
+	categorieJuridique?: string | undefined;
+	/** La qualification du gérant, qui l'emporte. */
+	acheteurPublic?: QualificationAcheteur | undefined;
+	/** Absent : le choix du barème ne s'affiche pas (la file, la salle). */
+	onQualifierAcheteur?: (qualification: QualificationAcheteur | null) => void;
 	/** Le taux stipulé en vigueur, en pourcentage saisissable. */
 	tauxContractuel: string | undefined;
 	/** Le taux relevé sur une pièce déposée. `null` quand aucune n'en porte. */
@@ -383,6 +466,14 @@ export function IdentiteDebiteur({
 				optionsSecteur={optionsSecteur}
 				onChoisirSecteur={onChoisirSecteur}
 			/>
+
+			{onQualifierAcheteur === undefined ? null : (
+				<ChoixAcheteur
+					categorieJuridique={categorieJuridique}
+					acheteurPublic={acheteurPublic}
+					onQualifier={onQualifierAcheteur}
+				/>
+			)}
 
 			<div className="flex flex-col gap-cladd-3xs">
 				{/* LE TAUX LU SUR UNE PIÈCE, AU-DESSUS DU CHAMP ET JAMAIS DEDANS. Le

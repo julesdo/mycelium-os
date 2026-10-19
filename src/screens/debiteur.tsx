@@ -53,6 +53,7 @@ import {
 import { ecartJours, estDateReelle } from '../lib/verticales/recouvrement/calendrier';
 import { PREAVIS } from '../lib/verticales/recouvrement/surveillance';
 import { TITRE_ECRAN } from './titres';
+import type { QualificationAcheteur } from '../lib/verticales/recouvrement/pays/france/commande-publique';
 
 /**
  * UN DÉBITEUR : UNE PAGE, ET TOUT EST DESSUS.
@@ -137,6 +138,10 @@ export interface DebiteurAffiche {
 	/** Le gérant a retiré ce client du pilote : rien ne s'ouvre ni ne part seul. */
 	readonly horsPilote?: boolean;
 	readonly secteur?: string;
+	/** Lue au registre : un « 7… » est une personne publique (lot 1 bis). */
+	readonly categorieJuridique?: string;
+	/** Ce que le gérant a qualifié, qui l'emporte. */
+	readonly acheteurPublic?: QualificationAcheteur;
 	readonly santeFinanciere: 'INCONNUE' | 'SAINE' | 'PROCEDURE_COLLECTIVE' | 'RADIEE';
 	readonly constatRegistre?: ConstatRegistreAffiche;
 }
@@ -183,6 +188,8 @@ export interface DebiteurComplet {
 	/** Retirer ce client du pilote, ou le lui rendre. */
 	readonly onReglerPilote?: (horsPilote: boolean) => void;
 	readonly onChoisirSecteur: (cle: string) => void;
+	/** `null` : revenir à ce que dit le registre. */
+	readonly onQualifierAcheteur: (qualification: QualificationAcheteur | null) => void;
 	readonly onEnregistrerTaux: (pourcentage: string | null) => void;
 	readonly onChercherLettrage: (montant: string, date: string) => void;
 	readonly onAppliquerLettrage: (
@@ -431,6 +438,7 @@ function CorpsDebiteur({
 	onEnregistrerEmail,
 	onReglerPilote,
 	onChoisirSecteur,
+	onQualifierAcheteur,
 	onEnregistrerTaux,
 	onChercherLettrage,
 	onAppliquerLettrage,
@@ -812,6 +820,9 @@ function CorpsDebiteur({
 						erreurSiren={erreurSiren}
 						onEnregistrerSiren={onEnregistrerSiren}
 						onChoisirSecteur={onChoisirSecteur}
+						categorieJuridique={debiteur.categorieJuridique}
+						acheteurPublic={debiteur.acheteurPublic}
+						onQualifierAcheteur={onQualifierAcheteur}
 						tauxContractuel={tauxStipule}
 						propositionTaux={propositionTaux}
 						constatTaux={constatTaux}

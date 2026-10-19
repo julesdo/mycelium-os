@@ -91,6 +91,16 @@ const vDebiteur = v.object({
 	 *  dit s'il faut agir ; celui-ci dit sur quoi.
 	 */
 	secteur: v.optional(vSecteurCreance),
+	/** La catégorie juridique lue au registre, et la qualification du gérant (lot 1 bis). */
+	categorieJuridique: v.optional(v.string()),
+	acheteurPublic: v.optional(
+		v.union(
+			v.literal('POUVOIR_ADJUDICATEUR'),
+			v.literal('SANTE'),
+			v.literal('ENTREPRISE_PUBLIQUE'),
+			v.literal('PRIVE')
+		)
+	),
 	/**
 	 * Le dernier constat du registre public, CITE VERBATIM.
 	 *
@@ -225,6 +235,8 @@ export const listerDebiteurs = authedQuery({
 					santeFinanciere: debiteur.santeFinanciere,
 					secteurDetermine: debiteur.secteur !== undefined && debiteur.secteur !== 'INDETERMINE',
 					secteur: debiteur.secteur,
+					categorieJuridique: debiteur.categorieJuridique,
+					acheteurPublic: debiteur.acheteurPublic,
 					constatRegistre: debiteur.constatRegistre,
 					encours: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
 					facturesEchues: nonSoldees.filter(

@@ -1,6 +1,6 @@
 import { fraction, type Fraction } from '../../../../socle/montants';
 import { ajouterJours } from '../../calendrier';
-import type { PeriodeDeTaux } from '../../decompte';
+import type { Bareme, PeriodeDeTaux } from '../../decompte';
 import { PARAMETRES, exiger } from '../../parametres';
 import { TAUX_BCE_PAR_SEMESTRE, exigerSemestre, semestreDe } from './taux';
 
@@ -118,4 +118,35 @@ export function echeanceLegalePublique(
 /** Les intérêts et l'indemnité se paient dans les 45 jours du paiement du principal (R2192-36). */
 export function dateLimitePaiementDesAccessoires(miseEnPaiementDuPrincipal: string): string {
 	return ajouterJours(miseEnPaiementDuPrincipal, exiger(PARAMETRES.paiementAccessoiresPublics));
+}
+
+/**
+ * Ce que le gérant a dit de son client : une catégorie d'acheteur public, ou « privé ».
+ * Une QUALIFICATION, pas une déduction cachée : elle l'emporte sur la catégorie juridique.
+ */
+export type QualificationAcheteur = CategorieAcheteurPublic | 'PRIVE';
+
+/**
+ * LE BARÈME D'UN CLIENT (19/10/2026, lot 1 bis) : la qualification du gérant d'abord,
+ * puis la catégorie juridique lue au registre. Une personne publique que ce module ne
+ * range pas est au barème public, catégorie à qualifier (son délai n'est pas connu).
+ * `qualifie` dit si c'est le gérant qui l'a établi, pour que l'écran montre une
+ * déduction comme une déduction.
+ */
+export function baremeDuDebiteur(debiteur: {
+	readonly categorieJuridique?: string;
+	readonly acheteurPublic?: QualificationAcheteur;
+}): { bareme: Bareme; categorie: CategorieAcheteurPublic | null; qualifie: boolean } {
+	if (debiteur.acheteurPublic === 'PRIVE') {
+		return { bareme: 'COMMERCIAL', categorie: null, qualifie: true };
+	}
+	if (debiteur.acheteurPublic !== undefined) {
+		return { bareme: 'COMMANDE_PUBLIQUE', categorie: debiteur.acheteurPublic, qualifie: true };
+	}
+	const categorie = categorieAcheteurPublic(debiteur.categorieJuridique);
+	if (categorie !== null) return { bareme: 'COMMANDE_PUBLIQUE', categorie, qualifie: false };
+	if (estPersonnePublique(debiteur.categorieJuridique)) {
+		return { bareme: 'COMMANDE_PUBLIQUE', categorie: null, qualifie: false };
+	}
+	return { bareme: 'COMMERCIAL', categorie: null, qualifie: false };
 }

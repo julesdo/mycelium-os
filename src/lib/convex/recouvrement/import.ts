@@ -130,6 +130,7 @@ async function trouverOuCreerDebiteur(
 				...(emailNouveau ? { email, emailSource: 'BANQUE' as const } : {})
 			});
 		}
+		if (sirenNouveau) await releverLaCategorie(ctx, existant._id, siren);
 		return { id: existant._id, cree: false };
 	}
 
@@ -147,7 +148,23 @@ async function trouverOuCreerDebiteur(
 		santeFinanciere: 'INCONNUE',
 		creeLe: Date.now()
 	});
+	if (siren !== undefined) await releverLaCategorie(ctx, id, siren);
 	return { id, cree: true };
+}
+
+/**
+ * La catégorie juridique d'un client dont on vient d'apprendre le SIREN (lot 1 bis) :
+ * un hôpital ou une commune se compte au barème public. Lue au registre, plus tard.
+ */
+async function releverLaCategorie(
+	ctx: MutationCtx,
+	debiteurId: Id<'debiteurs'>,
+	siren: string
+): Promise<void> {
+	await ctx.scheduler.runAfter(0, internal.recouvrement.acheteurPublic.releverCategorieJuridique, {
+		debiteurId,
+		siren
+	});
 }
 
 /** Le statut d'une facture au vu de ce qui a été réglé. */

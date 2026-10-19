@@ -457,6 +457,24 @@ export const recouvrementTables = {
 		denominationsBrutes: v.array(v.string()),
 		siren: v.optional(v.string()),
 		formeJuridique: v.optional(v.string()),
+		/**
+		 * La catégorie juridique INSEE (quatre chiffres), lue au registre par le SIREN
+		 * (19/10/2026, lot 1 bis). Un « 7… » est une personne publique : son retard se
+		 * compte au barème de la commande publique (`commande-publique.ts`).
+		 */
+		categorieJuridique: v.optional(v.string()),
+		/**
+		 * Ce que le GÉRANT a dit : une catégorie d'acheteur public, ou « privé ». Une
+		 * qualification, qui l'emporte sur la catégorie juridique.
+		 */
+		acheteurPublic: v.optional(
+			v.union(
+				v.literal('POUVOIR_ADJUDICATEUR'),
+				v.literal('SANTE'),
+				v.literal('ENTREPRISE_PUBLIQUE'),
+				v.literal('PRIVE')
+			)
+		),
 		estCommercant: vEtatCritere,
 		/**
 		 * L'état connu, et sa date. `INCONNUE` par défaut : ne rien savoir n'est

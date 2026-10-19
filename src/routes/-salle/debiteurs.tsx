@@ -837,6 +837,7 @@ function pageDu(
 		// Le réglage du pilote pour ce client : dans la salle, il se regarde.
 		onReglerPilote: () => undefined,
 		onChoisirSecteur: () => undefined,
+		onQualifierAcheteur: () => undefined,
 		onEnregistrerTaux: () => undefined,
 		onChercherLettrage: () => undefined,
 		onAppliquerLettrage: () => undefined,

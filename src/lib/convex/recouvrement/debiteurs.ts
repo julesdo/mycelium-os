@@ -159,8 +159,20 @@ export const renseignerSirenInterne = internalMutation({
 			// Absentes d'une saisie manuelle : on garde alors celles qu'on avait,
 			// plutôt que d'effacer une information juste.
 			...(formeJuridique === undefined ? {} : { formeJuridique }),
-			...(adresse === undefined ? {} : { adresse })
+			...(adresse === undefined ? {} : { adresse }),
+			// La catégorie juridique décrivait l'ancien numéro : elle se relit.
+			...(retenu === debiteur.siren ? {} : { categorieJuridique: undefined })
 		});
+		// Un hôpital ou une commune ne paie pas au barème commercial : sa catégorie
+		// juridique se lit au registre, sans rien retenir (lot 1 bis).
+		await ctx.scheduler.runAfter(
+			0,
+			internal.recouvrement.acheteurPublic.releverCategorieJuridique,
+			{
+				debiteurId: debiteur._id,
+				siren: retenu
+			}
+		);
 
 		/**
 		 * LA QUALITÉ DE COMMERÇANT SE DÉDUIT DE LA FORME, ET NE SE DEMANDE PLUS.

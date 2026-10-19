@@ -8,6 +8,7 @@ import { depuisCentimes, enCentimes, fraction, versEuros } from '../../socle/mon
 import { controlerDecompte } from '../../verticales/recouvrement/controle';
 import {
 	decompterCreance,
+	type Bareme,
 	type ConventionJours,
 	type DecompteCreance,
 	type FacturePourDecompte,
@@ -15,6 +16,11 @@ import {
 	type Reglement
 } from '../../verticales/recouvrement/decompte';
 import { periodesDeTauxParDefaut } from '../../verticales/recouvrement/pays/france/taux';
+import {
+	baremeDuDebiteur,
+	delaiDePaiementPublic,
+	periodesDeTauxPublics
+} from '../../verticales/recouvrement/pays/france/commande-publique';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
 import { ajouterJours } from '../../verticales/recouvrement/calendrier';
 import { vConventionJours, vImputation, vImputationDuDecompte, vTaux } from './tables';
@@ -75,8 +81,15 @@ async function reglementsDe(
  * Un taux contractuel vaut pour toute la durée : c'est une stipulation, elle ne
  * se réancre pas. À défaut, la série légale, qui change deux fois par an.
  */
-function periodesDe(facture: Doc<'facturesVente'>, arreteAu: string): PeriodeDeTaux[] {
+function periodesDe(
+	facture: Doc<'facturesVente'>,
+	arreteAu: string,
+	bareme: Bareme = 'COMMERCIAL'
+): PeriodeDeTaux[] {
 	const debut = facture.dateExigibilite!;
+	// Le barème public : un seul taux, ancré sur le lendemain de l'échéance (R2192-31).
+	// Fixé par le code de la commande publique, il ne cède pas à un taux contractuel.
+	if (bareme === 'COMMANDE_PUBLIQUE') return periodesDeTauxPublics(debut);
 
 	if (facture.tauxContractuel !== undefined) {
 		return [
@@ -156,7 +169,19 @@ export async function projeterDecompte(
 		.query('profilsCreancier')
 		.withIndex('by_org', (q) => q.eq('organizationId', creance.organizationId))
 		.first();
-	const ordre = creance.ordreImputation ?? profil?.ordreImputationParDefaut ?? 'A_CONFIRMER';
+	// Le client public (lot 1 bis) : son barème, et le principal d'abord, puisque les
+	// intérêts et l'indemnité se paient à part, après le principal (R2192-36).
+	const client = await ctx.db.get(creance.debiteurId);
+	const { bareme, categorie } = baremeDuDebiteur({
+		...(client?.categorieJuridique === undefined
+			? {}
+			: { categorieJuridique: client.categorieJuridique }),
+		...(client?.acheteurPublic === undefined ? {} : { acheteurPublic: client.acheteurPublic })
+	});
+	const ordre =
+		bareme === 'COMMANDE_PUBLIQUE'
+			? 'PRINCIPAL_DABORD'
+			: (creance.ordreImputation ?? profil?.ordreImputationParDefaut ?? 'A_CONFIRMER');
 
 	if (factures.length === 0) {
 		return {
@@ -177,7 +202,12 @@ export async function projeterDecompte(
 					detail:
 						`La facture ${facture.reference} n’a pas de date d’exigibilité. Les intérêts ` +
 						'courent à compter de cette date : sans elle, le décompte serait arbitraire. ' +
-						'La renseigner avant de décompter.'
+						'La renseigner avant de décompter.' +
+						(bareme === 'COMMANDE_PUBLIQUE'
+							? categorie === null
+								? ' Pour un acheteur public, c’est la réception de la demande de paiement plus son délai, qui dépend de sa catégorie : qualifiez-la sur la fiche du client.'
+								: ` Pour cet acheteur public, c’est la réception de la demande de paiement (son dépôt sur Chorus Pro) plus ${delaiDePaiementPublic(categorie)} jours.`
+							: '')
 				}
 			};
 		}
@@ -207,7 +237,8 @@ export async function projeterDecompte(
 				montantExigible: depuisCentimes(facture.montantTTC),
 				dateExigibilite: facture.dateExigibilite!,
 				reglements: await reglementsDe(ctx, facture._id),
-				taux: periodesDe(facture, arretEffectif),
+				taux: periodesDe(facture, arretEffectif, bareme),
+				bareme,
 				...(jugement === undefined ? {} : { jugementOuvertureLe: jugement })
 			});
 		}

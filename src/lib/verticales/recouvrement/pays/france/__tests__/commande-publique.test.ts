@@ -3,6 +3,7 @@ import { depuisCentimes, enCentimes, fraction } from '../../../../../socle/monta
 import { decompterFacture } from '../../../decompte';
 import { PARAMETRES, exiger } from '../../../parametres';
 import {
+	baremeDuDebiteur,
 	categorieAcheteurPublic,
 	dateLimitePaiementDesAccessoires,
 	echeanceLegalePublique,
@@ -142,5 +143,42 @@ describe('la prescription quadriennale', () => {
 
 	it('ignore une interruption antérieure à l’année des droits', () => {
 		expect(datePrescriptionQuadriennale(2023, 2021).premierJourPrescrit).toBe('2028-01-01');
+	});
+});
+
+describe('le barème d’un client (19/10/2026)', () => {
+	it('suit la qualification du gérant avant la catégorie juridique', () => {
+		expect(baremeDuDebiteur({ categorieJuridique: '7364', acheteurPublic: 'PRIVE' })).toEqual({
+			bareme: 'COMMERCIAL',
+			categorie: null,
+			qualifie: true
+		});
+		expect(baremeDuDebiteur({ categorieJuridique: '5710', acheteurPublic: 'SANTE' })).toEqual({
+			bareme: 'COMMANDE_PUBLIQUE',
+			categorie: 'SANTE',
+			qualifie: true
+		});
+	});
+
+	it('déduit un hôpital ou une commune de sa catégorie juridique, sans la dire qualifiée', () => {
+		expect(baremeDuDebiteur({ categorieJuridique: '7364' })).toEqual({
+			bareme: 'COMMANDE_PUBLIQUE',
+			categorie: 'SANTE',
+			qualifie: false
+		});
+		expect(baremeDuDebiteur({ categorieJuridique: '7210' }).categorie).toBe('POUVOIR_ADJUDICATEUR');
+	});
+
+	it('laisse à qualifier une personne publique que le module ne range pas', () => {
+		expect(baremeDuDebiteur({ categorieJuridique: '7470' })).toEqual({
+			bareme: 'COMMANDE_PUBLIQUE',
+			categorie: null,
+			qualifie: false
+		});
+	});
+
+	it('garde le barème commercial pour une société, ou sans rien savoir', () => {
+		expect(baremeDuDebiteur({ categorieJuridique: '5710' }).bareme).toBe('COMMERCIAL');
+		expect(baremeDuDebiteur({}).bareme).toBe('COMMERCIAL');
 	});
 });

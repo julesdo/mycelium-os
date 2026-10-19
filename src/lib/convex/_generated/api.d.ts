@@ -91,6 +91,7 @@ import type * as ouvertureFacturation from "../ouvertureFacturation.js";
 import type * as paddle from "../paddle.js";
 import type * as paddleCatalogue from "../paddleCatalogue.js";
 import type * as previewDev from "../previewDev.js";
+import type * as recouvrement_acheteurPublic from "../recouvrement/acheteurPublic.js";
 import type * as recouvrement_annuaireNuit from "../recouvrement/annuaireNuit.js";
 import type * as recouvrement_annuaires from "../recouvrement/annuaires.js";
 import type * as recouvrement_apresProcedure from "../recouvrement/apresProcedure.js";
@@ -248,6 +249,7 @@ declare const fullApi: ApiFromModules<{
   paddle: typeof paddle;
   paddleCatalogue: typeof paddleCatalogue;
   previewDev: typeof previewDev;
+  "recouvrement/acheteurPublic": typeof recouvrement_acheteurPublic;
   "recouvrement/annuaireNuit": typeof recouvrement_annuaireNuit;
   "recouvrement/annuaires": typeof recouvrement_annuaires;
   "recouvrement/apresProcedure": typeof recouvrement_apresProcedure;
