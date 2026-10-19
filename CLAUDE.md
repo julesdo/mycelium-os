@@ -704,6 +704,42 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   **Attirer** : `/taux-des-penalites-de-retard`, `/secteurs/<métier>` (`marketing/secteurs.ts`),
   `/llms.txt`, où mènent les liens des e-mails. Le siège légal reste à Bordeaux au registre : les
   mentions légales le disent tant que le transfert n'est pas déclaré.
+- **La trajectoire de l'audit** (19/10/2026, `docs/superpowers/specs/2026-10-19-trajectoire-de-l-audit.md`,
+  lots 1 à 8 livrés le jour même). Le fondateur : « ce document est hyper important ». Ce qui est
+  désormais vrai, et qu'un nouveau code doit respecter :
+  - **Découverte est le diagnostic express** : trois mois CALCULÉS (`plancherDe`, seule source du
+    plancher), tout est gardé, la surveillance n'est jamais bornée. Le diagnostic
+    (`diagnostiquer`, `/app/diagnostic`, PDF à la demande) sépare impayées, **payées en retard**
+    (soldées après l'échéance : L441-10 II) et non chiffrées ; **les payées en retard ne sont jamais
+    « ce qu'on vous doit »** (accueil, `montantIdentifie` : un événement `horsDeCeQuiEstDu`). Une
+    date de paiement `LECTURE` ne se chiffre pas ; un FEC se lettre (`EcritureLet`).
+  - **Le client public** : `categorieJuridique` d'après le SIREN, barème de la commande publique
+    (BCE + 8, un seul taux, indemnité publique, délais 30/50/60) lu au registre ; la réclamation et
+    le signalement (`gabarits/commande-publique.ts`, `FeuilleCourriersPublics`), jamais la chambre
+    régionale des comptes ; la date des quatre ans est une LECTURE, dite au conditionnel
+    (« pourraient ne plus se réclamer »), et ses pénalités soldées se surveillent.
+  - **Le CRM a des parcours** (`crm/parcours.ts`) : la file d'appels `/admin/appels` (l'avertissement
+    Paddle 11.1 xv à l'écran), l'e-mail conforme CNIL (`emailPermis`, pied légal avec la vraie source
+    et la désinscription `/desinscription/<jeton>`, POST seul), LinkedIn retiré. « Trouver » commence
+    par **Quel parcours** ; les fournisseurs publics viennent de la **DECP** (`crm/decp.ts`) et
+    portent une **estimation** (`crm/estimation.ts`) : un majorant décomposé par acheteur et par
+    année, ses hypothèses écrites, les délais publiés de l'ODP et de la DGFiP (`crm/retards-publics.ts`,
+    sourcés et datés), réservée à l'équipe.
+  - **Les offres** (`OFFRES`, `config/tarifs.ts`, jamais dans `GRILLE`) : diagnostic complet,
+    réclamation, pilote se DEMANDENT (`demandes.ts`, prospect au CRM) ; l'offre fondateurs et la
+    remise de bienvenue passent par Paddle (`paiement/offres.ts` : prix sans version de grille,
+    jamais migré, places comptées, `changerDeFormule` le protège ; remise à usage unique créée au
+    paiement, qui ne se perd jamais en silence).
+  - **Le cycle de vie** : le rapport du diagnostic par e-mail transactionnel (sans désinscription),
+    deux rappels de l'offre de bienvenue (garde PAR RÈGLE, `sauf` en tableau, administrateurs
+    seulement, abonnement relu à l'envoi), le relevé au webhook Paddle, les ventes après diagnostic
+    au point du lundi.
+  - **Le site** : « Combien vous doit-on ? », le calculateur « Client public », `/tarifs` et ses
+    offres, `/secteurs/fournisseurs-publics`, `/experts-comptables`, `/fondateur` (identité de
+    `LEGAL_CONFIG`, aucun visage), `/procedure-sans-juge` (état du décret lu au registre, liste
+    d'attente à double confirmation, `/attente/<jeton>` exclue de la mesure) ; le blog a un
+    `pilier` et un article daté du futur attend son jour, à Paris.
+  Les politiques de confidentialité (2.9) et de remboursement (1.3) suivent : **à faire relire**.
 - **Le service client : Plume d'abord, l'équipe dans le même fil** (16/10/2026,
   `docs/superpowers/specs/2026-10-16-service-client.md`, sur Intercom Fin, Plain, Front, Monzo, Alan
   et Linktree). Le fondateur : « un module de service client humain avec tout un système automatisé
