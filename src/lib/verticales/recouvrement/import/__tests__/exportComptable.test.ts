@@ -152,7 +152,7 @@ describe('import d’un FEC', () => {
 			},
 			'2026-12-31',
 			'ACT_365',
-		'PENALITES_DABORD'
+			'PENALITES_DABORD'
 		);
 		expect(versEuros(decompte.imputations[0]!.surInterets)).toBe('0,00');
 		expect(versEuros(decompte.imputations[0]!.surPrincipal)).toBe('4 000,00');
@@ -336,5 +336,129 @@ describe('dates impossibles', () => {
 		const resultat = importerExportComptable(csv);
 		expect(resultat.factures).toHaveLength(1);
 		expect(resultat.factures[0]!.dateEcheance).toBeUndefined();
+	});
+});
+
+describe('un FEC tel que les logiciels l’écrivent (19/10/2026)', () => {
+	const encaissement = (champs: Partial<Record<string, string>>) =>
+		ligneFec({
+			JournalCode: 'BQ',
+			JournalLib: 'Banque',
+			EcritureNum: 'BQ0007',
+			EcritureDate: '20260610',
+			PieceRef: 'BQ-0610',
+			PieceDate: '20260610',
+			EcritureLib: 'Virement Durand',
+			Debit: '0,00',
+			...champs
+		});
+
+	it('rattache un encaissement à sa facture par le lettrage, pas par sa pièce de banque', () => {
+		const resultat = importerExportComptable(
+			fec(ligneFec({ EcritureLet: 'AA' }), encaissement({ Credit: '12000,00', EcritureLet: 'AA' }))
+		);
+		expect(resultat.reglements).toHaveLength(1);
+		expect(resultat.reglements[0]!.reference).toBe('FA-2026-0042');
+		expect(resultat.reglements[0]!.date).toBe('2026-06-10');
+	});
+
+	it('répartit un encaissement lettré sur plusieurs factures, dans l’ordre des factures', () => {
+		const resultat = importerExportComptable(
+			fec(
+				ligneFec({ PieceRef: 'FA-1', Debit: '1000,00', PieceDate: '20260401', EcritureLet: 'AB' }),
+				ligneFec({ PieceRef: 'FA-2', Debit: '500,00', PieceDate: '20260410', EcritureLet: 'AB' }),
+				encaissement({ Credit: '1500,00', EcritureLet: 'AB' })
+			)
+		);
+		expect(resultat.reglements.map((r) => [r.reference, versEuros(r.montant)])).toEqual([
+			['FA-1', '1 000,00'],
+			['FA-2', '500,00']
+		]);
+	});
+
+	it('ne confond pas deux lettrages identiques sur deux clients', () => {
+		const resultat = importerExportComptable(
+			fec(
+				ligneFec({ EcritureLet: 'AA' }),
+				ligneFec({
+					PieceRef: 'FA-MARTIN',
+					CompteNum: '411MARTIN',
+					CompAuxNum: '411MARTIN',
+					CompAuxLib: 'Martin',
+					EcritureLet: 'AA'
+				}),
+				encaissement({
+					Credit: '12000,00',
+					CompteNum: '411MARTIN',
+					CompAuxNum: '411MARTIN',
+					EcritureLet: 'AA'
+				})
+			)
+		);
+		expect(resultat.reglements.map((r) => r.reference)).toEqual(['FA-MARTIN']);
+	});
+
+	it('écarte les à-nouveaux, en le disant : un solde d’ouverture n’est pas une facture', () => {
+		const resultat = importerExportComptable(
+			fec(
+				ligneFec({
+					JournalCode: 'AN',
+					JournalLib: 'A nouveaux',
+					PieceRef: 'AN-2026',
+					PieceDate: '20260101',
+					EcritureDate: '20260101'
+				}),
+				ligneFec({})
+			)
+		);
+		expect(resultat.factures.map((f) => f.reference)).toEqual(['FA-2026-0042']);
+		expect(resultat.ignorees).toHaveLength(1);
+		expect(resultat.ignorees[0]!.raison).toMatch(/à-nouveau/i);
+	});
+
+	it('lit un FEC séparé par des barres verticales', () => {
+		const contenu = fec(ligneFec({})).replace(/\t/g, '|');
+		expect(detecterFormat(contenu)).toBe('FEC');
+		expect(importerExportComptable(contenu).factures).toHaveLength(1);
+	});
+
+	it('lit la variante Montant et Sens à la place de Débit et Crédit', () => {
+		const entete = ENTETE_FEC.replace('Debit\tCredit', 'Montant\tSens');
+		const vers = (champs: Partial<Record<string, string>>) =>
+			entete
+				.split('\t')
+				.map(
+					(c) =>
+						({
+							...{
+								JournalCode: 'VE',
+								JournalLib: 'Ventes',
+								EcritureDate: '20260415',
+								CompteNum: '411DURAND',
+								CompAuxNum: '411DURAND',
+								CompAuxLib: 'Fournitures Durand',
+								PieceRef: 'FA-2026-0042',
+								PieceDate: '20260415'
+							},
+							...champs
+						})[c] ?? ''
+				)
+				.join('\t');
+		const contenu = [
+			entete,
+			vers({ Montant: '12000,00', Sens: 'D' }),
+			vers({
+				JournalCode: 'BQ',
+				JournalLib: 'Banque',
+				PieceDate: '20260610',
+				EcritureDate: '20260610',
+				Montant: '4000,00',
+				Sens: 'C'
+			})
+		].join('\n');
+		expect(detecterFormat(contenu)).toBe('FEC');
+		const resultat = importerExportComptable(contenu);
+		expect(versEuros(resultat.factures[0]!.montantTTC)).toBe('12 000,00');
+		expect(resultat.reglements.map((r) => versEuros(r.montant))).toEqual(['4 000,00']);
 	});
 });

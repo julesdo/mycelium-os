@@ -1,4 +1,4 @@
-import { ZERO, additionner, depuisEuros, type Montant } from '../../../socle/montants';
+import { ZERO, additionner, depuisEuros, soustraire, type Montant } from '../../../socle/montants';
 import { estDateReelle } from '../calendrier';
 
 /**
@@ -47,8 +47,16 @@ import { estDateReelle } from '../calendrier';
 /** Le préfixe des comptes clients au plan comptable général. */
 const PREFIXE_COMPTE_CLIENT = '411';
 
-/** Les colonnes qui identifient un FEC de façon non ambiguë. */
-const COLONNES_FEC = ['CompteNum', 'PieceRef', 'Debit', 'Credit', 'EcritureDate'] as const;
+/**
+ * Les colonnes qui identifient un FEC de façon non ambiguë, et ses deux façons d'écrire
+ * un montant : Débit et Crédit, ou Montant et Sens (article A47 A-1 du livre des
+ * procédures fiscales, que plusieurs logiciels suivent).
+ */
+const COLONNES_FEC = ['CompteNum', 'PieceRef', 'EcritureDate'] as const;
+const MONTANTS_FEC = [
+	['Debit', 'Credit'],
+	['Montant', 'Sens']
+] as const;
 
 /**
  * D'ou viennent les factures.
@@ -153,7 +161,7 @@ function lignesUtiles(contenu: string): string[] {
 function separateurDe(entete: string): string {
 	// Tabulation d'abord : c'est celui du FEC, et il ne se rencontre jamais par
 	// accident dans un libellé.
-	for (const candidat of ['\t', ';', ',']) {
+	for (const candidat of ['\t', '|', ';', ',']) {
 		if (entete.split(candidat).length >= 3) return candidat;
 	}
 	return ';';
@@ -176,7 +184,12 @@ export function detecterFormat(contenu: string): FormatExport | null {
 	const entete = lignes[0]!;
 	const colonnes = new Set(entete.split(separateurDe(entete)).map(normaliser));
 
-	if (COLONNES_FEC.every((colonne) => colonnes.has(normaliser(colonne)))) return 'FEC';
+	if (
+		COLONNES_FEC.every((colonne) => colonnes.has(normaliser(colonne))) &&
+		MONTANTS_FEC.some((paire) => paire.every((colonne) => colonnes.has(normaliser(colonne))))
+	) {
+		return 'FEC';
+	}
 
 	const aReference =
 		colonnes.has('REFERENCE') || colonnes.has('NUMERO') || colonnes.has('N FACTURE');
@@ -216,6 +229,86 @@ interface AccumulateurFacture {
 	dateEmission: string;
 }
 
+/**
+ * LE JOURNAL DES À-NOUVEAUX (19/10/2026). Il reporte les soldes de l'exercice précédent
+ * à la date d'ouverture : un débit sur compte client y est un SOLDE, pas une facture.
+ * Le lire comme une facture la daterait du 1er janvier et ferait courir des pénalités
+ * depuis l'ouverture. Il est écarté, et nommé : les factures d'origine sont dans le FEC
+ * de l'exercice précédent.
+ */
+function estANouveau(journalCode: string, journalLib: string): boolean {
+	const code = journalCode.trim().toUpperCase();
+	const libelle = journalLib.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+	return ['AN', 'RAN', 'ANO', 'ANX'].includes(code) || /a[\s-]*nouveaux?/.test(libelle);
+}
+
+/** Un crédit sur compte client, avant d'être rattaché à sa facture. */
+interface CreditLu {
+	readonly reference: string;
+	readonly date: string;
+	readonly montant: Montant;
+	readonly nature: NatureCredit;
+	/** Le compte et la lettre : le lettrage ne vaut qu'à l'intérieur d'un même compte. */
+	readonly lettrage: string | null;
+}
+
+/**
+ * LE LETTRAGE RATTACHE L'ENCAISSEMENT À SA FACTURE (19/10/2026). Dans la plupart des
+ * comptabilités, l'encaissement porte la pièce de BANQUE, pas le numéro de la facture :
+ * sans le lettrage, le règlement restait orphelin, la facture paraissait impayée, et le
+ * chiffre gonflait. Un encaissement lettré se répartit sur les factures de sa lettre,
+ * dans l'ordre de leurs dates, chacune jusqu'à son montant ; ce qui dépasserait reste
+ * sur sa pièce, comme avant.
+ */
+function rattacherParLettrage(
+	credits: readonly CreditLu[],
+	factures: ReadonlyMap<string, AccumulateurFacture>,
+	parLettre: ReadonlyMap<string, readonly string[]>
+): ReglementImporte[] {
+	const restes = new Map<string, Montant>();
+	const resteDe = (reference: string): Montant => {
+		const connu = restes.get(reference);
+		if (connu !== undefined) return connu;
+		const facture = factures.get(reference);
+		return facture === undefined ? ZERO : additionner(...facture.montants);
+	};
+	const reglements: ReglementImporte[] = [];
+	for (const credit of credits) {
+		const groupe = credit.lettrage === null ? undefined : parLettre.get(credit.lettrage);
+		if (factures.has(credit.reference) || groupe === undefined || groupe.length === 0) {
+			reglements.push({
+				reference: credit.reference,
+				date: credit.date,
+				montant: credit.montant,
+				nature: credit.nature
+			});
+			continue;
+		}
+		let aRepartir = credit.montant;
+		const ordonnees = [...groupe].sort((a, b) =>
+			(factures.get(a)?.dateEmission ?? '').localeCompare(factures.get(b)?.dateEmission ?? '')
+		);
+		for (const reference of ordonnees) {
+			if ((aRepartir as bigint) <= 0n) break;
+			const reste = resteDe(reference);
+			if ((reste as bigint) <= 0n) continue;
+			const part = (aRepartir as bigint) < (reste as bigint) ? aRepartir : reste;
+			reglements.push({ reference, date: credit.date, montant: part, nature: credit.nature });
+			restes.set(reference, soustraire(reste, part));
+			aRepartir = soustraire(aRepartir, part);
+		}
+		if ((aRepartir as bigint) > 0n) {
+			reglements.push({
+				reference: credit.reference,
+				date: credit.date,
+				montant: aRepartir,
+				nature: credit.nature
+			});
+		}
+	}
+	return reglements;
+}
+
 function importerFec(lignes: string[], separateur: string): ResultatImport {
 	const colonnes = lignes[0]!.split(separateur).map(normaliser);
 	const indexDe = (nom: string) => colonnes.indexOf(normaliser(nom));
@@ -228,14 +321,19 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 	const iEcritureDate = indexDe('EcritureDate');
 	const iDebit = indexDe('Debit');
 	const iCredit = indexDe('Credit');
+	// La variante de l'article A47 A-1 : un montant et son sens (D ou C).
+	const iMontant = indexDe('Montant');
+	const iSens = indexDe('Sens');
 	const iJournalCode = indexDe('JournalCode');
 	const iJournalLib = indexDe('JournalLib');
+	const iLettre = indexDe('EcritureLet');
 
 	// L'ordre d'apparition fait foi : deux débiteurs distincts ressortent dans
 	// l'ordre où la comptabilité les a écrits, ce qui est celui que le gérant
 	// reconnaît en relisant son export.
 	const parReference = new Map<string, AccumulateurFacture>();
-	const reglements: ReglementImporte[] = [];
+	const parLettre = new Map<string, string[]>();
+	const credits: CreditLu[] = [];
 	const ignorees: LigneIgnoree[] = [];
 	let horsPerimetre = 0;
 
@@ -250,6 +348,16 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 			continue;
 		}
 
+		if (estANouveau(champs[iJournalCode] ?? '', champs[iJournalLib] ?? '')) {
+			ignorees.push({
+				texte: ligne,
+				raison:
+					'À-nouveau : un solde reporté de l’exercice précédent, pas une facture. Ses factures ' +
+					'd’origine sont dans le FEC de cet exercice-là.'
+			});
+			continue;
+		}
+
 		const reference = (champs[iPieceRef] ?? '').trim();
 		if (reference === '') {
 			ignorees.push({
@@ -261,8 +369,18 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 			continue;
 		}
 
-		const debit = montantOuNull(champs[iDebit] ?? '');
-		const credit = montantOuNull(champs[iCredit] ?? '');
+		let debit: Montant | null;
+		let credit: Montant | null;
+		if (iDebit !== -1 && iCredit !== -1) {
+			debit = montantOuNull(champs[iDebit] ?? '');
+			credit = montantOuNull(champs[iCredit] ?? '');
+		} else {
+			const montant = montantOuNull(champs[iMontant] ?? '');
+			const sens = (champs[iSens] ?? '').trim().toUpperCase();
+			const lisible = montant !== null && (sens === 'D' || sens === 'C');
+			debit = lisible ? (sens === 'D' ? montant : ZERO) : null;
+			credit = lisible ? (sens === 'C' ? montant : ZERO) : null;
+		}
 		if (debit === null || credit === null) {
 			ignorees.push({ texte: ligne, raison: 'Montant illisible en débit ou en crédit.' });
 			continue;
@@ -278,15 +396,21 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 			continue;
 		}
 
+		const compteAux = (champs[iAuxNum] ?? '').trim();
+		const lettre = iLettre === -1 ? '' : (champs[iLettre] ?? '').trim();
+		const lettrage = lettre === '' ? null : `${compteAux || compte}|${lettre}`;
+
 		// Un crédit sur compte client éteint la créance, en tout ou partie. Son journal
 		// dit s'il est un paiement ou un avoir, et ce n'est pas un détail : les deux
-		// ne s'imputent pas de la même façon.
+		// ne s'imputent pas de la même façon. Il se rattache après la lecture, par sa
+		// pièce ou par son lettrage.
 		if (credit > ZERO) {
-			reglements.push({
+			credits.push({
 				reference,
 				date,
 				montant: credit,
-				nature: natureDuCredit(champs[iJournalCode] ?? '', champs[iJournalLib] ?? '')
+				nature: natureDuCredit(champs[iJournalCode] ?? '', champs[iJournalLib] ?? ''),
+				lettrage
 			});
 			continue;
 		}
@@ -298,7 +422,6 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 
 		const existante = parReference.get(reference);
 		if (existante === undefined) {
-			const compteAux = (champs[iAuxNum] ?? '').trim();
 			parReference.set(reference, {
 				reference,
 				debiteur: (champs[iAuxLib] ?? '').trim() || compteAux || compte,
@@ -310,6 +433,11 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 			// Une facture peut s'étaler sur plusieurs lignes d'écriture.
 			existante.montants.push(debit);
 		}
+		if (lettrage !== null) {
+			const groupe = parLettre.get(lettrage) ?? [];
+			if (!groupe.includes(reference)) groupe.push(reference);
+			parLettre.set(lettrage, groupe);
+		}
 	}
 
 	const factures = [...parReference.values()].map((accumulateur) => ({
@@ -319,6 +447,7 @@ function importerFec(lignes: string[], separateur: string): ResultatImport {
 		montantTTC: additionner(...accumulateur.montants),
 		dateEmission: accumulateur.dateEmission
 	}));
+	const reglements = rattacherParLettrage(credits, parReference, parLettre);
 
 	return { format: 'FEC', factures, reglements, ignorees, horsPerimetre };
 }
@@ -386,8 +515,9 @@ export function importerExportComptable(contenu: string): ResultatImport {
 	const format = detecterFormat(contenu);
 	if (format === null) {
 		throw new Error(
-			"Format d'export non reconnu. Attendu : un FEC (colonnes CompteNum, PieceRef, Debit, " +
-				'Credit, EcritureDate) ou un CSV portant au moins une référence et un montant.'
+			"Format d'export non reconnu. Attendu : un FEC (colonnes CompteNum, PieceRef, " +
+				'EcritureDate, et Debit et Credit ou Montant et Sens) ou un CSV portant au moins une ' +
+				'référence et un montant.'
 		);
 	}
 
