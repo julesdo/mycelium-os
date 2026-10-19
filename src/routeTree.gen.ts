@@ -25,6 +25,7 @@ import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oubl
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
 import { Route as PaiementRouteImport } from './routes/paiement'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
+import { Route as ProcedureSansJugeRouteImport } from './routes/procedure-sans-juge'
 import { Route as RemboursementRouteImport } from './routes/remboursement'
 import { Route as SecuriteRouteImport } from './routes/securite'
 import { Route as ShowroomRouteImport } from './routes/showroom'
@@ -48,6 +49,7 @@ import { Route as AppImportFacturesRouteImport } from './routes/app/import-factu
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
+import { Route as AttenteJetonRouteImport } from './routes/attente.$jeton'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogAdresseRouteImport } from './routes/blog/$adresse'
 import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
@@ -167,6 +169,11 @@ const PolitiqueDeConfidentialiteRoute =
     path: '/politique-de-confidentialite',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProcedureSansJugeRoute = ProcedureSansJugeRouteImport.update({
+  id: '/procedure-sans-juge',
+  path: '/procedure-sans-juge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RemboursementRoute = RemboursementRouteImport.update({
   id: '/remboursement',
   path: '/remboursement',
@@ -282,6 +289,11 @@ const AppRevelationRoute = AppRevelationRouteImport.update({
   id: '/revelation',
   path: '/revelation',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const AttenteJetonRoute = AttenteJetonRouteImport.update({
+  id: '/attente/$jeton',
+  path: '/attente/$jeton',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
@@ -486,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
+  '/procedure-sans-juge': typeof ProcedureSansJugeRoute
   '/remboursement': typeof RemboursementRoute
   '/securite': typeof SecuriteRoute
   '/showroom': typeof ShowroomRoute
@@ -507,6 +520,7 @@ export interface FileRoutesByFullPath {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/attente/$jeton': typeof AttenteJetonRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion/verification': typeof ConnexionVerificationRoute
@@ -562,6 +576,7 @@ export interface FileRoutesByTo {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
+  '/procedure-sans-juge': typeof ProcedureSansJugeRoute
   '/remboursement': typeof RemboursementRoute
   '/securite': typeof SecuriteRoute
   '/showroom': typeof ShowroomRoute
@@ -583,6 +598,7 @@ export interface FileRoutesByTo {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/attente/$jeton': typeof AttenteJetonRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion/verification': typeof ConnexionVerificationRoute
@@ -641,6 +657,7 @@ export interface FileRoutesById {
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
+  '/procedure-sans-juge': typeof ProcedureSansJugeRoute
   '/remboursement': typeof RemboursementRoute
   '/securite': typeof SecuriteRoute
   '/showroom': typeof ShowroomRoute
@@ -662,6 +679,7 @@ export interface FileRoutesById {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/attente/$jeton': typeof AttenteJetonRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion_/verification': typeof ConnexionVerificationRoute
@@ -721,6 +739,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/paiement'
     | '/politique-de-confidentialite'
+    | '/procedure-sans-juge'
     | '/remboursement'
     | '/securite'
     | '/showroom'
@@ -742,6 +761,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
+    | '/attente/$jeton'
     | '/blog/$adresse'
     | '/blog/rss.xml'
     | '/connexion/verification'
@@ -797,6 +817,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/paiement'
     | '/politique-de-confidentialite'
+    | '/procedure-sans-juge'
     | '/remboursement'
     | '/securite'
     | '/showroom'
@@ -818,6 +839,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
+    | '/attente/$jeton'
     | '/blog/$adresse'
     | '/blog/rss.xml'
     | '/connexion/verification'
@@ -875,6 +897,7 @@ export interface FileRouteTypes {
     | '/nouveau-mot-de-passe'
     | '/paiement'
     | '/politique-de-confidentialite'
+    | '/procedure-sans-juge'
     | '/remboursement'
     | '/securite'
     | '/showroom'
@@ -896,6 +919,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
+    | '/attente/$jeton'
     | '/blog/$adresse'
     | '/blog/rss.xml'
     | '/connexion_/verification'
@@ -954,12 +978,14 @@ export interface RootRouteChildren {
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
   PaiementRoute: typeof PaiementRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
+  ProcedureSansJugeRoute: typeof ProcedureSansJugeRoute
   RemboursementRoute: typeof RemboursementRoute
   SecuriteRoute: typeof SecuriteRoute
   ShowroomRoute: typeof ShowroomRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TarifsRoute: typeof TarifsRoute
   TauxDesPenalitesDeRetardRoute: typeof TauxDesPenalitesDeRetardRoute
+  AttenteJetonRoute: typeof AttenteJetonRoute
   BlogAdresseRoute: typeof BlogAdresseRoute
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   ConnexionVerificationRoute: typeof ConnexionVerificationRoute
@@ -1083,6 +1109,13 @@ declare module '@tanstack/react-router' {
       path: '/politique-de-confidentialite'
       fullPath: '/politique-de-confidentialite'
       preLoaderRoute: typeof PolitiqueDeConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/procedure-sans-juge': {
+      id: '/procedure-sans-juge'
+      path: '/procedure-sans-juge'
+      fullPath: '/procedure-sans-juge'
+      preLoaderRoute: typeof ProcedureSansJugeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/remboursement': {
@@ -1245,6 +1278,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/revelation'
       preLoaderRoute: typeof AppRevelationRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/attente/$jeton': {
+      id: '/attente/$jeton'
+      path: '/attente/$jeton'
+      fullPath: '/attente/$jeton'
+      preLoaderRoute: typeof AttenteJetonRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/blog/': {
       id: '/blog/'
@@ -1664,12 +1704,14 @@ const rootRouteChildren: RootRouteChildren = {
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
   PaiementRoute: PaiementRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
+  ProcedureSansJugeRoute: ProcedureSansJugeRoute,
   RemboursementRoute: RemboursementRoute,
   SecuriteRoute: SecuriteRoute,
   ShowroomRoute: ShowroomRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TarifsRoute: TarifsRoute,
   TauxDesPenalitesDeRetardRoute: TauxDesPenalitesDeRetardRoute,
+  AttenteJetonRoute: AttenteJetonRoute,
   BlogAdresseRoute: BlogAdresseRoute,
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   ConnexionVerificationRoute: ConnexionVerificationRoute,

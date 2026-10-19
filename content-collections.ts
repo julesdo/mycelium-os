@@ -3,7 +3,7 @@ import { compileMDX } from '@content-collections/mdx';
 import remarkGfm from 'remark-gfm';
 import { z } from 'zod';
 import { ancreDe } from './src/marketing/ancre';
-import { CATEGORIES, ILLUSTRATIONS } from './src/marketing/motifs-blog';
+import { CATEGORIES, ILLUSTRATIONS, PILIERS } from './src/marketing/motifs-blog';
 
 /**
  * LE BLOG, EN FICHIERS (06/10/2026).
@@ -45,6 +45,8 @@ const articles = defineCollection({
 		misAJour: dateDuJour.optional(),
 		auteur: z.string().default('L’équipe Letikette'),
 		categorie: z.enum(CATEGORIES),
+		// Le pilier de la ligne éditoriale (`motifs-blog.ts`), facultatif.
+		pilier: z.enum(PILIERS).optional(),
 		// La couverture illustrée, dessinée dans la DA (`blog-couvertures.tsx`) sur la
 		// teinte de la catégorie. `facture` par défaut.
 		illustration: z.enum(ILLUSTRATIONS).default('facture'),

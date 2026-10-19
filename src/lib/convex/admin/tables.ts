@@ -133,7 +133,7 @@ export const vTypeEvenementCrm = v.union(
 /**
  * LES TABLES DU CRM (16/10/2026).
  *
- * `prospects`, `oppositions` et `importsProspects` sont des données de Letikette,
+ * `prospects`, `oppositions`, `importsProspects` et `inscriptionsAttente` sont des données de Letikette,
  * exemptées nommément du cloisonnement. `evenementsCrm` et `tachesCrm` portent un
  * `organizationId` quand elles touchent un compte client, et partent avec lui.
  */
@@ -206,6 +206,24 @@ export const crmTables = {
 		empreinte: v.string(),
 		le: v.number()
 	}).index('by_empreinte', ['empreinte']),
+
+	/**
+	 * LA LISTE D'ATTENTE DE LA PROCÉDURE SANS JUGE (19/10/2026, `convex/attente.ts`) : une
+	 * adresse qui demande à être prévenue. Non confirmée, elle s'efface passé son lien ;
+	 * confirmée, trois ans au plus (`crm/attente.ts`).
+	 */
+	inscriptionsAttente: defineTable({
+		liste: v.literal('procedure-sans-juge'),
+		email: v.string(),
+		entreprise: v.optional(v.string()),
+		/** `crypto.randomUUID()` : la serrure du lien de confirmation et de retrait. */
+		jeton: v.string(),
+		creeLe: v.number(),
+		confirmeeLe: v.optional(v.number())
+	})
+		.index('by_liste_email', ['liste', 'email'])
+		.index('by_jeton', ['jeton'])
+		.index('by_cree', ['creeLe']),
 
 	evenementsCrm: defineTable({
 		organizationId: v.optional(v.id('organizations')),

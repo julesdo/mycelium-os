@@ -62,6 +62,15 @@ crons.daily(
 	{}
 );
 
+// La liste d'attente : les inscriptions non confirmées passé leur lien, les confirmées
+// passé trois ans (`attente.ts`).
+crons.daily(
+	'effacementListeDAttente',
+	{ hourUTC: 3, minuteUTC: 40 },
+	internal.attente.effacerLesEchues,
+	{}
+);
+
 crons.weekly(
 	'pointDuLundi',
 	{ dayOfWeek: 'monday', hourUTC: 5, minuteUTC: 0 },

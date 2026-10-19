@@ -28,6 +28,7 @@ export { Faq, questionsDeFacturation } from './faq';
 export { PageSecurite } from './page-securite';
 export { PageExpertsComptables } from './page-experts';
 export { PageFondateur } from './page-fondateur';
+export { PageSansJuge } from './page-sans-juge';
 export { Appel } from './appel';
 export { Pied } from './pied';
 export { DocumentLegal } from './document-legal';

@@ -1014,7 +1014,10 @@ export const PARAMETRES = {
 		valeur: null,
 		unite: 'centimes',
 		source: 'Décret d’application de la procédure L.126 — NON PUBLIÉ à ce jour',
-		verifieLe: LE,
+		// Recherché de nouveau le 19/10/2026 : le JORF, trié par date jusqu'au n° 0244 du
+		// 18/10/2026, ne remonte que la loi ; l'échéancier de la loi annonce une « publication
+		// envisagée en octobre 2026 ». La page `/procedure-sans-juge` affiche cette date.
+		verifieLe: LE_19_10,
 		verifie: false,
 		valideParAvocat: false,
 		note:

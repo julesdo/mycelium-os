@@ -30,8 +30,9 @@ Du texte, des **mots en gras**, des [liens](/blog), des listes…
 | -------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `titre`        | oui         | 10 à 90 caractères.                                                                                                            |
 | `description`  | oui         | 50 à 170 caractères : le résumé affiché par Google.                                                                            |
-| `date`         | oui         | Date de publication, au format `2026-10-06`.                                                                                   |
-| `categorie`    | oui         | `La loi`, `Trésorerie`, `Méthode` ou `Letikette`.                                                                              |
+| `date`         | oui         | Date de publication, au format `2026-10-06`. Une date future attend son jour, à Paris : on écrit d’avance, un par semaine.     |
+| `categorie`    | oui         | `La loi`, `Procédures`, `Trésorerie`, `Méthode` ou `Letikette`.                                                                |
+| `pilier`       | non         | `L’argent oublié`, `Le secteur public`, `Le transport` ou `Les règles qui changent` : de quoi parle l’article.                 |
 | `misAJour`     | non         | Date de la dernière mise à jour, même format.                                                                                  |
 | `auteur`       | non         | « L’équipe Letikette » par défaut.                                                                                             |
 | `illustration` | non         | Le motif de la couverture : `facture` (par défaut), `decompte`, `indemnites`, `calendrier`, `relance` ou `paiement`.           |

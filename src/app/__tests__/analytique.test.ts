@@ -27,4 +27,8 @@ describe('le garde d’Umami', () => {
 	it('annule l’envoi sur la page de désinscription d’un prospect', () => {
 		expect(garde('/desinscription/9b2f-41c1', '/desinscription/9b2f-41c1')).toBe(false);
 	});
+
+	it('annule l’envoi sur la page de confirmation de la liste d’attente', () => {
+		expect(garde('/attente/9b2f-41c1', '/attente/9b2f-41c1')).toBe(false);
+	});
 });

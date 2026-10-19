@@ -66,11 +66,13 @@ function Document() {
 	  de nos clients : rien de lui ne part chez un tiers, pas même la demande du script
 	  (voir `app/analytique.ts`).
 	*/
-	// Ni sur la page de désinscription d'un prospect : son adresse porte son jeton.
+	// Ni sur la page de désinscription d'un prospect, ni sur la confirmation de la liste
+	// d'attente : leur adresse porte un jeton.
 	const pageDuClient = useRouterState({
 		select: (etat) =>
 			etat.location.pathname.startsWith('/p/') ||
-			etat.location.pathname.startsWith('/desinscription/')
+			etat.location.pathname.startsWith('/desinscription/') ||
+			etat.location.pathname.startsWith('/attente/')
 	});
 	return (
 		// `lang="fr"` en dur : l'interface est en français uniquement, EGalim est

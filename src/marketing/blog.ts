@@ -1,4 +1,5 @@
 import { allArticles } from 'content-collections';
+import { estPublie } from './publication';
 
 /**
  * LES ARTICLES DU BLOG, d'où qu'ils viennent (06/10/2026).
@@ -11,13 +12,14 @@ import { allArticles } from 'content-collections';
  *
  * ⚠️ UN BROUILLON NE SORT JAMAIS EN PRODUCTION. Il se lit en local, pour la
  * relecture ; en ligne, il n'existe pas, ni dans la liste, ni à son adresse, ni
- * dans le flux, ni dans le plan du site.
+ * dans le flux, ni dans le plan du site. Un article daté du futur non plus, jusqu'à son
+ * jour à Paris (`publication.ts`, 19/10/2026) : le blog s'écrit d'avance, un par semaine.
  */
 export type ArticleBlog = (typeof allArticles)[number];
 
 export function articlesPublies(): readonly ArticleBlog[] {
 	return allArticles
-		.filter((article) => import.meta.env.DEV || !article.brouillon)
+		.filter((article) => estPublie(article, Date.now(), import.meta.env.DEV))
 		.sort((a, b) => b.date.localeCompare(a.date));
 }
 

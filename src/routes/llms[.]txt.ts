@@ -36,6 +36,7 @@ Letikette ne manipule aucun fonds, n’exerce aucune activité de recouvrement p
 - [Tarifs](${SITE_CANONIQUE}/tarifs) : le diagnostic gratuit (Découverte, sur ${historiqueDeDecouverte()}), puis Solo, Équipe ou Pro (${GRILLE.solo.mensuel}, ${GRILLE.equipe.mensuel} ou ${GRILLE.pro.mensuel} € HT par mois).
 - [Sécurité](${SITE_CANONIQUE}/securite) : chiffrement des documents, cloisonnement des données, hébergement.
 - [Taux des pénalités de retard](${SITE_CANONIQUE}/taux-des-penalites-de-retard) : le taux du semestre, le plancher contractuel, l’historique.
+- [Procédure sans juge](${SITE_CANONIQUE}/procedure-sans-juge) : la voie sans tribunal pour une facture entre commerçants que le client ne conteste pas, son état et la liste d’attente.
 - [Experts-comptables](${SITE_CANONIQUE}/experts-comptables) : le diagnostic à proposer aux clients du cabinet, et ${PARTENARIAT_CABINET.commissionPourcent} % de la première année de ceux qui s’abonnent.
 - [Qui sommes-nous](${SITE_CANONIQUE}/fondateur) : qui édite Letikette, et ce que le logiciel s’interdit.
 ${secteurs.join('\n')}

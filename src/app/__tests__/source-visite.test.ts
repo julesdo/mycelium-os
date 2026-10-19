@@ -54,4 +54,14 @@ describe('l’amorce de la source', () => {
 			)
 		).toBeUndefined();
 	});
+
+	it('ne note rien sur la confirmation de la liste d’attente : son adresse porte un jeton', () => {
+		expect(
+			executer(
+				'/attente/9b2f-41c1',
+				'https://www.letikette.com/attente/9b2f-41c1',
+				'https://mail.exemple.fr/'
+			)
+		).toBeUndefined();
+	});
 });

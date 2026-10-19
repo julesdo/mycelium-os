@@ -30,6 +30,7 @@ import type * as admin_recherche from "../admin/recherche.js";
 import type * as admin_support from "../admin/support.js";
 import type * as admin_tables from "../admin/tables.js";
 import type * as admin_taches from "../admin/taches.js";
+import type * as attente from "../attente.js";
 import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as coffre_anciens from "../coffre/anciens.js";
@@ -190,6 +191,7 @@ declare const fullApi: ApiFromModules<{
   "admin/support": typeof admin_support;
   "admin/tables": typeof admin_tables;
   "admin/taches": typeof admin_taches;
+  "attente": typeof attente;
   auth: typeof auth;
   billing: typeof billing;
   "coffre/anciens": typeof coffre_anciens;

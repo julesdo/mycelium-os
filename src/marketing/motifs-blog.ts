@@ -21,3 +21,16 @@ export type Illustration = (typeof ILLUSTRATIONS)[number];
 
 export const CATEGORIES = ['La loi', 'Procédures', 'Trésorerie', 'Méthode', 'Letikette'] as const;
 export type CategorieBlog = (typeof CATEGORIES)[number];
+
+/**
+ * LES QUATRE PILIERS DE LA LIGNE ÉDITORIALE (19/10/2026, audit stratégique) : ce dont le
+ * blog parle, à côté de la catégorie qui dit quel genre d'article c'est. Facultatif : un
+ * article qui ne relève d'aucun pilier n'en porte pas.
+ */
+export const PILIERS = [
+	'L’argent oublié',
+	'Le secteur public',
+	'Le transport',
+	'Les règles qui changent'
+] as const;
+export type PilierBlog = (typeof PILIERS)[number];
