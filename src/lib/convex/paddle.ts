@@ -4,14 +4,22 @@ import {
 	internalMutation,
 	internalQuery,
 	query,
-	type ActionCtx
+	type ActionCtx,
+	type QueryCtx
 } from './_generated/server';
 import { internal } from './_generated/api';
 import { authComponent } from './auth';
 import { authedAction, authedQuery } from './functions';
 import { organisationCouranteOuNull } from './lib/auth';
 import type { Doc, Id } from './_generated/dataModel';
-import { FORMULES, RYTHMES, type Formule, type Rythme } from '../config/tarifs';
+import { FORMULES, OFFRES, RYTHMES, type Formule, type Rythme } from '../config/tarifs';
+import {
+	corpsDeLaRemise,
+	ETIQUETTE_FONDATEURS,
+	offreDeBienvenue,
+	placesFondateurs
+} from '../paiement/offres';
+import { jourDeParis } from '../admin/dates';
 import { essaiDisponible, limitesDe, paiementOuvert } from './billing';
 import {
 	CLE_ORGANISATION,
@@ -107,6 +115,18 @@ export type CaisseServeur =
 			/** Le client Paddle déjà connu, sinon l'adresse pour préremplir. */
 			readonly client: { readonly id: string } | { readonly email: string };
 			readonly pwCustomer: string | null;
+			/** L'offre fondateurs, tant qu'il reste des places et que la date n'est pas passée. */
+			readonly fondateurs: {
+				readonly prixId: string;
+				readonly restantes: number;
+				readonly jusquAu: string;
+			} | null;
+			/** L'offre de bienvenue d'après un diagnostic : la remise se prépare au paiement. */
+			readonly bienvenue: {
+				readonly pourcent: number;
+				readonly mois: number;
+				readonly dernierJour: string;
+			} | null;
 	  }
 	| { readonly pret: false; readonly manque: readonly string[] };
 
@@ -172,12 +192,24 @@ export const caisse = authedQuery({
 			};
 		}
 
+		const maintenant = Date.now();
+		const parcours = await ctx.db
+			.query('parcoursComptes')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.first();
+		const offre = offreDeBienvenue(parcours?.etapes ?? {}, maintenant);
+
 		return {
 			pret: true,
 			environnement: reglages.environnement,
 			jeton: reglages.jeton,
 			prix,
 			essai,
+			fondateurs: await offreFondateurs(ctx, jourDeParis(maintenant)),
+			bienvenue:
+				offre === null
+					? null
+					: { pourcent: offre.pourcent, mois: offre.mois, dernierJour: offre.dernierJour },
 			donnees: {
 				[CLE_ORGANISATION]: orgId,
 				[CLE_SCEAU]: await sceller(reglages.secret, orgId)
@@ -187,6 +219,32 @@ export const caisse = authedQuery({
 		};
 	}
 });
+
+/** Les abonnements qui occupent une place : tout ce qui n'est pas résilié. */
+const STATUTS_QUI_OCCUPENT = new Set(['active', 'trialing', 'past_due', 'paused']);
+
+/**
+ * L'offre fondateurs pour la caisse : le prix rangé, les places restantes (comptées sur
+ * les abonnements vivants au prix fondateurs), et rien quand elle est close.
+ */
+export async function offreFondateurs(
+	ctx: QueryCtx,
+	jour: string
+): Promise<{ prixId: string; restantes: number; jusquAu: string } | null> {
+	const ligne = await ctx.db
+		.query('prixPaddle')
+		.withIndex('by_etiquette', (q) => q.eq('etiquette', ETIQUETTE_FONDATEURS))
+		.first();
+	if (ligne === null) return null;
+	const prises = (
+		await ctx.db
+			.query('organizations')
+			.withIndex('by_paddle_prix', (q) => q.eq('paddlePrixId', ligne.prixId))
+			.take(OFFRES.fondateurs.places + 10)
+	).filter((o) => o.paddleStatus !== undefined && STATUTS_QUI_OCCUPENT.has(o.paddleStatus)).length;
+	const { ouverte, restantes } = placesFondateurs(jour, prises);
+	return ouverte ? { prixId: ligne.prixId, restantes, jusquAu: OFFRES.fondateurs.jusquAu } : null;
+}
 
 /**
  * CE QU'IL FAUT À LA PAGE `/paiement` POUR OUVRIR UN LIEN DE PAIEMENT DE PADDLE
@@ -224,7 +282,8 @@ export const rangerLesPrix = internalMutation({
 				formule: v.union(v.literal('solo'), v.literal('equipe'), v.literal('pro')),
 				rythme: v.union(v.literal('mensuel'), v.literal('annuel')),
 				essai: v.boolean(),
-				montant: v.string()
+				montant: v.string(),
+				fondateurs: v.optional(v.boolean())
 			})
 		)
 	},
@@ -709,9 +768,19 @@ export const apercuDuChangement = authedAction({
 });
 
 export const changerDeFormule = authedAction({
-	args: { formule: vFormule, rythme: vRythme },
-	handler: async (ctx, { formule, rythme }): Promise<null> => {
+	args: {
+		formule: vFormule,
+		rythme: vRythme,
+		/** Le gérant a lu que le prix fondateurs ne revient pas (audit, lot 8). */
+		quitterLePrixFondateurs: v.optional(v.boolean())
+	},
+	handler: async (ctx, { formule, rythme, quitterLePrixFondateurs }): Promise<null> => {
 		const courant = await abonnementAGerer(ctx);
+		if (courant.prixFondateurs && quitterLePrixFondateurs !== true) {
+			throw new ConvexError(
+				'Vous êtes au prix fondateurs, bloqué à vie : changer de formule le quitte, sans retour. Confirmez depuis la page du changement.'
+			);
+		}
 		const prixId = await prixCible(ctx, formule, rythme, courant);
 		const data = await appelerPaddle(
 			'PATCH',
@@ -719,6 +788,108 @@ export const changerDeFormule = authedAction({
 			corpsDuChangement(prixId, courant.statut)
 		);
 		await inscrireLaReponse(ctx, data, courant.organizationId);
+		return null;
+	}
+});
+
+/**
+ * LA REMISE DE BIENVENUE (19/10/2026, audit, lot 8) : créée chez Paddle au moment de
+ * payer une formule au mois, pour cet établissement seul, à usage unique, jusqu'à la fin
+ * de l'offre. Une remise déjà créée qui vaut encore est reprise, jamais doublée. Rend
+ * son identifiant, que la caisse passe à Paddle ; `null` quand l'offre ne vaut plus.
+ */
+export const remiseDeBienvenue = authedAction({
+	args: {},
+	handler: async (ctx): Promise<string | null> => {
+		const contexte = await ctx.runQuery(internal.paddle._contexteDeLaRemise, {
+			userId: ctx.user._id
+		});
+		if (contexte === null) throw new ConvexError('Seul un administrateur choisit la formule.');
+		const offre = offreDeBienvenue(contexte.etapes, Date.now());
+		if (offre === null) return null;
+		if (contexte.remiseId !== null && contexte.remiseExpireLe === offre.expireLe) {
+			return contexte.remiseId;
+		}
+		if (contexte.prixMensuels.length === 0) return null;
+		const data = await appelerPaddle(
+			'POST',
+			'/discounts',
+			corpsDeLaRemise({
+				organisationId: contexte.organizationId,
+				nomEtablissement: contexte.nom,
+				prixIds: contexte.prixMensuels,
+				expireLe: offre.expireLe
+			})
+		);
+		const id = typeof data.id === 'string' ? data.id : null;
+		if (id === null) throw new ConvexError('Paddle n’a pas rendu la remise.');
+		await ctx.runMutation(internal.paddle._noterLaRemise, {
+			organizationId: contexte.organizationId,
+			remiseId: id,
+			expireLe: offre.expireLe
+		});
+		return id;
+	}
+});
+
+export const _contexteDeLaRemise = internalQuery({
+	args: { userId: v.string() },
+	handler: async (
+		ctx,
+		{ userId }
+	): Promise<{
+		organizationId: Id<'organizations'>;
+		nom: string;
+		etapes: Doc<'parcoursComptes'>['etapes'];
+		remiseId: string | null;
+		remiseExpireLe: number | null;
+		prixMensuels: string[];
+	} | null> => {
+		const orgId = await organisationCouranteOuNull(ctx, userId);
+		if (orgId === null) return null;
+		const membre = await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) => q.eq('organizationId', orgId).eq('userId', userId))
+			.unique();
+		if (membre?.role !== 'ORG_ADMIN') return null;
+		const org = await ctx.db.get(orgId);
+		if (org === null) return null;
+		const parcours = await ctx.db
+			.query('parcoursComptes')
+			.withIndex('by_org', (q) => q.eq('organizationId', orgId))
+			.first();
+		// Les prix au mois, avec et sans essai : la remise porte sur les premiers mois.
+		const prixMensuels: string[] = [];
+		for (const formule of FORMULES) {
+			for (const essai of [true, false]) {
+				const ligne = await ctx.db
+					.query('prixPaddle')
+					.withIndex('by_etiquette', (q) =>
+						q.eq('etiquette', etiquetteDuPrix(formule, 'mensuel', essai))
+					)
+					.first();
+				if (ligne !== null) prixMensuels.push(ligne.prixId);
+			}
+		}
+		return {
+			organizationId: org._id,
+			nom: org.name,
+			etapes: parcours?.etapes ?? {},
+			remiseId: org.remiseBienvenueId ?? null,
+			remiseExpireLe: org.remiseBienvenueExpireLe ?? null,
+			prixMensuels
+		};
+	}
+});
+
+export const _noterLaRemise = internalMutation({
+	args: { organizationId: v.id('organizations'), remiseId: v.string(), expireLe: v.number() },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, remiseId, expireLe }): Promise<null> => {
+		await ctx.db.patch(organizationId, {
+			remiseBienvenueId: remiseId,
+			remiseBienvenueExpireLe: expireLe
+		});
 		return null;
 	}
 });
@@ -800,6 +971,8 @@ export const _abonnementCourant = internalQuery({
 		statut: string | null;
 		/** Le prix souscrit porte les trente jours d'essai. */
 		prixAvecEssai: boolean;
+		/** Le prix souscrit est le prix fondateurs. */
+		prixFondateurs: boolean;
 		organizationId: Id<'organizations'>;
 	} | null> => {
 		const orgId = await organisationCouranteOuNull(ctx, userId);
@@ -823,6 +996,7 @@ export const _abonnementCourant = internalQuery({
 			abonnementId: org.paddleSubscriptionId ?? null,
 			statut: org.paddleStatus ?? null,
 			prixAvecEssai: prix?.essai === true,
+			prixFondateurs: prix?.fondateurs === true,
 			organizationId: org._id
 		};
 	}

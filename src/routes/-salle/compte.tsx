@@ -673,7 +673,10 @@ const CAISSE_DEMO: CaisseAffichee = {
 	enCours: null,
 	souscrite: null,
 	onFermerLaReussite: () => undefined,
-	erreur: null
+	erreur: null,
+	bienvenue: { pourcent: 20, mois: 3, dernierJour: '2026-11-01' },
+	fondateurs: { prixId: 'pri_demo', restantes: 37, jusquAu: '2026-12-31' },
+	onChoisirFondateurs: () => undefined
 };
 
 /**

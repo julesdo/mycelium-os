@@ -17,9 +17,9 @@ import {
 } from '../../croissance/conseils';
 import { rapportHtml, rapportTexte, OBJET_DU_RAPPORT } from '../emails/modeles/diagnostic';
 import { composerRapportDiagnostic } from '../../verticales/recouvrement/rapport-diagnostic';
-import { ajouterJours, dateLisible } from '../../verticales/recouvrement/calendrier';
+import { dateLisible } from '../../verticales/recouvrement/calendrier';
 import { jourDeParis } from '../../admin/dates';
-import { JOURS_OFFRE_DE_BIENVENUE, OFFRES } from '../../config/tarifs';
+import { offreDeBienvenue } from '../../paiement/offres';
 import { paiementOuvert } from '../billing';
 import { PLAN_PAR_DEFAUT, prochainCreneauDEnvoi } from '../../verticales/recouvrement/plan-relance';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
@@ -130,9 +130,12 @@ async function envoyerUnConseil(
 	// abonné ou à l'essai entre-temps ne la reçoit plus, et rien ne la propose tant que la
 	// facturation n'est pas ouverte. Elle est consommée sans partir.
 	const offre = CONSEILS_DES_ADMINS.has(cle);
+	// La même règle que la caisse (`paiement/offres.ts`) : ouverte, ou rien.
+	const ouverte = offre ? offreDeBienvenue(parcours.etapes, maintenant) : null;
 	if (
 		offre &&
 		(org === null ||
+			ouverte === null ||
 			org.paddleStatus === 'trialing' ||
 			org.paddleStatus === 'active' ||
 			!paiementOuvert())
@@ -174,15 +177,14 @@ async function envoyerUnConseil(
 			? await ceQuiEstDu(ctx, organizationId, new Date(maintenant).toISOString().slice(0, 10))
 			: undefined;
 	const expediteur = expediteurNomme(process.env.AUTH_EMAIL ?? '', 'Plume de Letikette');
-	const rendu = parcours.etapes.DIAGNOSTIC_RENDU;
-	const offreDeBienvenue =
-		offre && rendu !== undefined
-			? {
-					pourcent: OFFRES.diagnosticComplet.remiseBienvenuePourcent,
-					mois: OFFRES.diagnosticComplet.remiseBienvenueMois,
-					jusquAu: dateLisible(ajouterJours(jourDeParis(rendu), JOURS_OFFRE_DE_BIENVENUE - 1))
-				}
-			: undefined;
+	const donneesDeLOffre =
+		ouverte === null
+			? undefined
+			: {
+					pourcent: ouverte.pourcent,
+					mois: ouverte.mois,
+					jusquAu: dateLisible(ouverte.dernierJour)
+				};
 
 	for (const { userId, email } of destinataires) {
 		const membre = membres.find((m) => m.userId === userId);
@@ -201,7 +203,7 @@ async function envoyerUnConseil(
 			...(prenom === undefined ? {} : { prenom }),
 			...(du === undefined ? {} : { du }),
 			...(cle === 'ce-qui-partirait' ? { plan: lignesDuPlan() } : {}),
-			...(offreDeBienvenue === undefined ? {} : { offre: offreDeBienvenue })
+			...(donneesDeLOffre === undefined ? {} : { offre: donneesDeLOffre })
 		};
 		await resend.sendEmail(ctx, {
 			from: expediteur,

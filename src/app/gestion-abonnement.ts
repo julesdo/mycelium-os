@@ -20,7 +20,12 @@ export function useGestionAbonnement(
 	if (caisse === undefined) return undefined;
 	return {
 		apercu: (formule, rythme) => apercu({ formule, rythme }),
-		changer: (formule, rythme) => changer({ formule, rythme }),
+		changer: (formule, rythme, quitterLePrixFondateurs) =>
+			changer({
+				formule,
+				rythme,
+				...(quitterLePrixFondateurs === true ? { quitterLePrixFondateurs: true } : {})
+			}),
 		resilier: (raison) => resilier(raison === undefined ? {} : { raison }),
 		reprendre: () => reprendre({}),
 		onGererLaCarte: caisse.onGerer,

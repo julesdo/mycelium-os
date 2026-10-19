@@ -44,12 +44,15 @@ export function ConfirmationDeChangement({
 	apercu,
 	enCours,
 	erreur,
-	onConfirmer
+	onConfirmer,
+	quittePrixFondateurs = false
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
 	readonly formule: Formule;
 	readonly rythme: Rythme;
+	/** L'abonnement est au prix fondateurs : le changement le quitte, sans retour. */
+	readonly quittePrixFondateurs?: boolean;
 	/** L'abonnement est encore à l'essai : rien n'est facturé avant sa fin. */
 	readonly aLEssai: boolean;
 	readonly apercu: ApercuDeChangement;
@@ -123,6 +126,12 @@ export function ConfirmationDeChangement({
 					)}
 				</ListeDeReleve>
 			)}
+			{quittePrixFondateurs ? (
+				<p className="px-1 text-cladd-xs leading-relaxed font-medium">
+					Vous êtes au prix fondateurs, bloqué à vie. En changeant de formule, vous le quittez : il
+					ne revient pas.
+				</p>
+			) : null}
 			<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
 				Montants hors taxes ; Paddle ajoute la TVA de votre pays et envoie la facture.
 			</p>

@@ -56,7 +56,8 @@ export function ChoixDeFormule({
 	plusTard,
 	retour = false,
 	utilisateurs = 1,
-	actuelle
+	actuelle,
+	bienvenue
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -80,6 +81,12 @@ export function ChoixDeFormule({
 	 * actuelle est marquée, et le bouton mène à la confirmation chiffrée.
 	 */
 	readonly actuelle?: { readonly formule: Formule; readonly rythme: Rythme };
+	/** L'offre de bienvenue après un diagnostic : sa remise s'applique aux formules au mois. */
+	readonly bienvenue?: {
+		readonly pourcent: number;
+		readonly mois: number;
+		readonly dernierJour: string;
+	};
 }) {
 	const [formule, setFormule] = useState<Formule>(actuelle?.formule ?? recommandee);
 	const [rythme, setRythme] = useState<Rythme>(actuelle?.rythme ?? 'annuel');
@@ -146,6 +153,12 @@ export function ChoixDeFormule({
 				</Segmented>
 			</SurfaceCut>
 
+			{bienvenue === undefined || actuelle !== undefined ? null : (
+				<p className="px-1 text-center text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					{`Votre offre de bienvenue : ${bienvenue.pourcent} % sur vos ${MOIS_EN_LETTRES[bienvenue.mois] ?? bienvenue.mois} premiers mois${rythme === 'annuel' ? ', en formule au mois' : ''}, jusqu’au ${dateEnLettres(Date.parse(`${bienvenue.dernierJour}T12:00:00Z`))}.`}
+				</p>
+			)}
+
 			<div role="radiogroup" aria-label="Votre formule" className="flex flex-col gap-2">
 				{FORMULES.map((f) => (
 					<CarteDeFormule
@@ -171,9 +184,13 @@ export function ChoixDeFormule({
 }
 
 const JOUR = 24 * 60 * 60 * 1000;
+const MOIS_EN_LETTRES = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six'];
 
+/** « 1er novembre », « 14 novembre » : `Intl` écrit « 1 novembre », le premier prend son « er ». */
 function dateEnLettres(ms: number): string {
-	return new Date(ms).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+	return new Date(ms)
+		.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+		.replace(/^1 /, '1er ');
 }
 
 /** Une formule, cochable. Le prix suit le rythme choisi au-dessus. */

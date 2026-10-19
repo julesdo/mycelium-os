@@ -168,7 +168,8 @@ export const catalogue = internalAction({
 								formule: attendu.formule,
 								rythme: attendu.rythme,
 								essai: attendu.essai,
-								montant: attendu.montant
+								montant: attendu.montant,
+								...(attendu.fondateurs === true ? { fondateurs: true } : {})
 							}
 						]
 					: [];

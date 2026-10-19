@@ -192,6 +192,7 @@ export const etatAbonnement = authedQuery({
 			formule: souscrite,
 			rythme: (org.paddleRythme ?? null) as Rythme | null,
 			montantDuPrixSouscrit: prixSouscrit?.montant ?? null,
+			prixFondateurs: prixSouscrit?.fondateurs === true,
 			essaiFinLe: org.paddleStatus === 'trialing' ? (org.paddleEssaiFinLe ?? null) : null,
 			prochainPrelevementLe: org.paddleProchainPrelevementLe ?? null,
 			resiliationLe: org.paddleResiliationLe ?? null,

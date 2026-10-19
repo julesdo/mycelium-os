@@ -7,6 +7,7 @@
  * tests sans harnais. Les fonctions Convex vivent dans `convex/paddle.ts` et
  * `convex/paddleCatalogue.ts`.
  */
+import { prixFondateursAttendu } from './offres';
 import {
 	DUREE_ESSAI_JOURS,
 	FORMULES,
@@ -378,6 +379,8 @@ export interface PrixAttendu {
 	readonly cycle: { readonly interval: 'month' | 'year'; readonly frequency: 1 };
 	/** Les jours d'essai, ou `null`. */
 	readonly essaiJours: number | null;
+	/** Le prix fondateurs (`offres.ts`) : compté, daté, jamais migré. */
+	readonly fondateurs?: boolean;
 }
 
 export interface ProduitAttendu {
@@ -389,6 +392,16 @@ export interface ProduitAttendu {
 
 export function catalogueAttendu(): readonly ProduitAttendu[] {
 	return FORMULES.map((formule) => ({
+		...produitDeLaGrille(formule),
+		// Le prix fondateurs vit sous le produit Pro, à côté des prix de la grille.
+		...(formule === prixFondateursAttendu().formule
+			? { prix: [...produitDeLaGrille(formule).prix, prixFondateursAttendu()] }
+			: {})
+	}));
+}
+
+function produitDeLaGrille(formule: Formule): ProduitAttendu {
+	return {
 		etiquette: formule,
 		nom: `Letikette ${GRILLE[formule].nom}`,
 		description: `${GRILLE[formule].pour} : vos factures lues, vos relances envoyées à votre nom, ce qu’on vous doit calculé au centime.`,
@@ -407,7 +420,7 @@ export function catalogueAttendu(): readonly ProduitAttendu[] {
 				})
 			)
 		)
-	}));
+	};
 }
 
 /** Ce qu'un prix existant dit, lu dans la réponse de l'API. */

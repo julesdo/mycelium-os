@@ -89,6 +89,12 @@ export default defineSchema({
 		paddleResiliationLe: v.optional(v.number()),
 		/** L'établissement a déjà eu ses trente jours d'essai : plus de second. */
 		essaiUtilise: v.optional(v.boolean()),
+		/**
+		 * La remise de bienvenue créée chez Paddle pour cet établissement (audit, lot 8) :
+		 * son identifiant et son expiration. Reprise tant qu'elle vaut, jamais recréée.
+		 */
+		remiseBienvenueId: v.optional(v.string()),
+		remiseBienvenueExpireLe: v.optional(v.number()),
 		/** Les rappels d'abonnement déjà envoyés (« essai-7:2026-11-13 ») : jamais deux fois. */
 		rappelsAbonnement: v.optional(v.array(v.string())),
 		paddleStatus: v.optional(
@@ -113,7 +119,9 @@ export default defineSchema({
 		.index('by_paddle_subscription', ['paddleSubscriptionId'])
 		.index('by_paddle_customer', ['paddleCustomerId'])
 		// Les rappels d'abonnement du matin lisent les essais et les abonnements actifs.
-		.index('by_paddle_status', ['paddleStatus']),
+		.index('by_paddle_status', ['paddleStatus'])
+		// Les places de l'offre fondateurs se comptent sur le prix souscrit.
+		.index('by_paddle_prix', ['paddlePrixId']),
 
 	/**
 	 * LES PRIX PADDLE DE CE DÉPLOIEMENT, rangés par le catalogue
@@ -131,6 +139,8 @@ export default defineSchema({
 		essai: v.boolean(),
 		/** En centimes, tel que Paddle le prélève. */
 		montant: v.string(),
+		/** Le prix fondateurs (`paiement/offres.ts`) : compté, daté, jamais migré. */
+		fondateurs: v.optional(v.boolean()),
 		enregistreLe: v.number()
 	})
 		.index('by_etiquette', ['etiquette'])

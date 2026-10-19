@@ -26,7 +26,11 @@ export interface GestionAffichee {
 		formule: Formule,
 		rythme: Rythme
 	) => Promise<{ aujourdhui: number; ensuite: number | null; prochainLe: number | null }>;
-	readonly changer: (formule: Formule, rythme: Rythme) => Promise<unknown>;
+	readonly changer: (
+		formule: Formule,
+		rythme: Rythme,
+		quitterLePrixFondateurs?: boolean
+	) => Promise<unknown>;
 	readonly resilier: (raison: string | undefined) => Promise<unknown>;
 	readonly reprendre: () => Promise<unknown>;
 	/** Le portail de Paddle : la carte, les factures. */
@@ -166,12 +170,14 @@ export function GestionDeLaFormule({
 					formule={cible.formule}
 					rythme={cible.rythme}
 					aLEssai={aLEssai}
+					quittePrixFondateurs={abonnement.prixFondateurs === true}
 					apercu={apercu}
 					enCours={enCours}
 					erreur={erreur}
 					onConfirmer={() =>
 						agir(
-							() => gestion.changer(cible.formule, cible.rythme),
+							() =>
+								gestion.changer(cible.formule, cible.rythme, abonnement.prixFondateurs === true),
 							() => {
 								setReussite({
 									titre: 'Formule changée',

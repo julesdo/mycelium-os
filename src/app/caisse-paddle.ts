@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Paddle, PaddleEventData } from '@paddle/paddle-js';
 import type { CaisseServeur } from '../lib/convex/paddle';
 import type { CaisseAffichee, Souscription } from '../screens/compte/facturation';
-import { useMutation } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
 import { suivre } from './analytique';
 
@@ -68,6 +68,8 @@ export function useCaissePaddle({
 	// L'intérêt pour une formule nourrit le score du compte (`croissance/`) ; il
 	// part sans attendre et n'arrête jamais le paiement.
 	const noterInteret = useMutation(api.croissance.interet.noterInteretFormule);
+	// La remise de bienvenue se crée chez Paddle au moment de payer (audit, lot 8).
+	const preparerLaRemise = useAction(api.paddle.remiseDeBienvenue);
 	const rappel = useRef(onSouscrit);
 	useEffect(() => {
 		rappel.current = onSouscrit;
@@ -101,9 +103,52 @@ export function useCaissePaddle({
 
 	const pret = caisse.pret ? caisse : null;
 
+	/** Ouvre le paiement de Paddle sur ce prix, avec la remise si elle est donnée. */
+	function ouvrir(
+		p: Extract<CaisseServeur, { pret: true }>,
+		prixId: string,
+		remise: string | null
+	): void {
+		paddlePour(p)
+			.then((paddle) => {
+				if (!paddle) throw new Error('Paddle.js absent');
+				paddle.Checkout.open({
+					items: [{ priceId: prixId, quantity: 1 }],
+					...(remise === null ? {} : { discountId: remise }),
+					customData: p.donnees,
+					customer: p.client,
+					settings: {
+						displayMode: 'overlay',
+						locale: 'fr',
+						theme: themeDeLaPage(),
+						allowLogout: false
+					}
+				});
+			})
+			.catch(() => {
+				setEnCours(null);
+				setErreur('Le paiement n’a pas pu se charger. Vérifiez la connexion, puis réessayez.');
+			});
+	}
+
 	return {
 		disponible: pret !== null,
 		essai: pret?.essai ?? false,
+		bienvenue: pret?.bienvenue ?? null,
+		fondateurs: pret?.fondateurs ?? null,
+		...(pret?.fondateurs
+			? {
+					onChoisirFondateurs: () => {
+						const f = pret.fondateurs;
+						if (f === null) return;
+						setErreur(null);
+						setEnCours('formule');
+						setChoix({ formule: 'pro', rythme: 'annuel', essai: false });
+						suivre('paiement-ouvert', { formule: 'pro', rythme: 'annuel', essai: false });
+						ouvrir(pret, f.prixId, null);
+					}
+				}
+			: {}),
 		enCours,
 		souscrite,
 		onFermerLaReussite: () => setSouscrite(null),
@@ -119,25 +164,18 @@ export function useCaissePaddle({
 			setChoix({ formule, rythme, essai: pret.essai });
 			suivre('paiement-ouvert', { formule, rythme, essai: pret.essai });
 			noterInteret({}).catch(() => undefined);
-			paddlePour(pret)
-				.then((paddle) => {
-					if (!paddle) throw new Error('Paddle.js absent');
-					paddle.Checkout.open({
-						items: [{ priceId: prix, quantity: 1 }],
-						customData: pret.donnees,
-						customer: pret.client,
-						settings: {
-							displayMode: 'overlay',
-							locale: 'fr',
-							theme: themeDeLaPage(),
-							allowLogout: false
-						}
+			// Au mois, pendant l'offre de bienvenue : la remise d'abord. Elle ne se perd
+			// jamais en silence : si elle ne se prépare pas, le paiement ne s'ouvre pas.
+			if (rythme === 'mensuel' && pret.bienvenue !== null) {
+				preparerLaRemise({})
+					.then((remise) => ouvrir(pret, prix, remise))
+					.catch(() => {
+						setEnCours(null);
+						setErreur('La remise de bienvenue n’a pas pu se préparer. Réessayez dans un instant.');
 					});
-				})
-				.catch(() => {
-					setEnCours(null);
-					setErreur('Le paiement n’a pas pu se charger. Vérifiez la connexion, puis réessayez.');
-				});
+				return;
+			}
+			ouvrir(pret, prix, null);
 		},
 		onGerer: () => {
 			setErreur(null);

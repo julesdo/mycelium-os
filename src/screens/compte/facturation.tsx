@@ -4,6 +4,7 @@ import {
 	DUREE_ESSAI_JOURS,
 	GRILLE,
 	JOURS_DE_REMBOURSEMENT,
+	OFFRES,
 	montantDuRythme,
 	type Formule,
 	type Limites,
@@ -11,6 +12,7 @@ import {
 } from '../../lib/config/tarifs';
 import {
 	BoutonPrincipal,
+	BoutonSecondaire,
 	BoutonTexte,
 	ChoixDeFormule,
 	EnTeteDeGroupe,
@@ -39,6 +41,8 @@ export interface AbonnementAffiche {
 	readonly rythme: Rythme | null;
 	/** Le montant du prix souscrit chez Paddle, en centimes (texte) : ce qui est prélevé. */
 	readonly montantDuPrixSouscrit?: string | null;
+	/** Le prix souscrit est le prix fondateurs : le quitter se confirme (audit, lot 8). */
+	readonly prixFondateurs?: boolean;
 	readonly essaiFinLe: number | null;
 	readonly prochainPrelevementLe: number | null;
 	/** Une résiliation programmée : le jour où elle prend effet. */
@@ -77,6 +81,19 @@ export interface CaisseAffichee {
 	/** Les prix proposés portent les trente jours d'essai. */
 	readonly essai: boolean;
 	readonly onChoisir: (formule: Formule, rythme: Rythme) => void;
+	/** L'offre de bienvenue après un diagnostic : la remise s'applique aux formules au mois. */
+	readonly bienvenue?: {
+		readonly pourcent: number;
+		readonly mois: number;
+		readonly dernierJour: string;
+	} | null;
+	/** L'offre fondateurs, tant qu'il reste des places. */
+	readonly fondateurs?: {
+		readonly prixId: string;
+		readonly restantes: number;
+		readonly jusquAu: string;
+	} | null;
+	readonly onChoisirFondateurs?: () => void;
 	readonly onGerer: () => void;
 	readonly enCours: 'formule' | 'portail' | null;
 	/** Paddle a confirmé le paiement : la coche s'affiche jusqu'à ce qu'on la ferme. */
@@ -142,6 +159,15 @@ export function SectionFacturation({
 				{...(choisir === undefined ? {} : { onChoisir: choisir })}
 			/>
 
+			{peutChoisir && caisse?.fondateurs && caisse.onChoisirFondateurs ? (
+				<OffreFondateurs
+					restantes={caisse.fondateurs.restantes}
+					jusquAu={caisse.fondateurs.jusquAu}
+					enCours={caisse.enCours === 'formule'}
+					onChoisir={caisse.onChoisirFondateurs}
+				/>
+			) : null}
+
 			{etat.genre === 'ouverture' || etat.genre === 'developpement' ? null : (
 				<CeQueComprend abonnement={abonnement} />
 			)}
@@ -178,6 +204,7 @@ export function SectionFacturation({
 					maintenant={maintenant}
 					utilisateurs={abonnement.utilisateurs}
 					onChoisir={caisse.onChoisir}
+					{...(caisse.bienvenue ? { bienvenue: caisse.bienvenue } : {})}
 				/>
 			) : null}
 
@@ -456,4 +483,42 @@ function dateEnClair(ms: number): string {
 		month: 'long',
 		year: 'numeric'
 	});
+}
+
+/**
+ * L'OFFRE FONDATEURS (19/10/2026, audit, décision 4, lot 8) : Pro à l'année au prix de
+ * l'offre, bloqué à vie, tant qu'il reste des places et jusqu'à son dernier jour. Les
+ * places et la date se disent en clair : ni compte à rebours, ni prix barré.
+ */
+function OffreFondateurs({
+	restantes,
+	jusquAu,
+	enCours,
+	onChoisir
+}: {
+	readonly restantes: number;
+	readonly jusquAu: string;
+	readonly enCours: boolean;
+	readonly onChoisir: () => void;
+}) {
+	const f = OFFRES.fondateurs;
+	const date = new Date(`${jusquAu}T12:00:00Z`)
+		.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+		.replace(/^1 /, '1er ');
+	return (
+		<section className="flex flex-col gap-cladd-3xs">
+			<EnTeteDeGroupe libelle={f.nom} />
+			<ListeDeReleve>
+				<LigneDeReleve
+					titre={`${GRILLE[f.formule].nom}, à l’année`}
+					ligne={`Prix bloqué à vie · ${restantes} place${restantes > 1 ? 's' : ''} sur ${f.places}, jusqu’au ${date}`}
+					montant={`${prixAffiche(f.prixCentimes)} HT`}
+					retour
+				/>
+			</ListeDeReleve>
+			<BoutonSecondaire pleineLargeur loading={enCours} disabled={enCours} onClick={onChoisir}>
+				Choisir l’offre fondateurs
+			</BoutonSecondaire>
+		</section>
+	);
 }

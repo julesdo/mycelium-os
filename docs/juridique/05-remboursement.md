@@ -1,6 +1,6 @@
 # Politique de remboursement
 
-> **Version 1.2** du 14 octobre 2026 (trente jours pour demander un remboursement). Version 1.1
+> **Version 1.3** du 19 octobre 2026 (l'offre fondateurs, la remise de bienvenue et les prestations sur devis, section 2 bis). **Version 1.2** du 14 octobre 2026 (trente jours pour demander un remboursement). Version 1.1
 > du même jour (l'essai avec carte, l'abonnement annuel), version 1.0 du même jour. Elle complète l'article 8 des
 > [conditions générales](./02-conditions-generales.md).
 
@@ -19,6 +19,19 @@ vend l'abonnement, émet la facture, encaisse le paiement, et effectue les rembo
   pour chaque renouvellement, au mois comme à l'année.
 - **Passé ce délai**, le paiement reste acquis. Vous pouvez toujours résilier : la résiliation
   prend effet à la fin de la période en cours (le mois ou l'année), et rien n'est plus prélevé.
+
+## 2 bis. Les offres
+
+- **L'offre fondateurs** est un abonnement à l'année au prix de l'offre, bloqué tant que cet
+  abonnement court. Elle suit la même règle : trente jours pour demander le remboursement de
+  chaque paiement. Une résiliation qui prend effet, ou un changement de formule, quitte ce prix ;
+  il ne revient pas, et l'espace le dit avant de confirmer le changement.
+- **La remise de bienvenue**, proposée après un diagnostic, s'applique aux premiers prélèvements
+  d'une formule au mois souscrite pendant l'offre, une seule fois. Un paiement remisé se rembourse
+  pour le montant réellement payé ; la remise ne se convertit pas en argent.
+- **Les prestations vendues sur devis** (le diagnostic complet, la réclamation clé en main, le
+  pilote accompagné) sont facturées directement par Letikette, hors Paddle. Leurs conditions,
+  remboursement compris, figurent au devis que vous acceptez.
 
 ## 3. Avant tout paiement
 

@@ -213,7 +213,10 @@ describe('la lecture d’un événement', () => {
 });
 
 describe('le catalogue attendu', () => {
-	const tous = catalogueAttendu().flatMap((p) => p.prix);
+	// Les douze prix de la grille ; le prix fondateurs a ses tests (`offres.test.ts`).
+	const tous = catalogueAttendu()
+		.flatMap((p) => p.prix)
+		.filter((p) => p.fondateurs !== true);
 
 	it('tire chaque montant de la grille affichée', () => {
 		for (const prix of tous) {
