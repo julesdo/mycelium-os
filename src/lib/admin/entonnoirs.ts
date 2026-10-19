@@ -57,7 +57,9 @@ const RANG: Record<StatutProspect, number> = {
 	PERDU: 2,
 	STOP: 2,
 	INTERESSE: 3,
-	INSCRIT: 4
+	INSCRIT: 4,
+	// Une réclamation payée, un pilote signé : gagné sans inscription.
+	GAGNE: 4
 };
 
 export const ETAPES_DE_PROSPECTION = [

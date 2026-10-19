@@ -4,6 +4,7 @@ import { CHAMPS_IMPORT, type ChampImport } from '../../crm/colonnes';
 import { empreinteDEmail, normaliserEmail } from '../../crm/empreinte';
 import { verifierImport, type BilanDImport } from '../../crm/import';
 import { equipeMutation, equipeQuery, noterAuJournal } from './enveloppe';
+import { naissanceDuProspect } from './prospects';
 
 /**
  * L'IMPORT DU TABLEUR DE PROSPECTION (16/10/2026).
@@ -101,6 +102,7 @@ export const importer = equipeMutation('SUPPORT')({
 		for (const p of b.aImporter) {
 			await ctx.db.insert('prospects', {
 				...p,
+				...naissanceDuProspect(p),
 				importId,
 				creePar: ctx.equipier.email,
 				creeLe: maintenant

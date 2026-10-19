@@ -16,6 +16,7 @@ import { LigneDeTache, type EvenementAffiche } from '../../ui/admin';
 import { echeanceDeTache, grouperParJour, heureDeParis } from '../../lib/admin/dates';
 import { grouperTaches } from '../../lib/crm/taches';
 import { LIBELLES_DES_STATUTS, type StatutProspect } from '../../lib/crm/statuts';
+import { LIBELLES_DES_ISSUES, type IssueAppel } from '../../lib/crm/appels';
 
 /**
  * CE QUE LES ÉCRANS DE L'ADMIN PARTAGENT (16/10/2026) : la tâche, l'événement d'une
@@ -35,12 +36,14 @@ export interface TacheAffichee {
 	readonly fiche?: { readonly type: TypeFiche; readonly id: string; readonly libelle: string };
 }
 
-export type TypeEvenementCrm = 'NOTE' | 'APPEL' | 'EMAIL' | 'REPONSE' | 'STATUT';
+export type TypeEvenementCrm = 'NOTE' | 'APPEL' | 'EMAIL' | 'REPONSE' | 'STATUT' | 'ETAPE';
 
 export interface EvenementCrm {
 	readonly id: string;
 	readonly type: TypeEvenementCrm;
 	readonly texte?: string;
+	/** Pour un appel : ce qu'il a donné. */
+	readonly issue?: IssueAppel;
 	readonly auteur: string;
 	readonly le: number;
 }
@@ -143,10 +146,11 @@ const ICONES: Record<TypeEvenementCrm, ReactNode> = {
 	APPEL: <PhoneIcon />,
 	EMAIL: <MailIcon />,
 	REPONSE: <MessageSquareReplyIcon />,
-	STATUT: <TagIcon />
+	STATUT: <TagIcon />,
+	ETAPE: <FlagIcon />
 };
 
-const TITRES: Record<Exclude<TypeEvenementCrm, 'STATUT'>, string> = {
+const TITRES: Record<Exclude<TypeEvenementCrm, 'STATUT' | 'ETAPE'>, string> = {
 	NOTE: 'Note',
 	APPEL: 'Appel noté',
 	EMAIL: 'E-mail noté',
@@ -166,11 +170,24 @@ export function evenementAffiche(e: EvenementCrm): EvenementAffiche & { readonly
 			auteur: nomCourt(e.auteur)
 		};
 	}
+	if (e.type === 'ETAPE') {
+		return {
+			id: e.id,
+			le: e.le,
+			icone: ICONES.ETAPE,
+			titre: `Étape : ${e.texte ?? ''}`,
+			heure: heureDeParis(e.le),
+			auteur: nomCourt(e.auteur)
+		};
+	}
 	return {
 		id: e.id,
 		le: e.le,
 		icone: ICONES[e.type],
-		titre: TITRES[e.type],
+		titre:
+			e.type === 'APPEL' && e.issue !== undefined
+				? `Appel : ${LIBELLES_DES_ISSUES[e.issue].toLocaleLowerCase('fr-FR')}`
+				: TITRES[e.type],
 		...(e.texte === undefined ? {} : { texte: e.texte }),
 		heure: heureDeParis(e.le),
 		auteur: nomCourt(e.auteur)

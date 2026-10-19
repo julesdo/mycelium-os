@@ -1,6 +1,6 @@
 import { v, ConvexError } from 'convex/values';
 import { equipeMutation, equipeQuery } from './enveloppe';
-import { vTypeEvenementCrm } from './tables';
+import { vIssueAppel, vTypeEvenementCrm } from './tables';
 import { jourDeRelance, LIBELLES_DES_ETAPES, SUITE_DES_ETAPES } from '../../crm/modeles';
 
 /**
@@ -21,6 +21,7 @@ export const deLaFiche = equipeQuery('LECTURE')({
 			id: v.id('evenementsCrm'),
 			type: vTypeEvenementCrm,
 			texte: v.optional(v.string()),
+			issue: v.optional(vIssueAppel),
 			auteur: v.string(),
 			le: v.number()
 		})
@@ -42,6 +43,7 @@ export const deLaFiche = equipeQuery('LECTURE')({
 			id: e._id,
 			type: e.type,
 			...(e.texte === undefined ? {} : { texte: e.texte }),
+			...(e.issue === undefined ? {} : { issue: e.issue }),
 			auteur: e.auteur,
 			le: e.le
 		}));
@@ -88,7 +90,12 @@ export const noter = equipeMutation('SUPPORT')({
 			});
 		}
 		if (type === 'REPONSE' && ['A_CONTACTER', 'CONTACTE', 'RELANCE'].includes(p.statut)) {
-			await ctx.db.patch(cible.prospect, { statut: 'A_REPONDU', dernierContactLe: maintenant });
+			await ctx.db.patch(cible.prospect, {
+				statut: 'A_REPONDU',
+				dernierContactLe: maintenant,
+				// Une réponse vient du prospect : la durée de conservation repart d'elle.
+				dernierContactDuProspectLe: maintenant
+			});
 		}
 		return null;
 	}

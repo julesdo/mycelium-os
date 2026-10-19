@@ -16,6 +16,7 @@ import {
 } from '../../screens/admin/prospects';
 import { FeuilleProspect } from '../../screens/admin/formulaire-prospect';
 import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
+import { estParcours, libelleDeLEtape, type Parcours } from '../../lib/crm/parcours';
 
 /**
  * Les prospects : la vue se garde dans l'adresse, la présentation (liste ou
@@ -27,7 +28,13 @@ const CLES_AFFICHAGE = AFFICHAGES_PROSPECTS.map((a) => a.cle);
 export const Route = createFileRoute('/admin/prospects/')({
 	validateSearch: (
 		recherche: Record<string, unknown>
-	): { vue?: VueProspects; affichage?: AffichageProspects; ajouter?: 1 } => ({
+	): {
+		vue?: VueProspects;
+		affichage?: AffichageProspects;
+		ajouter?: 1;
+		parcours?: Parcours;
+	} => ({
+		...(estParcours(recherche.parcours) ? { parcours: recherche.parcours } : {}),
 		...(CLES_AFFICHAGE.includes(recherche.affichage as AffichageProspects)
 			? { affichage: recherche.affichage as AffichageProspects }
 			: {}),
@@ -40,7 +47,7 @@ export const Route = createFileRoute('/admin/prospects/')({
 });
 
 function ProspectsAdmin() {
-	const { vue = 'TOUS', ajouter, affichage: affichageDeLAdresse } = Route.useSearch();
+	const { vue = 'TOUS', ajouter, affichage: affichageDeLAdresse, parcours } = Route.useSearch();
 	const navigate = useNavigate({ from: '/admin/prospects/' });
 	const role = useRoleAdmin();
 	const horloge = useHorlogeAdmin();
@@ -52,7 +59,10 @@ function ProspectsAdmin() {
 		CLES_AFFICHAGE
 	);
 	const affichage = affichageDeLAdresse ?? prefere;
-	const prospects = useQuery(api.admin.prospects.liste, { vue });
+	const prospects = useQuery(api.admin.prospects.liste, {
+		vue,
+		...(parcours === undefined ? {} : { parcours })
+	});
 	const equipe = useQuery(api.admin.equipe.adresses, {});
 	// Optimiste : la carte reste où on l'a posée, sans revenir le temps que le serveur réponde.
 	const changerStatut = useMutation(api.admin.prospects.changerStatut).withOptimisticUpdate(
@@ -85,6 +95,19 @@ function ProspectsAdmin() {
 		}
 	);
 	const assigner = useMutation(api.admin.prospects.assigner);
+	// Optimiste, comme le statut : la carte reste dans la colonne où on l'a posée.
+	const changerEtape = useMutation(api.admin.prospects.changerEtape).withOptimisticUpdate(
+		(local, { prospectId, etape }) => {
+			for (const { args, value } of local.getAllQueries(api.admin.prospects.liste)) {
+				if (value === undefined) continue;
+				local.setQuery(
+					api.admin.prospects.liste,
+					args,
+					value.map((p) => (p.id === prospectId ? { ...p, etapeParcours: etape } : p))
+				);
+			}
+		}
+	);
 	const creer = useMutation(api.admin.prospects.creer);
 	const chercherAuRegistre = useAction(
 		api.recouvrement.monEtablissement.chercherAuRegistreALInscription
@@ -123,6 +146,7 @@ function ProspectsAdmin() {
 			onSelection={setSelection}
 			equipe={equipe ?? []}
 			maintenant={horloge?.maintenant ?? 0}
+			{...(parcours === undefined ? {} : { parcours })}
 			{...(peutEcrire
 				? {
 						gestes: {
@@ -158,7 +182,29 @@ function ProspectsAdmin() {
 											? 'Plus personne ne les suit.'
 											: `${ids.length} prospect${ids.length > 1 ? 's' : ''} pour ${responsable}.`
 								}).catch(() => undefined),
-							onAjouter: () => void navigate({ search: (s) => ({ ...s, ajouter: 1 }) })
+							onAjouter: () => void navigate({ search: (s) => ({ ...s, ajouter: 1 }) }),
+							onChangerEtape: (id, etape) => {
+								const prospectId = id as Id<'prospects'>;
+								void changerEtape({ prospectId, etape })
+									.then((avant) => {
+										if (avant === null || parcours === undefined) return;
+										dire({
+											titre: 'Étape changée',
+											texte: `Passé à « ${libelleDeLEtape(parcours, etape)} ».`,
+											geste: {
+												libelle: 'Annuler',
+												faire: () => void changerEtape({ prospectId, etape: avant })
+											}
+										});
+									})
+									.catch((e: unknown) =>
+										dire({
+											titre: 'Pas fait',
+											texte: e instanceof Error ? e.message : 'L’étape n’a pas changé.',
+											humeur: 'attention'
+										})
+									);
+							}
 						}
 					}
 				: {})}

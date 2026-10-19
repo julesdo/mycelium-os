@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { SEUIL_APPELER } from '../../croissance/score';
 import { statutClos } from '../../crm/statuts';
+import { parcoursDe, type Parcours } from '../../crm/parcours';
 import { bornesDuJourDeParis } from '../../admin/dates';
 import { equipeQuery } from './enveloppe';
 
@@ -21,6 +22,14 @@ export const compteurs = equipeQuery('LECTURE')({
 		sansAction: v.number(),
 		aRelancer: v.number(),
 		interesses: v.number(),
+		// Les parcours (19/10/2026) : les prospects encore ouverts de chacun.
+		parcoursFournisseurPublic: v.number(),
+		parcoursTransporteur: v.number(),
+		parcoursExpertComptable: v.number(),
+		parcoursPmeLogiciel: v.number(),
+		parcoursPilote: v.number(),
+		// Collectés il y a plus d'un mois, jamais informés : la même règle que la vue.
+		aInformer: v.number(),
 		// Le support (16/10/2026) : à vous, chez l'équipe, en attente du client, chez Plume.
 		supportAVous: v.number(),
 		supportOuvertes: v.number(),
@@ -48,6 +57,10 @@ export const compteurs = equipeQuery('LECTURE')({
 					.take(500)
 			).filter((c) => c.reserveeAuFondateur !== true || ctx.equipier.role === 'FONDATEUR');
 		const chezLEquipe = await conversations('A_NOUS');
+		const ouverts = prospects.filter((p) => !statutClos(p.statut));
+		const duParcours = (parcours: Parcours) =>
+			ouverts.filter((p) => parcoursDe(p) === parcours).length;
+		const UN_MOIS = 30 * 24 * 60 * 60 * 1000;
 
 		return {
 			tachesDues: ouvertes.length,
@@ -66,6 +79,14 @@ export const compteurs = equipeQuery('LECTURE')({
 			).length,
 			interesses: prospects.filter((p) => p.statut === 'INTERESSE' || p.statut === 'A_REPONDU')
 				.length,
+			parcoursFournisseurPublic: duParcours('FOURNISSEUR_PUBLIC'),
+			parcoursTransporteur: duParcours('TRANSPORTEUR'),
+			parcoursExpertComptable: duParcours('EXPERT_COMPTABLE'),
+			parcoursPmeLogiciel: duParcours('PME_LOGICIEL'),
+			parcoursPilote: duParcours('PILOTE'),
+			aInformer: ouverts.filter(
+				(p) => p.email !== undefined && p.emailBase === undefined && maintenant - p.creeLe > UN_MOIS
+			).length,
 			supportAVous: chezLEquipe.filter(
 				(c) => c.assigneA === undefined || c.assigneA === ctx.equipier.email
 			).length,

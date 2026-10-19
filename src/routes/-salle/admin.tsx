@@ -410,7 +410,8 @@ function DemoFicheProspect({ etat, variante }: { etat: EtatDemo; variante?: stri
 				onModifier: RIEN_ASYNC,
 				onStop: RIEN_ASYNC,
 				onChercherAuRegistre: async () => [],
-				onEmailEcrit: RIEN_ASYNC
+				onEmailEcrit: RIEN_ASYNC,
+				onChangerEtape: RIEN
 			}}
 			signataire={{ prenom: 'Jules', fondateur: true }}
 		/>
@@ -588,6 +589,12 @@ function DemoBarreLaterale({ variante }: { etat: EtatDemo; variante?: string }) 
 					sansAction: 14,
 					aRelancer: 6,
 					interesses: 9,
+					parcoursFournisseurPublic: 31,
+					parcoursTransporteur: 18,
+					parcoursExpertComptable: 6,
+					parcoursPmeLogiciel: 64,
+					parcoursPilote: 2,
+					aInformer: 4,
 					supportAVous: 2,
 					supportOuvertes: 3,
 					supportEnAttente: 4,

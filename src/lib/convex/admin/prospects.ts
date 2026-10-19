@@ -2,9 +2,34 @@ import { v, ConvexError } from 'convex/values';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx } from '../_generated/server';
 import { empreinteDEmail, normaliserEmail } from '../../crm/empreinte';
-import { statutClos } from '../../crm/statuts';
+import { statutClos, type Cible } from '../../crm/statuts';
+import {
+	etapeInitiale,
+	etapeValide,
+	libelleDeLEtape,
+	parcoursDe,
+	type Parcours
+} from '../../crm/parcours';
 import { equipeMutation, equipeQuery, noterAuJournal } from './enveloppe';
-import { vCible, vStatutProspect } from './tables';
+import { vCible, vEstimationProspect, vParcours, vStatutProspect } from './tables';
+
+/**
+ * Ce qu'un prospect reçoit en naissant, d'où qu'il vienne (ajout, import, annuaire) :
+ * son parcours (choisi, ou déduit de sa cible et de son activité), la première étape
+ * de ce parcours, et le jeton de son lien de désinscription.
+ */
+export function naissanceDuProspect(p: {
+	readonly parcours?: Parcours;
+	readonly cible: Cible;
+	readonly activite?: string;
+}): { parcours: Parcours; etapeParcours: string; jetonDesinscription: string } {
+	const parcours = parcoursDe(p);
+	return {
+		parcours,
+		etapeParcours: etapeInitiale(parcours),
+		jetonDesinscription: crypto.randomUUID()
+	};
+}
 
 /**
  * LES PROSPECTS (16/10/2026) — des données de Letikette, pas d'un client.
@@ -20,7 +45,8 @@ export const vVueProspects = v.union(
 	v.literal('A_RELANCER'),
 	v.literal('INTERESSES'),
 	v.literal('PME'),
-	v.literal('CABINETS')
+	v.literal('CABINETS'),
+	v.literal('A_INFORMER')
 );
 
 const vLigneProspect = v.object({
@@ -31,6 +57,12 @@ const vLigneProspect = v.object({
 	dirigeant: v.optional(v.string()),
 	cible: vCible,
 	statut: vStatutProspect,
+	/** Toujours rendu : lu, ou déduit pour un prospect d'avant le 19/10/2026. */
+	parcours: vParcours,
+	etapeParcours: v.string(),
+	telephone: v.optional(v.string()),
+	montantEstimeCentimes: v.optional(v.int64()),
+	dateButoir: v.optional(v.string()),
 	prochaineAction: v.optional(v.string()),
 	prochaineActionLe: v.optional(v.number()),
 	dernierContactLe: v.optional(v.number()),
@@ -39,11 +71,22 @@ const vLigneProspect = v.object({
 });
 
 function ligne(p: Doc<'prospects'>): typeof vLigneProspect.type {
+	const parcours = parcoursDe(p);
 	return {
 		id: p._id,
 		entreprise: p.entreprise,
 		cible: p.cible,
 		statut: p.statut,
+		parcours,
+		etapeParcours:
+			p.etapeParcours !== undefined && etapeValide(parcours, p.etapeParcours)
+				? p.etapeParcours
+				: etapeInitiale(parcours),
+		...(p.telephone === undefined ? {} : { telephone: p.telephone }),
+		...(p.montantEstimeCentimes === undefined
+			? {}
+			: { montantEstimeCentimes: p.montantEstimeCentimes }),
+		...(p.dateButoir === undefined ? {} : { dateButoir: p.dateButoir }),
 		...(p.ville === undefined ? {} : { ville: p.ville }),
 		...(p.activite === undefined ? {} : { activite: p.activite }),
 		...(p.dirigeant === undefined ? {} : { dirigeant: p.dirigeant }),
@@ -56,12 +99,14 @@ function ligne(p: Doc<'prospects'>): typeof vLigneProspect.type {
 }
 
 export const liste = equipeQuery('LECTURE')({
-	args: { vue: vVueProspects },
+	args: { vue: vVueProspects, parcours: v.optional(vParcours) },
 	returns: v.array(vLigneProspect),
-	handler: async (ctx, { vue }) => {
+	handler: async (ctx, { vue, parcours }) => {
 		const tous = await ctx.db.query('prospects').withIndex('by_cree').order('desc').take(3000);
 		const maintenant = Date.now();
+		const UN_MOIS = 30 * 24 * 60 * 60 * 1000;
 		return tous
+			.filter((p) => parcours === undefined || parcoursDe(p) === parcours)
 			.filter((p) => {
 				switch (vue) {
 					case 'SANS_ACTION':
@@ -78,6 +123,15 @@ export const liste = equipeQuery('LECTURE')({
 						return p.cible === 'PME';
 					case 'CABINETS':
 						return p.cible === 'CABINET';
+					case 'A_INFORMER':
+						// Collecté il y a plus d'un mois, adresse nominative, personne jamais
+						// informée (article 14 du RGPD) : à appeler ou à écarter.
+						return (
+							!statutClos(p.statut) &&
+							p.email !== undefined &&
+							p.emailBase === undefined &&
+							maintenant - p.creeLe > UN_MOIS
+						);
 					default:
 						return true;
 				}
@@ -100,6 +154,13 @@ export const fiche = equipeQuery('LECTURE')({
 			site: v.optional(v.string()),
 			trouveOu: v.optional(v.string()),
 			notes: v.optional(v.string()),
+			codePartenaire: v.optional(v.string()),
+			logicielComptable: v.optional(v.string()),
+			estimation: v.optional(vEstimationProspect),
+			emailBase: v.optional(v.union(v.literal('GENERIQUE'), v.literal('INFORMEE'))),
+			emailInformeLe: v.optional(v.number()),
+			jetonDesinscription: v.optional(v.string()),
+			dernierContactDuProspectLe: v.optional(v.number()),
 			creeLe: v.number(),
 			creePar: v.string()
 		})
@@ -117,6 +178,17 @@ export const fiche = equipeQuery('LECTURE')({
 			...(p.site === undefined ? {} : { site: p.site }),
 			...(p.trouveOu === undefined ? {} : { trouveOu: p.trouveOu }),
 			...(p.notes === undefined ? {} : { notes: p.notes }),
+			...(p.codePartenaire === undefined ? {} : { codePartenaire: p.codePartenaire }),
+			...(p.logicielComptable === undefined ? {} : { logicielComptable: p.logicielComptable }),
+			...(p.estimation === undefined ? {} : { estimation: p.estimation }),
+			...(p.emailBase === undefined ? {} : { emailBase: p.emailBase }),
+			...(p.emailInformeLe === undefined ? {} : { emailInformeLe: p.emailInformeLe }),
+			...(p.jetonDesinscription === undefined
+				? {}
+				: { jetonDesinscription: p.jetonDesinscription }),
+			...(p.dernierContactDuProspectLe === undefined
+				? {}
+				: { dernierContactDuProspectLe: p.dernierContactDuProspectLe }),
 			creeLe: p.creeLe,
 			creePar: p.creePar
 		};
@@ -139,7 +211,10 @@ const vChampsProspect = {
 	prochaineAction: v.optional(v.string()),
 	prochaineActionLe: v.optional(v.union(v.number(), v.null())),
 	notes: v.optional(v.string()),
-	responsable: v.optional(v.union(v.string(), v.null()))
+	responsable: v.optional(v.union(v.string(), v.null())),
+	parcours: v.optional(vParcours),
+	codePartenaire: v.optional(v.string()),
+	logicielComptable: v.optional(v.string())
 };
 
 type ChampsProspect = {
@@ -162,7 +237,9 @@ function champsPropres(c: ChampsProspect): Partial<Doc<'prospects'>> {
 		'site',
 		'trouveOu',
 		'prochaineAction',
-		'notes'
+		'notes',
+		'codePartenaire',
+		'logicielComptable'
 	] as const) {
 		if (c[cle] !== undefined) sortie[cle] = texte(c[cle]);
 	}
@@ -173,6 +250,7 @@ function champsPropres(c: ChampsProspect): Partial<Doc<'prospects'>> {
 		sortie.siren = s.length === 9 ? s : undefined;
 	}
 	if (c.cible !== undefined) sortie.cible = c.cible;
+	if (c.parcours !== undefined) sortie.parcours = c.parcours;
 	if (c.prochaineActionLe !== undefined)
 		sortie.prochaineActionLe = c.prochaineActionLe ?? undefined;
 	if (c.responsable !== undefined) sortie.responsable = c.responsable ?? undefined;
@@ -205,11 +283,17 @@ export const creer = equipeMutation('SUPPORT')({
 				.first();
 			if (deja !== null) throw new ConvexError(`Ce prospect existe déjà : ${deja.entreprise}.`);
 		}
+		const cible = champs.cible ?? 'PME';
 		return await ctx.db.insert('prospects', {
 			...champs,
 			entreprise: champs.entreprise,
-			cible: champs.cible ?? 'PME',
+			cible,
 			statut: 'A_CONTACTER',
+			...naissanceDuProspect({
+				...(champs.parcours === undefined ? {} : { parcours: champs.parcours }),
+				cible,
+				...(champs.activite === undefined ? {} : { activite: champs.activite })
+			}),
 			creePar: ctx.equipier.email,
 			creeLe: Date.now()
 		});
@@ -256,6 +340,38 @@ export const changerStatut = equipeMutation('SUPPORT')({
 				le: Date.now()
 			});
 		}
+		return avant;
+	}
+});
+
+/**
+ * Avancer un prospect dans son parcours. L'étape est relue contre le registre du
+ * parcours (une clé inconnue est refusée), notée à l'historique par son libellé, et
+ * l'étape d'avant est rendue pour le « Annuler ».
+ */
+export const changerEtape = equipeMutation('SUPPORT')({
+	args: { prospectId: v.id('prospects'), etape: v.string() },
+	returns: v.union(v.null(), v.string()),
+	handler: async (ctx, { prospectId, etape }): Promise<string | null> => {
+		const p = await ctx.db.get(prospectId);
+		if (p === null) throw new ConvexError('Prospect introuvable.');
+		if (p.statut === 'STOP') {
+			throw new ConvexError('Ce prospect a demandé à ne plus être contacté.');
+		}
+		const parcours = parcoursDe(p);
+		if (!etapeValide(parcours, etape)) {
+			throw new ConvexError('Cette étape n’existe pas pour ce parcours.');
+		}
+		const avant = p.etapeParcours ?? etapeInitiale(parcours);
+		if (avant === etape) return null;
+		await ctx.db.patch(prospectId, { parcours, etapeParcours: etape });
+		await ctx.db.insert('evenementsCrm', {
+			prospectId,
+			type: 'ETAPE',
+			texte: libelleDeLEtape(parcours, etape),
+			auteur: ctx.equipier.email,
+			le: Date.now()
+		});
 		return avant;
 	}
 });

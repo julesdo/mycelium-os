@@ -38,6 +38,7 @@ function FicheProspectAdmin() {
 	const moi = useQuery(api.admin.support.moi, {});
 	const creerTache = useMutation(api.admin.taches.creer);
 	const changerStatut = useMutation(api.admin.prospects.changerStatut);
+	const changerEtape = useMutation(api.admin.prospects.changerEtape);
 	const remettreStatuts = useMutation(api.admin.prospects.remettreStatuts);
 	const modifier = useMutation(api.admin.prospects.modifier);
 	const stop = useMutation(api.admin.prospects.stop);
@@ -116,6 +117,26 @@ function FicheProspectAdmin() {
 									texte: 'Il ne sera plus contacté, ni réimporté.'
 								}),
 							onChercherAuRegistre: async (nom) => (await chercherAuRegistre({ nom })).candidats,
+							onChangerEtape: (etape) =>
+								void changerEtape({ prospectId, etape })
+									.then((avant) => {
+										if (avant === null) return;
+										dire({
+											titre: 'Étape changée',
+											texte: 'C’est dans l’historique.',
+											geste: {
+												libelle: 'Annuler',
+												faire: () => void changerEtape({ prospectId, etape: avant })
+											}
+										});
+									})
+									.catch((e: unknown) =>
+										dire({
+											titre: 'Pas fait',
+											texte: e instanceof Error ? e.message : 'L’étape n’a pas changé.',
+											humeur: 'attention'
+										})
+									),
 							onEmailEcrit: (etape, objet, texte) =>
 								faire(
 									() =>

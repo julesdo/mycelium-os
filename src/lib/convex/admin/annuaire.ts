@@ -13,6 +13,16 @@ import {
 } from '../../crm/annuaire';
 import { equipeAction } from './action';
 import { equipeMutation, noterAuJournal } from './enveloppe';
+import { naissanceDuProspect } from './prospects';
+import type { Parcours } from '../../crm/parcours';
+
+/** Le parcours de prospection de chaque secteur cherché à l'annuaire. */
+const PARCOURS_DU_SECTEUR: Readonly<Record<CleSecteur, Parcours>> = {
+	TRANSPORT: 'TRANSPORTEUR',
+	BATIMENT: 'PME_LOGICIEL',
+	SERVICES: 'PME_LOGICIEL',
+	CABINETS: 'EXPERT_COMPTABLE'
+};
 
 /**
  * TROUVER DES ENTREPRISES À L'ANNUAIRE, PUIS LES AJOUTER (17/10/2026).
@@ -157,8 +167,10 @@ export const ajouter = equipeMutation('SUPPORT')({
 			le: maintenant
 		});
 		for (const e of retenues) {
+			const prospect = versProspect(e, secteur, maintenant);
 			await ctx.db.insert('prospects', {
-				...versProspect(e, secteur, maintenant),
+				...prospect,
+				...naissanceDuProspect({ ...prospect, parcours: PARCOURS_DU_SECTEUR[secteur] }),
 				importId,
 				creePar: ctx.equipier.email,
 				creeLe: maintenant

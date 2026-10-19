@@ -1,3 +1,4 @@
+import { Select } from '@cladd-ui/react';
 import { useState } from 'react';
 import {
 	BoutonPrincipal,
@@ -19,6 +20,12 @@ import {
 } from '../../lib/crm/modeles';
 import { valeursDeLaLoi } from '../../lib/crm/valeurs-loi';
 import { LIBELLES_DES_CIBLES, type StatutProspect } from '../../lib/crm/statuts';
+import {
+	REGISTRE_DES_PARCOURS,
+	libelleDeLEtape,
+	parcoursParDefaut,
+	type Parcours
+} from '../../lib/crm/parcours';
 import { quandInscrit } from './aujourdhui';
 import { evenementAffiche, nomCourt, type EvenementCrm, type TacheAffichee } from './commun';
 import { CorpsDeFiche, type GestesDeFiche } from './fiche';
@@ -51,6 +58,68 @@ export interface FicheProspect extends LigneProspect {
 	readonly notes?: string;
 	readonly creeLe: number;
 	readonly creePar: string;
+	readonly codePartenaire?: string;
+	readonly logicielComptable?: string;
+	/** Fournisseur public : le majorant estimé avant l'appel, décomposé. */
+	readonly estimation?: {
+		readonly segments: readonly {
+			readonly acheteur: string;
+			readonly annee: number;
+			readonly montantAnnuelCentimes: bigint;
+			readonly joursDeRetard: number;
+			readonly interetsCentimes: bigint;
+			readonly indemnitesCentimes: bigint;
+		}[];
+		readonly hypotheses: readonly string[];
+		readonly calculeeLe: number;
+	};
+	readonly emailBase?: 'GENERIQUE' | 'INFORMEE';
+	readonly emailInformeLe?: number;
+	readonly jetonDesinscription?: string;
+}
+
+/** « 31 déc. 2026 » : une date AAAA-MM-JJ, en clair. */
+function dateCourteDeJour(jour: string): string {
+	return dateCourteDeParis(Date.parse(`${jour}T12:00:00Z`));
+}
+
+/** « 12 480 € » : un ordre de grandeur, sans centimes. */
+function eurosRonds(centimes: bigint): string {
+	return `${new Intl.NumberFormat('fr-FR').format(Number(centimes / 100n))} €`;
+}
+
+/** Le parcours dans la ligne, sous le nom : un menu de ses étapes. */
+function SelecteurDEtape({
+	parcours,
+	etape,
+	onChanger,
+	lectureSeule
+}: {
+	readonly parcours: Parcours;
+	readonly etape: string | undefined;
+	readonly onChanger: (etape: string) => void;
+	readonly lectureSeule: boolean;
+}) {
+	const etapes = REGISTRE_DES_PARCOURS[parcours].etapes;
+	const courante = libelleDeLEtape(parcours, etape);
+	return (
+		<Select
+			size="md"
+			rounded
+			title={REGISTRE_DES_PARCOURS[parcours].libelle}
+			options={etapes.map((e) => e.cle)}
+			value={etapes.find((e) => e.libelle === courante)?.cle ?? etapes[0]!.cle}
+			readOnly={lectureSeule}
+			keyboardHints={false}
+			renderOption={({ value }) => libelleDeLEtape(parcours, value)}
+			onChange={(cle) => {
+				if (cle !== etape) onChanger(cle);
+			}}
+			aria-label={`${REGISTRE_DES_PARCOURS[parcours].libelle} : ${courante}`}
+		>
+			{courante}
+		</Select>
+	);
 }
 
 export interface DonneesFicheProspect {
@@ -64,6 +133,8 @@ export interface GestesDuProspect extends GestesDeFiche {
 	readonly onModifier: (champs: ChampsProspect) => Promise<void>;
 	readonly onStop: () => Promise<void>;
 	readonly onChercherAuRegistre: (nom: string) => Promise<readonly CandidatDuRegistre[]>;
+	/** Avancer le prospect dans son parcours. */
+	readonly onChangerEtape: (etape: string) => void;
 	/** Un e-mail écrit depuis son modèle : noté avec son étape, la relance suivante posée. */
 	readonly onEmailEcrit: (
 		etape: Exclude<EtapeDEcriture, 'FINI'>,
@@ -236,6 +307,38 @@ export function EcranFicheProspect({
 				)}
 			</BlocDeFiche>
 
+			{fiche.estimation === undefined ? null : (
+				<BlocDeFiche titre="Estimation avant l’appel">
+					<ChampsDeFiche
+						champs={[
+							{
+								libelle: 'Au plus',
+								valeur:
+									fiche.montantEstimeCentimes === undefined
+										? 'Pas calculé'
+										: eurosRonds(fiche.montantEstimeCentimes)
+							},
+							{
+								libelle: 'Date butoir',
+								valeur:
+									fiche.dateButoir === undefined
+										? 'Pas calculée'
+										: dateCourteDeJour(fiche.dateButoir)
+							},
+							...fiche.estimation.segments.map((s) => ({
+								libelle: `${s.acheteur}, ${s.annee}`,
+								valeur: `${eurosRonds(s.interetsCentimes + s.indemnitesCentimes)} (${s.joursDeRetard} j sur ${eurosRonds(s.montantAnnuelCentimes)})`
+							}))
+						]}
+					/>
+					<ul className="flex flex-col gap-1 px-1 text-cladd-3xs text-cladd-fg-soft">
+						{fiche.estimation.hypotheses.map((h) => (
+							<li key={h}>{h}</li>
+						))}
+					</ul>
+				</BlocDeFiche>
+			)}
+
 			<BlocDeFiche titre="Entreprise">
 				<ChampsDeFiche
 					champs={[
@@ -329,6 +432,12 @@ export function EcranFicheProspect({
 							statut={fiche.statut}
 							lectureSeule={!actif}
 							onChanger={(s) => gestes?.onChangerStatut(s)}
+						/>
+						<SelecteurDEtape
+							parcours={fiche.parcours ?? parcoursParDefaut(fiche.cible, fiche.activite)}
+							etape={fiche.etapeParcours}
+							lectureSeule={!actif}
+							onChanger={(e) => gestes?.onChangerEtape(e)}
 						/>
 						{fiche.compteId === undefined ? null : (
 							<BoutonTexte as={Lien} to="/admin/comptes/$id" params={{ id: fiche.compteId }}>

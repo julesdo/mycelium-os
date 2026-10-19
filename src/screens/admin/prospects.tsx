@@ -33,7 +33,18 @@ import {
 	type ColonneTableau,
 	type OptionDAffichage
 } from '../../ui/admin-vues';
-import { atteintEtapeDeProspection, entonnoirDeProspection } from '../../lib/admin/entonnoirs';
+import {
+	atteintEtapeDeProspection,
+	enEntonnoir,
+	entonnoirDeProspection
+} from '../../lib/admin/entonnoirs';
+import {
+	REGISTRE_DES_PARCOURS,
+	atteintsParEtape,
+	libelleDeLEtape,
+	rangDeLEtape,
+	type Parcours
+} from '../../lib/crm/parcours';
 import { echeanceDeTache } from '../../lib/admin/dates';
 import {
 	LIBELLES_DES_STATUTS,
@@ -63,7 +74,8 @@ export type VueProspects =
 	| 'A_RELANCER'
 	| 'INTERESSES'
 	| 'PME'
-	| 'CABINETS';
+	| 'CABINETS'
+	| 'A_INFORMER';
 export type AffichageProspects = 'tableau' | 'kanban' | 'liste' | 'entonnoir';
 
 export const VUES_PROSPECTS: readonly VueEnPastille<VueProspects>[] = [
@@ -72,7 +84,8 @@ export const VUES_PROSPECTS: readonly VueEnPastille<VueProspects>[] = [
 	{ cle: 'A_RELANCER', libelle: 'À relancer' },
 	{ cle: 'INTERESSES', libelle: 'Intéressés' },
 	{ cle: 'PME', libelle: 'PME' },
-	{ cle: 'CABINETS', libelle: 'Cabinets' }
+	{ cle: 'CABINETS', libelle: 'Cabinets' },
+	{ cle: 'A_INFORMER', libelle: 'À informer' }
 ];
 
 export interface LigneProspect {
@@ -88,10 +101,33 @@ export interface LigneProspect {
 	readonly dernierContactLe?: number;
 	readonly responsable?: string;
 	readonly compteId?: string;
+	/** Le parcours et son étape (19/10/2026) ; absents dans les données de démonstration anciennes. */
+	readonly parcours?: Parcours;
+	readonly etapeParcours?: string;
+	/** Fournisseur public : le majorant estimé, en centimes, et le dernier jour pour réclamer. */
+	readonly montantEstimeCentimes?: bigint;
+	readonly dateButoir?: string;
+}
+
+/** « 12 480 € » : un ordre de grandeur, sans centimes. */
+function eurosRonds(centimes: bigint): string {
+	return `${new Intl.NumberFormat('fr-FR').format(Number(centimes / 100n))} €`;
+}
+
+/** « 31 déc. 2026 » : la date butoir, en clair. */
+function dateCourte(jour: string): string {
+	return new Intl.DateTimeFormat('fr-FR', {
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		timeZone: 'UTC'
+	}).format(new Date(`${jour}T12:00:00Z`));
 }
 
 export interface GestesProspects {
 	readonly onChangerStatut: (ids: readonly string[], statut: StatutProspect) => void;
+	/** Avancer dans le parcours affiché (le kanban d'un parcours). */
+	readonly onChangerEtape?: (id: string, etape: string) => void;
 	readonly onAssigner: (ids: readonly string[], responsable: string | null) => void;
 	readonly onAjouter: () => void;
 }
@@ -192,7 +228,8 @@ export function EcranProspects({
 	equipe,
 	maintenant,
 	gestes,
-	feuilles
+	feuilles,
+	parcours
 }: {
 	readonly lecture: Lecture<readonly LigneProspect[]>;
 	readonly vue: VueProspects;
@@ -210,11 +247,13 @@ export function EcranProspects({
 	readonly gestes?: GestesProspects;
 	/** La page pleine d'ajout, posée par la route. */
 	readonly feuilles?: ReactNode;
+	/** Le parcours choisi dans la barre latérale : le kanban et l'entonnoir suivent ses étapes. */
+	readonly parcours?: Parcours;
 }) {
 	const [etapeChoisie, setEtapeChoisie] = useState<string | null>(null);
 	const entete = {
 		genre: 'onglet' as const,
-		titre: 'Prospects',
+		titre: parcours === undefined ? 'Prospects' : REGISTRE_DES_PARCOURS[parcours].libelle,
 		actions: (
 			<>
 				<SearchField
@@ -374,6 +413,46 @@ export function EcranProspects({
 		</div>
 	);
 
+	const colonnesDuParcours: ColonneTableau<LigneProspect>[] =
+		parcours === undefined
+			? []
+			: [
+					{
+						cle: 'etape',
+						libelle: 'Étape',
+						largeur: 'w-40',
+						rendu: (p) => (
+							<span className="text-cladd-fg-soft">
+								{libelleDeLEtape(parcours, p.etapeParcours)}
+							</span>
+						),
+						tri: (a, b) =>
+							rangDeLEtape(parcours, a.etapeParcours) - rangDeLEtape(parcours, b.etapeParcours)
+					},
+					...(parcours === 'FOURNISSEUR_PUBLIC'
+						? ([
+								{
+									cle: 'estime',
+									libelle: 'Estimé',
+									largeur: 'w-28',
+									rendu: (p) =>
+										p.montantEstimeCentimes === undefined
+											? ''
+											: eurosRonds(p.montantEstimeCentimes),
+									tri: (a, b) =>
+										Number((a.montantEstimeCentimes ?? 0n) - (b.montantEstimeCentimes ?? 0n))
+								},
+								{
+									cle: 'butoir',
+									libelle: 'Date butoir',
+									largeur: 'w-32',
+									rendu: (p) => (p.dateButoir === undefined ? '' : dateCourte(p.dateButoir)),
+									tri: (a, b) => (a.dateButoir ?? '9999').localeCompare(b.dateButoir ?? '9999')
+								}
+							] satisfies ColonneTableau<LigneProspect>[])
+						: [])
+				];
+
 	const colonnesDuTableau: ColonneTableau<LigneProspect>[] = [
 		{
 			cle: 'entreprise',
@@ -381,6 +460,7 @@ export function EcranProspects({
 			rendu: (p) => p.entreprise,
 			tri: (a, b) => a.entreprise.localeCompare(b.entreprise, 'fr')
 		},
+		...colonnesDuParcours,
 		{
 			cle: 'statut',
 			libelle: 'Statut',
@@ -454,7 +534,39 @@ export function EcranProspects({
 		/>
 	);
 
-	const kanban = (
+	const carteDuKanban = (p: LigneProspect) => {
+		const action = prochaineActionDe(p, maintenant);
+		const ligne = ligneDe(p);
+		return {
+			id: p.id,
+			titre: p.entreprise,
+			...(ligne === undefined ? {} : { ligne }),
+			action: action.texte,
+			alerte: action.manquante,
+			vers: '/admin/prospects/$id' as const,
+			parametres: { id: p.id }
+		};
+	};
+
+	// Un parcours choisi : ses étapes font les colonnes, et glisser une carte l'avance.
+	const kanbanDuParcours =
+		parcours === undefined ? null : (
+			<Kanban
+				libelleDeLaCarte="le prospect"
+				colonnes={REGISTRE_DES_PARCOURS[parcours].etapes.map((etape) => ({
+					cle: etape.cle,
+					libelle: etape.libelle,
+					cartes: retenus
+						.filter((p) => libelleDeLEtape(parcours, p.etapeParcours) === etape.libelle)
+						.map(carteDuKanban)
+				}))}
+				{...(gestes?.onChangerEtape === undefined
+					? {}
+					: { onDeposer: (id: string, etape: string) => gestes.onChangerEtape?.(id, etape) })}
+			/>
+		);
+
+	const kanban = kanbanDuParcours ?? (
 		<Kanban
 			libelleDeLaCarte="le prospect"
 			colonnes={STATUTS_CHOISISSABLES.map((statut) => {
@@ -489,12 +601,24 @@ export function EcranProspects({
 		/>
 	);
 
-	const etapes = entonnoirDeProspection(retenus.map((p) => p.statut));
+	const etapes =
+		parcours === undefined
+			? entonnoirDeProspection(retenus.map((p) => p.statut))
+			: enEntonnoir(
+					atteintsParEtape(
+						parcours,
+						retenus.map((p) => p.etapeParcours)
+					)
+				);
 	const choisie = etapes.find((e) => e.cle === etapeChoisie);
 	const aLEtape =
 		choisie === undefined
 			? []
-			: retenus.filter((p) => atteintEtapeDeProspection(p.statut, choisie.cle));
+			: parcours === undefined
+				? retenus.filter((p) => atteintEtapeDeProspection(p.statut, choisie.cle))
+				: retenus.filter(
+						(p) => rangDeLEtape(parcours, p.etapeParcours) >= rangDeLEtape(parcours, choisie.cle)
+					);
 	const entonnoir = (
 		<div className="flex flex-col gap-cladd-xs">
 			<Entonnoir etapes={etapes} choisie={etapeChoisie} onChoisir={setEtapeChoisie} />

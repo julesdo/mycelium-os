@@ -30,7 +30,12 @@ import {
 	LifeBuoyIcon,
 	FeatherIcon,
 	CircleCheckIcon,
-	MessageSquareReplyIcon
+	MessageSquareReplyIcon,
+	LandmarkIcon,
+	TruckIcon,
+	CalculatorIcon,
+	BriefcaseIcon,
+	HandshakeIcon
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { RoleEquipe } from '../lib/admin/acces';
@@ -140,7 +145,12 @@ const SUPPORT: Destination = {
 	prefixes: ['/admin/support'],
 	compte: 'supportAVous'
 };
-const SUPPORT_ONGLET: Destination = { ...SUPPORT, cle: 'support-onglet', libelle: 'Support', Icone: LifeBuoyIcon };
+const SUPPORT_ONGLET: Destination = {
+	...SUPPORT,
+	cle: 'support-onglet',
+	libelle: 'Support',
+	Icone: LifeBuoyIcon
+};
 
 /**
  * Les quatre onglets du téléphone. Le support y remplace les tâches (16/10/2026) : elles
@@ -156,6 +166,59 @@ const GROUPES: readonly {
 }[] = [
 	{ cle: 'travail', destinations: [AUJOURDHUI, TACHES] },
 	{ cle: 'fiches', titre: 'Fiches', destinations: [COMPTES, PROSPECTS] },
+	{
+		// Les parcours de prospection (19/10/2026, audit stratégique) : un kanban et un
+		// entonnoir par façon de vendre, chacun avec ses étapes.
+		cle: 'parcours',
+		titre: 'Parcours',
+		destinations: [
+			{
+				cle: 'parcours-public',
+				libelle: 'Fournisseurs publics',
+				vers: '/admin/prospects',
+				Icone: LandmarkIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { parcours: 'FOURNISSEUR_PUBLIC' },
+				compte: 'parcoursFournisseurPublic'
+			},
+			{
+				cle: 'parcours-transport',
+				libelle: 'Transporteurs',
+				vers: '/admin/prospects',
+				Icone: TruckIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { parcours: 'TRANSPORTEUR' },
+				compte: 'parcoursTransporteur'
+			},
+			{
+				cle: 'parcours-cabinets',
+				libelle: 'Experts-comptables',
+				vers: '/admin/prospects',
+				Icone: CalculatorIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { parcours: 'EXPERT_COMPTABLE' },
+				compte: 'parcoursExpertComptable'
+			},
+			{
+				cle: 'parcours-pme',
+				libelle: 'PME logiciel',
+				vers: '/admin/prospects',
+				Icone: BriefcaseIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { parcours: 'PME_LOGICIEL' },
+				compte: 'parcoursPmeLogiciel'
+			},
+			{
+				cle: 'parcours-pilote',
+				libelle: 'Pilotes',
+				vers: '/admin/prospects',
+				Icone: HandshakeIcon,
+				prefixes: ['/admin/prospects'],
+				recherche: { parcours: 'PILOTE' },
+				compte: 'parcoursPilote'
+			}
+		]
+	},
 	{
 		cle: 'support',
 		titre: 'Support',

@@ -73,18 +73,61 @@ export const vStatutProspect = v.union(
 	v.literal('A_REPONDU'),
 	v.literal('INTERESSE'),
 	v.literal('INSCRIT'),
+	v.literal('GAGNE'),
 	v.literal('PERDU'),
 	v.literal('STOP')
 );
 
 export const vCible = v.union(v.literal('PME'), v.literal('CABINET'), v.literal('AUTRE'));
 
+/** Les parcours de prospection (`crm/parcours.ts`, qui en porte les étapes). */
+export const vParcours = v.union(
+	v.literal('FOURNISSEUR_PUBLIC'),
+	v.literal('TRANSPORTEUR'),
+	v.literal('EXPERT_COMPTABLE'),
+	v.literal('PME_LOGICIEL'),
+	v.literal('PILOTE')
+);
+
+/** L'issue d'un appel (`crm/appels.ts`). */
+export const vIssueAppel = v.union(
+	v.literal('PAS_DE_REPONSE'),
+	v.literal('MESSAGE_LAISSE'),
+	v.literal('BARRAGE'),
+	v.literal('A_RAPPELER'),
+	v.literal('PAS_INTERESSE'),
+	v.literal('INTERESSE'),
+	v.literal('EMAIL_ACCEPTE'),
+	v.literal('RDV'),
+	v.literal('STOP')
+);
+
+/**
+ * L'estimation de ce qu'un acheteur public doit à un fournisseur, avant l'appel : un
+ * MAJORANT décomposé, qui se refait à la main (`crm/estimation.ts`).
+ */
+export const vEstimationProspect = v.object({
+	segments: v.array(
+		v.object({
+			acheteur: v.string(),
+			annee: v.number(),
+			montantAnnuelCentimes: v.int64(),
+			joursDeRetard: v.number(),
+			interetsCentimes: v.int64(),
+			indemnitesCentimes: v.int64()
+		})
+	),
+	hypotheses: v.array(v.string()),
+	calculeeLe: v.number()
+});
+
 export const vTypeEvenementCrm = v.union(
 	v.literal('NOTE'),
 	v.literal('APPEL'),
 	v.literal('EMAIL'),
 	v.literal('REPONSE'),
-	v.literal('STATUT')
+	v.literal('STATUT'),
+	v.literal('ETAPE')
 );
 
 /**
@@ -120,9 +163,37 @@ export const crmTables = {
 		compteId: v.optional(v.id('organizations')),
 		importId: v.optional(v.id('importsProspects')),
 		creePar: v.string(),
-		creeLe: v.number()
+		creeLe: v.number(),
+		// ── Les parcours (19/10/2026) ─────────────────────────────────────
+		/** Absent sur les prospects d'avant : déduit par `parcoursDe`. */
+		parcours: v.optional(vParcours),
+		/** Une clé des étapes du parcours, validée par la mutation. */
+		etapeParcours: v.optional(v.string()),
+		/** Un cabinet partenaire : son code, lu dans la source des inscriptions. */
+		codePartenaire: v.optional(v.string()),
+		/** Sage, Cegid, EBP… pour un pilote. */
+		logicielComptable: v.optional(v.string()),
+		/** Fournisseur public : le majorant estimé, en centimes. */
+		montantEstimeCentimes: v.optional(v.int64()),
+		/** Fournisseur public : le dernier jour pour réclamer (AAAA-MM-JJ). */
+		dateButoir: v.optional(v.string()),
+		estimation: v.optional(vEstimationProspect),
+		// ── L'e-mail conforme (CNIL, fiches du 10/06/2026) ─────────────────
+		/** Pourquoi un e-mail est permis : une adresse générique, ou une personne informée. */
+		emailBase: v.optional(v.union(v.literal('GENERIQUE'), v.literal('INFORMEE'))),
+		/** Le jour où la personne a été informée (article 14 du RGPD). */
+		emailInformeLe: v.optional(v.number()),
+		/** Le jeton du lien « Ne plus recevoir de messages ». */
+		jetonDesinscription: v.optional(v.string()),
+		/**
+		 * Le dernier contact VENU DU PROSPECT (une réponse, un rendez-vous) : la durée
+		 * de trois ans part de lui, pas de nos envois (référentiel CNIL).
+		 */
+		dernierContactDuProspectLe: v.optional(v.number())
 	})
 		.index('by_statut', ['statut'])
+		.index('by_parcours', ['parcours', 'creeLe'])
+		.index('by_jeton_desinscription', ['jetonDesinscription'])
 		.index('by_email', ['email'])
 		.index('by_siren', ['siren'])
 		.index('by_compte', ['compteId'])
@@ -139,11 +210,14 @@ export const crmTables = {
 		prospectId: v.optional(v.id('prospects')),
 		type: vTypeEvenementCrm,
 		texte: v.optional(v.string()),
+		/** Pour un appel : ce qu'il a donné. */
+		issue: v.optional(vIssueAppel),
 		auteur: v.string(),
 		le: v.number()
 	})
 		.index('by_org', ['organizationId'])
-		.index('by_prospect', ['prospectId']),
+		.index('by_prospect', ['prospectId'])
+		.index('by_auteur_and_le', ['auteur', 'le']),
 
 	tachesCrm: defineTable({
 		organizationId: v.optional(v.id('organizations')),

@@ -12,6 +12,7 @@ export const STATUTS_PROSPECT = [
 	'A_REPONDU',
 	'INTERESSE',
 	'INSCRIT',
+	'GAGNE',
 	'PERDU',
 	'STOP'
 ] as const;
@@ -24,6 +25,7 @@ export const LIBELLES_DES_STATUTS: Record<StatutProspect, string> = {
 	A_REPONDU: 'A répondu',
 	INTERESSE: 'Intéressé',
 	INSCRIT: 'Inscrit',
+	GAGNE: 'Gagné',
 	PERDU: 'Perdu',
 	STOP: 'Stop'
 };
@@ -39,5 +41,5 @@ export const LIBELLES_DES_CIBLES: Record<Cible, string> = {
 
 /** Un statut qui ne se travaille plus : il ne demande pas de prochaine action. */
 export function statutClos(statut: StatutProspect): boolean {
-	return statut === 'INSCRIT' || statut === 'PERDU' || statut === 'STOP';
+	return statut === 'INSCRIT' || statut === 'GAGNE' || statut === 'PERDU' || statut === 'STOP';
 }
