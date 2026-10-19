@@ -3,7 +3,11 @@ import {
 	periodesDeTauxParDefaut,
 	tauxPenaliteParDefaut
 } from '../verticales/recouvrement/pays/france/taux';
-import { REGIMES_PRESCRIPTION } from '../verticales/recouvrement/pays/france/prescription';
+import {
+	REGIMES_PRESCRIPTION,
+	datePrescriptionQuadriennale
+} from '../verticales/recouvrement/pays/france/prescription';
+import { tauxInteretsMoratoires } from '../verticales/recouvrement/pays/france/commande-publique';
 import { decompterFacture } from '../verticales/recouvrement/decompte';
 import { tauxLisible } from '../verticales/recouvrement/taux-lisible';
 import { depuisCentimes } from '../socle/montants';
@@ -82,4 +86,77 @@ function tauxEtExemple(jour: string): { taux: string | null; exemple: string | n
 		// Un semestre que la série ne connaît pas : on ne l'extrapole pas.
 		return { taux: null, exemple: null };
 	}
+}
+
+/** Ce qu'un script ou un e-mail dit d'un acheteur public, lu au registre. */
+export interface ValeursPubliques {
+	/** « 10,40 % » pour un retard qui commence ce jour-là, ou `null` hors de la série. */
+	readonly taux: string | null;
+	/** « 40 € », ou `null`. */
+	readonly indemnite: string | null;
+	/** Les délais plafonds, en jours. */
+	readonly delaiCollectivite: number;
+	readonly delaiHopital: number;
+	/** L'année dont les droits peuvent se prescrire à la fin de l'année en cours (lecture). */
+	readonly anneeQuiSePrescrit: number;
+	/** « 31 décembre 2026 » : le dernier jour pour réclamer les droits de cette année-là. */
+	readonly dernierJour: string;
+	/** Les jours laissés à l'acheteur pour payer les intérêts après le principal. */
+	readonly joursPourLesAccessoires: number;
+}
+
+/**
+ * Les chiffres du barème public d'aujourd'hui. L'année qui se prescrit est une LECTURE
+ * (droits acquis l'année des prestations, `PARAMETRES.delaiPrescriptionQuadriennale`) :
+ * qui la cite écrit « peuvent se prescrire ».
+ */
+export function valeursPubliques(jour: string): ValeursPubliques {
+	const annee = Number(jour.slice(0, 4));
+	const duree = Number(PARAMETRES.delaiPrescriptionQuadriennale.valeur);
+	const anneeQuiSePrescrit = annee - duree;
+	const { dernierJourPourAgir } = datePrescriptionQuadriennale(anneeQuiSePrescrit);
+	const delais = PARAMETRES.delaisPaiementPublics.valeur;
+	const indemnite = PARAMETRES.indemniteForfaitairePublique;
+	return {
+		taux: tauxPublicLisible(jour),
+		indemnite:
+			estUtilisable(indemnite) && typeof indemnite.valeur === 'bigint'
+				? eurosRonds(indemnite.valeur)
+				: null,
+		delaiCollectivite: delais.POUVOIR_ADJUDICATEUR,
+		delaiHopital: delais.SANTE,
+		anneeQuiSePrescrit,
+		dernierJour: dateEnLettres(dernierJourPourAgir),
+		joursPourLesAccessoires: Number(PARAMETRES.paiementAccessoiresPublics.valeur)
+	};
+}
+
+/** Le taux public du jour, ou `null` pour un semestre que la série ne connaît pas. */
+function tauxPublicLisible(jour: string): string | null {
+	try {
+		return tauxLisible(tauxInteretsMoratoires(jour)).replace(/\s/g, ' ');
+	} catch {
+		return null;
+	}
+}
+
+const MOIS = [
+	'janvier',
+	'février',
+	'mars',
+	'avril',
+	'mai',
+	'juin',
+	'juillet',
+	'août',
+	'septembre',
+	'octobre',
+	'novembre',
+	'décembre'
+];
+
+/** « 2026-12-31 » → « 31 décembre 2026 ». */
+function dateEnLettres(jour: string): string {
+	const [a, m, j] = jour.split('-').map(Number);
+	return `${j} ${MOIS[(m ?? 1) - 1]} ${a}`;
 }

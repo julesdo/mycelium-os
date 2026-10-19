@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { SEUIL_APPELER } from '../../croissance/score';
 import { statutClos } from '../../crm/statuts';
+import { estAAppeler } from '../../crm/appels';
 import { parcoursDe, type Parcours } from '../../crm/parcours';
 import { bornesDuJourDeParis } from '../../admin/dates';
 import { equipeQuery } from './enveloppe';
@@ -30,6 +31,8 @@ export const compteurs = equipeQuery('LECTURE')({
 		parcoursPilote: v.number(),
 		// Collectés il y a plus d'un mois, jamais informés : la même règle que la vue.
 		aInformer: v.number(),
+		// La file d'appels du jour (`appels.fileDAppels`), par la même règle.
+		appelsDuJour: v.number(),
 		// Le support (16/10/2026) : à vous, chez l'équipe, en attente du client, chez Plume.
 		supportAVous: v.number(),
 		supportOuvertes: v.number(),
@@ -38,7 +41,8 @@ export const compteurs = equipeQuery('LECTURE')({
 	}),
 	handler: async (ctx) => {
 		const maintenant = Date.now();
-		const { fin } = bornesDuJourDeParis(maintenant);
+		const jour = bornesDuJourDeParis(maintenant);
+		const { fin } = jour;
 
 		const ouvertes = await ctx.db
 			.query('tachesCrm')
@@ -87,6 +91,7 @@ export const compteurs = equipeQuery('LECTURE')({
 			aInformer: ouverts.filter(
 				(p) => p.email !== undefined && p.emailBase === undefined && maintenant - p.creeLe > UN_MOIS
 			).length,
+			appelsDuJour: prospects.filter((p) => estAAppeler(p, jour)).length,
 			supportAVous: chezLEquipe.filter(
 				(c) => c.assigneA === undefined || c.assigneA === ctx.equipier.email
 			).length,

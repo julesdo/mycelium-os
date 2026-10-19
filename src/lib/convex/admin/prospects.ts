@@ -404,43 +404,58 @@ export const assigner = equipeMutation('SUPPORT')({
 });
 
 /**
- * « STOP » : le prospect ne veut plus être contacté. Ses coordonnées personnelles
- * sont effacées, l'empreinte de son adresse entre dans la liste d'opposition, ses
- * tâches ouvertes sont closes. Il reste visible en « Stop », sans coordonnées.
+ * ARRÊTER UN PROSPECT, de l'une des trois façons dont il peut le demander : « Stop »
+ * sur sa fiche, l'issue « Ne veut plus être contacté » d'un appel, ou le lien de
+ * désinscription de ses e-mails. Ses coordonnées personnelles sont effacées,
+ * l'empreinte de son adresse entre dans la liste d'opposition, ses tâches ouvertes
+ * sont closes. Il reste visible en « Stop », sans coordonnées, et l'effacement de
+ * trois ans ne le retire jamais : c'est lui qui empêche son retour par SIREN.
  */
+export async function arreterLeProspect(
+	ctx: MutationCtx,
+	p: Doc<'prospects'>,
+	auteur: string
+): Promise<void> {
+	const prospectId = p._id;
+	if (p.email !== undefined) {
+		const empreinte = await empreinteDEmail(p.email);
+		const deja = await ctx.db
+			.query('oppositions')
+			.withIndex('by_empreinte', (q) => q.eq('empreinte', empreinte))
+			.first();
+		if (deja === null) await ctx.db.insert('oppositions', { empreinte, le: Date.now() });
+	}
+	await ctx.db.patch(prospectId, {
+		statut: 'STOP',
+		email: undefined,
+		telephone: undefined,
+		dirigeant: undefined,
+		fonction: undefined,
+		prochaineAction: undefined,
+		prochaineActionLe: undefined,
+		emailBase: undefined,
+		emailInformeLe: undefined
+	});
+	for (const t of await ctx.db
+		.query('tachesCrm')
+		.withIndex('by_prospect', (q) => q.eq('prospectId', prospectId))
+		.take(100)) {
+		if (t.faiteLe === undefined) await ctx.db.patch(t._id, { faiteLe: Date.now() });
+	}
+	await noterAuJournal(ctx, auteur, {
+		action: 'PROSPECT_EFFACE',
+		cible: { type: 'PROSPECT', id: prospectId, libelle: p.entreprise }
+	});
+}
+
+/** « STOP » depuis la fiche : la confirmation est faite par l'écran. */
 export const stop = equipeMutation('SUPPORT')({
 	args: { prospectId: v.id('prospects') },
 	returns: v.null(),
 	handler: async (ctx, { prospectId }): Promise<null> => {
 		const p = await ctx.db.get(prospectId);
 		if (p === null) throw new ConvexError('Prospect introuvable.');
-		if (p.email !== undefined) {
-			const empreinte = await empreinteDEmail(p.email);
-			const deja = await ctx.db
-				.query('oppositions')
-				.withIndex('by_empreinte', (q) => q.eq('empreinte', empreinte))
-				.first();
-			if (deja === null) await ctx.db.insert('oppositions', { empreinte, le: Date.now() });
-		}
-		await ctx.db.patch(prospectId, {
-			statut: 'STOP',
-			email: undefined,
-			telephone: undefined,
-			dirigeant: undefined,
-			fonction: undefined,
-			prochaineAction: undefined,
-			prochaineActionLe: undefined
-		});
-		for (const t of await ctx.db
-			.query('tachesCrm')
-			.withIndex('by_prospect', (q) => q.eq('prospectId', prospectId))
-			.take(100)) {
-			if (t.faiteLe === undefined) await ctx.db.patch(t._id, { faiteLe: Date.now() });
-		}
-		await noterAuJournal(ctx, ctx.equipier.email, {
-			action: 'PROSPECT_EFFACE',
-			cible: { type: 'PROSPECT', id: prospectId, libelle: p.entreprise }
-		});
+		await arreterLeProspect(ctx, p, ctx.equipier.email);
 		return null;
 	}
 });

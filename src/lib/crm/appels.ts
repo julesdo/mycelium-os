@@ -1,5 +1,5 @@
 import { jourDeRelance } from './modeles';
-import type { StatutProspect } from './statuts';
+import { statutClos, type StatutProspect } from './statuts';
 
 /**
  * L'APPEL, ET CE QU'IL CHANGE (19/10/2026, audit stratégique : « le téléphone passe
@@ -17,6 +17,12 @@ import type { StatutProspect } from './statuts';
  */
 
 export const APPELS_PAR_JOUR = 10;
+
+/**
+ * Passe à `true` le jour où Paddle a donné son accord écrit pour la prospection par
+ * téléphone : l'avertissement en tête de la file disparaît. Rien d'autre n'en dépend.
+ */
+export const ACCORD_PADDLE_OBTENU = false;
 
 export const ISSUES_APPEL = [
 	'PAS_DE_REPONSE',
@@ -132,4 +138,28 @@ export function effetDeLIssue(
 		case 'STOP':
 			return { ...base, contactDuProspect: true, statut: 'STOP', arreter: true };
 	}
+}
+
+export interface ProspectAAppeler {
+	readonly statut: StatutProspect;
+	readonly telephone?: string;
+	readonly prochaineActionLe?: number;
+	readonly dernierAppelLe?: number;
+}
+
+/**
+ * Est-il dans la file d'appels du jour ? Ouvert, un téléphone, une prochaine action due
+ * aujourd'hui (ou aucune), et personne ne l'a appelé depuis minuit, heure de Paris. La
+ * file et le compte de la barre latérale lisent cette seule règle.
+ */
+export function estAAppeler(
+	p: ProspectAAppeler,
+	jour: { readonly debut: number; readonly fin: number }
+): boolean {
+	return (
+		!statutClos(p.statut) &&
+		p.telephone !== undefined &&
+		(p.prochaineActionLe === undefined || p.prochaineActionLe < jour.fin) &&
+		(p.dernierAppelLe === undefined || p.dernierAppelLe < jour.debut)
+	);
 }

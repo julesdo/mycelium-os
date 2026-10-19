@@ -36,6 +36,8 @@ import {
 } from './formulaire-prospect';
 import { SelecteurDeStatut, type LigneProspect } from './prospects';
 import { RedactionDEmail, rechercheDuSite } from './redaction-email';
+import { FeuilleDAppel, type DansJours } from './appel';
+import type { IssueAppel } from '../../lib/crm/appels';
 
 /**
  * LA FICHE D'UN PROSPECT (16/10/2026) : la forme de celle d'un compte (gestes, À
@@ -135,6 +137,8 @@ export interface GestesDuProspect extends GestesDeFiche {
 	readonly onChercherAuRegistre: (nom: string) => Promise<readonly CandidatDuRegistre[]>;
 	/** Avancer le prospect dans son parcours. */
 	readonly onChangerEtape: (etape: string) => void;
+	/** Un appel passé depuis la feuille d'appel : son issue fait le reste. */
+	readonly onNoterAppel: (issue: IssueAppel, texte: string, dansJours?: DansJours) => Promise<void>;
 	/** Un e-mail écrit depuis son modèle : noté avec son étape, la relance suivante posée. */
 	readonly onEmailEcrit: (
 		etape: Exclude<EtapeDEcriture, 'FINI'>,
@@ -171,7 +175,7 @@ export function EcranFicheProspect({
 	readonly gestes?: GestesDuProspect;
 	readonly signataire?: Signataire;
 }) {
-	const [feuille, setFeuille] = useState<null | 'MODIFIER' | 'STOP'>(null);
+	const [feuille, setFeuille] = useState<null | 'MODIFIER' | 'STOP' | 'APPEL'>(null);
 	const [stopEnCours, setStopEnCours] = useState(false);
 
 	if (lecture.etat !== 'pret') {
@@ -199,6 +203,8 @@ export function EcranFicheProspect({
 	const { fiche, historique, taches } = lecture.valeur;
 	const stop = fiche.statut === 'STOP';
 	const actif = gestes !== undefined && !stop;
+	const parcours = fiche.parcours ?? parcoursParDefaut(fiche.cible, fiche.activite);
+	const telephone = actif && signataire !== undefined ? fiche.telephone : undefined;
 
 	// Le modèle de l'étape, d'après le nombre d'e-mails déjà notés sur la fiche.
 	const etape = etapeDEcriture(historique.filter((e) => e.type === 'EMAIL').length);
@@ -434,7 +440,7 @@ export function EcranFicheProspect({
 							onChanger={(s) => gestes?.onChangerStatut(s)}
 						/>
 						<SelecteurDEtape
-							parcours={fiche.parcours ?? parcoursParDefaut(fiche.cible, fiche.activite)}
+							parcours={parcours}
 							etape={fiche.etapeParcours}
 							lectureSeule={!actif}
 							onChanger={(e) => gestes?.onChangerEtape(e)}
@@ -453,6 +459,7 @@ export function EcranFicheProspect({
 				maintenant={maintenant}
 				finDuJour={finDuJour}
 				{...(actif ? { gestes } : {})}
+				{...(telephone === undefined ? {} : { onAppeler: () => setFeuille('APPEL') })}
 				{...(redaction === null || gestes === undefined
 					? {}
 					: {
@@ -472,6 +479,27 @@ export function EcranFicheProspect({
 								gestes.onEmailEcrit(redaction.etape, redaction.objet, texte)
 						})}
 			/>
+
+			{telephone === undefined || gestes === undefined || signataire === undefined ? null : (
+				<FeuilleDAppel
+					ouverte={feuille === 'APPEL'}
+					onFermer={() => setFeuille(null)}
+					prospect={{
+						entreprise: fiche.entreprise,
+						telephone,
+						parcours,
+						...(fiche.dirigeant === undefined ? {} : { dirigeant: fiche.dirigeant }),
+						...(fiche.trouveOu === undefined ? {} : { trouveOu: fiche.trouveOu }),
+						...(fiche.montantEstimeCentimes === undefined
+							? {}
+							: { montantEstimeCentimes: fiche.montantEstimeCentimes }),
+						...(fiche.dateButoir === undefined ? {} : { dateButoir: fiche.dateButoir })
+					}}
+					appelant={signataire.prenom}
+					maintenant={maintenant}
+					onNoter={gestes.onNoterAppel}
+				/>
+			)}
 
 			{actif ? (
 				<>

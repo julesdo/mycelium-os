@@ -30,6 +30,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as TauxDesPenalitesDeRetardRouteImport } from './routes/taux-des-penalites-de-retard'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAppelsRouteImport } from './routes/admin/appels'
 import { Route as AdminEquipeRouteImport } from './routes/admin/equipe'
 import { Route as AdminJournalRouteImport } from './routes/admin/journal'
 import { Route as AdminTachesRouteImport } from './routes/admin/taches'
@@ -186,6 +187,11 @@ const TauxDesPenalitesDeRetardRoute =
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAppelsRoute = AdminAppelsRouteImport.update({
+  id: '/appels',
+  path: '/appels',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminEquipeRoute = AdminEquipeRouteImport.update({
@@ -460,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
   '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
+  '/admin/appels': typeof AdminAppelsRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -531,6 +538,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
   '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
+  '/admin/appels': typeof AdminAppelsRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -605,6 +613,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tarifs': typeof TarifsRoute
   '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
+  '/admin/appels': typeof AdminAppelsRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -680,6 +689,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/tarifs'
     | '/taux-des-penalites-de-retard'
+    | '/admin/appels'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -751,6 +761,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/tarifs'
     | '/taux-des-penalites-de-retard'
+    | '/admin/appels'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -824,6 +835,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/tarifs'
     | '/taux-des-penalites-de-retard'
+    | '/admin/appels'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -1055,6 +1067,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/appels': {
+      id: '/admin/appels'
+      path: '/appels'
+      fullPath: '/admin/appels'
+      preLoaderRoute: typeof AdminAppelsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/equipe': {
@@ -1411,6 +1430,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
+  AdminAppelsRoute: typeof AdminAppelsRoute
   AdminEquipeRoute: typeof AdminEquipeRoute
   AdminJournalRoute: typeof AdminJournalRoute
   AdminTachesRoute: typeof AdminTachesRoute
@@ -1428,6 +1448,7 @@ interface AdminRouteRouteChildren {
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAppelsRoute: AdminAppelsRoute,
   AdminEquipeRoute: AdminEquipeRoute,
   AdminJournalRoute: AdminJournalRoute,
   AdminTachesRoute: AdminTachesRoute,

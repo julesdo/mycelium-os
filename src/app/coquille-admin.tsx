@@ -21,6 +21,7 @@ import {
 	HourglassIcon,
 	ListChecksIcon,
 	PhoneIcon,
+	PhoneOutgoingIcon,
 	ScrollTextIcon,
 	StarIcon,
 	TargetIcon,
@@ -124,6 +125,15 @@ const PROSPECTS: Destination = {
 	prefixes: ['/admin/prospects'],
 	compte: 'prospects'
 };
+/** Les appels du jour (19/10/2026, audit stratégique : le téléphone d'abord). */
+const APPELS: Destination = {
+	cle: 'appels',
+	libelle: 'Appels du jour',
+	vers: '/admin/appels',
+	Icone: PhoneOutgoingIcon,
+	prefixes: ['/admin/appels'],
+	compte: 'appelsDuJour'
+};
 const TACHES: Destination = {
 	cle: 'taches',
 	libelle: 'Tâches',
@@ -164,7 +174,7 @@ const GROUPES: readonly {
 	readonly fondateur?: boolean;
 	readonly destinations: readonly Destination[];
 }[] = [
-	{ cle: 'travail', destinations: [AUJOURDHUI, TACHES] },
+	{ cle: 'travail', destinations: [AUJOURDHUI, APPELS, TACHES] },
 	{ cle: 'fiches', titre: 'Fiches', destinations: [COMPTES, PROSPECTS] },
 	{
 		// Les parcours de prospection (19/10/2026, audit stratégique) : un kanban et un
@@ -441,6 +451,27 @@ export const FournisseurDuRole = ContexteRole.Provider;
 /** Le rôle de celui qui regarde : les écrans cachent ce que le serveur lui refuserait. */
 export function useRoleAdmin(): RoleEquipe {
 	return useContext(ContexteRole);
+}
+
+/** « jules.dore@… » → « Jules ». */
+function prenomDeLAdresse(email: string): string {
+	const debut = email.split('@')[0]?.split(/[._-]/)[0] ?? '';
+	return debut === '' ? 'L’équipe' : debut.charAt(0).toUpperCase() + debut.slice(1);
+}
+
+/**
+ * Qui signe les e-mails et se présente au téléphone : le prénom affiché, sinon le début
+ * de l'adresse (« jules » plutôt que rien), et s'il est fondateur. `undefined` le temps
+ * de la lecture.
+ */
+export function useSignataireAdmin(): { prenom: string; fondateur: boolean } | undefined {
+	const role = useRoleAdmin();
+	const moi = useQuery(api.admin.support.moi, {});
+	if (moi === undefined) return undefined;
+	return {
+		prenom: moi.prenomAffiche ?? prenomDeLAdresse(moi.email),
+		fondateur: role === 'FONDATEUR'
+	};
 }
 
 /** L'instant présent, à la minute, et les bornes du jour de Paris ; `null` sans horloge (rendu serveur). */

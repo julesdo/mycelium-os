@@ -9,16 +9,11 @@ import {
 	useCocherTache,
 	useGesteAdmin,
 	useHorlogeAdmin,
-	useRoleAdmin
+	useRoleAdmin,
+	useSignataireAdmin
 } from '../../app/coquille-admin';
 import { EcranFicheProspect } from '../../screens/admin/fiche-prospect';
 import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
-
-/** « jules.dore@… » → « Jules ». */
-function prenomDeLAdresse(email: string): string {
-	const debut = email.split('@')[0]?.split(/[._-]/)[0] ?? '';
-	return debut === '' ? 'L’équipe' : debut.charAt(0).toUpperCase() + debut.slice(1);
-}
 
 /** La fiche d'un prospect : ses champs, son historique, ses tâches, et « Stop ». */
 export const Route = createFileRoute('/admin/prospects/$id')({
@@ -35,7 +30,8 @@ function FicheProspectAdmin() {
 	const taches = useQuery(api.admin.taches.liste, { fiche: { prospect: prospectId } });
 	const noter = useMutation(api.admin.historique.noter);
 	const emailEcrit = useMutation(api.admin.historique.emailEcrit);
-	const moi = useQuery(api.admin.support.moi, {});
+	const signataire = useSignataireAdmin();
+	const noterUnAppel = useMutation(api.admin.appels.noterUnAppel);
 	const creerTache = useMutation(api.admin.taches.creer);
 	const changerStatut = useMutation(api.admin.prospects.changerStatut);
 	const changerEtape = useMutation(api.admin.prospects.changerEtape);
@@ -60,15 +56,7 @@ function FicheProspectAdmin() {
 			}
 			maintenant={horloge?.maintenant ?? 0}
 			finDuJour={horloge?.finDuJour ?? 0}
-			{...(moi === undefined
-				? {}
-				: {
-						signataire: {
-							// Sans prénom affiché, le début de l'adresse : « jules » plutôt que rien.
-							prenom: moi.prenomAffiche ?? prenomDeLAdresse(moi.email),
-							fondateur: role === 'FONDATEUR'
-						}
-					})}
+			{...(signataire === undefined ? {} : { signataire })}
 			{...(permis(role, 'SUPPORT')
 				? {
 						gestes: {
@@ -137,6 +125,23 @@ function FicheProspectAdmin() {
 											humeur: 'attention'
 										})
 									),
+							onNoterAppel: (issue, texte, dansJours) =>
+								faire(
+									() =>
+										noterUnAppel({
+											prospectId,
+											issue,
+											...(texte.trim() === '' ? {} : { texte }),
+											...(dansJours === undefined ? {} : { dansJours })
+										}),
+									{
+										titre: 'Appel noté',
+										texte:
+											issue === 'STOP'
+												? 'Ses coordonnées sont effacées.'
+												: 'La suite est dans « Prochaine action ».'
+									}
+								),
 							onEmailEcrit: (etape, objet, texte) =>
 								faire(
 									() =>

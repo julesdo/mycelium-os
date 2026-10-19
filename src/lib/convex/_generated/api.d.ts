@@ -13,6 +13,7 @@ import type * as admin_acces from "../admin/acces.js";
 import type * as admin_action from "../admin/action.js";
 import type * as admin_annuaire from "../admin/annuaire.js";
 import type * as admin_annuaireLecture from "../admin/annuaireLecture.js";
+import type * as admin_appels from "../admin/appels.js";
 import type * as admin_aujourdhui from "../admin/aujourdhui.js";
 import type * as admin_brouillon from "../admin/brouillon.js";
 import type * as admin_brouillonLecture from "../admin/brouillonLecture.js";
@@ -168,6 +169,7 @@ declare const fullApi: ApiFromModules<{
   "admin/action": typeof admin_action;
   "admin/annuaire": typeof admin_annuaire;
   "admin/annuaireLecture": typeof admin_annuaireLecture;
+  "admin/appels": typeof admin_appels;
   "admin/aujourdhui": typeof admin_aujourdhui;
   "admin/brouillon": typeof admin_brouillon;
   "admin/brouillonLecture": typeof admin_brouillonLecture;

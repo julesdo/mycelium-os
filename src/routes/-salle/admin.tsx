@@ -17,6 +17,7 @@ import { EcranFicheProspect, type DonneesFicheProspect } from '../../screens/adm
 import { ParcoursImport } from '../../screens/admin/import';
 import { ParcoursTrouver, type EntrepriseAffichee } from '../../screens/admin/trouver';
 import { EcranTaches } from '../../screens/admin/taches';
+import { EcranAppels, type FileDAppels } from '../../screens/admin/appels';
 import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
 import { EcranJournal, type EntreeDuJournal } from '../../screens/admin/journal';
 import type { TacheAffichee } from '../../screens/admin/commun';
@@ -411,7 +412,8 @@ function DemoFicheProspect({ etat, variante }: { etat: EtatDemo; variante?: stri
 				onStop: RIEN_ASYNC,
 				onChercherAuRegistre: async () => [],
 				onEmailEcrit: RIEN_ASYNC,
-				onChangerEtape: RIEN
+				onChangerEtape: RIEN,
+				onNoterAppel: RIEN_ASYNC
 			}}
 			signataire={{ prenom: 'Jules', fondateur: true }}
 		/>
@@ -474,6 +476,51 @@ function DemoImport() {
 					le: MAINTENANT - 5 * JOUR
 				}
 			]}
+		/>
+	);
+}
+
+const FILE_D_APPELS: FileDAppels = {
+	faitsAujourdhui: 3,
+	appels: [
+		{
+			id: 'a1',
+			entreprise: 'NETTOYAGE HOSPITALIER DU VAL',
+			telephone: '01 45 00 00 00',
+			parcours: 'FOURNISSEUR_PUBLIC',
+			dirigeant: 'Karim Benali',
+			trouveOu: 'DECP 2024, centre hospitalier de Créteil',
+			montantEstimeCentimes: 1_248_000n,
+			dateButoir: '2026-12-31',
+			ville: 'Créteil'
+		},
+		{
+			id: 'a2',
+			entreprise: 'TRANSPORTS MOREAU ET FILS',
+			telephone: '01 48 00 00 00',
+			parcours: 'TRANSPORTEUR',
+			dirigeant: 'Claire Moreau',
+			trouveOu: 'Annuaire des entreprises (data.gouv.fr), le 18/10/2026',
+			ville: 'Paris',
+			prochaineAction: 'Rappeler'
+		},
+		{
+			id: 'a3',
+			entreprise: 'Cabinet Morel Expertise',
+			telephone: '02 41 00 00 00',
+			parcours: 'EXPERT_COMPTABLE',
+			ville: 'Angers'
+		}
+	]
+};
+
+function DemoAppels({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranAppels
+			lecture={lectureDemo(etat, FILE_D_APPELS, { appels: [], faitsAujourdhui: 0 })}
+			maintenant={MAINTENANT}
+			appelant="Jules"
+			onNoter={RIEN_ASYNC}
 		/>
 	);
 }
@@ -595,6 +642,7 @@ function DemoBarreLaterale({ variante }: { etat: EtatDemo; variante?: string }) 
 					parcoursPmeLogiciel: 64,
 					parcoursPilote: 2,
 					aInformer: 4,
+					appelsDuJour: 8,
 					supportAVous: 2,
 					supportOuvertes: 3,
 					supportEnAttente: 4,
@@ -654,6 +702,7 @@ export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
 		vide: false,
 		Demo: DemoTrouver
 	},
+	{ route: '/admin/appels', libelle: 'admin · appels du jour', vide: true, Demo: DemoAppels },
 	{ route: '/admin/taches', libelle: 'admin · tâches', vide: true, Demo: DemoTaches },
 	{ route: '/admin/equipe', libelle: 'admin · équipe', vide: false, Demo: DemoEquipe },
 	{ route: '/admin/journal', libelle: 'admin · journal', vide: true, Demo: DemoJournal }

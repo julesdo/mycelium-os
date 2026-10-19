@@ -56,7 +56,8 @@ export function CorpsDeFiche({
 	finDuJour,
 	gestes,
 	ecrire,
-	onNoterEmail
+	onNoterEmail,
+	onAppeler
 }: {
 	readonly nom: string;
 	readonly ligne?: string;
@@ -74,6 +75,8 @@ export function CorpsDeFiche({
 	readonly ecrire?: ReactNode;
 	/** Pour un prospect : noter l'envoi avec son étape, au lieu d'un e-mail quelconque. */
 	readonly onNoterEmail?: (texte: string) => Promise<void>;
+	/** Pour un prospect qui a un téléphone : « Appeler » ouvre la feuille d'appel. */
+	readonly onAppeler?: () => void;
 }) {
 	const [feuille, setFeuille] = useState<Feuille>(null);
 	const [segment, setSegment] = useState<'historique' | 'details'>('historique');
@@ -108,9 +111,9 @@ export function CorpsDeFiche({
 					{ cle: 'note', libelle: 'Note', icone: <StickyNoteIcon />, onClick: ecrireUneNote },
 					{
 						cle: 'appel',
-						libelle: 'Appel noté',
+						libelle: onAppeler === undefined ? 'Appel noté' : 'Appeler',
 						icone: <PhoneIcon />,
-						onClick: () => setFeuille('APPEL')
+						onClick: onAppeler ?? (() => setFeuille('APPEL'))
 					},
 					{
 						cle: 'email',

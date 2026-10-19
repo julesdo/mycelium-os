@@ -189,7 +189,9 @@ export const crmTables = {
 		 * Le dernier contact VENU DU PROSPECT (une réponse, un rendez-vous) : la durée
 		 * de trois ans part de lui, pas de nos envois (référentiel CNIL).
 		 */
-		dernierContactDuProspectLe: v.optional(v.number())
+		dernierContactDuProspectLe: v.optional(v.number()),
+		/** Le dernier appel noté : la file du jour ne rappelle pas deux fois le même jour. */
+		dernierAppelLe: v.optional(v.number())
 	})
 		.index('by_statut', ['statut'])
 		.index('by_parcours', ['parcours', 'creeLe'])
