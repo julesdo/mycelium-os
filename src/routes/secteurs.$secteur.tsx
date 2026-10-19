@@ -41,10 +41,11 @@ function Page() {
 	const { secteur } = Route.useParams();
 	// Le chargeur a déjà levé `notFound` : ce cas ne se produit pas.
 	if (!estSecteurPublic(secteur)) return null;
+	const jour = new Date().toISOString().slice(0, 10);
 	return (
 		<main className="flex w-full flex-col bg-creme">
 			<Navbar />
-			<PageSecteur page={pageDuSecteur(secteur, new Date().toISOString().slice(0, 10))} />
+			<PageSecteur page={pageDuSecteur(secteur, jour)} jour={jour} />
 			<Appel />
 			<Pied />
 		</main>

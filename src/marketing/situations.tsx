@@ -1,83 +1,46 @@
-import { REGIMES_PRESCRIPTION } from '../lib/verticales/recouvrement/pays/france/prescription';
-import { cn } from '../ui';
-import { Chapeau, Photo, SectionMarketing, TitreSection, type PhotoSite } from './section';
+import { CarteMetier } from './metiers';
+import { pageDuSecteur, SECTEURS_PUBLICS } from './secteurs';
+import { Chapeau, SectionMarketing, TitreSection } from './section';
 
 /**
- * POUR QUI — trois métiers, trois photos (06/10/2026, réécrite le soir même).
+ * POUR QUI : les métiers, et chacun MÈNE à sa page (19/10/2026).
  *
- * Remplace « Vous vous reconnaissez ? » : trois gérants dessinés aux prénoms
- * d'exemple. Le fondateur a jugé le ton peu rassurant ; les sites du métier
- * (Revolut Business, Squarespace, Wise) présentent leurs segments par leur
- * NOM, une photo et une ligne. Des métiers, jamais un prénom à côté d'un
- * visage réel.
- *
- * ⚠️ LA DURÉE DU TRANSPORT EST LUE, PAS ÉCRITE : `REGIMES_PRESCRIPTION`.
+ * Le fondateur : « pourquoi on n'a pas de maillage dans la home page vers les pages par
+ * secteur ? ». La section présentait trois métiers en photos (commerce, transport,
+ * industrie) qui ne menaient nulle part, pendant que les quatre pages métier n'étaient
+ * jointes que par le pied de page. Désormais une carte par page métier, sur le modèle de
+ * « Who we're built for » chez Slash : la photo, la carte de l'écran du métier posée
+ * dessus, une ligne et « Voir la page ». Des métiers, jamais un prénom à côté d'un visage.
  */
-
-function annees(n: number): string {
-	return `${n} ${n > 1 ? 'ans' : 'an'}`;
-}
-
-const SEGMENTS: readonly {
-	readonly metier: string;
-	readonly texte: string;
-	readonly photo: PhotoSite;
-	readonly description: string;
-	readonly cadrage?: string;
-}[] = [
-	{
-		metier: 'Commerce et négoce',
-		texte: 'Beaucoup de factures, et des relances faites à la main quand on a le temps.',
-		photo: 'commercante',
-		description: 'Une commerçante souriante dans sa boutique, devant ses rayonnages.',
-		cadrage: 'object-top'
-	},
-	{
-		metier: 'Transport et livraison',
-		texte: `Une facture de transport se réclame pendant ${annees(REGIMES_PRESCRIPTION.TRANSPORT_MARCHANDISES.dureeAnnees)}, contre ${annees(REGIMES_PRESCRIPTION.GENERAL.dureeAnnees)} en général.`,
-		photo: 'chauffeur',
-		description: 'Un chauffeur souriant au volant de sa camionnette, vitre baissée.'
-	},
-	{
-		metier: 'Industrie et logistique',
-		texte: 'Des montants élevés, des clients réguliers, et des retards qui s’installent.',
-		photo: 'entrepot',
-		description: 'Deux personnes qui marchent dans l’allée d’un entrepôt, un classeur à la main.',
-		cadrage: 'object-top'
-	}
-];
-
 export function Situations() {
+	const jour = new Date().toISOString().slice(0, 10);
 	return (
 		<SectionMarketing id="pour-qui" ton="creme" className="gap-cladd-lg">
 			<div className="flex flex-col gap-cladd-2xs">
 				<TitreSection>Pour les entreprises qui facturent d’autres entreprises.</TitreSection>
 				<Chapeau>
-					Artisans, commerçants, transporteurs, industriels, prestataires de services.
+					Une page par métier : ce que dit la loi pour vous, et Letikette sur des factures comme les
+					vôtres.
 				</Chapeau>
 			</div>
 
-			{/* LE CARROUSEL SUR TÉLÉPHONE, LA GRILLE AU-DELÀ. Les cartes débordent
-			    jusqu'au bord de l'écran : c'est ce qui dit qu'il y en a d'autres. */}
-			<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
-				{SEGMENTS.map((s) => (
-					<article
-						key={s.metier}
-						className="flex w-4/5 shrink-0 snap-center flex-col overflow-hidden rounded-carte-site bg-papier shadow-carte-chaude md:w-auto"
-					>
-						<Photo
-							photo={s.photo}
-							description={s.description}
-							sizes="(min-width: 768px) 360px, 80vw"
-							className={cn('aspect-4/3', s.cadrage)}
-						/>
-						<div className="flex flex-col gap-1 p-cladd-xs">
-							<h3 className="text-intertitre leading-snug font-semibold">{s.metier}</h3>
-							<p className="text-cladd-md leading-relaxed text-encre-site-douce">{s.texte}</p>
-						</div>
-					</article>
+			{/* LE CARROUSEL SUR TÉLÉPHONE, LA GRILLE AU-DELÀ. Les cartes débordent jusqu'au bord
+			    de l'écran : c'est ce qui dit qu'il y en a d'autres. */}
+			<div className="carrousel -mx-cladd-2xs flex snap-x snap-mandatory gap-cladd-2xs overflow-x-auto px-cladd-2xs pb-cladd-3xs md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0">
+				{SECTEURS_PUBLICS.map((secteur) => (
+					<CarteMetier
+						key={secteur}
+						secteur={secteur}
+						accroche={pageDuSecteur(secteur, jour).accroche}
+						className="w-4/5 shrink-0 snap-center md:w-auto"
+					/>
 				))}
 			</div>
+
+			<p className="text-cladd-md text-encre-site-douce">
+				Votre métier n’y est pas ? Letikette sert toute entreprise qui facture d’autres entreprises
+				: artisans, commerçants, industriels, prestataires.
+			</p>
 		</SectionMarketing>
 	);
 }

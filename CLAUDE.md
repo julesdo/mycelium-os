@@ -703,7 +703,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   n'envoie rien — et « Je l'ai envoyé » pose la relance suivante (`historique.emailEcrit`).
   **Attirer** : `/taux-des-penalites-de-retard`, `/secteurs/<métier>` (`marketing/secteurs.ts`),
   `/llms.txt`, où mènent les liens des e-mails. Le siège légal reste à Bordeaux au registre : les
-  mentions légales le disent tant que le transfert n'est pas déclaré.
+  mentions légales le disent tant que le transfert n'est pas déclaré. **Les pages métier ont été
+  refaites le 19/10** (Slash, Acctual, HoneyBook, V7 sur Mobbin) : une scène (photo, VRAIE capture
+  d'« Aujourd'hui » aux données du métier, cartes flottantes), les chiffres de la loi, « sans
+  logiciel / avec Letikette », deux écrans du métier puis la page de paiement, le calculateur,
+  l'offre, les autres métiers. L'exemple de chaque métier vit dans `marketing/scenes-metiers.ts`,
+  que lisent la salle (variantes « métier : … », `routes/-salle/metiers.tsx`, montant de tête par
+  `reveler`, au barème public pour les hôpitaux) et les cartes du site ; une donnée changée se
+  rephotographie (`SALLE=… capturer-ecrans.ts metier-…`). Des noms inventés, « Exemple » sous
+  chaque scène. L'accueil (« Pour qui ») et le menu « Métiers » de la barre y mènent.
 - **La trajectoire de l'audit** (19/10/2026, `docs/superpowers/specs/2026-10-19-trajectoire-de-l-audit.md`,
   lots 1 à 8 livrés le jour même). Le fondateur : « ce document est hyper important ». Ce qui est
   désormais vrai, et qu'un nouveau code doit respecter :

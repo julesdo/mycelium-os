@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon, ChevronDownIcon, MenuIcon, XIcon } from 'lucide-react';
 import { BoutonAffiche, FAMILLES, LogoLetikette, MotLetikette, Plume, cn } from '../ui';
 import { articlesPublies } from './blog';
 import { FONCTIONNALITES, TEINTE_DE_LA_FAMILLE, type Fonctionnalite } from './fonctionnalites';
-import { fondDeTeinte } from './section';
+import { SCENES_DES_METIERS } from './scenes-metiers';
+import {
+	NOMS_DES_SECTEURS,
+	PUBLICS_DES_SECTEURS,
+	SECTEURS_PUBLICS,
+	type SecteurPublic
+} from './secteurs';
+import { Photo, fondDeTeinte } from './section';
 
 /**
  * LA BARRE PUBLIQUE : pleine largeur, collée en haut, un filet dessous
@@ -24,6 +31,9 @@ import { fondDeTeinte } from './section';
  * blog qu'en descendant. Un bouton rond « Menu » ouvre désormais une page
  * pleine, comme toute modale du produit : les fonctions en cartes, les pages,
  * la connexion, et le seul bouton plein en pied.
+ *
+ * ⚠️ ET « MÉTIERS » MÈNE AUX PAGES MÉTIER (19/10/2026) : elles n'étaient jointes que
+ * par le pied de page. Le même panneau, une photo et un public par métier.
  *
  * ⚠️ LES ANCRES PASSENT PAR « / » : la barre sert aussi le blog et les pages
  * légales, où `#tarifs` seul ne mènerait nulle part.
@@ -90,8 +100,57 @@ function EntreeDuMenu({
 	);
 }
 
-/** Le panneau « Logiciel », au-delà de 1024 px. */
-function MenuLogiciel() {
+/** Une page métier : sa photo, son nom, son public. */
+function EntreeMetier({
+	secteur,
+	onChoisir,
+	carte = false
+}: {
+	secteur: SecteurPublic;
+	onChoisir: () => void;
+	carte?: boolean;
+}) {
+	const scene = SCENES_DES_METIERS[secteur];
+	return (
+		<Link
+			to="/secteurs/$secteur"
+			params={{ secteur }}
+			onClick={onChoisir}
+			className={cn(
+				'flex min-h-14 items-center gap-cladd-3xs rounded-cladd-xl p-cladd-3xs transition-colors',
+				carte ? 'bg-papier shadow-carte-chaude' : 'hover:bg-creme-profonde'
+			)}
+		>
+			<span className="size-10 shrink-0 overflow-hidden rounded-cladd-sm">
+				<Photo
+					photo={scene.photo}
+					description=""
+					sizes="40px"
+					className={cn('size-10', scene.cadrage)}
+				/>
+			</span>
+			<span className="flex min-w-0 flex-col">
+				<span className="text-cladd-sm leading-snug font-semibold text-encre-site">
+					{NOMS_DES_SECTEURS[secteur]}
+				</span>
+				<span className="text-cladd-2xs leading-snug text-encre-site-douce">
+					{PUBLICS_DES_SECTEURS[secteur]}
+				</span>
+			</span>
+		</Link>
+	);
+}
+
+/** Un panneau qui pend sous la barre, au-delà de 1024 px : « Logiciel », « Métiers ». */
+function MenuDeroulant({
+	libelle,
+	id,
+	children
+}: {
+	libelle: string;
+	id: string;
+	children: (fermer: () => void) => ReactNode;
+}) {
 	const [ouvert, setOuvert] = useState(false);
 	const zone = useRef<HTMLDivElement | null>(null);
 
@@ -123,11 +182,11 @@ function MenuLogiciel() {
 			<button
 				type="button"
 				aria-expanded={ouvert}
-				aria-controls="menu-logiciel"
+				aria-controls={id}
 				onClick={() => setOuvert((o) => !o)}
 				className={cn(LIEN, 'flex items-center gap-1', ouvert && 'text-encre-site')}
 			>
-				Logiciel
+				{libelle}
 				<ChevronDownIcon
 					aria-hidden
 					size={16}
@@ -136,18 +195,42 @@ function MenuLogiciel() {
 			</button>
 			{/* Le panneau pend sous la barre ; la marge transparente au-dessus garde le
 			    survol quand le pointeur descend du bouton vers lui. */}
-			<div id="menu-logiciel" hidden={!ouvert} className="absolute top-full left-0 pt-cladd-3xs">
+			<div id={id} hidden={!ouvert} className="absolute top-full left-0 pt-cladd-3xs">
 				<div className="grid w-max grid-cols-2 gap-1 rounded-carte-site border border-filet-creme bg-papier p-cladd-3xs shadow-carte-chaude">
-					{FONCTIONNALITES.map((fonctionnalite) => (
-						<EntreeDuMenu
-							key={fonctionnalite.cle}
-							fonctionnalite={fonctionnalite}
-							onChoisir={() => setOuvert(false)}
-						/>
-					))}
+					{children(() => setOuvert(false))}
 				</div>
 			</div>
 		</div>
+	);
+}
+
+/** Le panneau « Logiciel » : chaque fonction du registre. */
+function MenuLogiciel() {
+	return (
+		<MenuDeroulant libelle="Logiciel" id="menu-logiciel">
+			{(fermer) =>
+				FONCTIONNALITES.map((fonctionnalite) => (
+					<EntreeDuMenu
+						key={fonctionnalite.cle}
+						fonctionnalite={fonctionnalite}
+						onChoisir={fermer}
+					/>
+				))
+			}
+		</MenuDeroulant>
+	);
+}
+
+/** Le panneau « Métiers » : une page par métier. */
+function MenuMetiers() {
+	return (
+		<MenuDeroulant libelle="Métiers" id="menu-metiers">
+			{(fermer) =>
+				SECTEURS_PUBLICS.map((secteur) => (
+					<EntreeMetier key={secteur} secteur={secteur} onChoisir={fermer} />
+				))
+			}
+		</MenuDeroulant>
 	);
 }
 
@@ -205,6 +288,12 @@ function MenuPleinePage({ onFermer }: { onFermer: () => void }) {
 							onChoisir={onFermer}
 							carte
 						/>
+					))}
+				</div>
+				<p className="text-cladd-sm font-semibold text-encre-site-douce">Par métier</p>
+				<div className="flex flex-col gap-cladd-3xs">
+					{SECTEURS_PUBLICS.map((secteur) => (
+						<EntreeMetier key={secteur} secteur={secteur} onChoisir={onFermer} carte />
 					))}
 				</div>
 				<nav aria-label="Pages" className="flex flex-col border-t border-filet-creme pt-cladd-3xs">
@@ -268,6 +357,7 @@ export function Navbar() {
 
 					<nav aria-label="Le site" className="ml-cladd-sm hidden items-center gap-1 lg:flex">
 						<MenuLogiciel />
+						<MenuMetiers />
 						{PAGES.map(({ vers, label }) => (
 							<a key={vers} href={vers} className={LIEN}>
 								{label}

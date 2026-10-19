@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../ui';
+import type { SecteurPublic } from './secteurs';
 
 /**
  * LE SOCLE D'UNE SECTION DE LA PAGE PUBLIQUE — le papier chaud (06/10/2026).
@@ -147,7 +148,10 @@ export type CaptureProduit =
 	| 'coffre'
 	| 'sante'
 	| 'defense'
-	| 'paiement';
+	| 'paiement'
+	// Les pages métier : « Aujourd'hui » aux données de chaque métier (`scenes-metiers.ts`).
+	| `metier-${SecteurPublic}`
+	| `metier-${SecteurPublic}-cartes`;
 
 export function EcranProduit({
 	capture,
