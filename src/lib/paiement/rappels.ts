@@ -16,10 +16,10 @@ import {
 	GRILLE,
 	RAPPELS_AVANT_PRELEVEMENT_JOURS,
 	RAPPEL_RENOUVELLEMENT_JOURS,
-	montantDuRythme,
 	type Formule,
 	type Rythme
 } from '../config/tarifs';
+import { montantPreleve } from './paddle';
 
 const JOUR = 24 * 60 * 60 * 1000;
 
@@ -107,10 +107,12 @@ export function texteDuRappel(
 	rappel: RappelDu,
 	formule: Formule,
 	rythme: Rythme,
-	bilan: Bilan
+	bilan: Bilan,
+	/** Le montant du prix souscrit (`prixPaddle.montant`) : ce que Paddle prélève vraiment. */
+	montantDuPrixSouscrit?: string | null
 ): TexteDuRappel {
 	const date = dateEnLettres(rappel.date);
-	const montant = `${euros(montantDuRythme(formule, rythme) * 100)} HT`;
+	const montant = `${euros(montantPreleve(montantDuPrixSouscrit, formule, rythme))} HT`;
 	const nom = GRILLE[formule].nom;
 
 	if (rappel.genre === 'point') {

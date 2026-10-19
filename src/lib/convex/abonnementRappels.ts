@@ -86,7 +86,21 @@ export const rappeler = internalMutation({
 		const rappel = dus[0];
 		if (rappel === undefined || etat.formule === null || etat.rythme === null) return null;
 
-		const texte = texteDuRappel(rappel, etat.formule, etat.rythme, await bilanDe(ctx, org, rappel));
+		// Le montant du prix que l'établissement paie, pas celui de la grille du jour.
+		const prixSouscrit =
+			org.paddlePrixId === undefined
+				? null
+				: await ctx.db
+						.query('prixPaddle')
+						.withIndex('by_prix', (q) => q.eq('prixId', org.paddlePrixId!))
+						.first();
+		const texte = texteDuRappel(
+			rappel,
+			etat.formule,
+			etat.rythme,
+			await bilanDe(ctx, org, rappel),
+			prixSouscrit?.montant ?? null
+		);
 		const admins = (
 			await ctx.db
 				.query('organizationMembers')

@@ -54,16 +54,30 @@ export const GRILLE: Readonly<Record<Formule, FormuleDeLaGrille>> = {
 	equipe: {
 		nom: 'Équipe',
 		pour: 'TPE, jusqu’à dix personnes',
-		mensuel: 39,
-		annuel: 390
+		mensuel: 59,
+		annuel: 590
 	},
 	pro: {
 		nom: 'Pro',
 		pour: 'PME',
-		mensuel: 119,
-		annuel: 1190
+		mensuel: 149,
+		annuel: 1490
 	}
 };
+
+/**
+ * LA VERSION DE LA GRILLE, PORTÉE PAR L'ÉTIQUETTE DE CHAQUE PRIX PADDLE.
+ *
+ * ⚠️ UN PRIX PADDLE NE SE CORRIGE PAS. Le 19/10/2026, Équipe passe de 39 à 59 € et
+ * Pro de 119 à 149 € (audit stratégique du 18/10, adopté par le fondateur). Sans
+ * version, le catalogue retrouvait l'ancien prix sous la même étiquette, le
+ * signalait en écart et n'en créait aucun : le site aurait affiché 59 € pendant que
+ * Paddle prélevait 39 €. Avec elle, les nouveaux prix naissent à côté des anciens,
+ * qui restent en base pour les abonnés qui les paient (`prixPaddle` n'est jamais vidé).
+ *
+ * Changer un montant de `GRILLE`, c'est changer cette version.
+ */
+export const VERSION_GRILLE = 'g2';
 
 /** La formule mise en avant sur le site et proposée par défaut. */
 export const FORMULE_RECOMMANDEE: Formule = 'equipe';
@@ -256,3 +270,68 @@ export const RAPPEL_RENOUVELLEMENT_JOURS = 30;
  * et l'article 8.2 des conditions générales) : le changer, c'est changer les trois.
  */
 export const JOURS_DE_REMBOURSEMENT = 30;
+
+// ── Les offres hors abonnement ─────────────────────────────────────────────
+
+/**
+ * LES OFFRES QUI NE SONT PAS DES FORMULES (audit stratégique du 18/10/2026, § 2).
+ *
+ * ⚠️ JAMAIS DANS `GRILLE` NI DANS LE CATALOGUE PADDLE. Le catalogue crée trois
+ * produits de quatre prix d'abonnement ; ces offres-là se vendent SUR DEMANDE (devis
+ * et facture du fondateur) tant que Paddle n'a pas approuvé des services ponctuels
+ * (son règlement d'usage exclut les prestations humaines sans lien avec un logiciel ;
+ * `docs/superpowers/specs/2026-10-19-trajectoire-de-l-audit.md`, décision 3). L'offre
+ * fondateurs, elle, est un abonnement : elle passera par Paddle avec son propre prix.
+ *
+ * Montants en centimes, hors taxes.
+ */
+export const OFFRES = {
+	diagnosticComplet: {
+		nom: 'Diagnostic complet',
+		/** 290 € HT. */
+		prixCentimes: 29_000,
+		/** Remboursé si moins de 2 900 € sont identifiés. */
+		rembourseSousCentimes: 290_000,
+		/** Après un diagnostic : 20 % sur les trois premiers mois d'abonnement. */
+		remiseBienvenuePourcent: 20,
+		remiseBienvenueMois: 3
+	},
+	reclamation: {
+		nom: 'Réclamation clé en main',
+		/** 5 % du montant calculé, borné entre 290 € et 2 000 €, payé d'avance. */
+		pourcent: 5,
+		minimumCentimes: 29_000,
+		maximumCentimes: 200_000
+	},
+	pilote: {
+		nom: 'Pilote accompagné',
+		/** 2 500 € HT sur 90 jours, la formule Pro comprise pendant le pilote. */
+		prixCentimes: 250_000,
+		dureeJours: 90
+	},
+	fondateurs: {
+		nom: 'Offre fondateurs',
+		formule: 'pro' as Formule,
+		rythme: 'annuel' as Rythme,
+		/** Le prix bloqué à vie : celui de Pro à l'année. */
+		prixCentimes: 149_000,
+		places: 50,
+		/** Dernier jour, heure de Paris. */
+		jusquAu: '2026-12-31'
+	}
+} as const;
+
+/** Les jours pendant lesquels l'offre de bienvenue reste valable après un diagnostic. */
+export const JOURS_OFFRE_DE_BIENVENUE = 14;
+
+/**
+ * Le prix d'une réclamation clé en main : 5 % du montant calculé, jamais moins de
+ * 290 €, jamais plus de 2 000 €. En centimes entiers, arrondi au centime le plus proche.
+ */
+export function prixDeLaReclamation(montantCalculeCentimes: bigint): bigint {
+	const { pourcent, minimumCentimes, maximumCentimes } = OFFRES.reclamation;
+	const brut = (montantCalculeCentimes * BigInt(pourcent) + 50n) / 100n;
+	const min = BigInt(minimumCentimes);
+	const max = BigInt(maximumCentimes);
+	return brut < min ? min : brut > max ? max : brut;
+}

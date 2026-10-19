@@ -156,7 +156,7 @@ suivants, **autorisation générale au sens de l'article 28.2** :
 | Sous-traitant ultérieur | Prestation | Localisation | Transfert hors UE |
 |---|---|---|---|
 | **Convex, Inc.** | Base de données, stockage, exécution | **`aws-us-east-1`, États-Unis** | **Oui — voir 7.2** |
-| **Vercel Inc.** | Hébergement de l'application | `fra1`, Paris | Non |
+| **Vercel Inc.** | Hébergement de l'application | `cdg1`, Paris | Non |
 | **Anthropic PBC** | Lecture des documents non structurés | États-Unis | **Oui — voir 7.1** |
 | **Resend, Inc.** | Acheminement des courriels de service, à l'exclusion de toute donnée de débiteur | États-Unis | **Oui**, clauses contractuelles types |
 | **Paddle.com Market Ltd** | Facturation | Royaume-Uni | Décision d'adéquation |
@@ -204,7 +204,7 @@ par cet accord.
 Ce transfert ne porte pas sur un traitement particulier : il porte sur **l'ensemble des données**
 confiées au Sous-traitant. Base de données, fichiers déposés et exécution des fonctions sont
 localisés aux États-Unis. L'application qui répond aux requêtes est, elle, hébergée en région
-`fra1` à Paris ; mais les données qu'elle lit et écrit ne le sont pas.
+`cdg1` à Paris ; mais les données qu'elle lit et écrit ne le sont pas.
 
 Il est encadré par les mêmes **clauses contractuelles types** que celui de l'article 7.1.
 

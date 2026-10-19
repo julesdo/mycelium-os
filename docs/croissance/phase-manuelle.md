@@ -170,7 +170,7 @@ comptes du prospect.
 |---|---|
 | « J'ai déjà les relances de Pennylane / Qonto. » | Elles relancent ; Letikette ajoute le calcul des 40 € et des pénalités, la date limite pour agir, et le suivi jusqu'à l'avocat si besoin. Les deux se branchent ensemble. |
 | « Je ne veux pas froisser mes clients. » | Vous choisissez qui est relancé. Rien ne part sans que vous l'ayez décidé ; chaque relance s'affiche une heure avant de partir et se retient d'un geste. |
-| « Combien ça coûte ? » | Découverte est gratuite (on voit ce qui est dû). Ensuite 12, 39 ou 119 € HT par mois, trente jours d'essai, aucune commission sur ce qui rentre. |
+| « Combien ça coûte ? » | Découverte est gratuite (on voit ce qui est dû). Ensuite 12, 59 ou 149 € HT par mois, trente jours d'essai, aucune commission sur ce qui rentre. |
 | « Réclamer 40 €, c'est légal ? » | Oui : c'est dû par tout professionnel qui paie en retard (code de commerce, D441-5), sans démarche préalable. Le logiciel cite la source sur chaque décompte. |
 | « Je n'ai pas le temps. » | Le logiciel lit un export ou une photo de vos factures ; le reste se fait seul. Dix minutes pour voir ce qui vous est dû. |
 | « Mes données ? » | Chaque document est chiffré à son arrivée, sous une clé propre à votre entreprise ; détail sur www.letikette.com/securite. |

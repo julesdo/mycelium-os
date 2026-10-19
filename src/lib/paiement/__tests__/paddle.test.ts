@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { DUREE_ESSAI_JOURS, GRILLE } from '../../config/tarifs';
+import {
+	DUREE_ESSAI_JOURS,
+	GRILLE,
+	VERSION_GRILLE,
+	prixDeLaReclamation
+} from '../../config/tarifs';
 import {
 	CLE_ORGANISATION,
 	CLE_SCEAU,
 	catalogueAttendu,
 	ecartsDuPrix,
+	montantPreleve,
 	etiquetteDuPrix,
 	environnementDuJeton,
 	environnementPaddle,
@@ -225,11 +231,20 @@ describe('le catalogue attendu', () => {
 		expect(
 			tous.filter((p) => p.rythme === 'annuel').every((p) => p.cycle.interval === 'year')
 		).toBe(true);
-		expect(etiquetteDuPrix('equipe', 'annuel', true)).toBe('equipe-annuel-essai');
+		// La version de la grille entre dans l'étiquette : un nouveau montant fait naître
+		// un nouveau prix, au lieu d'être signalé en écart sous l'ancienne étiquette.
+		expect(etiquetteDuPrix('equipe', 'annuel', true)).toBe(`equipe-annuel-essai@${VERSION_GRILLE}`);
+	});
+
+	it('lit le montant du prix souscrit avant la grille : un abonné à 39 € reste à 39 €', () => {
+		expect(montantPreleve('3900', 'equipe', 'mensuel')).toBe(3900);
+		// Prix introuvable : la grille du jour, faute de mieux.
+		expect(montantPreleve(null, 'equipe', 'mensuel')).toBe(GRILLE.equipe.mensuel * 100);
+		expect(montantPreleve('pas un nombre', 'pro', 'annuel')).toBe(GRILLE.pro.annuel * 100);
 	});
 
 	it('nomme chaque écart sans rien corriger', () => {
-		const attendu = tous.find((p) => p.etiquette === 'solo-mensuel-essai');
+		const attendu = tous.find((p) => p.etiquette === etiquetteDuPrix('solo', 'mensuel', true));
 		if (attendu === undefined) throw new Error('prix absent');
 		expect(
 			ecartsDuPrix(attendu, {
@@ -251,5 +266,18 @@ describe('le catalogue attendu', () => {
 				modeDeTaxe: 'internal'
 			})
 		).toHaveLength(4);
+	});
+});
+
+describe('le prix d’une réclamation clé en main', () => {
+	it('vaut 5 % du montant calculé, entre 290 € et 2 000 €', () => {
+		// 5 % de 10 000 € = 500 €.
+		expect(prixDeLaReclamation(1_000_000n)).toBe(50_000n);
+		// 5 % de 1 000 € = 50 € : relevé au plancher de 290 €.
+		expect(prixDeLaReclamation(100_000n)).toBe(29_000n);
+		// 5 % de 100 000 € = 5 000 € : ramené au plafond de 2 000 €.
+		expect(prixDeLaReclamation(10_000_000n)).toBe(200_000n);
+		// 5 % de 7 777,77 € = 388,8885 € → 388,89 €.
+		expect(prixDeLaReclamation(777_777n)).toBe(38_889n);
 	});
 });

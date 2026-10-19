@@ -66,8 +66,22 @@ describe('le texte d’un rappel', () => {
 		expect(texte.titre).toBe('Votre essai se termine le 11 novembre');
 		expect(lisible(texte.message)).toContain('12 relances parties');
 		expect(lisible(texte.message)).toContain('rentrés sur les dossiers suivis');
-		expect(lisible(texte.message)).toContain('390 € HT');
+		expect(lisible(texte.message)).toContain('590 € HT');
 		expect(texte.message).not.toMatch(/grâce à|garanti/i);
+	});
+
+	it('annonce le prix que l’établissement paie, pas la grille du jour', () => {
+		const [point] = rappelsDus(essai(7), maintenant);
+		// Souscrit à 390 € l'année avant le passage d'Équipe à 590 €.
+		const texte = texteDuRappel(
+			point!,
+			'equipe',
+			'annuel',
+			{ relancesParties: 0, rentre: 0n },
+			'39000'
+		);
+		expect(lisible(texte.message)).toContain('390 € HT');
+		expect(lisible(texte.message)).not.toContain('590 € HT');
 	});
 
 	it('dit comment annuler avant le premier prélèvement', () => {

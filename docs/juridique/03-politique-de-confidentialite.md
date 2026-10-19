@@ -255,7 +255,7 @@ supposerait une migration vers un nouveau déploiement. Convex propose égalemen
 
 Le transfert est encadré par les **clauses contractuelles types** adoptées par la Commission
 européenne. L'application elle-même — la partie qui s'exécute à la réception d'une requête — est
-hébergée par Vercel en région `fra1`, à Paris ; mais les données qu'elle lit et écrit sont aux
+hébergée par Vercel en région `cdg1`, à Paris ; mais les données qu'elle lit et écrit sont aux
 États-Unis.
 
 Convex propose également une région européenne. Un changement supposerait une migration vers un
@@ -317,7 +317,7 @@ indéterminé compte comme absent, jamais comme acquis. **Toute décision appart
 | Destinataire | Rôle | Données | Localisation |
 |---|---|---|---|
 | **Convex, Inc.** | Base de données, stockage des fichiers, exécution des fonctions | **Toutes** | **États-Unis**, région `aws-us-east-1` (section 6.0) |
-| **Vercel Inc.** | Hébergement de l'application | Trafic, journaux | Exécution en région `fra1`, Paris |
+| **Vercel Inc.** | Hébergement de l'application | Trafic, journaux | Exécution en région `cdg1`, Paris |
 | **Anthropic PBC** | Lecture des documents non structurés | Contenu intégral des documents transmis (section 6) | **États-Unis** |
 | **Resend, Inc.** | Acheminement des courriels de service et des relances parties au nom du créancier ; réception des e-mails écrits au support | Adresse et contenu de ces courriels ; pour un e-mail reçu, son contenu et les résultats de vérification de l'expéditeur | **États-Unis** |
 | **Google LLC** (Google Workspace) | Messagerie de l'équipe : l'adresse publique du support y arrive, puis est transférée au Service | Adresse de l'expéditeur, objet et contenu des e-mails écrits au support | **États-Unis et Union européenne** |

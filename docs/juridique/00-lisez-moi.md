@@ -113,7 +113,7 @@ de son périmètre, et mieux vaut qu'il l'apprenne de nous.
 |---|---|---|---|
 | **Anthropic** (`@anthropic-ai/sdk`) | Extraction et classification | **L'image entière de chaque facture, en base64**, puis les libellés produits | États-Unis ⚠️ |
 | **Convex** | Base de données et stockage | Tout | ⚠️ À VÉRIFIER au tableau de bord |
-| **Vercel** | Hébergement de l'application | Trafic, journaux | Région `fra1`, Paris |
+| **Vercel** | Hébergement de l'application | Trafic, journaux | Région `cdg1`, Paris |
 | **Resend** | Envoi des e-mails | Adresse, contenu des e-mails | Région `eu-west-1`, Irlande |
 | **Paddle** | Facturation, vendeur de registre | Identité de facturation, paiement | Royaume-Uni / Irlande |
 

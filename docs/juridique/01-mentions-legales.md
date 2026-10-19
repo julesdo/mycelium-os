@@ -32,7 +32,7 @@ exploitant le site, au sens de l'article 6-III-1 de la LCEN.
 Deux prestataires concourent à l'hébergement, et ils n'hébergent pas la même chose.
 
 **L'application web** — **Vercel Inc.**, 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.
-Les instances qui répondent aux requêtes sont servies depuis la région `fra1` (Paris).
+Les instances qui répondent aux requêtes sont servies depuis la région `cdg1` (Paris).
 
 **La base de données, le stockage des fichiers et l'exécution des traitements** — **Convex, Inc.**,
 États-Unis, région `aws-us-east-1`.

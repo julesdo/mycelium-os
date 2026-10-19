@@ -20,6 +20,7 @@ import {
 	RefusEnQuatreParties,
 	prixAffiche
 } from '../../ui';
+import { montantPreleve } from '../../lib/paiement/paddle';
 import { OuvertureEnCours } from './offre';
 import { GestionDeLaFormule, type GestionAffichee } from './gestion-formule';
 import { etatDeLaFacturation, type CauseDeFermeture, type EtatFacturation } from './presse';
@@ -36,6 +37,8 @@ export interface AbonnementAffiche {
 	/** La formule souscrite, à l'essai ou payée. */
 	readonly formule: Formule | null;
 	readonly rythme: Rythme | null;
+	/** Le montant du prix souscrit chez Paddle, en centimes (texte) : ce qui est prélevé. */
+	readonly montantDuPrixSouscrit?: string | null;
 	readonly essaiFinLe: number | null;
 	readonly prochainPrelevementLe: number | null;
 	/** Une résiliation programmée : le jour où elle prend effet. */
@@ -252,7 +255,9 @@ function EtatCourant({
 	const montant =
 		abonnement.formule === null || abonnement.rythme === null
 			? null
-			: prixAffiche(montantDuRythme(abonnement.formule, abonnement.rythme) * 100);
+			: prixAffiche(
+					montantPreleve(abonnement.montantDuPrixSouscrit, abonnement.formule, abonnement.rythme)
+				);
 	const rythme = abonnement.rythme === 'annuel' ? 'à l’année' : 'au mois';
 
 	if (etat.genre === 'essai') {

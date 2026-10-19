@@ -541,7 +541,7 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   tableau de bord (`serveurs/nango/LISEZMOI.md`). Dormant sans `NANGO_SECRET_KEY`.
 - **L'abonnement se paie par Paddle** (14/10/2026, `serveurs/paddle/LISEZMOI.md`, grille dans
   `docs/superpowers/specs/2026-10-14-pricing-abonnements.md`). **Découverte** est gratuite (on
-  voit ce qu'on vous doit, rien ne part) ; **Solo, Équipe, Pro** (12, 39, 119 € HT par mois,
+  voit ce qu'on vous doit, rien ne part) ; **Solo, Équipe, Pro** (12, 59, 149 € HT par mois depuis le 19/10/2026, étiquettes de prix versionnées par `VERSION_GRILLE`,
   l'année à dix mois) se choisissent sur UNE page (`ChoixDeFormule`) : la frise de l'essai, le
   rythme, trois cartes, « Commencer l'essai, 0 € aujourd'hui ». Trente jours d'essai, la carte
   enregistrée chez Paddle, une fois par établissement et par compte (`essaiUtilise`). La grille

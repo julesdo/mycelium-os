@@ -160,6 +160,14 @@ export const etatAbonnement = authedQuery({
 		const { tier, isDev } = resolveEffectivePlan(org);
 		const maintenant = Date.now();
 		const souscrite = org.paddleStatus === undefined ? null : formuleSouscrite(org);
+		// Ce que Paddle prélève vraiment : le prix souscrit, jamais la grille du jour.
+		const prixSouscrit =
+			org.paddlePrixId === undefined
+				? null
+				: await ctx.db
+						.query('prixPaddle')
+						.withIndex('by_prix', (q) => q.eq('prixId', org.paddlePrixId!))
+						.first();
 		const [profil, creancier, membres, suivis] = await Promise.all([
 			ctx.db
 				.query('userProfiles')
@@ -183,6 +191,7 @@ export const etatAbonnement = authedQuery({
 			statut: org.paddleStatus ?? null,
 			formule: souscrite,
 			rythme: (org.paddleRythme ?? null) as Rythme | null,
+			montantDuPrixSouscrit: prixSouscrit?.montant ?? null,
 			essaiFinLe: org.paddleStatus === 'trialing' ? (org.paddleEssaiFinLe ?? null) : null,
 			prochainPrelevementLe: org.paddleProchainPrelevementLe ?? null,
 			resiliationLe: org.paddleResiliationLe ?? null,

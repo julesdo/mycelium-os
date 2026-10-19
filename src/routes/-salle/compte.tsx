@@ -685,7 +685,7 @@ const GESTION_DEMO: GestionAffichee = {
 		new Promise((resoudre) =>
 			setTimeout(
 				() =>
-					resoudre({ aujourdhui: 5423, ensuite: 11900, prochainLe: Date.now() + 23 * JOUR_DEMO }),
+					resoudre({ aujourdhui: 5423, ensuite: 14900, prochainLe: Date.now() + 23 * JOUR_DEMO }),
 				600
 			)
 		),

@@ -12,6 +12,7 @@ import {
 	FORMULES,
 	GRILLE,
 	RYTHMES,
+	VERSION_GRILLE,
 	montantDuRythme,
 	type Formule,
 	type Rythme
@@ -336,8 +337,32 @@ function date(valeur: unknown): number | null {
  */
 export const CLE_ETIQUETTE = 'letikette';
 
+/**
+ * L'étiquette d'un prix : « equipe-mensuel-essai@g2 ». La version de la grille y
+ * entre (`VERSION_GRILLE`) : un nouveau montant fait naître un nouveau prix au lieu
+ * d'être signalé en écart, et les anciens prix restent lisibles pour qui les paie.
+ */
 export function etiquetteDuPrix(formule: Formule, rythme: Rythme, essai: boolean): string {
-	return `${formule}-${rythme}${essai ? '-essai' : ''}`;
+	return `${formule}-${rythme}${essai ? '-essai' : ''}@${VERSION_GRILLE}`;
+}
+
+/**
+ * Ce que Paddle prélève vraiment à un abonné, en centimes : le montant du prix qu'il a
+ * souscrit (`prixPaddle.montant`), et la grille seulement si ce prix est introuvable.
+ *
+ * ⚠️ JAMAIS LA GRILLE D'ABORD. Un abonné à 39 € reste à 39 € quand la grille passe à
+ * 59 € : lui annoncer 59 € dans un rappel serait faux, et dans le sens qui inquiète.
+ */
+export function montantPreleve(
+	montantDuPrixSouscrit: string | undefined | null,
+	formule: Formule,
+	rythme: Rythme
+): number {
+	const lu =
+		montantDuPrixSouscrit === undefined || montantDuPrixSouscrit === null
+			? Number.NaN
+			: Number(montantDuPrixSouscrit);
+	return Number.isInteger(lu) && lu > 0 ? lu : montantDuRythme(formule, rythme) * 100;
 }
 
 export interface PrixAttendu {

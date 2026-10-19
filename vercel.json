@@ -3,7 +3,7 @@
 	"buildCommand": "bunx varlock run -- bun scripts/deploy.ts",
 	"outputDirectory": "dist/client",
 	"framework": null,
-	"regions": ["fra1"],
+	"regions": ["cdg1"],
 	"rewrites": [{ "source": "/(.*)", "destination": "/api" }],
 	"headers": [
 		{
