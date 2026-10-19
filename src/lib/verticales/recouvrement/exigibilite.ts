@@ -19,16 +19,25 @@ import { PARAMETRES, exiger } from './parametres';
  * Une date d'émission illisible part telle quelle : le décompte la nommera, au lieu
  * qu'une date fabriquée la cache.
  */
-export function departDuRetard(facture: {
-	readonly dateExigibilite?: string;
-	readonly dateEcheance?: string;
-	readonly dateEmission: string;
-}): { depart: string; supposee: boolean } {
+export function departDuRetard(
+	facture: {
+		readonly dateExigibilite?: string;
+		readonly dateEcheance?: string;
+		readonly dateEmission: string;
+	},
+	options: {
+		/**
+		 * Le délai à supposer à la place du délai commercial : celui d'un acheteur public
+		 * (`commande-publique.delaiDePaiementPublic`), trente, cinquante ou soixante jours.
+		 */
+		readonly delaiSupposeJours?: number;
+	} = {}
+): { depart: string; supposee: boolean } {
 	if (facture.dateExigibilite !== undefined) {
 		return { depart: facture.dateExigibilite, supposee: false };
 	}
 	if (facture.dateEcheance !== undefined) return { depart: facture.dateEcheance, supposee: false };
-	const jours = exiger(PARAMETRES.delaiDeReglementSuppletif);
+	const jours = options.delaiSupposeJours ?? exiger(PARAMETRES.delaiDeReglementSuppletif);
 	return {
 		depart: estDateReelle(facture.dateEmission)
 			? ajouterJours(facture.dateEmission, jours)

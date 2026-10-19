@@ -15,6 +15,12 @@ import {
 	type LigneRevelee
 } from '../../verticales/recouvrement/revelation';
 import { departDuRetard } from '../../verticales/recouvrement/exigibilite';
+import {
+	baremeDuDebiteur,
+	delaiDePaiementPublic,
+	periodesDeTauxPublics
+} from '../../verticales/recouvrement/pays/france/commande-publique';
+import type { Bareme } from '../../verticales/recouvrement/decompte';
 import { plancherDHistorique } from '../../config/tarifs';
 import { limitesDeLOrganisation } from '../limites';
 import type { FacturePourRevelation } from '../../verticales/recouvrement/revelation';
@@ -67,10 +73,43 @@ const CONVENTION = 'ACT_365' as const;
  * une incohérence : une prescription approximée reste une surveillance, alors
  * qu'un intérêt approximé est un chiffre faux qu'on envoie à un débiteur.
  */
-function departDe(facture: Doc<'facturesVente'>): { depart: string; supposee: boolean } {
+function departDe(
+	facture: Doc<'facturesVente'>,
+	delaiSupposeJours?: number
+): { depart: string; supposee: boolean } {
 	// La lecture de tout ce qui mesure (`exigibilite.ts`) : l'exigibilité, l'échéance,
 	// sinon le délai supplétif depuis la date de la facture, marqué comme hypothèse.
-	return departDuRetard(facture);
+	return departDuRetard(facture, delaiSupposeJours === undefined ? {} : { delaiSupposeJours });
+}
+
+/**
+ * Le barème d'un client et le délai à supposer pour ses factures sans échéance (lot 1
+ * bis) : celui de sa catégorie d'acheteur public, ou le plus long quand elle n'est pas
+ * qualifiée. Le doute ne profite jamais au produit : un délai plus long fait partir le
+ * retard plus tard.
+ */
+function baremeEtDelai(debiteur: Doc<'debiteurs'> | undefined): {
+	bareme: Bareme;
+	delaiSupposeJours?: number;
+} {
+	const { bareme, categorie } = baremeDuDebiteur({
+		...(debiteur?.categorieJuridique === undefined
+			? {}
+			: { categorieJuridique: debiteur.categorieJuridique }),
+		...(debiteur?.acheteurPublic === undefined ? {} : { acheteurPublic: debiteur.acheteurPublic })
+	});
+	if (bareme === 'COMMERCIAL') return { bareme };
+	return {
+		bareme,
+		delaiSupposeJours:
+			categorie === null
+				? Math.max(
+						delaiDePaiementPublic('POUVOIR_ADJUDICATEUR'),
+						delaiDePaiementPublic('SANTE'),
+						delaiDePaiementPublic('ENTREPRISE_PUBLIQUE')
+					)
+				: delaiDePaiementPublic(categorie)
+	};
 }
 
 /**
@@ -81,8 +120,11 @@ function departDe(facture: Doc<'facturesVente'>): { depart: string; supposee: bo
 function periodesDe(
 	facture: Doc<'facturesVente'>,
 	depart: string,
-	arreteAu: string
+	arreteAu: string,
+	bareme: Bareme = 'COMMERCIAL'
 ): PeriodeDeTaux[] {
+	// Le barème public : un seul taux, ancré sur le lendemain de l'échéance (R2192-31).
+	if (bareme === 'COMMANDE_PUBLIQUE') return periodesDeTauxPublics(depart);
 	if (facture.tauxContractuel !== undefined) {
 		return [
 			{
@@ -148,8 +190,9 @@ async function facturesPour(
 
 	for (const facture of brutes) {
 		if (facture.creanceId !== undefined && classes.has(facture.creanceId)) continue;
-		const { depart, supposee } = departDe(facture);
 		const debiteur = debiteurs.get(facture.debiteurId);
+		const { bareme, delaiSupposeJours } = baremeEtDelai(debiteur);
+		const { depart, supposee } = departDe(facture, delaiSupposeJours);
 		const secteur: SecteurCreance = debiteur?.secteur ?? 'INDETERMINE';
 
 		// ⚠️ LA RÉFÉRENCE EST LA CLÉ, et elle est unique par établissement :
@@ -164,7 +207,7 @@ async function facturesPour(
 
 		let taux: PeriodeDeTaux[] = [];
 		try {
-			taux = periodesDe(facture, depart, arreteAu);
+			taux = periodesDe(facture, depart, arreteAu, bareme);
 		} catch {
 			// Série vide : le décompte lèvera, et `reveler` nommera la facture.
 		}
@@ -186,6 +229,7 @@ async function facturesPour(
 				})
 			),
 			taux,
+			...(bareme === 'COMMANDE_PUBLIQUE' ? { bareme } : {}),
 			statutPaiement: facture.statutPaiement,
 			...(reglements.some((r) => r.dateSource === 'LECTURE')
 				? { datesDeReglementSures: false }

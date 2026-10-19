@@ -43,3 +43,19 @@ describe('le départ du retard', () => {
 		expect(estEchue({ ...sansEcheance, statutPaiement: 'SOLDEE' }, '2026-12-01')).toBe(false);
 	});
 });
+
+describe('le départ du retard d’un client public (lot 1 bis)', () => {
+	it('suppose le délai de sa catégorie à la place du délai commercial', () => {
+		expect(departDuRetard({ dateEmission: '2026-08-01' }, { delaiSupposeJours: 50 })).toEqual({
+			depart: '2026-09-20',
+			supposee: true
+		});
+		// Une échéance connue l'emporte toujours.
+		expect(
+			departDuRetard(
+				{ dateEcheance: '2026-08-31', dateEmission: '2026-08-01' },
+				{ delaiSupposeJours: 50 }
+			)
+		).toEqual({ depart: '2026-08-31', supposee: false });
+	});
+});

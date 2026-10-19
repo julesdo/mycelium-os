@@ -111,7 +111,7 @@ export function composerRapportDiagnostic(
 	const hypotheses: string[] = [];
 	if (d.echeancesSupposees > 0) {
 		hypotheses.push(
-			`${factures(d.echeancesSupposees)} sans échéance dans le fichier : le calcul suppose un règlement à ${jours} jours de la date de la facture (${suppletif.source}). Une échéance connue plus tardive réduirait les pénalités.`
+			`${factures(d.echeancesSupposees)} sans échéance dans le fichier : le calcul suppose un règlement à ${jours} jours de la date de la facture (${suppletif.source}), ou le délai de paiement de l’acheteur pour un client public (${PARAMETRES.delaisPaiementPublics.source}). Une échéance connue plus tardive réduirait les pénalités.`
 		);
 	}
 	if (d.du !== null && d.horsPeriode.nombre > 0) {

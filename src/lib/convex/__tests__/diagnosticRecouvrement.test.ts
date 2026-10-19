@@ -165,3 +165,36 @@ describe('le diagnostic express', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('le diagnostic d’un client public (lot 1 bis)', () => {
+	it(
+		'compte une facture d’hôpital payée en retard au barème public',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await poser(t, [
+				{
+					reference: 'CHU-1',
+					dateEmission: '2026-03-01',
+					dateEcheance: '2026-05-01',
+					statutPaiement: 'SOLDEE',
+					reglement: { date: '2026-09-01', montant: 1_000_000n, dateSource: 'REELLE' }
+				}
+			]);
+			await t.run(async (ctx) => {
+				const debiteur = await ctx.db
+					.query('debiteurs')
+					.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+					.first();
+				await ctx.db.patch(debiteur!._id, { categorieJuridique: '7364' });
+			});
+			const d = await t.query(internal.recouvrement.revelation.diagnosticInterne, {
+				organizationId,
+				arreteAu: AUJOURDHUI
+			});
+			// 10 000 € à 10,15 % pendant 123 jours, en une période : 342,04 €, plus 40 €.
+			expect(d.payeesEnRetard.lignes[0]!.interets).toBe(34_204n);
+			expect(d.payeesEnRetard.lignes[0]!.indemniteForfaitaire).toBe(4_000n);
+		},
+		DELAI_CONVEX
+	);
+});
