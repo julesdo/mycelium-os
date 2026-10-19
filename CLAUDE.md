@@ -712,6 +712,13 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   `reveler`, au barème public pour les hôpitaux) et les cartes du site ; une donnée changée se
   rephotographie (`SALLE=… capturer-ecrans.ts metier-…`). Des noms inventés, « Exemple » sous
   chaque scène. L'accueil (« Pour qui ») et le menu « Métiers » de la barre y mènent.
+  **Le blog a son CMS dans l'admin** (19/10/2026, `/admin/blog`) : GitHub reste la base, Convex
+  lit et publie par l'API « contents » avec un jeton à portée fine (`GITHUB_CMS_TOKEN`, dormant
+  sans). L'en-tête a UNE définition (`lib/blog/schema.ts`, que lit aussi content-collections) ;
+  `lib/blog/source.ts` lit, réécrit et relit la charte ; la publication (`admin/blogPublication`,
+  Node) refuse ce que le build refuserait, compile le MDX, et va au journal. Seize articles par
+  métier paraissent deux fois par semaine jusqu'au 10 décembre ; chaque page métier montre les
+  siens (« À lire »).
 - **La trajectoire de l'audit** (19/10/2026, `docs/superpowers/specs/2026-10-19-trajectoire-de-l-audit.md`,
   lots 1 à 8 livrés le jour même). Le fondateur : « ce document est hyper important ». Ce qui est
   désormais vrai, et qu'un nouveau code doit respecter :

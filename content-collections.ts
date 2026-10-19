@@ -3,7 +3,7 @@ import { compileMDX } from '@content-collections/mdx';
 import remarkGfm from 'remark-gfm';
 import { z } from 'zod';
 import { ancreDe } from './src/marketing/ancre';
-import { CATEGORIES, ILLUSTRATIONS, PILIERS } from './src/marketing/motifs-blog';
+import { ADRESSE_VALIDE, schemaEnteteArticle } from './src/lib/blog/schema';
 
 /**
  * LE BLOG, EN FICHIERS (06/10/2026).
@@ -22,13 +22,8 @@ import { CATEGORIES, ILLUSTRATIONS, PILIERS } from './src/marketing/motifs-blog'
  * ramène à `AAAA-MM-JJ` avant de le valider, ce qui garde la donnée
  * sérialisable et refuse un 30 février au lieu de le faire glisser au 2 mars.
  */
-const dateDuJour = z.preprocess(
-	(valeur) => (valeur instanceof Date ? valeur.toISOString().slice(0, 10) : valeur),
-	z.iso.date()
-);
 
 /** L'adresse d'un article : son nom de fichier, en minuscules, chiffres et tirets. */
-const ADRESSE_VALIDE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Les intertitres de niveau 2, pour le sommaire : `## Le titre` en début de ligne. */
 const INTERTITRE = /^##\s+(.+?)\s*$/gm;
@@ -38,29 +33,9 @@ const articles = defineCollection({
 	typeName: 'ArticleBlog',
 	directory: 'content/blog',
 	include: '**/*.mdx',
-	schema: z.object({
-		titre: z.string().min(10).max(90),
-		description: z.string().min(50).max(170),
-		date: dateDuJour,
-		misAJour: dateDuJour.optional(),
-		auteur: z.string().default('L’équipe Letikette'),
-		categorie: z.enum(CATEGORIES),
-		// Le pilier de la ligne éditoriale (`motifs-blog.ts`), facultatif.
-		pilier: z.enum(PILIERS).optional(),
-		// La couverture illustrée, dessinée dans la DA (`blog-couvertures.tsx`) sur la
-		// teinte de la catégorie. `facture` par défaut.
-		illustration: z.enum(ILLUSTRATIONS).default('facture'),
-		// Une vraie image, seulement si l'article en a besoin : elle remplace alors
-		// l'illustration. Une image propre au blog (`/blog/`) ou une capture (`/ecrans/`).
-		couverture: z
-			.object({
-				src: z.string().regex(/^\/(blog|ecrans)\//),
-				alt: z.string().min(5)
-			})
-			.optional(),
-		// Trois à cinq phrases courtes : ce que le lecteur retient s'il ne lit que ça.
-		enBref: z.array(z.string().min(10).max(220)).min(2).max(5).optional(),
-		brouillon: z.boolean().default(false),
+	// L'en-tête vit dans `src/lib/blog/schema.ts`, que le CMS de l'admin lit aussi : ce que le
+	// build refuse, l'admin refuse de le publier.
+	schema: schemaEnteteArticle.extend({
 		// Le corps de l'article, déclaré explicitement : la propriété implicite est
 		// dépréciée depuis content-collections 0.15.
 		content: z.string()

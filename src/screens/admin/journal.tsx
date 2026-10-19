@@ -8,7 +8,8 @@ import {
 	UserRoundCogIcon,
 	EraserIcon,
 	MessageSquareIcon,
-	BellOffIcon
+	BellOffIcon,
+	NewspaperIcon
 } from 'lucide-react';
 import { PageEcran, type Lecture } from '../../ui';
 import { HistoriqueParJour } from '../../ui/admin';
@@ -36,9 +37,19 @@ const PHRASES: Readonly<Record<string, { icone: ReactNode; phrase: (libelle: str
 		MEMBRE_RETIRE: { icone: <UserMinusIcon />, phrase: (l) => `a retiré ${l} de l’équipe` },
 		IMPORT: { icone: <FileUpIcon />, phrase: (l) => `a importé ${l}` },
 		PROSPECT_EFFACE: { icone: <EraserIcon />, phrase: (l) => `a effacé les coordonnées de ${l}` },
-		CONVERSATION_OUVERTE: { icone: <MessageSquareIcon />, phrase: (l) => `a ouvert la conversation de ${l}` },
-		CONTENU_RETIRE: { icone: <EraserIcon />, phrase: (l) => `a retiré un contenu de la conversation de ${l}` },
-		RELANCES_SUSPENDUES: { icone: <BellOffIcon />, phrase: (l) => `a suspendu les relances automatiques de ${l}` }
+		CONVERSATION_OUVERTE: {
+			icone: <MessageSquareIcon />,
+			phrase: (l) => `a ouvert la conversation de ${l}`
+		},
+		CONTENU_RETIRE: {
+			icone: <EraserIcon />,
+			phrase: (l) => `a retiré un contenu de la conversation de ${l}`
+		},
+		RELANCES_SUSPENDUES: {
+			icone: <BellOffIcon />,
+			phrase: (l) => `a suspendu les relances automatiques de ${l}`
+		},
+		ARTICLE_PUBLIE: { icone: <NewspaperIcon />, phrase: (l) => `a publié l’article « ${l} »` }
 	};
 
 export function EcranJournal({

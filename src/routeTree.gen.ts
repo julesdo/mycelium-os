@@ -58,6 +58,9 @@ import { Route as DesinscriptionJetonRouteImport } from './routes/desinscription
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as SecteursSecteurRouteImport } from './routes/secteurs.$secteur'
+import { Route as AdminBlogIndexRouteImport } from './routes/admin/blog.index'
+import { Route as AdminBlogAdresseRouteImport } from './routes/admin/blog.$adresse'
+import { Route as AdminBlogNouveauRouteImport } from './routes/admin/blog.nouveau'
 import { Route as AdminComptesIndexRouteImport } from './routes/admin/comptes.index'
 import { Route as AdminComptesIdRouteImport } from './routes/admin/comptes.$id'
 import { Route as AdminProspectsIndexRouteImport } from './routes/admin/prospects.index'
@@ -335,6 +338,21 @@ const SecteursSecteurRoute = SecteursSecteurRouteImport.update({
   path: '/secteurs/$secteur',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBlogIndexRoute = AdminBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminBlogAdresseRoute = AdminBlogAdresseRouteImport.update({
+  id: '/blog/$adresse',
+  path: '/blog/$adresse',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminBlogNouveauRoute = AdminBlogNouveauRouteImport.update({
+  id: '/blog/nouveau',
+  path: '/blog/nouveau',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminComptesIndexRoute = AdminComptesIndexRouteImport.update({
   id: '/comptes/',
   path: '/comptes/',
@@ -531,6 +549,8 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/admin/blog/$adresse': typeof AdminBlogAdresseRoute
+  '/admin/blog/nouveau': typeof AdminBlogNouveauRoute
   '/admin/comptes/$id': typeof AdminComptesIdRoute
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
@@ -552,6 +572,7 @@ export interface FileRoutesByFullPath {
   '/app/pilote/$id': typeof AppPiloteIdRoute
   '/app/risque/$id': typeof AppRisqueIdRoute
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/admin/comptes/': typeof AdminComptesIndexRoute
   '/admin/prospects/': typeof AdminProspectsIndexRoute
   '/admin/support/': typeof AdminSupportIndexRoute
@@ -609,6 +630,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
+  '/admin/blog/$adresse': typeof AdminBlogAdresseRoute
+  '/admin/blog/nouveau': typeof AdminBlogNouveauRoute
   '/admin/comptes/$id': typeof AdminComptesIdRoute
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
@@ -630,6 +653,7 @@ export interface FileRoutesByTo {
   '/app/pilote/$id': typeof AppPiloteIdRoute
   '/app/risque/$id': typeof AppRisqueIdRoute
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
+  '/admin/blog': typeof AdminBlogIndexRoute
   '/admin/comptes': typeof AdminComptesIndexRoute
   '/admin/prospects': typeof AdminProspectsIndexRoute
   '/admin/support': typeof AdminSupportIndexRoute
@@ -690,6 +714,8 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/admin/blog/$adresse': typeof AdminBlogAdresseRoute
+  '/admin/blog/nouveau': typeof AdminBlogNouveauRoute
   '/admin/comptes/$id': typeof AdminComptesIdRoute
   '/admin/prospects/$id': typeof AdminProspectsIdRoute
   '/admin/prospects/importer': typeof AdminProspectsImporterRoute
@@ -711,6 +737,7 @@ export interface FileRoutesById {
   '/app/pilote/$id': typeof AppPiloteIdRoute
   '/app/risque/$id': typeof AppRisqueIdRoute
   '/app/risque/verifier': typeof AppRisqueVerifierRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/admin/comptes/': typeof AdminComptesIndexRoute
   '/admin/prospects/': typeof AdminProspectsIndexRoute
   '/admin/support/': typeof AdminSupportIndexRoute
@@ -772,6 +799,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/blog/'
+    | '/admin/blog/$adresse'
+    | '/admin/blog/nouveau'
     | '/admin/comptes/$id'
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
@@ -793,6 +822,7 @@ export interface FileRouteTypes {
     | '/app/pilote/$id'
     | '/app/risque/$id'
     | '/app/risque/verifier'
+    | '/admin/blog/'
     | '/admin/comptes/'
     | '/admin/prospects/'
     | '/admin/support/'
@@ -850,6 +880,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/blog'
+    | '/admin/blog/$adresse'
+    | '/admin/blog/nouveau'
     | '/admin/comptes/$id'
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
@@ -871,6 +903,7 @@ export interface FileRouteTypes {
     | '/app/pilote/$id'
     | '/app/risque/$id'
     | '/app/risque/verifier'
+    | '/admin/blog'
     | '/admin/comptes'
     | '/admin/prospects'
     | '/admin/support'
@@ -930,6 +963,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/blog/'
+    | '/admin/blog/$adresse'
+    | '/admin/blog/nouveau'
     | '/admin/comptes/$id'
     | '/admin/prospects/$id'
     | '/admin/prospects/importer'
@@ -951,6 +986,7 @@ export interface FileRouteTypes {
     | '/app/pilote/$id'
     | '/app/risque/$id'
     | '/app/risque/verifier'
+    | '/admin/blog/'
     | '/admin/comptes/'
     | '/admin/prospects/'
     | '/admin/support/'
@@ -1342,6 +1378,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecteursSecteurRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/blog/': {
+      id: '/admin/blog/'
+      path: '/blog'
+      fullPath: '/admin/blog/'
+      preLoaderRoute: typeof AdminBlogIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/blog/$adresse': {
+      id: '/admin/blog/$adresse'
+      path: '/blog/$adresse'
+      fullPath: '/admin/blog/$adresse'
+      preLoaderRoute: typeof AdminBlogAdresseRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/blog/nouveau': {
+      id: '/admin/blog/nouveau'
+      path: '/blog/nouveau'
+      fullPath: '/admin/blog/nouveau'
+      preLoaderRoute: typeof AdminBlogNouveauRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/comptes/': {
       id: '/admin/comptes/'
       path: '/comptes'
@@ -1554,6 +1611,8 @@ interface AdminRouteRouteChildren {
   AdminJournalRoute: typeof AdminJournalRoute
   AdminTachesRoute: typeof AdminTachesRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminBlogAdresseRoute: typeof AdminBlogAdresseRoute
+  AdminBlogNouveauRoute: typeof AdminBlogNouveauRoute
   AdminComptesIdRoute: typeof AdminComptesIdRoute
   AdminProspectsIdRoute: typeof AdminProspectsIdRoute
   AdminProspectsImporterRoute: typeof AdminProspectsImporterRoute
@@ -1561,6 +1620,7 @@ interface AdminRouteRouteChildren {
   AdminSupportIdRoute: typeof AdminSupportIdRoute
   AdminSupportMesureRoute: typeof AdminSupportMesureRoute
   AdminSupportReponsesRoute: typeof AdminSupportReponsesRoute
+  AdminBlogIndexRoute: typeof AdminBlogIndexRoute
   AdminComptesIndexRoute: typeof AdminComptesIndexRoute
   AdminProspectsIndexRoute: typeof AdminProspectsIndexRoute
   AdminSupportIndexRoute: typeof AdminSupportIndexRoute
@@ -1572,6 +1632,8 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminJournalRoute: AdminJournalRoute,
   AdminTachesRoute: AdminTachesRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminBlogAdresseRoute: AdminBlogAdresseRoute,
+  AdminBlogNouveauRoute: AdminBlogNouveauRoute,
   AdminComptesIdRoute: AdminComptesIdRoute,
   AdminProspectsIdRoute: AdminProspectsIdRoute,
   AdminProspectsImporterRoute: AdminProspectsImporterRoute,
@@ -1579,6 +1641,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminSupportIdRoute: AdminSupportIdRoute,
   AdminSupportMesureRoute: AdminSupportMesureRoute,
   AdminSupportReponsesRoute: AdminSupportReponsesRoute,
+  AdminBlogIndexRoute: AdminBlogIndexRoute,
   AdminComptesIndexRoute: AdminComptesIndexRoute,
   AdminProspectsIndexRoute: AdminProspectsIndexRoute,
   AdminSupportIndexRoute: AdminSupportIndexRoute,

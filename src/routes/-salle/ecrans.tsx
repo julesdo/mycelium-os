@@ -14,6 +14,7 @@ import { ECRANS_SANTE } from './sante';
 import { ECRANS_ONGLETS } from './onglets';
 import { ECRANS_PIECE } from './piece';
 import { ECRANS_ADMIN } from './admin';
+import { ECRANS_BLOG } from './blog';
 import { ECRANS_AIDE, ECRANS_SUPPORT_EQUIPE } from './aide';
 
 /**
@@ -109,6 +110,7 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	 * Rendu dans la coquille de l'application, et non dans la sienne : c'est
 	 * l'écran qu'on regarde ici, pas sa barre latérale. */
 	...ECRANS_ADMIN,
+	...ECRANS_BLOG,
 	...ECRANS_AIDE,
 	...ECRANS_SUPPORT_EQUIPE
 ];

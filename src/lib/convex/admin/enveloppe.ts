@@ -102,7 +102,8 @@ export async function noterAuJournal(
 			| 'PROSPECT_EFFACE'
 			| 'CONVERSATION_OUVERTE'
 			| 'CONTENU_RETIRE'
-			| 'RELANCES_SUSPENDUES';
+			| 'RELANCES_SUSPENDUES'
+			| 'ARTICLE_PUBLIE';
 		readonly cible: Infer<typeof vCibleJournal>;
 		readonly organizationId?: Id<'organizations'>;
 	}

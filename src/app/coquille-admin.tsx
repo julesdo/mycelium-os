@@ -36,7 +36,8 @@ import {
 	TruckIcon,
 	CalculatorIcon,
 	BriefcaseIcon,
-	HandshakeIcon
+	HandshakeIcon,
+	NewspaperIcon
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { RoleEquipe } from '../lib/admin/acces';
@@ -166,6 +167,15 @@ const SUPPORT_ONGLET: Destination = {
  * Les quatre onglets du téléphone. Le support y remplace les tâches (16/10/2026) : elles
  * restent dans « Aujourd'hui ».
  */
+/** Le CMS du blog (19/10/2026) : les articles du dépôt, édités et publiés sur GitHub. */
+const BLOG: Destination = {
+	cle: 'blog',
+	libelle: 'Blog',
+	vers: '/admin/blog',
+	Icone: NewspaperIcon,
+	prefixes: ['/admin/blog']
+};
+
 const ONGLETS: readonly Destination[] = [AUJOURDHUI, COMPTES, PROSPECTS, SUPPORT_ONGLET];
 
 const GROUPES: readonly {
@@ -176,6 +186,7 @@ const GROUPES: readonly {
 }[] = [
 	{ cle: 'travail', destinations: [AUJOURDHUI, APPELS, TACHES] },
 	{ cle: 'fiches', titre: 'Fiches', destinations: [COMPTES, PROSPECTS] },
+	{ cle: 'contenu', titre: 'Contenu', destinations: [BLOG] },
 	{
 		// Les parcours de prospection (19/10/2026, audit stratégique) : un kanban et un
 		// entonnoir par façon de vendre, chacun avec ses étapes.

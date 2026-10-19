@@ -6,6 +6,24 @@ Un article = un fichier `.mdx` dans ce dossier. Le nom du fichier devient l'adre
 Rien d'autre à installer ni à configurer : au prochain `git push`, l'article est construit avec le
 site et publié. Aucun CMS, aucun compte, aucun coût.
 
+## Publier depuis l’admin
+
+L’admin a un CMS (`/admin/blog`) : la liste des articles lue sur GitHub, un éditeur avec
+l’aperçu fidèle, la relecture de cette charte, et un bouton qui publie (un commit sur `main`,
+que Vercel déploie ; un article daté du futur attend son jour). Seul un fondateur publie, et
+chaque publication va au journal de l’équipe.
+
+Le brancher demande un jeton GitHub à portée fine, limité au dépôt du site, avec le droit
+« Contents : Read and write » (GitHub, Settings, Developer settings, Fine-grained tokens),
+posé dans Convex :
+
+```bash
+npx convex env set --prod GITHUB_CMS_TOKEN <le jeton>
+```
+
+`GITHUB_CMS_DEPOT` (« julesdo/mycelium-os » par défaut) et `GITHUB_CMS_BRANCHE` (« main »)
+sont facultatifs. Sans jeton, l’écran dit ce qu’il faut poser.
+
 ## Écrire un article
 
 Créer un fichier, copier cet en-tête, puis écrire en Markdown en dessous :

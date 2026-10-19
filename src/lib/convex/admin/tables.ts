@@ -21,7 +21,9 @@ export const vCibleJournal = v.object({
 		v.literal('PROSPECT'),
 		v.literal('MEMBRE'),
 		v.literal('IMPORT'),
-		v.literal('CONVERSATION')
+		v.literal('CONVERSATION'),
+		// Le CMS du blog (19/10/2026) : l'adresse de l'article publié.
+		v.literal('ARTICLE')
 	),
 	id: v.optional(v.string()),
 	libelle: v.string()
@@ -56,7 +58,9 @@ export const adminTables = {
 			// chaque coupure des relances demandée au support.
 			v.literal('CONVERSATION_OUVERTE'),
 			v.literal('CONTENU_RETIRE'),
-			v.literal('RELANCES_SUSPENDUES')
+			v.literal('RELANCES_SUSPENDUES'),
+			// Le CMS du blog (19/10/2026) : chaque publication est un commit sur le dépôt.
+			v.literal('ARTICLE_PUBLIE')
 		),
 		cible: vCibleJournal,
 		organizationId: v.optional(v.id('organizations')),
