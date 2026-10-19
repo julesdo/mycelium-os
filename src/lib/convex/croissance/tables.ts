@@ -46,7 +46,12 @@ export const vCleConseil = v.union(
 	v.literal('bienvenue'),
 	v.literal('il-manque-vos-factures'),
 	v.literal('ce-qui-vous-est-du'),
-	v.literal('ce-qui-partirait')
+	v.literal('ce-qui-partirait'),
+	// L'audit du 19/10/2026 (lot 7) : le rapport du diagnostic, et les deux rappels de
+	// l'offre de bienvenue.
+	v.literal('rapport-diagnostic'),
+	v.literal('offre-de-bienvenue'),
+	v.literal('offre-de-bienvenue-fin')
 );
 
 export const croissanceTables = {

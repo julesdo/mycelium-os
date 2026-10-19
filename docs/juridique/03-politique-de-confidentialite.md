@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.8** du 16 octobre 2026 (le service client : l'Aide, Plume support, l'équipe et la réception des e-mails ; et les relances que Resend achemine depuis le 8 octobre, sections 3, 5, 6.1, 7, 9 et 10). **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.9** du 19 octobre 2026 (le rapport du diagnostic, et deux rappels de l'offre de bienvenue qui le suit, section 5). **Version 2.8** du 16 octobre 2026 (le service client : l'Aide, Plume support, l'équipe et la réception des e-mails ; et les relances que Resend achemine depuis le 8 octobre, sections 3, 5, 6.1, 7, 9 et 10). **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -181,7 +181,8 @@ analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête 
 | Assurer la sécurité et prévenir la fraude | **Intérêt légitime** | art. 6.1.f |
 | Mesurer l'audience du site et l'usage du Service, en statistiques agrégées | **Intérêt légitime** à améliorer le Service | art. 6.1.f |
 | Suivre où en est votre compte (provenance de l'inscription, étapes franchies, indice d'activité) pour vous accompagner | **Intérêt légitime** à faire réussir l'utilisation du Service | art. 6.1.f |
-| Vous envoyer les conseils de Plume dans vos premières semaines (quatre au plus) | **Intérêt légitime**, avec opposition en un clic | art. 6.1.f |
+| Vous envoyer le rapport de votre diagnostic quand il est rendu | **Exécution du contrat** | art. 6.1.b |
+| Vous envoyer les conseils de Plume dans vos premières semaines (quatre au plus) et, aux administrateurs du compte, deux rappels de l'offre de bienvenue dans les quatorze jours qui suivent un diagnostic | **Intérêt légitime**, avec opposition en un clic | art. 6.1.f |
 | Permettre à l'équipe de Letikette d'accompagner les comptes, et journaliser ses accès | **Intérêt légitime** à assister les clients et à sécuriser l'administration du Service | art. 6.1.f |
 | Prospecter des entreprises qui ne sont pas clientes, par leurs contacts professionnels (section 8 bis) | **Intérêt légitime** à présenter le Service, avec opposition à tout moment | art. 6.1.f |
 | Répondre à vos questions au support, par Plume support puis par l'équipe | **Exécution du contrat** | art. 6.1.b |
@@ -204,7 +205,8 @@ ne s'y charge pas. Le réglage « Ne pas me pister » du navigateur est respect�
 **Accompagnement.** Pour savoir ce qui vous a mené à Letikette et vous accompagner dans vos premières
 semaines, le Service garde, pour chaque établissement : la page d'entrée et le site d'origine de
 la visite qui a mené à l'inscription (avec ses éventuels paramètres de campagne), les étapes
-franchies et leur date (entreprise renseignée, factures déposées, relances activées, abonnement),
+franchies et leur date (entreprise renseignée, diagnostic lancé et rendu, factures déposées,
+relances activées, abonnement),
 et un indice d'activité de 0 à 100. **Jamais le contenu d'un dossier** : ni débiteur, ni facture,
 ni montant. Ces informations ne sont vues que par Letikette ; elles servent à choisir le prochain
 conseil de Plume et les comptes que l'équipe contacte, et ne produisent aucune décision qui vous

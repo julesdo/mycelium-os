@@ -34,6 +34,31 @@ export function compterParSource(
 	return { lignes, total };
 }
 
+/**
+ * LES VENTES QUI SUIVENT UN DIAGNOSTIC (19/10/2026, audit, lot 7) : une cohorte, que
+ * `compterParSource` ne sait pas faire. Une vente est le premier essai ou abonnement de
+ * l'établissement, tombé dans la fenêtre ET après son diagnostic rendu. Par source.
+ */
+export function ventesApresDiagnostic(
+	parcours: readonly { readonly source: SourceVisite | null; readonly etapes: DatesDesEtapes }[],
+	debut: number,
+	fin: number
+): { total: number; parSource: Map<string, number> } {
+	const parSource = new Map<string, number>();
+	let total = 0;
+	for (const p of parcours) {
+		const rendu = p.etapes.DIAGNOSTIC_RENDU;
+		const achats = [p.etapes.ESSAI, p.etapes.ABONNE].filter((d): d is number => d !== undefined);
+		if (rendu === undefined || achats.length === 0) continue;
+		const vente = Math.min(...achats);
+		if (vente < debut || vente >= fin || vente < rendu) continue;
+		const nom = libelleDeSource(p.source);
+		parSource.set(nom, (parSource.get(nom) ?? 0) + 1);
+		total += 1;
+	}
+	return { total, parSource };
+}
+
 /** Le nom de chaque étape dans le point du lundi. */
 export const LIBELLES_DES_ETAPES: Record<Etape, string> = {
 	INSCRIT: 'Inscrits',

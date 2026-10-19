@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { lireSource, libelleDeSource } from '../source';
 import { deduireEtapes, type EtatDuCompte } from '../etapes';
 import { calculerScore } from '../score';
-import { prochainConseil, ECART_MINIMAL_MS } from '../conseils';
-import { compterParSource } from '../semaine';
+import { prochainConseil, ECART_MINIMAL_MS, CONSEILS_DES_ADMINS } from '../conseils';
+import { JOURS_OFFRE_DE_BIENVENUE } from '../../config/tarifs';
+import { compterParSource, ventesApresDiagnostic } from '../semaine';
 
 const JOUR = 24 * 60 * 60 * 1000;
 const T0 = Date.UTC(2026, 9, 14, 10, 0); // un mercredi
@@ -231,6 +232,59 @@ describe('prochainConseil', () => {
 	});
 });
 
+describe('l’offre de bienvenue après un diagnostic (19/10/2026, audit, lot 7)', () => {
+	// Un compte inscrit il y a deux mois lance son diagnostic aujourd'hui : la garde est par
+	// règle, il reçoit les rappels de l'offre, jamais la « bienvenue ».
+	const rendu = { INSCRIT: T0 - 60 * JOUR, DIAGNOSTIC_RENDU: T0, MONTANT_REVELE: T0 };
+	const rapport = { cle: 'rapport-diagnostic' as const, le: T0 };
+
+	it('rappelle l’offre une semaine après le rapport, puis avant qu’elle expire', () => {
+		expect(prochainConseil(rendu, [rapport], T0 + JOUR)).toEqual({
+			cle: 'offre-de-bienvenue',
+			des: T0 + 7 * JOUR
+		});
+		expect(
+			prochainConseil(
+				rendu,
+				[rapport, { cle: 'offre-de-bienvenue', le: T0 + 7 * JOUR }],
+				T0 + 8 * JOUR
+			)
+		).toEqual({ cle: 'offre-de-bienvenue-fin', des: T0 + (JOURS_OFFRE_DE_BIENVENUE - 3) * JOUR });
+	});
+
+	it('se tait dès l’essai ou l’abonnement', () => {
+		expect(prochainConseil({ ...rendu, ESSAI: T0 + JOUR }, [rapport], T0 + 7 * JOUR)).toBeNull();
+		expect(prochainConseil({ ...rendu, ABONNE: T0 + JOUR }, [rapport], T0 + 7 * JOUR)).toBeNull();
+	});
+
+	it('ne rappelle jamais une offre expirée, même repoussée par un week-end', () => {
+		expect(
+			prochainConseil(rendu, [rapport], T0 + (JOURS_OFFRE_DE_BIENVENUE - 1) * JOUR + 1)
+		).toBeNull();
+	});
+
+	it('ne redit pas ce qui est dû : le rapport l’a dit', () => {
+		const nouveau = {
+			INSCRIT: T0,
+			FACTURES_DEPOSEES: T0,
+			DIAGNOSTIC_RENDU: T0,
+			MONTANT_REVELE: T0
+		};
+		const p = prochainConseil(
+			nouveau,
+			[{ cle: 'bienvenue', le: T0 - 3 * JOUR }, rapport],
+			T0 + 3 * JOUR
+		);
+		expect(p?.cle).not.toBe('ce-qui-vous-est-du');
+	});
+
+	it('parle d’un achat : aux administrateurs seulement', () => {
+		expect(CONSEILS_DES_ADMINS.has('offre-de-bienvenue')).toBe(true);
+		expect(CONSEILS_DES_ADMINS.has('offre-de-bienvenue-fin')).toBe(true);
+		expect(CONSEILS_DES_ADMINS.has('bienvenue')).toBe(false);
+	});
+});
+
 describe('compterParSource', () => {
 	it('compte les étapes atteintes dans la fenêtre, par source', () => {
 		const r = compterParSource(
@@ -251,5 +305,45 @@ describe('compterParSource', () => {
 			FACTURES_DEPOSEES: 1
 		});
 		expect(r.lignes.find((l) => l.source === 'Inconnue')?.compte.INSCRIT).toBe(1);
+	});
+});
+
+describe('ventesApresDiagnostic (19/10/2026, audit, lot 7)', () => {
+	const recherche = { canal: 'recherche' as const, pageEntree: '/', referent: 'www.google.fr' };
+	it('compte l’essai ou l’abonnement de la semaine qui suit un diagnostic rendu, par source', () => {
+		const r = ventesApresDiagnostic(
+			[
+				// Diagnostic puis essai dans la semaine : une vente après diagnostic.
+				{
+					source: recherche,
+					etapes: {
+						INSCRIT: T0 - 20 * JOUR,
+						DIAGNOSTIC_RENDU: T0 - 10 * JOUR,
+						ESSAI: T0 - 2 * JOUR
+					}
+				},
+				// Abonné sans diagnostic : pas compté.
+				{ source: recherche, etapes: { INSCRIT: T0 - 20 * JOUR, ABONNE: T0 - 2 * JOUR } },
+				// Essai avant le diagnostic : pas compté.
+				{
+					source: null,
+					etapes: { INSCRIT: T0 - 20 * JOUR, ESSAI: T0 - 3 * JOUR, DIAGNOSTIC_RENDU: T0 - JOUR }
+				},
+				// Essai puis abonnement : une seule vente, celle de l'essai.
+				{
+					source: null,
+					etapes: {
+						INSCRIT: T0 - 30 * JOUR,
+						DIAGNOSTIC_RENDU: T0 - 9 * JOUR,
+						ESSAI: T0 - 6 * JOUR,
+						ABONNE: T0 - JOUR
+					}
+				}
+			],
+			T0 - 7 * JOUR,
+			T0
+		);
+		expect(r.total).toBe(2);
+		expect(r.parSource.get('Recherche')).toBe(1);
 	});
 });

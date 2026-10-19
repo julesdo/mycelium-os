@@ -5,7 +5,12 @@ import { resend } from '../emails/resend';
 import { expediteurNomme } from '../emails/helpers';
 import { pointDuLundiHtml, pointDuLundiTexte } from '../emails/modeles/pointDuLundi';
 import { ETAPES, type Etape } from '../../croissance/etapes';
-import { ETAPES_DU_POINT, LIBELLES_DES_ETAPES, compterParSource } from '../../croissance/semaine';
+import {
+	ETAPES_DU_POINT,
+	LIBELLES_DES_ETAPES,
+	compterParSource,
+	ventesApresDiagnostic
+} from '../../croissance/semaine';
 import { dateLisible } from '../../verticales/recouvrement/calendrier';
 import { traficDuSite } from './umami';
 
@@ -19,6 +24,9 @@ import { traficDuSite } from './umami';
 
 const JOUR = 24 * 60 * 60 * 1000;
 const PLAFOND = 5000;
+/** La rangée et la clé des ventes qui suivent un diagnostic (audit, lot 7). */
+const VENTES = 'VENTES_APRES_DIAGNOSTIC';
+const LIBELLE_DES_VENTES = 'Ventes après un diagnostic';
 
 const vChiffres = v.object({
 	totaux: v.array(
@@ -35,16 +43,11 @@ export const chiffresDeLaSemaine = internalQuery({
 	returns: vChiffres,
 	handler: async (ctx, { maintenant }): Promise<Chiffres> => {
 		const parcours = await ctx.db.query('parcoursComptes').take(PLAFOND);
-		const semaine = compterParSource(
-			parcours.map((p) => ({ source: p.source ?? null, etapes: p.etapes })),
-			maintenant - 7 * JOUR,
-			maintenant
-		);
-		const mois = compterParSource(
-			parcours.map((p) => ({ source: p.source ?? null, etapes: p.etapes })),
-			maintenant - 28 * JOUR,
-			maintenant
-		);
+		const lus = parcours.map((p) => ({ source: p.source ?? null, etapes: p.etapes }));
+		const semaine = compterParSource(lus, maintenant - 7 * JOUR, maintenant);
+		const mois = compterParSource(lus, maintenant - 28 * JOUR, maintenant);
+		const ventesSemaine = ventesApresDiagnostic(lus, maintenant - 7 * JOUR, maintenant);
+		const ventesMois = ventesApresDiagnostic(lus, maintenant - 28 * JOUR, maintenant);
 
 		const meilleurs = parcours
 			.filter((p) => (p.score ?? 0) > 0)
@@ -62,15 +65,28 @@ export const chiffresDeLaSemaine = internalQuery({
 		}
 
 		return {
-			totaux: ETAPES_DU_POINT.map((etape) => ({
-				etape,
-				libelle: LIBELLES_DES_ETAPES[etape],
-				semaine: semaine.total[etape] ?? 0,
-				mois: mois.total[etape] ?? 0
-			})),
+			totaux: [
+				...ETAPES_DU_POINT.map((etape) => ({
+					etape,
+					libelle: LIBELLES_DES_ETAPES[etape],
+					semaine: semaine.total[etape] ?? 0,
+					mois: mois.total[etape] ?? 0
+				})),
+				{
+					etape: VENTES,
+					libelle: LIBELLE_DES_VENTES,
+					semaine: ventesSemaine.total,
+					mois: ventesMois.total
+				}
+			],
 			sources: semaine.lignes.map((l) => ({
 				source: l.source,
-				semaine: Object.fromEntries(Object.entries(l.compte)) as Record<string, number>
+				semaine: {
+					...(Object.fromEntries(Object.entries(l.compte)) as Record<string, number>),
+					...(ventesSemaine.parSource.has(l.source)
+						? { [VENTES]: ventesSemaine.parSource.get(l.source) ?? 0 }
+						: {})
+				}
 			})),
 			aAppeler
 		};
@@ -81,6 +97,9 @@ function phraseDeSource(source: string, compte: Record<string, number>): string 
 	const morceaux = ETAPES_DU_POINT.filter((e) => (compte[e] ?? 0) > 0).map(
 		(e) => `${LIBELLES_DES_ETAPES[e].toLowerCase()} ${compte[e]}`
 	);
+	if ((compte[VENTES] ?? 0) > 0) {
+		morceaux.push(`${LIBELLE_DES_VENTES.toLowerCase()} ${compte[VENTES]}`);
+	}
 	return `${source} : ${morceaux.join(' · ')}`;
 }
 

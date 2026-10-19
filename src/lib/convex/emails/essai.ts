@@ -28,7 +28,8 @@ import { composerLettreRelance } from '../../verticales/recouvrement/gabarits/le
 import type { Evenement } from '../../verticales/recouvrement/surveillance';
 import { conseilHtml, conseilTexte, objetDuConseil } from './modeles/conseils';
 import { pointDuLundiHtml, pointDuLundiTexte } from './modeles/pointDuLundi';
-import { CLES_CONSEILS } from '../../croissance/conseils';
+import { CLES_CONSEILS_ENVOYES } from '../../croissance/conseils';
+import { rapportHtml, rapportTexte, OBJET_DU_RAPPORT } from './modeles/diagnostic';
 import { lignesDuPlan } from '../croissance/conseils';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
 
@@ -175,7 +176,7 @@ export function lesEssais(
 
 	// Les conseils de Plume, dans l'ordre où ils partent (`croissance/conseils.ts`).
 	const unitaire = depuisCentimes(exiger(PARAMETRES.indemniteForfaitaire));
-	for (const cle of CLES_CONSEILS) {
+	for (const cle of CLES_CONSEILS_ENVOYES) {
 		const donnees = {
 			cle,
 			prenom: 'Camille',
@@ -188,7 +189,8 @@ export function lesEssais(
 				indemnite: `${versEuros(unitaire)} €`,
 				indemniteTotale: `${versEuros(depuisCentimes((unitaire as bigint) * 2n))} €`
 			},
-			plan: lignesDuPlan()
+			plan: lignesDuPlan(),
+			offre: { pourcent: 20, mois: 3, jusquAu: dateLisible(ajouterJours(aujourdHui, 13)) }
 		};
 		essais.push({
 			objet: objetDuConseil(cle),
@@ -198,6 +200,28 @@ export function lesEssais(
 		});
 	}
 
+	// Le rapport du diagnostic, à la fin de la lecture (transactionnel, sans désinscription).
+	const rapport = {
+		prenom: 'Camille',
+		nomEtablissement: CREANCIER,
+		site: SITE,
+		periode: `Factures depuis le ${dateLisible(ajouterJours(aujourdHui, -92))}`,
+		compteAu: dateLisible(aujourdHui),
+		enJeu: `${versEuros(depuisCentimes(128_450n))} €`,
+		encoreDues: { factures: 4, montant: `${versEuros(depuisCentimes(842_000n))} €` },
+		payeesEnRetard: 7,
+		nonChiffrees: 2,
+		hypotheses: [],
+		avertissement:
+			'Ce rapport mesure ce que la loi ajoute à vos factures, d’après les données importées. Il ne dit pas qu’une somme sera payée, ni qu’une démarche est à engager : c’est à vous de décider.'
+	};
+	essais.push({
+		objet: OBJET_DU_RAPPORT,
+		de: plume,
+		html: rapportHtml(rapport),
+		texte: rapportTexte(rapport)
+	});
+
 	// Le point chiffré du lundi, pour le fondateur.
 	const point = {
 		periode: `du ${dateLisible(ajouterJours(aujourdHui, -7))} au ${dateLisible(ajouterJours(aujourdHui, -1))}`,
@@ -206,7 +230,8 @@ export function lesEssais(
 			{ libelle: 'Inscrits', semaine: 3, mois: 9 },
 			{ libelle: 'Factures déposées', semaine: 2, mois: 6 },
 			{ libelle: 'Relances activées', semaine: 1, mois: 3 },
-			{ libelle: 'Abonnés', semaine: 1, mois: 2 }
+			{ libelle: 'Abonnés', semaine: 1, mois: 2 },
+			{ libelle: 'Ventes après un diagnostic', semaine: 1, mois: 1 }
 		],
 		sources: ['manuel · transport : inscrits 2 · factures déposées 1', 'Recherche : inscrits 1'],
 		aAppeler: ['Garnier Bâtiment, 72, relances activées', `${CREANCIER}, 45, factures déposées`]

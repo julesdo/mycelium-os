@@ -169,3 +169,106 @@ describe('la désinscription des conseils', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('l’offre de bienvenue et le rapport (19/10/2026, audit, lot 7)', () => {
+	function envoiPret(facturation: boolean) {
+		vi.stubEnv('RESEND_API_KEY', 're_test');
+		vi.stubEnv('AUTH_EMAIL', 'plume@exemple.fr');
+		vi.stubEnv('SITE_URL', 'https://www.letikette.com');
+		vi.stubEnv('CONVEX_SITE_URL', 'https://exemple.convex.site');
+		vi.stubEnv('PADDLE_API_KEY', facturation ? 'pdl_sdbx_test' : '');
+		vi.stubEnv('PADDLE_FACTURATION_OUVERTE', facturation ? 'oui' : '');
+	}
+	// Un diagnostic rendu il y a une semaine, le rapport parti : le premier rappel est dû.
+	const etapes = { INSCRIT: MERCREDI_10H - 60 * JOUR, DIAGNOSTIC_RENDU: MERCREDI_10H - 7 * JOUR };
+
+	async function avecRapport(t: Harnais, organizationId: Id<'organizations'>) {
+		await t.run(async (ctx) => {
+			await ctx.db.insert('envoisCroissance', {
+				organizationId,
+				userId: 'user_test_1',
+				cle: 'rapport-diagnostic',
+				le: MERCREDI_10H - 7 * JOUR
+			});
+		});
+	}
+
+	async function envois(t: Harnais) {
+		return t.run(async (ctx) => ctx.db.query('envoisCroissance').collect());
+	}
+
+	it(
+		'ne part pas à un établissement abonné entre-temps : consommée sans partir',
+		async () => {
+			envoiPret(true);
+			const t = nouveau();
+			const id = await compte(t, etapes, MERCREDI_10H - 1);
+			await avecRapport(t, id);
+			await t.run(async (ctx) => ctx.db.patch(id, { paddleStatus: 'active' }));
+			await t.mutation(internal.croissance.conseils.envoyerLesConseils, {
+				maintenant: MERCREDI_10H
+			});
+			const offre = (await envois(t)).find((e) => e.cle === 'offre-de-bienvenue');
+			expect(offre?.userId).toBe('');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne part pas tant que la facturation est fermée',
+		async () => {
+			envoiPret(false);
+			const t = nouveau();
+			const id = await compte(t, etapes, MERCREDI_10H - 1);
+			await avecRapport(t, id);
+			await t.mutation(internal.croissance.conseils.envoyerLesConseils, {
+				maintenant: MERCREDI_10H
+			});
+			expect((await envois(t)).find((e) => e.cle === 'offre-de-bienvenue')?.userId).toBe('');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne part qu’aux administrateurs : un simple membre ne la reçoit pas',
+		async () => {
+			envoiPret(true);
+			const t = nouveau();
+			const id = await compte(t, etapes, MERCREDI_10H - 1);
+			await avecRapport(t, id);
+			await t.run(async (ctx) => {
+				const m = await ctx.db
+					.query('organizationMembers')
+					.withIndex('by_organization', (q) => q.eq('organizationId', id))
+					.first();
+				if (m !== null) await ctx.db.patch(m._id, { role: 'ORG_MEMBER' });
+			});
+			await t.mutation(internal.croissance.conseils.envoyerLesConseils, {
+				maintenant: MERCREDI_10H
+			});
+			expect((await envois(t)).find((e) => e.cle === 'offre-de-bienvenue')?.userId).toBe('');
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'le rapport, sans envoi configuré, se reprogramme sans rien noter',
+		async () => {
+			vi.useFakeTimers();
+			try {
+				vi.stubEnv('RESEND_API_KEY', '');
+				const t = nouveau();
+				const id = await compte(t, etapes, MERCREDI_10H - 1);
+				await t.mutation(internal.croissance.conseils.envoyerLeRapport, { organizationId: id });
+				expect(await envois(t)).toEqual([]);
+				const programmes = await t.run(async (ctx) =>
+					ctx.db.system.query('_scheduled_functions').collect()
+				);
+				expect(programmes.some((f) => f.name.includes('envoyerLeRapport'))).toBe(true);
+			} finally {
+				vi.useRealTimers();
+			}
+		},
+		DELAI_CONVEX
+	);
+});

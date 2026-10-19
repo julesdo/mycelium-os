@@ -344,6 +344,11 @@ export const upsertSubscription = internalMutation({
 				}
 			}
 		}
+		// L'essai, l'abonnement, la résiliation : datés au jour vrai, et l'offre de bienvenue
+		// se tait le jour même de l'achat (audit du 19/10/2026, lot 7).
+		await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
+			organizationId: org._id
+		});
 		return { action: 'inscrit', organizationId: org._id };
 	}
 });
@@ -420,6 +425,9 @@ export const rattacherLePaiement = internalMutation({
 			...(args.currentPeriodEnd === undefined
 				? {}
 				: { paddleCurrentPeriodEnd: args.currentPeriodEnd })
+		});
+		await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
+			organizationId: org._id
 		});
 		return { action: 'rattache' };
 	}

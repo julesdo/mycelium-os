@@ -19,7 +19,9 @@ const { briefingHtml, invitationHtml, motDePasseHtml, rappelAbonnementHtml, veri
 	await import('../src/lib/convex/emails/modeles');
 const { relanceHtml } = await import('../src/lib/convex/emails/modeles/relance');
 const { conseilHtml, objetDuConseil } = await import('../src/lib/convex/emails/modeles/conseils');
-const { CLES_CONSEILS } = await import('../src/lib/croissance/conseils');
+const { CLES_CONSEILS_ENVOYES } = await import('../src/lib/croissance/conseils');
+const { rapportHtml, OBJET_DU_RAPPORT } =
+	await import('../src/lib/convex/emails/modeles/diagnostic');
 const { composerRelance } = await import('../src/lib/verticales/recouvrement/relance');
 
 function enDonnee(chemin: string): string {
@@ -121,7 +123,7 @@ const EMAILS: readonly { nom: string; objet: string; de: string; html: string }[
 			url: 'https://www.letikette.com/app/compte?ouvrir=facturation'
 		})
 	},
-	...CLES_CONSEILS.map((cle) => ({
+	...CLES_CONSEILS_ENVOYES.map((cle) => ({
 		nom: `Conseil de Plume : ${cle}`,
 		objet: objetDuConseil(cle),
 		de: 'Plume de Letikette',
@@ -137,9 +139,29 @@ const EMAILS: readonly { nom: string; objet: string; de: string; html: string }[
 				'Un deuxième rappel, 10 jours plus tard',
 				'Une lettre officielle, 10 jours plus tard',
 				'La remise à votre conseil, seulement si vous la décidez'
-			]
+			],
+			offre: { pourcent: 20, mois: 3, jusquAu: '2 novembre 2026' }
 		})
 	})),
+	{
+		nom: 'Rapport du diagnostic',
+		objet: OBJET_DU_RAPPORT,
+		de: 'Plume de Letikette',
+		html: rapportHtml({
+			prenom: 'Camille',
+			nomEtablissement: 'Menuiserie Dupont',
+			site: 'https://www.letikette.com',
+			periode: 'Factures depuis le 19 juillet 2026',
+			compteAu: '19 octobre 2026',
+			enJeu: '1 284,50 €',
+			encoreDues: { factures: 4, montant: '8 420,00 €' },
+			payeesEnRetard: 7,
+			nonChiffrees: 2,
+			hypotheses: [],
+			avertissement:
+				'Ce rapport mesure ce que la loi ajoute à vos factures, d’après les données importées. Il ne dit pas qu’une somme sera payée, ni qu’une démarche est à engager : c’est à vous de décider.'
+		})
+	},
 	{
 		nom: 'Relance au client du gérant (sans Letikette)',
 		objet: rappel.objet,

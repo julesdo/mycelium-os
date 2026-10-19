@@ -10,7 +10,17 @@ import {
 	objetDuConseil,
 	type DonneesConseil
 } from '../emails/modeles/conseils';
-import { prochainConseil, type CleConseil } from '../../croissance/conseils';
+import {
+	CONSEILS_DES_ADMINS,
+	prochainConseil,
+	type CleConseilEnvoye
+} from '../../croissance/conseils';
+import { rapportHtml, rapportTexte, OBJET_DU_RAPPORT } from '../emails/modeles/diagnostic';
+import { composerRapportDiagnostic } from '../../verticales/recouvrement/rapport-diagnostic';
+import { ajouterJours, dateLisible } from '../../verticales/recouvrement/calendrier';
+import { jourDeParis } from '../../admin/dates';
+import { JOURS_OFFRE_DE_BIENVENUE, OFFRES } from '../../config/tarifs';
+import { paiementOuvert } from '../billing';
 import { PLAN_PAR_DEFAUT, prochainCreneauDEnvoi } from '../../verticales/recouvrement/plan-relance';
 import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
 import { estEchue } from '../../verticales/recouvrement/exigibilite';
@@ -111,15 +121,31 @@ async function ceQuiEstDu(
 async function envoyerUnConseil(
 	ctx: MutationCtx,
 	parcours: Doc<'parcoursComptes'>,
-	cle: CleConseil,
+	cle: CleConseilEnvoye,
 	maintenant: number
 ): Promise<void> {
 	const organizationId = parcours.organizationId;
 	const org = await ctx.db.get(organizationId);
-	const membres = await ctx.db
-		.query('organizationMembers')
-		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
-		.collect();
+	// L'offre de bienvenue parle d'un achat. Relue au moment d'envoyer : un établissement
+	// abonné ou à l'essai entre-temps ne la reçoit plus, et rien ne la propose tant que la
+	// facturation n'est pas ouverte. Elle est consommée sans partir.
+	const offre = CONSEILS_DES_ADMINS.has(cle);
+	if (
+		offre &&
+		(org === null ||
+			org.paddleStatus === 'trialing' ||
+			org.paddleStatus === 'active' ||
+			!paiementOuvert())
+	) {
+		await ctx.db.insert('envoisCroissance', { organizationId, userId: '', cle, le: maintenant });
+		return;
+	}
+	const membres = (
+		await ctx.db
+			.query('organizationMembers')
+			.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+			.collect()
+	).filter((m) => !offre || m.role === 'ORG_ADMIN');
 
 	const emails = new Map<string, string>();
 	const prenoms = new Map<string, string>();
@@ -148,6 +174,15 @@ async function envoyerUnConseil(
 			? await ceQuiEstDu(ctx, organizationId, new Date(maintenant).toISOString().slice(0, 10))
 			: undefined;
 	const expediteur = expediteurNomme(process.env.AUTH_EMAIL ?? '', 'Plume de Letikette');
+	const rendu = parcours.etapes.DIAGNOSTIC_RENDU;
+	const offreDeBienvenue =
+		offre && rendu !== undefined
+			? {
+					pourcent: OFFRES.diagnosticComplet.remiseBienvenuePourcent,
+					mois: OFFRES.diagnosticComplet.remiseBienvenueMois,
+					jusquAu: dateLisible(ajouterJours(jourDeParis(rendu), JOURS_OFFRE_DE_BIENVENUE - 1))
+				}
+			: undefined;
 
 	for (const { userId, email } of destinataires) {
 		const membre = membres.find((m) => m.userId === userId);
@@ -165,7 +200,8 @@ async function envoyerUnConseil(
 			desinscription,
 			...(prenom === undefined ? {} : { prenom }),
 			...(du === undefined ? {} : { du }),
-			...(cle === 'ce-qui-partirait' ? { plan: lignesDuPlan() } : {})
+			...(cle === 'ce-qui-partirait' ? { plan: lignesDuPlan() } : {}),
+			...(offreDeBienvenue === undefined ? {} : { offre: offreDeBienvenue })
 		};
 		await resend.sendEmail(ctx, {
 			from: expediteur,
@@ -231,6 +267,127 @@ export const envoyerLesConseils = internalMutation({
 				maintenant
 			);
 			await ctx.db.patch(parcours._id, { prochainConseilLe: suivant?.des });
+		}
+		return null;
+	}
+});
+
+/** Vingt-quatre essais, une heure d'écart : un jour pour que l'envoi soit configuré. */
+const ESSAIS_DU_RAPPORT = 24;
+
+/**
+ * LE RAPPORT DU DIAGNOSTIC (19/10/2026, audit, lot 7) : un e-mail TRANSACTIONNEL, la
+ * réponse au geste du gérant. Programmé par le relevé quand le diagnostic vient d'être
+ * rendu, il part hors du créneau des conseils et sans tenir compte de leur coupure, aux
+ * administrateurs, une fois par établissement. Ses chiffres sont ceux de l'écran
+ * `/app/diagnostic` (`diagnosticInterne`, `composerRapportDiagnostic`), lus au moment
+ * d'envoyer. Il se note comme un conseil : les rappels de l'offre comptent leur
+ * cadence à partir de lui.
+ */
+export const envoyerLeRapport = internalMutation({
+	args: { organizationId: v.id('organizations'), essai: v.optional(v.number()) },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, essai }): Promise<null> => {
+		const envois = await ctx.db
+			.query('envoisCroissance')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.collect();
+		if (envois.some((e) => e.cle === 'rapport-diagnostic')) return null;
+		const org = await ctx.db.get(organizationId);
+		if (org === null) return null;
+		if (!envoiConfigure()) {
+			const n = (essai ?? 0) + 1;
+			if (n <= ESSAIS_DU_RAPPORT) {
+				await ctx.scheduler.runAfter(UNE_HEURE, internal.croissance.conseils.envoyerLeRapport, {
+					organizationId,
+					essai: n
+				});
+			}
+			return null;
+		}
+		const maintenant = Date.now();
+		const admins = (
+			await ctx.db
+				.query('organizationMembers')
+				.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+				.collect()
+		).filter((m) => m.role === 'ORG_ADMIN');
+		const destinataires: { userId: string; email: string; prenom?: string }[] = [];
+		for (const membre of admins) {
+			const utilisateur = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+				model: 'user',
+				where: [{ field: '_id', operator: 'eq', value: membre.userId }]
+			})) as { email?: string; name?: string } | null;
+			if (!utilisateur?.email) continue;
+			const prenom = utilisateur.name?.trim().split(/\s+/)[0];
+			destinataires.push({
+				userId: membre.userId,
+				email: utilisateur.email,
+				...(prenom ? { prenom } : {})
+			});
+		}
+		if (destinataires.length === 0) {
+			await ctx.db.insert('envoisCroissance', {
+				organizationId,
+				userId: '',
+				cle: 'rapport-diagnostic',
+				le: maintenant
+			});
+			return null;
+		}
+		const diagnostic = await ctx.runQuery(internal.recouvrement.revelation.diagnosticInterne, {
+			organizationId,
+			arreteAu: jourDeParis(maintenant)
+		});
+		const rapport = composerRapportDiagnostic(diagnostic, org.name);
+		const site = (process.env.SITE_URL ?? '').replace(/\/$/, '');
+		const expediteur = expediteurNomme(process.env.AUTH_EMAIL ?? '', 'Plume de Letikette');
+		for (const { userId, email, prenom } of destinataires) {
+			const donnees = {
+				...(prenom === undefined ? {} : { prenom }),
+				nomEtablissement: org.name,
+				site,
+				periode: rapport.periode,
+				compteAu: rapport.compteAu,
+				enJeu: rapport.enJeu,
+				encoreDues: {
+					factures: diagnostic.impayees.nombreFactures,
+					montant: `${versEuros(depuisCentimes(diagnostic.impayees.principal))} €`
+				},
+				payeesEnRetard: diagnostic.payeesEnRetard.nombreFactures,
+				nonChiffrees: diagnostic.nonChiffrees.length,
+				hypotheses: rapport.hypotheses,
+				avertissement: rapport.avertissement
+			};
+			await resend.sendEmail(ctx, {
+				from: expediteur,
+				to: email,
+				subject: OBJET_DU_RAPPORT,
+				html: rapportHtml(donnees),
+				text: rapportTexte(donnees),
+				headers: [{ name: 'X-Email-Category', value: 'diagnostic' }]
+			});
+			await ctx.db.insert('envoisCroissance', {
+				organizationId,
+				userId,
+				cle: 'rapport-diagnostic',
+				le: maintenant
+			});
+		}
+		const parcours = await ctx.db
+			.query('parcoursComptes')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.first();
+		if (parcours !== null) {
+			const prochain = prochainConseil(
+				parcours.etapes,
+				[
+					...envois.map((e) => ({ cle: e.cle, le: e.le })),
+					{ cle: 'rapport-diagnostic' as const, le: maintenant }
+				],
+				maintenant
+			);
+			await ctx.db.patch(parcours._id, { prochainConseilLe: prochain?.des });
 		}
 		return null;
 	}

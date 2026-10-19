@@ -1,4 +1,5 @@
 import { LigneDeReleve, ListeDeReleve, PageEcran, type Lecture } from '../../ui';
+import type { CleConseil } from '../../lib/croissance/conseils';
 import { BlocDeFiche, ChampsDeFiche, FriseDesEtapes } from '../../ui/admin';
 import { dateCourteDeParis } from '../../lib/admin/dates';
 import { quandInscrit } from './aujourdhui';
@@ -50,11 +51,14 @@ export interface DonneesFicheCompte {
 	readonly taches: readonly TacheAffichee[];
 }
 
-const NOMS_DES_CONSEILS: Readonly<Record<string, string>> = {
+const NOMS_DES_CONSEILS: Readonly<Record<CleConseil, string>> = {
 	bienvenue: 'Bienvenue',
 	'il-manque-vos-factures': 'Il manque vos factures',
 	'ce-qui-vous-est-du': 'Ce qui vous est dû',
-	'ce-qui-partirait': 'Ce qui partirait'
+	'ce-qui-partirait': 'Ce qui partirait',
+	'rapport-diagnostic': 'Rapport du diagnostic',
+	'offre-de-bienvenue': 'Offre de bienvenue',
+	'offre-de-bienvenue-fin': 'Fin de l’offre de bienvenue'
 };
 
 const RETOUR = { vers: '/admin/comptes' as const, libelle: 'Comptes' };
@@ -105,7 +109,7 @@ export function EcranFicheCompte({
 				`conseil-${c.cle}-${i}`,
 				c.le,
 				'CONSEIL',
-				`Conseil de Plume envoyé : ${NOMS_DES_CONSEILS[c.cle] ?? c.cle}`
+				`Conseil de Plume envoyé : ${(NOMS_DES_CONSEILS as Readonly<Record<string, string>>)[c.cle] ?? c.cle}`
 			)
 		)
 	];

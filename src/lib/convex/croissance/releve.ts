@@ -208,6 +208,10 @@ async function rapprocher(
 	return prospect._id;
 }
 
+/** Le rapport attend dix minutes : une lecture en cours finit de compter ses factures. */
+const ATTENTE_DU_RAPPORT_MS = 10 * 60 * 1000;
+const FRAICHEUR_DU_RAPPORT_MS = 2 * 24 * 60 * 60 * 1000;
+
 export const releverLesEtapes = internalMutation({
 	args: { organizationId: v.id('organizations') },
 	returns: v.null(),
@@ -281,6 +285,21 @@ export const releverLesEtapes = internalMutation({
 		};
 		if (parcours === null) await ctx.db.insert('parcoursComptes', { organizationId, ...suite });
 		else await ctx.db.patch(parcours._id, suite);
+		// Le diagnostic vient d'être rendu : son rapport part, le temps que la lecture finisse.
+		// Un diagnostic rendu il y a plus de deux jours, remarqué au premier relevé d'un compte
+		// ancien, n'en reçoit pas.
+		const rendu = memoire.etapes.DIAGNOSTIC_RENDU;
+		if (
+			rendu !== undefined &&
+			parcours?.etapes.DIAGNOSTIC_RENDU === undefined &&
+			maintenant - rendu <= FRAICHEUR_DU_RAPPORT_MS
+		) {
+			await ctx.scheduler.runAfter(
+				ATTENTE_DU_RAPPORT_MS,
+				internal.croissance.conseils.envoyerLeRapport,
+				{ organizationId }
+			);
+		}
 		return null;
 	}
 });

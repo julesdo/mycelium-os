@@ -1,6 +1,8 @@
 // LES CONSEILS DE PLUME (16/10/2026) : quatre e-mails dans les premières semaines,
 // chacun attaché à une étape du gérant (`src/lib/croissance/conseils.ts` décide
-// quand ; ce fichier dit quoi).
+// quand ; ce fichier dit quoi). Et, depuis le 19/10/2026 (audit, lot 7), les deux
+// rappels de l'offre de bienvenue après un diagnostic : la remise et sa date en clair,
+// aucun compte à rebours, aucun prix barré (décision 10).
 //
 // ⚠️ AUCUN VERDICT (ligne rouge n° 3) : on montre ce que dit la loi et ce qu'il y a
 // dans les factures, jamais « vous devriez agir » ni « vous allez récupérer ».
@@ -10,10 +12,10 @@
 // Ils sont signés « Plume de Letikette » et portent chacun le lien qui les coupe.
 
 import { coquilleHtml, coquilleTexte, type BlocEmail } from './disposition';
-import type { CleConseil } from '../../../croissance/conseils';
+import type { CleConseilEnvoye } from '../../../croissance/conseils';
 
 export type DonneesConseil = {
-	readonly cle: CleConseil;
+	readonly cle: CleConseilEnvoye;
 	readonly prenom?: string;
 	readonly nomEtablissement: string;
 	/** L'adresse du site (`SITE_URL`), sans barre finale. */
@@ -28,16 +30,26 @@ export type DonneesConseil = {
 	};
 	/** Les étapes du plan de relance, une phrase chacune : pour `ce-qui-partirait`. */
 	readonly plan?: readonly string[];
+	/** L'offre de bienvenue : sa remise, sur combien de mois, jusqu'à quand (« 2 novembre 2026 »). */
+	readonly offre?: {
+		readonly pourcent: number;
+		readonly mois: number;
+		readonly jusquAu: string;
+	};
 };
 
-const OBJETS: Record<CleConseil, string> = {
+const MOIS_EN_LETTRES = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six'];
+
+const OBJETS: Record<CleConseilEnvoye, string> = {
 	bienvenue: 'Bienvenue sur Letikette',
 	'il-manque-vos-factures': 'Il me manque vos factures',
 	'ce-qui-vous-est-du': 'Ce qu’on vous doit',
-	'ce-qui-partirait': 'Ce qui partirait pour vous'
+	'ce-qui-partirait': 'Ce qui partirait pour vous',
+	'offre-de-bienvenue': 'Votre offre de bienvenue',
+	'offre-de-bienvenue-fin': 'Votre offre de bienvenue se termine bientôt'
 };
 
-export function objetDuConseil(cle: CleConseil): string {
+export function objetDuConseil(cle: CleConseilEnvoye): string {
 	return OBJETS[cle];
 }
 
@@ -106,6 +118,36 @@ function corpsDuConseil(d: DonneesConseil): Omit<BlocEmail, 'note' | 'desinscrip
 					'Les pénalités de retard s’y ajoutent, calculées jour par jour, facture par facture, dans Letikette.'
 				],
 				bouton: { libelle: 'Voir le détail', url: `${d.site}/app` }
+			};
+		}
+		case 'offre-de-bienvenue':
+		case 'offre-de-bienvenue-fin': {
+			const o = d.offre;
+			const remise =
+				o === undefined
+					? 'une remise sur vos premiers mois de formule'
+					: `${o.pourcent} % sur vos ${MOIS_EN_LETTRES[o.mois] ?? o.mois} premiers mois de formule`;
+			const jusquAu = o === undefined ? '' : `, jusqu’au ${o.jusquAu}`;
+			const fin = d.cle === 'offre-de-bienvenue-fin';
+			return {
+				apercu: fin
+					? `Pour mémoire : ${remise}${jusquAu}.`
+					: `Votre diagnostic vous ouvre ${remise}${jusquAu}.`,
+				plume: true,
+				titre:
+					fin && o !== undefined
+						? `Votre offre vaut jusqu’au ${o.jusquAu}`
+						: 'Votre offre de bienvenue',
+				intro: fin
+					? `Pour mémoire : votre diagnostic vous ouvre ${remise}${jusquAu}.`
+					: `Votre diagnostic est fait. Pour aller plus loin, il vous ouvre ${remise}${jusquAu}.`,
+				points: [
+					'Les relances partent à votre nom, quand vous l’avez décidé, et se retiennent d’un geste.',
+					'Chaque montant réclamé se décompose, période par période.',
+					'Vos clients vous paient directement : aucune commission sur ce qui rentre.'
+				],
+				corps: ['La remise s’applique à votre premier paiement, une seule fois.'],
+				bouton: { libelle: 'Voir les formules', url: `${d.site}/app/compte?ouvrir=facturation` }
 			};
 		}
 		case 'ce-qui-partirait':
