@@ -267,7 +267,7 @@ export function Kanban<C extends string>({
 		>
 			<div
 				className={cn(
-					'defilement-sans-barre -mx-cladd-2xs flex min-h-[55vh] items-start gap-3 overflow-x-auto px-cladd-2xs pb-3',
+					'defilement-sans-barre -mx-cladd-2xs flex min-h-[55svh] items-start gap-3 overflow-x-auto px-cladd-2xs pb-3',
 					// Au téléphone, une colonne à la fois sous le doigt (Attio iOS) ; jamais pendant un glisser.
 					enMain === null && 'max-lg:snap-x max-lg:snap-mandatory max-lg:scroll-px-cladd-2xs'
 				)}

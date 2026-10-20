@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { usePreference } from './use-preference';
+import { FOND_DU_THEME } from '../ui/fond-du-theme';
 
 /** Ce que le gérant CHOISIT. « Automatique » suit le réglage du système. */
 export type Theme = 'auto' | 'light' | 'dark';
@@ -10,6 +11,18 @@ export type ThemeApplique = 'light' | 'dark';
 const CLE = 'letikette-theme';
 const THEMES = ['auto', 'light', 'dark'] as const;
 const SOMBRE_AU_SYSTEME = '(prefers-color-scheme: dark)';
+
+/**
+ * Accorde les deux balises `theme-color` au thème peint. Un thème choisi à la
+ * main les met toutes les deux à sa couleur, quel que soit le système ;
+ * « Automatique » (`null`) rend à chacune la sienne, et le système choisit.
+ */
+function teinterLaBarre(theme: ThemeApplique | null) {
+	for (const balise of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+		const sienne = balise.media.includes('dark') ? FOND_DU_THEME.dark : FOND_DU_THEME.light;
+		balise.content = theme === null ? sienne : FOND_DU_THEME[theme];
+	}
+}
 
 /**
  * Le thème du système, clair par défaut, sombre s'il le demande.
@@ -50,6 +63,9 @@ export const AMORCE_THEME = [
 	// un thème arbitraire.
 	`var t=c==='light'?'light':c==='dark'?'dark':(window.matchMedia('${SOMBRE_AU_SYSTEME}').matches?'dark':'light');`,
 	"var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');",
+	// Un thème choisi à la main teinte aussi la barre d'état : voir `teinterLaBarre`.
+	`if(c==='light'||c==='dark'){var f=t==='dark'?'${FOND_DU_THEME.dark}':'${FOND_DU_THEME.light}';`,
+	"document.querySelectorAll('meta[name=\"theme-color\"]').forEach(function(m){m.setAttribute('content',f)});}",
 	'}catch(e){}})();'
 ].join('');
 
@@ -110,7 +126,8 @@ export function useTheme() {
 		const racine = document.documentElement;
 		racine.classList.toggle('dark', themeApplique === 'dark');
 		racine.classList.toggle('light', themeApplique === 'light');
-	}, [themeApplique]);
+		teinterLaBarre(theme === 'auto' ? null : themeApplique);
+	}, [theme, themeApplique]);
 
 	/** Bascule vers l'autre des deux thèmes PEINTS : elle quitte donc « Automatique ». */
 	const basculer = useCallback(() => {

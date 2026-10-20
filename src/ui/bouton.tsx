@@ -147,7 +147,8 @@ export function BoutonTexte<C extends ElementType = 'button'>({
 			outline={false}
 			hoverable={false}
 			size="md"
-			className={cn('px-1 font-medium text-cladd-primary', className)}
+			// `bouton-texte` : il pâlit à l'appui et sa cible prend 44 px (`app.css`).
+			className={cn('bouton-texte px-1 font-medium text-cladd-primary', className)}
 			{...reste}
 		>
 			{children}

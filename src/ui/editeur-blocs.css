@@ -116,8 +116,10 @@
 	transition: box-shadow 0.15s;
 }
 
-.bn-cms .bn-valeur:hover {
-	box-shadow: 0 0 0 1.5px oklch(0.27 0.05 266 / 0.35);
+@media (hover: hover) and (pointer: fine) {
+	.bn-cms .bn-valeur:hover {
+		box-shadow: 0 0 0 1.5px oklch(0.27 0.05 266 / 0.35);
+	}
 }
 
 .bn-cms .bn-valeur-source {
@@ -200,9 +202,14 @@
 	transition: opacity 0.15s;
 }
 
-.bn-cms .bn-block-outer:hover > .bn-block .bn-encadre-variantes,
 .bn-cms .bn-encadre-tete:focus-within .bn-encadre-variantes {
 	opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.bn-cms .bn-block-outer:hover > .bn-block .bn-encadre-variantes {
+		opacity: 1;
+	}
 }
 
 .bn-cms .bn-encadre-variantes button {
@@ -297,8 +304,10 @@
 	transition: outline-color 0.15s;
 }
 
-.bn-cms .bn-block-outer:hover .bn-mdx {
-	outline-color: var(--color-filet-creme);
+@media (hover: hover) and (pointer: fine) {
+	.bn-cms .bn-block-outer:hover .bn-mdx {
+		outline-color: var(--color-filet-creme);
+	}
 }
 
 .bn-cms .bn-mdx-etiquette {
@@ -317,9 +326,14 @@
 	pointer-events: none;
 }
 
-.bn-cms .bn-block-outer:hover .bn-mdx-etiquette,
 .bn-cms .ProseMirror-selectednode .bn-mdx-etiquette {
 	opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.bn-cms .bn-block-outer:hover .bn-mdx-etiquette {
+		opacity: 1;
+	}
 }
 
 .bn-cms .bn-mdx-rendu {

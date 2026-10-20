@@ -370,6 +370,26 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     secondaire compact peut faire 36 px, comme chez Claude, Revolut et Shop.
     `src/ui/__tests__/plancher-tactile.test.ts` refuse un `h-auto` sans `min-h-`, et tient le corps et
     la sous-ligne dans une FOURCHETTE — ni la légende, ni au-dessus de ce que rendent les références.
+- **L'ergonomie au doigt, sur les règles d'Apple et du web mobile natif** (20/10/2026, le fondateur :
+  « qu'il respecte bien les règles d'ergonomie […] surtout en mobile »). Tenue par
+  `ergonomie-mobile.test.ts` :
+  - **le survol n'existe qu'à la souris** : chaque `:hover` de nos feuilles vit sous
+    `@media (hover: hover) and (pointer: fine)` (au doigt, il restait allumé après le toucher), et
+    les boutons du kit reçoivent la même teinte à l'APPUI, en 100 ms ;
+  - **la cible fait 44 px même quand le disque en fait 36** : un calque invisible de 4 px autour
+    de chaque bouton de verre du kit et de `BoutonTexte`, qui pâlit à l'appui ;
+  - la couche de plateforme : `touch-action: manipulation` sur ce qui se touche, ni sélection ni
+    bulle d'iOS sur un contrôle, aucun champ sous 16 px au doigt, `color-scheme` du thème peint,
+    `interactive-widget=resizes-content`, deux `theme-color` (une par thème, accordées par
+    `use-theme.ts`, valeurs dans `ui/fond-du-theme.ts`), jamais `vh` (`dvh`, `svh`) ;
+  - **le clavier couvre la barre du bas** : elle descend quand un champ hors d'elle a le focus ;
+  - **« Réduire la transparence » et « Augmenter le contraste »** rendent le verre plein (et
+    contourné), et les deux gris les plus doux prennent le ton de la sous-ligne ;
+  - l'interlettrage et l'interligne suivent la taille (titres resserrés, légendes ouvertes ; le
+    corps et la sous-ligne, calibrés en largeur, ne bougent pas) ;
+  - **la carte qu'on balaie suit le doigt** : l'élan se projette (décélération 0,99), la vitesse
+    devient celle d'un ressort (réponse 0,3 s), la résistance au bord est celle d'iOS, et une carte
+    rattrapée en vol s'arrête sous le doigt.
 - **Contre les « milliards de zones cliquables »** (même relevé) : le filtrage d'une liste est une
   FEUILLE ouverte par UN bouton rond, pas une rangée d'onglets ; une action d'en-tête est du TEXTE
   (`BoutonTexte`, le « Sélectionner » de Mail) ; un seul bouton plein par écran ; une liste longue

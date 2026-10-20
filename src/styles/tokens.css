@@ -116,6 +116,35 @@
 	--text-cladd-3xs: 12px;
 	--text-cladd-4xs: 11px;
 
+	/* ⚠️ L'INTERLETTRAGE ET L'INTERLIGNE DÉPENDENT DE LA TAILLE (20/10/2026).
+	 *
+	 * Tout le produit lisait jusqu'ici ses six corps avec la même approche et le
+	 * même interligne de 1,5, hérité de la page. C'est juste pour le corps et la
+	 * sous-ligne, qu'on lit ; c'est faux aux deux bouts. Un titre de 20 px à 1,5
+	 * laisse 30 px par ligne, et deux lignes de titre se lisent comme deux titres ;
+	 * ses lettres paraissent aussi s'écarter à mesure qu'il grossit. Une légende de
+	 * 11 px, à l'inverse, se referme. Les tables d'Apple (« The Details of UI
+	 * Typography ») resserrent ce qui grossit et ouvrent ce qui rapetisse.
+	 *
+	 *   md  20 px  −0,012 em  1,3   (26 px : le Title 3 d'iOS, 20/25)
+	 *   sm  18 px  −0,008 em  1,33  (24 px)
+	 *   xs  16 px   0         1,5   — inchangé : c'est le corps, calibré en largeur
+	 *   2xs 13 px   0         1,5   — inchangé : la sous-ligne, même raison
+	 *   3xs 12 px  +0,004 em  1,4
+	 *   4xs 11 px  +0,01 em   1,36  (15 px)
+	 *
+	 * Le corps et la sous-ligne ne bougent pas : leurs tailles ont été mesurées sur
+	 * la LARGEUR que rendent Claude et Revolut, et un interlettrage les décalerait.
+	 * Une classe `leading-*` ou `tracking-*` posée sur un élément l'emporte toujours. */
+	--text-cladd-md--letter-spacing: -0.012em;
+	--text-cladd-md--line-height: 1.3;
+	--text-cladd-sm--letter-spacing: -0.008em;
+	--text-cladd-sm--line-height: 1.33;
+	--text-cladd-3xs--letter-spacing: 0.004em;
+	--text-cladd-3xs--line-height: 1.4;
+	--text-cladd-4xs--letter-spacing: 0.01em;
+	--text-cladd-4xs--line-height: 1.36;
+
 	/* La famille. Plus Jakarta Sans est une géométrique à hauteur d'x généreuse :
 	 * elle tient les petits corps sur une tablette tenue à bout de bras, là où
 	 * une grotesque classique se referme. Elle est empaquetée avec l'application
@@ -1034,6 +1063,31 @@ body {
 	 * ⚠️ CE JETON ET L'OPACITÉ DU LAVIS SONT LIÉS. Bouger l'un sans refaire le
 	 * calcul de l'autre casse le contraste en silence. */
 	--cladd-fg-softest: oklch(0.635 0.022 266);
+}
+
+/* « AUGMENTER LE CONTRASTE » (20/10/2026). Le réglage d'iOS, de macOS et de
+ * Windows : qui l'a coché lit mal les gris pâles. Les deux tons les plus doux
+ * prennent celui de la sous-ligne, dans les deux thèmes ; la hiérarchie tient
+ * alors à la taille et à la graisse, comme le veut Apple. Les sélecteurs sont
+ * ceux des deux palettes, dans le même ordre : les surfaces imbriquées
+ * redéclarent leurs tons, et un `:root` seul ne les atteindrait pas. */
+@media (prefers-contrast: more) {
+	:root.light,
+	.light,
+	.dark .light,
+	:root .light,
+	.light .cladd-color-neutral,
+	.light.cladd-color-neutral {
+		--cladd-fg-softer: oklch(0.395 0.036 266);
+		--cladd-fg-softest: oklch(0.395 0.036 266);
+	}
+	:root.dark,
+	.dark,
+	.dark .cladd-color-neutral,
+	.dark.cladd-color-neutral {
+		--cladd-fg-softer: oklch(0.82 0.022 266);
+		--cladd-fg-softest: oklch(0.82 0.022 266);
+	}
 }
 
 /* L'accent, en sombre. Cladd le veut clair sur fond sombre — il sert au texte

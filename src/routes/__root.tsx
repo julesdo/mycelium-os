@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { Providers } from '../app/providers';
 import { AMORCE_THEME } from '../app/use-theme';
+import { FOND_DU_THEME } from '../ui/fond-du-theme';
 import { AMORCE_INSTALLATION } from '../app/installation';
 import { AMORCE_SOURCE } from '../app/source-visite';
 import { AMORCE_ANALYTIQUE, ATTRIBUTS_UMAMI, SCRIPT_UMAMI } from '../app/analytique';
@@ -20,7 +21,13 @@ export const Route = createRootRoute({
 			{ charSet: 'utf-8' },
 			{
 				name: 'viewport',
-				content: 'width=device-width, initial-scale=1, viewport-fit=cover'
+				// `interactive-widget=resizes-content` : sur Android, le clavier réduit la
+				// page au lieu de la recouvrir, comme sur iOS ; un compositeur collé en bas
+				// reste au-dessus du clavier. Jamais `user-scalable=no` ni `maximum-scale` :
+				// le zoom est un droit, et la page zoomait au focus parce qu'un champ
+				// était sous 16 px — ce qui se corrige dans la feuille de style.
+				content:
+					'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content'
 			},
 			{ title: 'Letikette' }
 		],
@@ -82,6 +89,26 @@ function Document() {
 		// trop. C'est le seul endroit du produit où le DOM précède React.
 		<html lang="fr" suppressHydrationWarning>
 			<head>
+				{/*
+				  LA COULEUR DE LA BARRE D'ÉTAT ET DE LA BARRE DU NAVIGATEUR, une par thème
+				  du système (20/10/2026) : c'est celle du fond de la page, pas celle de la
+				  marque. Écrites ici et non dans `head()` : le routeur ne garde qu'une
+				  balise par nom, et il en faut deux. Un thème choisi à la main les
+				  accorde toutes les deux (`teinterLaBarre`, dans `app/use-theme.ts`) ;
+				  elles précèdent l'amorce, qui les retouche avant le premier affichage.
+				*/}
+				<meta
+					name="theme-color"
+					media="(prefers-color-scheme: light)"
+					content={FOND_DU_THEME.light}
+					suppressHydrationWarning
+				/>
+				<meta
+					name="theme-color"
+					media="(prefers-color-scheme: dark)"
+					content={FOND_DU_THEME.dark}
+					suppressHydrationWarning
+				/>
 				{/*
 				  ⚠️ AVANT `HeadContent`, ET AVANT TOUT AFFICHAGE. Cette ligne résout le
 				  thème — préférence enregistrée, sinon réglage du système — et pose la

@@ -9,6 +9,7 @@ import {
 	PopoverTrigger
 } from '@cladd-ui/react';
 import { EllipsisIcon } from 'lucide-react';
+import { pasDeRessort } from './lentille-liquide';
 import { LigneBouton, ListeAnalyses } from './navigation';
 import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
@@ -87,6 +88,51 @@ function poser(
 	if (gestes !== null) gestes.style.opacity = String(Math.min(1, decalage / (largeur * 0.6)));
 }
 
+/**
+ * LE LÂCHER SUIT LE DOIGT (20/10/2026, « Designing Fluid Interfaces », WWDC 2018).
+ *
+ * La carte tranchait sur la position au lâcher, à mi-chemin, puis partait sur une
+ * courbe de 280 ms : un balayage vif mais court se refermait, et la carte
+ * repartait de zéro au lieu de garder la vitesse du doigt. Trois règles d'Apple,
+ * désormais :
+ *
+ *   · l'ÉLAN se projette — la carte va là où la mènerait sa lancée, puis se range
+ *     au cran le plus proche de ce point, comme un défilement qui ralentit ;
+ *   · la vitesse du doigt devient celle d'un RESSORT, sans couture entre le geste
+ *     et l'animation ; amorti critique (réponse 0,3 s), un rien de rebond quand le
+ *     doigt a lancé la carte vers l'ouverture (0,8, le tiroir d'iOS) ;
+ *   · une carte rattrapée EN VOL s'arrête sous le doigt, là où elle est affichée,
+ *     au lieu de sauter à sa position logique.
+ */
+const RESSORT_CALME = { raideur: 439, amortissement: 42 } as const;
+const RESSORT_LANCE = { raideur: 439, amortissement: 33.5 } as const;
+/** Au-delà de cette vitesse (px/s), le doigt a lancé la carte. */
+const VITESSE_DE_LANCER = 500;
+/** La décélération de la projection : celle d'Apple pour un geste vif. */
+const DECELERATION = 0.99;
+
+/** Où la lancée mènerait la carte, en pixels, d'une vitesse en px/s. */
+function projeter(vitesse: number): number {
+	return ((vitesse / 1000) * DECELERATION) / (1 - DECELERATION);
+}
+
+/** Au-delà de l'ouverture, la carte suit de moins en moins : la résistance d'iOS. */
+function resistance(depassement: number, dimension: number): number {
+	return (depassement * dimension * 0.55) / (dimension + 0.55 * Math.abs(depassement));
+}
+
+/** L'ouverture AFFICHÉE, lue à l'écran : celle d'une carte qu'on rattrape en vol. */
+function ouvertureAffichee(carte: HTMLElement | null): number {
+	if (carte === null) return 0;
+	const transform = getComputedStyle(carte).transform;
+	return transform === 'none' ? 0 : -new DOMMatrixReadOnly(transform).m41;
+}
+
+function arreter(ressort: { current: number | null }) {
+	if (ressort.current !== null) cancelAnimationFrame(ressort.current);
+	ressort.current = null;
+}
+
 interface Geste {
 	readonly x0: number;
 	readonly y0: number;
@@ -94,6 +140,8 @@ interface Geste {
 	readonly depart: number;
 	sens: 'horizontal' | null;
 	decalage: number;
+	/** Les derniers points du geste (100 ms), pour la vitesse au lâcher. */
+	readonly echantillons: Array<{ t: number; d: number }>;
 }
 
 export function CarteGlissable({
@@ -121,6 +169,8 @@ export function CarteGlissable({
 	/** Le clic qui suit un glissement ou un appui long ne doit pas ouvrir la carte. */
 	const avaler = useRef(false);
 	const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
+	/** L'image en attente du ressort du lâcher, s'il court. */
+	const ressort = useRef<number | null>(null);
 	const [ouverte, setOuverte] = useState(false);
 	const [menu, setMenu] = useState(false);
 
@@ -131,6 +181,7 @@ export function CarteGlissable({
 		if (!ouverte) return;
 		function ailleurs(evenement: PointerEvent) {
 			if (enveloppe.current?.contains(evenement.target as Node)) return;
+			arreter(ressort);
 			poser(devant.current, dessous.current, largeur, 0, true);
 			setOuverte(false);
 		}
@@ -138,10 +189,12 @@ export function CarteGlissable({
 		return () => document.removeEventListener('pointerdown', ailleurs, true);
 	}, [ouverte, largeur]);
 
-	// Une carte qui disparaît (la liste a changé) n'ouvre pas son menu après coup.
+	// Une carte qui disparaît (la liste a changé) n'ouvre pas son menu après coup,
+	// et son ressort ne court plus.
 	useEffect(
 		() => () => {
 			if (minuterie.current !== null) clearTimeout(minuterie.current);
+			arreter(ressort);
 		},
 		[]
 	);
@@ -149,8 +202,42 @@ export function CarteGlissable({
 	if (actions.length === 0 && menuEnPlus.length === 0) return <>{children}</>;
 
 	function fermer() {
+		arreter(ressort);
 		poser(devant.current, dessous.current, largeur, 0, true);
 		setOuverte(false);
+	}
+
+	/** Lâche la carte vers `vers`, à la vitesse du doigt (px/s), sur un ressort. */
+	function lacher(depuis: number, vitesse: number, vers: number) {
+		arreter(ressort);
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			poser(devant.current, dessous.current, largeur, vers, true);
+			return;
+		}
+		const parametres = vers > 0 && vitesse > VITESSE_DE_LANCER ? RESSORT_LANCE : RESSORT_CALME;
+		let x = depuis;
+		let v = vitesse;
+		let avant: number | null = null;
+		const image = (maintenant: number) => {
+			const dt = avant === null ? 1 / 60 : Math.min(0.032, (maintenant - avant) / 1000);
+			avant = maintenant;
+			({ x, v } = pasDeRessort(x, v, vers, parametres, dt));
+			if (Math.abs(vers - x) < 0.5 && Math.abs(v) < 20) {
+				poser(devant.current, dessous.current, largeur, vers, false);
+				ressort.current = null;
+				return;
+			}
+			poser(devant.current, dessous.current, largeur, x, false);
+			ressort.current = requestAnimationFrame(image);
+		};
+		ressort.current = requestAnimationFrame(image);
+	}
+
+	/** Une carte arrêtée en vol par un toucher qui n'était pas un balayage repart. */
+	function reprendre() {
+		const ici = ouvertureAffichee(devant.current);
+		const vers = ouverte ? largeur : 0;
+		if (Math.abs(ici - vers) > 0.5) lacher(ici, 0, vers);
 	}
 
 	function annulerAppuiLong() {
@@ -170,12 +257,19 @@ export function CarteGlissable({
 				onPointerDown={(evenement) => {
 					avaler.current = false;
 					if (evenement.pointerType === 'mouse') return;
+					// Rattrapée en vol, la carte s'arrête sous le doigt, là où elle est.
+					arreter(ressort);
+					const ici = ouvertureAffichee(devant.current);
+					if (Math.abs(ici - (ouverte ? largeur : 0)) > 0.5) {
+						poser(devant.current, dessous.current, largeur, ici, false);
+					}
 					geste.current = {
 						x0: evenement.clientX,
 						y0: evenement.clientY,
-						depart: ouverte ? largeur : 0,
+						depart: ici,
 						sens: null,
-						decalage: ouverte ? largeur : 0
+						decalage: ici,
+						echantillons: [{ t: evenement.timeStamp, d: ici }]
 					};
 					annulerAppuiLong();
 					minuterie.current = setTimeout(() => {
@@ -214,30 +308,47 @@ export function CarteGlissable({
 							// Le doigt fait défiler la liste : la carte ne bouge pas.
 							annulerAppuiLong();
 							geste.current = null;
+							reprendre();
 							return;
 						} else return;
 					}
-					// Au-delà de l'ouverture complète, la carte résiste : le ressort d'iOS.
+					// Au-delà de l'ouverture complète, la carte résiste, de plus en plus.
 					const brut = g.depart - dx;
 					const decalage =
-						brut <= 0 ? 0 : brut <= largeur ? brut : largeur + (brut - largeur) * 0.25;
+						brut <= 0 ? 0 : brut <= largeur ? brut : largeur + resistance(brut - largeur, largeur);
 					g.decalage = decalage;
+					g.echantillons.push({ t: evenement.timeStamp, d: decalage });
+					while (g.echantillons.length > 2 && evenement.timeStamp - g.echantillons[0]!.t > 100) {
+						g.echantillons.shift();
+					}
 					poser(devant.current, dessous.current, largeur, decalage, false);
 				}}
-				onPointerUp={() => {
+				onPointerUp={(evenement) => {
 					annulerAppuiLong();
 					const g = geste.current;
 					geste.current = null;
-					if (g === null || g.sens !== 'horizontal') return;
+					if (g === null || g.sens !== 'horizontal') {
+						reprendre();
+						return;
+					}
 					avaler.current = true;
-					const ouvrir = g.decalage > largeur / 2;
-					poser(devant.current, dessous.current, largeur, ouvrir ? largeur : 0, true);
+					// La vitesse des 100 dernières ms ; un doigt qui s'est arrêté avant de se
+					// lever n'en a plus.
+					const premier = g.echantillons[0]!;
+					const dernier = g.echantillons[g.echantillons.length - 1]!;
+					const duree = dernier.t - premier.t;
+					const vitesse =
+						duree > 0 && evenement.timeStamp - dernier.t < 80
+							? ((dernier.d - premier.d) / duree) * 1000
+							: 0;
+					const ouvrir = g.decalage + projeter(vitesse) > largeur / 2;
+					lacher(g.decalage, vitesse, ouvrir ? largeur : 0);
 					setOuverte(ouvrir);
 				}}
 				onPointerCancel={() => {
 					annulerAppuiLong();
 					geste.current = null;
-					poser(devant.current, dessous.current, largeur, ouverte ? largeur : 0, true);
+					lacher(ouvertureAffichee(devant.current), 0, ouverte ? largeur : 0);
 				}}
 				onClickCapture={(evenement) => {
 					// Le clic qui termine un glissement, ou qui touche une carte ouverte, la

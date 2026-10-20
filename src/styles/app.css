@@ -65,6 +65,104 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+ * LA COUCHE DE PLATEFORME : CE QUI TRAHIT UN SITE SUR UN TÉLÉPHONE (20/10/2026).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Relevé contre les règles d'Apple et celles du web mobile natif. La remise à
+ * zéro de Tailwind fait déjà deux choses : le texte ne gonfle pas en paysage, et
+ * aucun voile gris ne couvre ce qu'on touche. Restait ceci, une déclaration
+ * chacune :
+ *
+ *   · le schéma de couleurs suit le thème PEINT, pas le système : les champs
+ *     natifs (date, liste déroulante, case) s'ouvraient en clair dans le thème
+ *     sombre, et le fond qui paraît au rebond restait blanc ;
+ *   · `touch-action: manipulation` sur tout ce qui se touche : le navigateur
+ *     n'attend plus de savoir si un second toucher arrive pour zoomer, le clic
+ *     part tout de suite. Le zoom à deux doigts reste, et un parent qui borne
+ *     déjà le geste (`touch-pan-y`, `touch-none`) le borne toujours ;
+ *   · un contrôle ne se sélectionne pas et n'ouvre pas la bulle d'iOS à l'appui
+ *     long ; un texte, si : on copie une adresse, un SIREN, un montant ;
+ *   · un champ ne descend jamais sous 16 px au doigt : en dessous, Safari zoome
+ *     la page au focus et ne la rend pas. En couche de base : un champ qui
+ *     déclare sa taille l'emporte, celui qui en hérite a ce plancher. Relevé le
+ *     même jour dans la salle, aucun champ du produit n'est sous 16 px.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+	html {
+		color-scheme: dark;
+	}
+	html.light {
+		color-scheme: light;
+	}
+	a[href],
+	button,
+	summary,
+	label,
+	input,
+	select,
+	textarea,
+	[role='button'],
+	[role='tab'],
+	[role='switch'],
+	[role='checkbox'],
+	[role='menuitem'],
+	[role='option'] {
+		touch-action: manipulation;
+	}
+	button,
+	summary,
+	[role='button'],
+	[role='tab'],
+	[role='switch'],
+	[role='menuitem'] {
+		-webkit-user-select: none;
+		user-select: none;
+		-webkit-touch-callout: none;
+	}
+	@media (pointer: coarse) {
+		input,
+		select,
+		textarea {
+			font-size: max(16px, 1rem);
+		}
+	}
+}
+
+/* LE CLAVIER COUVRE LA BARRE DU BAS, COMME DANS UNE APPLICATION (20/10/2026).
+ *
+ * Quand un champ prend le focus, iOS fait monter le clavier PAR-DESSUS la barre
+ * des onglets : on écrit, on ne navigue pas. Sur le web, la barre fixée restait
+ * là : à mi-écran sur iOS, où la page glisse sous le clavier, et collée au-dessus
+ * du clavier sur Android, où il redimensionne la page. Elle descend donc quand un
+ * champ HORS d'elle a le focus, au doigt seulement, et revient quand il le perd. */
+.barre-fixe {
+	transition:
+		transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+		opacity 160ms ease-out;
+}
+@media (pointer: coarse) {
+	body:has(
+			:is(
+				input:not(
+					[type='checkbox'],
+					[type='radio'],
+					[type='range'],
+					[type='button'],
+					[type='submit']
+				),
+				textarea,
+				select,
+				[contenteditable='true']
+			):focus
+		)
+		.barre-fixe:not(:focus-within) {
+		transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px)));
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
  * LE CURSEUR DE MAIN, PARTOUT OÙ L'ON PEUT CLIQUER.
  * ═══════════════════════════════════════════════════════════════════════════
  *
@@ -309,8 +407,14 @@ html:has(.coquille-app) body {
 /* Le verre au survol. Séparé plutôt que porté par `.verre` : la capsule de
  * navigation ne doit PAS s'éclaircir au survol de la barre entière, seuls ses
  * boutons le doivent. */
-.verre-actif:hover {
+@media (hover: hover) and (pointer: fine) {
+	.verre-actif:hover {
+		background-color: oklch(0.27 0.028 266 / 0.72);
+	}
+}
+.verre-actif:active {
 	background-color: oklch(0.27 0.028 266 / 0.72);
+	transition-duration: 100ms;
 }
 
 /* LE VERRE D'UN BOUTON — son survol et son enfoncement.
@@ -360,21 +464,46 @@ html:has(.coquille-app) body {
 		transform 120ms ease-out;
 }
 
-.verre-bouton:hover {
-	background-color: oklch(0.27 0.028 266 / 0.72);
-	/* L'arête se renforce en même temps que le fond s'éclaircit : c'est ce qui
-	 * fait lire « le verre prend la lumière » plutôt que « le fond a changé ». */
-	box-shadow:
-		inset 0 1px 0 0 oklch(1 0 0 / 0.22),
-		inset 0 0 0 1px oklch(1 0 0 / 0.1);
+/* ⚠️ LE SURVOL N'EXISTE QU'À LA SOURIS (20/10/2026). Au doigt, le navigateur simule
+ * un survol au premier toucher et le LAISSE en place jusqu'au toucher suivant : le
+ * bouton restait éclairé après qu'on l'avait lâché, comme une case cochée. Chaque
+ * `:hover` du produit vit donc sous `(hover: hover) and (pointer: fine)`
+ * (`ergonomie-mobile.test.ts` refuse les autres), et le doigt reçoit la même
+ * teinte À L'APPUI, en 100 ms : elle arrive avant que le doigt se relève, et
+ * s'éteint au rythme du survol. */
+@media (hover: hover) and (pointer: fine) {
+	.verre-bouton:hover {
+		background-color: oklch(0.27 0.028 266 / 0.72);
+		/* L'arête se renforce en même temps que le fond s'éclaircit : c'est ce qui
+		 * fait lire « le verre prend la lumière » plutôt que « le fond a changé ». */
+		box-shadow:
+			inset 0 1px 0 0 oklch(1 0 0 / 0.22),
+			inset 0 0 0 1px oklch(1 0 0 / 0.1);
+	}
 }
 
-/* L'enfoncement. Un pour cent et demi, pas davantage : sur un bouton pleine
- * largeur, un `scale(0.95)` fait bouger trois cents pixels de bord et se lit
- * comme un défaut de mise en page, là où sur une petite cible il se lit comme
- * un appui. La cible est grande, donc l'effet doit être petit. */
+/* L'appui : la teinte du survol, et l'enfoncement. Un pour cent et demi, pas
+ * davantage : sur un bouton pleine largeur, un `scale(0.95)` fait bouger trois
+ * cents pixels de bord et se lit comme un défaut de mise en page, là où sur une
+ * petite cible il se lit comme un appui. La cible est grande, donc l'effet doit
+ * être petit. */
 .verre-bouton:active {
+	background-color: oklch(0.27 0.028 266 / 0.72);
 	transform: scale(0.985);
+	transition-duration: 100ms;
+}
+
+/* LA CIBLE FAIT 44 PX, MÊME QUAND LE DISQUE EN FAIT 36 (20/10/2026). Le contrôle
+ * compact des références (Claude, Revolut, Shop) garde sa taille à l'œil ; sous le
+ * doigt, il prend les 44 pt d'Apple par un calque invisible de 4 px tout autour.
+ * Le faisceau et le pouls portent déjà leur `::after` : ils en sont exclus. Le
+ * bouton du kit seul : il est toujours positionné, et un calque absolu posé sur
+ * un élément statique couvrirait son ancêtre entier. */
+.cladd-button.verre-bouton:not(.faisceau, .pouls)::after {
+	content: '';
+	position: absolute;
+	inset: -4px;
+	border-radius: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -436,9 +565,13 @@ html:has(.coquille-app) body {
 /* Le champ survolé et le champ actif s'éclaircissent, comme tout le verre du
  * produit. `:focus-within` et pas `:focus` : le focus est sur le `<input>`
  * interne, pas sur la racine qui porte la couche de fond. */
-.cladd-input:hover .bg-cladd-surface-cut,
 .cladd-input:focus-within .bg-cladd-surface-cut {
 	background-color: oklch(0.32 0.028 266 / 0.7);
+}
+@media (hover: hover) and (pointer: fine) {
+	.cladd-input:hover .bg-cladd-surface-cut {
+		background-color: oklch(0.32 0.028 266 / 0.7);
+	}
 }
 
 /* LES CREUX, EUX AUSSI SUR LE SYSTÈME DE VERRE.
@@ -512,13 +645,17 @@ html:has(.coquille-app) body {
  * de la lumière est le seul geste disponible. La pilule blanche est déjà à la
  * valeur maximale ; l'éclaircir ne produirait rien du tout. Dans les deux cas
  * la règle réelle est la même : le survol AUGMENTE le contraste avec le fond. */
-.pilule-principale:hover {
-	background-color: oklch(0.9 0.016 85);
-	box-shadow: 0 4px 20px -6px oklch(1 0 0 / 0.25);
+@media (hover: hover) and (pointer: fine) {
+	.pilule-principale:hover {
+		background-color: oklch(0.9 0.016 85);
+		box-shadow: 0 4px 20px -6px oklch(1 0 0 / 0.25);
+	}
 }
-
+/* L'appui : la teinte du survol, et l'enfoncement. */
 .pilule-principale:active {
+	background-color: oklch(0.9 0.016 85);
 	transform: scale(0.985);
+	transition-duration: 100ms;
 }
 
 /* L'alternative. Du verre, un cran plus dense que les cartes : posée juste sous
@@ -540,12 +677,35 @@ html:has(.coquille-app) body {
 		transform 120ms ease-out;
 }
 
-.pilule-secondaire:hover {
-	background-color: oklch(1 0 0 / 0.22);
+@media (hover: hover) and (pointer: fine) {
+	.pilule-secondaire:hover {
+		background-color: oklch(1 0 0 / 0.22);
+	}
 }
 
+/* L'appui : la teinte du survol, et l'enfoncement. */
 .pilule-secondaire:active {
+	background-color: oklch(1 0 0 / 0.22);
 	transform: scale(0.985);
+	transition-duration: 100ms;
+}
+
+/* L'ACTION EN TEXTE SEUL (`BoutonTexte`, 20/10/2026). Elle n'avait AUCUN retour :
+ * ni fond, ni contour, ni survol, donc rien ne bougeait sous le doigt. Elle pâlit
+ * maintenant à l'appui, comme « Modifier » ou « Annuler » chez Apple, et revient
+ * plus lentement qu'elle n'est partie. Et sa cible prend 44 px de haut par le même
+ * calque invisible que les disques, sans que le mot grossisse. */
+.bouton-texte {
+	transition: opacity 200ms ease-out;
+}
+.bouton-texte:active {
+	opacity: 0.45;
+	transition-duration: 60ms;
+}
+.bouton-texte::after {
+	content: '';
+	position: absolute;
+	inset: -4px;
 }
 
 /* ⚠️ L'ÉTAT DÉSACTIVÉ EST GRIS, JAMAIS BLANC ESTOMPÉ. Le kit dime à 40 %
@@ -1108,8 +1268,14 @@ html:has(.coquille-app) body {
 /* La même, cliquable. Le survol éclaircit le verre plutôt que d'ajouter une
  * couche : deux translucidités superposées donnent un gris qui ne réfracte
  * plus rien. */
-.verre-carte-actif:hover {
+@media (hover: hover) and (pointer: fine) {
+	.verre-carte-actif:hover {
+		background-color: oklch(0.26 0.028 266 / 0.74);
+	}
+}
+.verre-carte-actif:active {
 	background-color: oklch(0.26 0.028 266 / 0.74);
+	transition-duration: 100ms;
 }
 
 /* LA PASTILLE DE FAMILLE SUR L'AVATAR D'UNE CARTE (`carte-rangee.tsx`).
@@ -1284,22 +1450,39 @@ html:has(.coquille-app) body {
 		0 -10px 36px -10px oklch(0.3 0.02 264 / 0.16);
 }
 
-.light .verre-actif:hover,
-.light .verre-bouton:hover {
-	background-color: oklch(0.94 0.016 82 / 0.88);
+@media (hover: hover) and (pointer: fine) {
+	.light .verre-actif:hover,
+	.light .verre-bouton:hover {
+		background-color: oklch(0.94 0.016 82 / 0.88);
+	}
 }
 
-.light .verre-carte-actif:hover {
+.light .verre-actif:active,
+.light .verre-bouton:active {
+	background-color: oklch(0.94 0.016 82 / 0.88);
+	transition-duration: 100ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.light .verre-carte-actif:hover {
+		background-color: oklch(0.945 0.016 82 / 0.9);
+	}
+}
+
+.light .verre-carte-actif:active {
 	background-color: oklch(0.945 0.016 82 / 0.9);
+	transition-duration: 100ms;
 }
 
 /* L'arête se renforce en même temps que le fond s'assombrit — la même lecture
  * qu'en sombre (« le verre prend la lumière »), obtenue par l'autre bout. */
-.light .verre-bouton:hover {
-	box-shadow:
-		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.12),
-		0 1px 2px oklch(0.3 0.02 264 / 0.08),
-		0 10px 32px -12px oklch(0.3 0.02 264 / 0.18);
+@media (hover: hover) and (pointer: fine) {
+	.light .verre-bouton:hover {
+		box-shadow:
+			inset 0 0 0 1px oklch(0.3 0.02 264 / 0.12),
+			0 1px 2px oklch(0.3 0.02 264 / 0.08),
+			0 10px 32px -12px oklch(0.3 0.02 264 / 0.18);
+	}
 }
 
 /* ── LES CHAMPS ET LES CREUX ──────────────────────────────────────────────── */
@@ -1324,9 +1507,14 @@ html:has(.coquille-app) body {
 		inset 0 1px 2px 0 oklch(0.3 0.02 264 / 0.06);
 }
 
-.light .cladd-input:hover .bg-cladd-surface-cut,
 .light .cladd-input:focus-within .bg-cladd-surface-cut {
 	background-color: oklch(0.925 0.018 80 / 0.88);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.light .cladd-input:hover .bg-cladd-surface-cut {
+		background-color: oklch(0.925 0.018 80 / 0.88);
+	}
 }
 
 /* Le creux, en clair. L'inversion d'éclairage se retourne AUSSI : en sombre, le
@@ -1349,9 +1537,15 @@ html:has(.coquille-app) body {
  * faire. Mais son SURVOL était figé à `oklch(0.9 0.006 85)`, un gris très
  * clair : sur une pilule devenue noire, il la faisait pratiquement disparaître.
  * Et sa lueur était du blanc, invisible sur du papier. */
-.light .pilule-principale:hover {
+@media (hover: hover) and (pointer: fine) {
+	.light .pilule-principale:hover {
+		background-color: oklch(0.36 0.05 266);
+		box-shadow: 0 4px 20px -6px oklch(0.3 0.02 264 / 0.32);
+	}
+}
+.light .pilule-principale:active {
 	background-color: oklch(0.36 0.05 266);
-	box-shadow: 0 4px 20px -6px oklch(0.3 0.02 264 / 0.32);
+	transition-duration: 100ms;
 }
 
 /* Le gris PLEIN de l'état désactivé, retourné. Le rapport reste celui de la
@@ -1380,8 +1574,15 @@ html:has(.coquille-app) body {
 		0 1px 2px oklch(0.3 0.02 264 / 0.05);
 }
 
-.light .pilule-secondaire:hover {
+@media (hover: hover) and (pointer: fine) {
+	.light .pilule-secondaire:hover {
+		background-color: oklch(0.885 0.018 80);
+	}
+}
+
+.light .pilule-secondaire:active {
 	background-color: oklch(0.885 0.018 80);
+	transition-duration: 100ms;
 }
 
 /* ── LE FAISCEAU ──────────────────────────────────────────────────────────── */
@@ -2052,9 +2253,16 @@ html:has(.coquille-app) body {
 		transform 120ms ease-out;
 }
 
-.pilule-craie:hover {
+@media (hover: hover) and (pointer: fine) {
+	.pilule-craie:hover {
+		background-color: var(--color-craie-douce);
+		box-shadow: 0 6px 28px -8px oklch(1 0 0 / 0.35);
+	}
+}
+
+.pilule-craie:active {
 	background-color: var(--color-craie-douce);
-	box-shadow: 0 6px 28px -8px oklch(1 0 0 / 0.35);
+	transition-duration: 100ms;
 }
 
 .pilule-encre {
@@ -2066,9 +2274,16 @@ html:has(.coquille-app) body {
 		transform 120ms ease-out;
 }
 
-.pilule-encre:hover {
+@media (hover: hover) and (pointer: fine) {
+	.pilule-encre:hover {
+		background-color: var(--color-encre-site-douce);
+		box-shadow: 0 6px 28px -8px oklch(0.27 0.05 266 / 0.45);
+	}
+}
+
+.pilule-encre:active {
 	background-color: var(--color-encre-site-douce);
-	box-shadow: 0 6px 28px -8px oklch(0.27 0.05 266 / 0.45);
+	transition-duration: 100ms;
 }
 
 .pilule-craie:active,
@@ -3202,25 +3417,53 @@ html:has(.coquille-app) body {
 
 /* L'ENTRÉE DE LA BARRE : le survol éclaire, l'entrée active est une pastille
  * claire — la même lecture que l'onglet actif de la pilule, en plus calme. */
-.entree-laterale:hover,
-.retour-fil:hover {
-	background-color: oklch(1 0 0 / 0.06);
+@media (hover: hover) and (pointer: fine) {
+	.entree-laterale:hover,
+	.retour-fil:hover {
+		background-color: oklch(1 0 0 / 0.06);
+	}
 }
-.light .entree-laterale:hover,
-.light .retour-fil:hover {
+.entree-laterale:active,
+.retour-fil:active {
+	background-color: oklch(1 0 0 / 0.06);
+	transition-duration: 100ms;
+}
+@media (hover: hover) and (pointer: fine) {
+	.light .entree-laterale:hover,
+	.light .retour-fil:hover {
+		background-color: oklch(0.3 0.02 264 / 0.05);
+	}
+}
+.light .entree-laterale:active,
+.light .retour-fil:active {
 	background-color: oklch(0.3 0.02 264 / 0.05);
+	transition-duration: 100ms;
 }
 .entree-laterale-active,
-.entree-laterale-active:hover {
+.entree-laterale-active:active {
 	background-color: oklch(1 0 0 / 0.1);
 	box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.06);
 }
+@media (hover: hover) and (pointer: fine) {
+	.entree-laterale-active:hover {
+		background-color: oklch(1 0 0 / 0.1);
+		box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.06);
+	}
+}
 .light .entree-laterale-active,
-.light .entree-laterale-active:hover {
+.light .entree-laterale-active:active {
 	background-color: oklch(1 0 0 / 0.92);
 	box-shadow:
 		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.08),
 		0 1px 2px oklch(0.3 0.02 264 / 0.07);
+}
+@media (hover: hover) and (pointer: fine) {
+	.light .entree-laterale-active:hover {
+		background-color: oklch(1 0 0 / 0.92);
+		box-shadow:
+			inset 0 0 0 1px oklch(0.3 0.02 264 / 0.08),
+			0 1px 2px oklch(0.3 0.02 264 / 0.07);
+	}
 }
 .entree-laterale:focus-visible,
 .retour-fil:focus-visible,
@@ -3236,8 +3479,10 @@ html:has(.coquille-app) body {
 	box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.08);
 	transition: background-color 150ms ease-out;
 }
-.champ-bureau:hover {
-	background-color: oklch(1 0 0 / 0.09);
+@media (hover: hover) and (pointer: fine) {
+	.champ-bureau:hover {
+		background-color: oklch(1 0 0 / 0.09);
+	}
 }
 .light .champ-bureau {
 	background-color: oklch(1 0 0 / 0.7);
@@ -3245,8 +3490,10 @@ html:has(.coquille-app) body {
 		inset 0 0 0 1px oklch(0.3 0.02 264 / 0.1),
 		0 1px 2px oklch(0.3 0.02 264 / 0.05);
 }
-.light .champ-bureau:hover {
-	background-color: oklch(1 0 0 / 0.95);
+@media (hover: hover) and (pointer: fine) {
+	.light .champ-bureau:hover {
+		background-color: oklch(1 0 0 / 0.95);
+	}
 }
 .touche-clavier {
 	box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.12);
@@ -3362,5 +3609,89 @@ html:has(.coquille-app) body {
 @media (prefers-reduced-motion: reduce) {
 	.invitation-installation {
 		animation: none;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * « RÉDUIRE LA TRANSPARENCE » ET « AUGMENTER LE CONTRASTE » (20/10/2026).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Deux réglages d'accessibilité d'iOS, de macOS et de Windows, que le verre du
+ * produit ignorait. Qui les a cochés lit mal un texte posé sur un flou qui bouge :
+ * le verre devient alors une matière PLEINE, à la teinte qu'il prend sur le fond
+ * nu, sans flou ; et sous « Augmenter le contraste », chaque surface qui se
+ * touche reçoit en plus un contour franc. L'appui garde sa teinte, plus claire
+ * en sombre, plus foncée en clair : un bouton plein qui ne réagit pas au doigt
+ * serait pire qu'un verre.
+ *
+ * ⚠️ `:root` DEVANT CHAQUE SÉLECTEUR, ET C'EST LA SPÉCIFICITÉ QUI LE VEUT. Les
+ * jumelles claires (`.light .verre`) pèsent deux classes : la version pleine doit
+ * peser autant pour le sombre, une de plus pour le clair, et venir après. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	:root :is(.verre, .verre-dense, .verre-carte, .verre-barre, .chrome-laterale) {
+		background-color: oklch(0.205 0.026 266);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+	:root .pilule-secondaire {
+		background-color: oklch(0.3 0.02 266);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+	:root .cladd-input .bg-cladd-surface-cut {
+		background-color: oklch(0.26 0.026 266);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+	:root .cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
+		background-color: oklch(0.13 0.022 266);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+	:root :is(.verre-barre-haute, .barre-publique, .fil-ariane) {
+		background-color: var(--cladd-bg);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		animation: none;
+	}
+	:root :is(.voile-barre-bas, .lentille-barre.lentille-levee, .voile-bureau) {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+	:root :is(.verre-actif, .verre-bouton, .verre-carte-actif):active,
+	:root .pilule-secondaire:active {
+		background-color: oklch(0.29 0.028 266);
+	}
+
+	:root.light :is(.verre, .verre-dense, .verre-carte, .verre-barre, .chrome-laterale) {
+		background-color: oklch(0.99 0.004 85);
+	}
+	:root.light .pilule-secondaire {
+		background-color: oklch(0.925 0.016 82);
+	}
+	:root.light .cladd-input .bg-cladd-surface-cut {
+		background-color: oklch(0.945 0.016 82);
+	}
+	:root.light .cladd-surface-cut:not(.cladd-input) > .bg-cladd-surface-cut {
+		background-color: oklch(0.92 0.016 82);
+	}
+	:root.light :is(.verre-actif, .verre-bouton, .verre-carte-actif):active,
+	:root.light .pilule-secondaire:active {
+		background-color: oklch(0.93 0.016 82);
+	}
+}
+
+@media (prefers-contrast: more) {
+	:root :is(.verre, .verre-dense, .verre-carte, .verre-barre, .pilule-secondaire) {
+		box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.42);
+	}
+	:root .cladd-input .bg-cladd-surface-cut {
+		box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.5);
+	}
+	:root.light :is(.verre, .verre-dense, .verre-carte, .verre-barre, .pilule-secondaire) {
+		box-shadow: inset 0 0 0 1px oklch(0.3 0.02 264 / 0.55);
+	}
+	:root.light .cladd-input .bg-cladd-surface-cut {
+		box-shadow: inset 0 0 0 1px oklch(0.3 0.02 264 / 0.65);
 	}
 }
