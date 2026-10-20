@@ -5,8 +5,8 @@ import { noterAuJournal } from './enveloppe';
 import { naissanceDuProspect } from './prospects';
 
 /**
- * L'ÉCRITURE DES FOURNISSEURS PUBLICS AJOUTÉS (19/10/2026, audit, lot 5). Séparée de
- * `decp.ts` pour que l'action n'appelle pas son propre module (cycle d'inférence).
+ * L'ÉCRITURE DES FOURNISSEURS PUBLICS AJOUTÉS (19/10/2026, audit, lot 5). Séparée des
+ * travaux pour que leur exécution n'appelle pas son propre module (cycle d'inférence).
  * Les doublons se revérifient par SIREN au moment même.
  */
 export const vFournisseurAjoute = v.object({
@@ -24,18 +24,25 @@ export const vFournisseurAjoute = v.object({
 	estimation: v.optional(vEstimationProspect)
 });
 
-export const ajouterLesFournisseurs = internalMutation({
+/**
+ * L'ÉCRITURE PAR LOTS, POUR LES TRAVAUX EN ARRIÈRE-PLAN (20/10/2026). Un ajout de vingt
+ * fournisseurs dure plusieurs minutes et se reprend en plusieurs passes : chaque passe écrit
+ * ce qu'elle a préparé dans UN seul import, créé à la première et complété aux suivantes.
+ */
+export const ajouterAuLot = internalMutation({
 	args: {
 		fournisseurs: v.array(vFournisseurAjoute),
+		importId: v.optional(v.id('importsProspects')),
 		libelle: v.string(),
 		lignes: v.number(),
 		par: v.string()
 	},
-	returns: v.object({ importes: v.number(), ecartes: v.number() }),
-	handler: async (
-		ctx,
-		{ fournisseurs, libelle, lignes, par }
-	): Promise<{ importes: number; ecartes: number }> => {
+	returns: v.object({
+		importId: v.id('importsProspects'),
+		importes: v.number(),
+		ecartes: v.number()
+	}),
+	handler: async (ctx, { fournisseurs, importId, libelle, lignes, par }) => {
 		const maintenant = Date.now();
 		const vus = new Set<string>();
 		const retenus = [];
@@ -48,30 +55,44 @@ export const ajouterLesFournisseurs = internalMutation({
 				.first();
 			if (deja === null) retenus.push(f);
 		}
-		const importId = await ctx.db.insert('importsProspects', {
-			fichier: libelle,
-			lignes,
-			importes: retenus.length,
-			ecartes: lignes - retenus.length,
-			oppositions: 0,
-			par,
-			le: maintenant
-		});
+		let id = importId;
+		if (id === undefined) {
+			id = await ctx.db.insert('importsProspects', {
+				fichier: libelle,
+				lignes,
+				importes: 0,
+				ecartes: 0,
+				oppositions: 0,
+				par,
+				le: maintenant
+			});
+			await noterAuJournal(ctx, par, {
+				action: 'IMPORT',
+				cible: { type: 'IMPORT', id, libelle }
+			});
+		}
+		const lot = await ctx.db.get(id);
+		if (lot !== null) {
+			await ctx.db.patch(id, {
+				importes: lot.importes + retenus.length,
+				ecartes: lot.ecartes + (fournisseurs.length - retenus.length)
+			});
+		}
 		for (const f of retenus) {
 			await ctx.db.insert('prospects', {
 				...f,
 				cible: 'PME',
 				statut: 'A_CONTACTER',
 				...naissanceDuProspect({ parcours: 'FOURNISSEUR_PUBLIC', cible: 'PME' }),
-				importId,
+				importId: id,
 				creePar: par,
 				creeLe: maintenant
 			});
 		}
-		await noterAuJournal(ctx, par, {
-			action: 'IMPORT',
-			cible: { type: 'IMPORT', id: importId, libelle: `${libelle} : ${retenus.length} prospects` }
-		});
-		return { importes: retenus.length, ecartes: lignes - retenus.length };
+		return {
+			importId: id,
+			importes: retenus.length,
+			ecartes: fournisseurs.length - retenus.length
+		};
 	}
 });

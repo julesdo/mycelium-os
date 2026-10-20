@@ -22,6 +22,7 @@ import {
 	pluriel
 } from '../../ui';
 import { LigneACocher } from '../../ui/admin';
+import { BarreDAvancement, IconeDeTravail, type EtatAffiche } from '../../ui/travaux';
 import {
 	CLES_ZONES,
 	departementsEnClair,
@@ -49,7 +50,9 @@ import { messageDeRefus } from './formulaire-prospect';
  * commande publique (qui a gagné des marchés d'hôpitaux ou de collectivités), les
  * transporteurs, les PME et les cabinets à l'annuaire public des entreprises. Puis la
  * zone, puis un toucher sur ce qu'on cherche lance la recherche ; on coche ; rien n'entre
- * avant « Ajouter ». L'estimation d'un fournisseur public se calcule à l'ajout, sur tous
+ * avant « Ajouter ». Depuis le 20/10/2026, chaque recherche et chaque ajout de fournisseurs
+ * est un TRAVAIL qui tourne en arrière-plan (`convex/admin/travaux.ts`) : l'écran le suit en
+ * direct, on peut le fermer, et la file d'attente (`/admin/travaux`) le rouvre. L'estimation d'un fournisseur public se calcule à l'ajout, sur tous
  * ses marchés. L'e-mail ne vient d'aucune de ces sources : il se lit sur le site de
  * l'entreprise, depuis sa fiche.
  */
@@ -59,23 +62,9 @@ export interface EntrepriseAffichee extends EntrepriseTrouvee {
 	readonly connue: boolean;
 }
 
-export interface PageTrouvee {
-	readonly pages: number;
-	/** La dernière page de l'annuaire lue par cet appel. */
-	readonly derniere: number;
-	readonly entreprises: readonly EntrepriseAffichee[];
-}
-
 export interface TitulaireAffiche extends Omit<TitulaireDecp, 'acheteurs'> {
 	readonly acheteurs: readonly string[];
 	readonly connue: boolean;
-}
-
-export interface PageDecpTrouvee {
-	readonly pages: number;
-	readonly derniere: number;
-	readonly nonDiffusibles: number;
-	readonly titulaires: readonly TitulaireAffiche[];
 }
 
 /** Les parcours qu'on trouve ici, et ce qu'on y cherche. */
@@ -136,80 +125,167 @@ function titulaireSansLaMarque(t: TitulaireAffiche): TitulaireDecp {
 	return { ...reste, acheteurs: [...t.acheteurs] };
 }
 
-/** L'ajout d'un fournisseur public lit l'annuaire et ses marchés : vingt à la fois. */
-const AJOUT_DECP_MAX = 20;
+/** L'ajout d'un fournisseur public lit l'annuaire et ses marchés : quarante à la fois, en arrière-plan. */
+const AJOUT_DECP_MAX = 40;
 
-type Etape = 'parcours' | 'criteres' | 'resultats' | 'resume';
-type Recherche =
+type Etape = 'parcours' | 'criteres' | 'travail' | 'resume';
+export type Recherche =
 	| { readonly source: 'ANNUAIRE'; readonly secteur: CleSecteur }
 	| { readonly source: 'DECP'; readonly acheteurs: CleAcheteurs };
 
+/** Ce qu'un travail de l'équipe rend à l'écran : son état en direct, puis son résultat. */
+export interface TravailSuivi {
+	readonly _id: string;
+	readonly genre: 'CHERCHER_ANNUAIRE' | 'CHERCHER_DECP' | 'AJOUTER_DECP';
+	readonly criteres: {
+		readonly secteur?: CleSecteur;
+		readonly acheteurs?: CleAcheteurs;
+		readonly zone: CleZone;
+		readonly page: number;
+	};
+	readonly etat: EtatAffiche;
+	readonly etape?: string;
+	readonly fait?: number;
+	readonly total?: number;
+	readonly erreur?: string;
+	readonly resultat?:
+		| {
+				readonly genre: 'ANNUAIRE';
+				readonly pages: number;
+				readonly derniere: number;
+				readonly entreprises: readonly EntrepriseAffichee[];
+		  }
+		| {
+				readonly genre: 'DECP';
+				readonly pages: number;
+				readonly derniere: number;
+				readonly nonDiffusibles: number;
+				readonly titulaires: readonly TitulaireAffiche[];
+		  }
+		| {
+				readonly genre: 'AJOUT';
+				readonly importes: number;
+				readonly ecartes: number;
+				readonly horsZone: number;
+				readonly echecs: readonly string[];
+		  };
+}
+
+/** Les pages déjà lues d'une recherche, quand on demande la suite. */
+interface PagesLues {
+	readonly entreprises: readonly EntrepriseAffichee[];
+	readonly titulaires: readonly TitulaireAffiche[];
+	readonly nonDiffusibles: number;
+	readonly pages: number;
+}
+const AUCUNE_PAGE: PagesLues = { entreprises: [], titulaires: [], nonDiffusibles: 0, pages: 0 };
+
+function sansDoublon<T extends { readonly siren: string }>(
+	avant: readonly T[],
+	apres: readonly T[]
+): T[] {
+	const vus = new Set(avant.map((x) => x.siren));
+	return [...avant, ...apres.filter((x) => !vus.has(x.siren))];
+}
+
+function rechercheDu(travail: TravailSuivi): Recherche | null {
+	const { secteur, acheteurs } = travail.criteres;
+	if (travail.genre === 'CHERCHER_ANNUAIRE' && secteur !== undefined)
+		return { source: 'ANNUAIRE', secteur };
+	if (travail.genre !== 'CHERCHER_ANNUAIRE' && acheteurs !== undefined)
+		return { source: 'DECP', acheteurs };
+	return null;
+}
+
 export function ParcoursTrouver({
 	onFermer,
-	onChercher,
+	travail,
+	suivi,
+	onSuivre,
+	onLancerRecherche,
 	onAjouter,
-	onChercherDecp,
-	onAjouterDecp
+	onLancerAjoutDecp
 }: {
 	readonly onFermer: () => void;
-	readonly onChercher: (secteur: CleSecteur, zone: CleZone, page: number) => Promise<PageTrouvee>;
+	/** Le travail suivi : `undefined` le temps de le lire, `null` s'il n'existe plus. */
+	readonly travail: TravailSuivi | null | undefined;
+	readonly suivi: string | null;
+	readonly onSuivre: (id: string | null) => void;
+	readonly onLancerRecherche: (recherche: Recherche, zone: CleZone, page: number) => Promise<string>;
 	readonly onAjouter: (
 		secteur: CleSecteur,
 		zone: CleZone,
 		entreprises: readonly EntrepriseTrouvee[]
 	) => Promise<{ importes: number; ecartes: number }>;
-	readonly onChercherDecp: (
-		acheteurs: CleAcheteurs,
-		zone: CleZone,
-		page: number
-	) => Promise<PageDecpTrouvee>;
-	readonly onAjouterDecp: (
+	readonly onLancerAjoutDecp: (
 		acheteurs: CleAcheteurs,
 		zone: CleZone,
 		titulaires: readonly TitulaireDecp[]
-	) => Promise<{ importes: number; ecartes: number; horsZone: number }>;
+	) => Promise<string>;
 }) {
-	const [etape, setEtape] = useState<Etape>('parcours');
+	const [etape, setEtape] = useState<Etape>(suivi === null ? 'parcours' : 'travail');
 	const [parcours, setParcours] = useState<Exclude<Parcours, 'PILOTE'> | null>(null);
-	const [zone, setZone] = useState<CleZone>('PETITE_COURONNE');
-	const [recherche, setRecherche] = useState<Recherche | null>(null);
-	const [pages, setPages] = useState(0);
-	const [page, setPage] = useState(0);
-	const [trouvees, setTrouvees] = useState<readonly EntrepriseAffichee[]>([]);
-	const [titulaires, setTitulaires] = useState<readonly TitulaireAffiche[]>([]);
-	const [nonDiffusibles, setNonDiffusibles] = useState(0);
+	const [zoneChoisie, setZoneChoisie] = useState<CleZone>('PETITE_COURONNE');
+	const [lues, setLues] = useState<PagesLues>(AUCUNE_PAGE);
 	const [cochees, setCochees] = useState<ReadonlySet<string>>(new Set());
-	const [resultat, setResultat] = useState<{
-		importes: number;
-		ecartes: number;
-		horsZone?: number;
-	} | null>(null);
+	const [ajoutAnnuaire, setAjoutAnnuaire] = useState<{ importes: number; ecartes: number } | null>(
+		null
+	);
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [enCours, setEnCours] = useState(false);
 
-	async function chercher(r: Recherche, suivante: number) {
+	// ── Ce que montre l'écran, déduit du travail suivi ──
+	const t = etape === 'travail' ? travail : null;
+	const vue:
+		| 'parcours'
+		| 'criteres'
+		| 'resume'
+		| 'chargement'
+		| 'introuvable'
+		| 'attente'
+		| 'resultats'
+		| 'bilan'
+		| 'echec' =
+		etape !== 'travail'
+			? etape
+			: travail === undefined
+				? 'chargement'
+				: travail === null
+					? 'introuvable'
+					: travail.etat === 'FAIT'
+						? travail.genre === 'AJOUTER_DECP'
+							? 'bilan'
+							: 'resultats'
+						: travail.etat === 'ECHEC'
+							? 'echec'
+							: 'attente';
+	const recherche = t === null || t === undefined ? null : rechercheDu(t);
+	const zone = t === null || t === undefined ? zoneChoisie : t.criteres.zone;
+	const resultat = t?.resultat;
+	const trouvees =
+		resultat?.genre === 'ANNUAIRE' ? sansDoublon(lues.entreprises, resultat.entreprises) : lues.entreprises;
+	const titulaires =
+		resultat?.genre === 'DECP' ? sansDoublon(lues.titulaires, resultat.titulaires) : lues.titulaires;
+	const nonDiffusibles = lues.nonDiffusibles + (resultat?.genre === 'DECP' ? resultat.nonDiffusibles : 0);
+	const pages =
+		resultat?.genre === 'ANNUAIRE' || resultat?.genre === 'DECP' ? resultat.pages : lues.pages;
+	const page =
+		resultat?.genre === 'ANNUAIRE' || resultat?.genre === 'DECP'
+			? resultat.derniere
+			: (t?.criteres.page ?? 1) - 1;
+	// La suite d'une recherche se cherche sous la liste déjà lue, qui reste à l'écran.
+	const suiteEnCours = vue === 'attente' && trouvees.length + titulaires.length > 0;
+	const montreLaListe = vue === 'resultats' || suiteEnCours;
+
+	async function lancer(r: Recherche, z: CleZone, suivante: number, garder: PagesLues) {
 		setErreur(null);
 		setEnCours(true);
 		try {
-			if (r.source === 'ANNUAIRE') {
-				const lue = await onChercher(r.secteur, zone, suivante);
-				setPages(lue.pages);
-				setPage(lue.derniere);
-				const deja = suivante === 1 ? [] : trouvees;
-				const sirens = new Set(deja.map((e) => e.siren));
-				setTrouvees([...deja, ...lue.entreprises.filter((e) => !sirens.has(e.siren))]);
-			} else {
-				const lue = await onChercherDecp(r.acheteurs, zone, suivante);
-				setPages(lue.pages);
-				setPage(lue.derniere);
-				const deja = suivante === 1 ? [] : titulaires;
-				const sirens = new Set(deja.map((t) => t.siren));
-				setTitulaires([...deja, ...lue.titulaires.filter((t) => !sirens.has(t.siren))]);
-				setNonDiffusibles((n) => (suivante === 1 ? 0 : n) + lue.nonDiffusibles);
-			}
-			setRecherche(r);
+			const id = await onLancerRecherche(r, z, suivante);
+			setLues(garder);
 			if (suivante === 1) setCochees(new Set());
-			setEtape('resultats');
+			onSuivre(id);
+			setEtape('travail');
 		} catch (e) {
 			setErreur(messageDeRefus(e));
 		} finally {
@@ -224,12 +300,14 @@ export function ParcoursTrouver({
 		try {
 			if (recherche.source === 'ANNUAIRE') {
 				const choisies = trouvees.filter((e) => cochees.has(e.siren)).map(sansLaMarque);
-				setResultat(await onAjouter(recherche.secteur, zone, choisies));
+				setAjoutAnnuaire(await onAjouter(recherche.secteur, zone, choisies));
+				setEtape('resume');
 			} else {
-				const choisis = titulaires.filter((t) => cochees.has(t.siren)).map(titulaireSansLaMarque);
-				setResultat(await onAjouterDecp(recherche.acheteurs, zone, choisis));
+				const choisis = titulaires.filter((x) => cochees.has(x.siren)).map(titulaireSansLaMarque);
+				const id = await onLancerAjoutDecp(recherche.acheteurs, zone, choisis);
+				setLues(AUCUNE_PAGE);
+				onSuivre(id);
 			}
-			setEtape('resume');
 		} catch (e) {
 			setErreur(messageDeRefus(e));
 		} finally {
@@ -245,7 +323,7 @@ export function ParcoursTrouver({
 	};
 	const decp = recherche?.source === 'DECP';
 	const libres = decp
-		? titulaires.filter((t) => !t.connue).map((t) => t.siren)
+		? titulaires.filter((x) => !x.connue).map((x) => x.siren)
 		: trouvees.filter((e) => !e.connue).map((e) => e.siren);
 	const plafond = decp ? AJOUT_DECP_MAX : Infinity;
 	const aCocher = libres.slice(0, plafond);
@@ -253,21 +331,27 @@ export function ParcoursTrouver({
 	const nombre = cochees.size;
 	const tropDeCochees = nombre > plafond;
 	const nombreDeLignes = decp ? titulaires.length : trouvees.length;
+	const ajoutEnCours = t?.genre === 'AJOUTER_DECP';
 
-	const titres: Record<Etape, string> = {
+	const titres: Record<typeof vue, string> = {
 		parcours: 'Trouver des prospects',
 		criteres: parcours === null ? 'Trouver' : REGISTRE_DES_PARCOURS[parcours].libelle,
+		chargement: 'Trouver',
+		introuvable: 'Recherche introuvable',
+		attente: ajoutEnCours ? 'Ajout en cours' : 'Recherche en cours',
 		resultats:
 			recherche === null
 				? 'Les résultats'
 				: recherche.source === 'ANNUAIRE'
 					? SECTEURS[recherche.secteur].libelle
 					: ACHETEURS[recherche.acheteurs].libelle,
-		resume: 'C’est ajouté'
+		bilan: 'C’est ajouté',
+		resume: 'C’est ajouté',
+		echec: ajoutEnCours ? 'L’ajout s’est arrêté' : 'La recherche s’est arrêtée'
 	};
 
 	const pied =
-		etape === 'resultats' ? (
+		vue === 'resultats' ? (
 			<BoutonPrincipal
 				pleineLargeur
 				disabled={enCours || nombre === 0 || tropDeCochees}
@@ -277,18 +361,32 @@ export function ParcoursTrouver({
 					? `Cochez des ${decp ? 'fournisseurs' : 'entreprises'}`
 					: tropDeCochees
 						? `${AJOUT_DECP_MAX} au plus à la fois`
-						: enCours && decp
-							? 'Estimation en cours…'
-							: `Ajouter ${nombre} prospect${pluriel(nombre)}`}
+						: `Ajouter ${nombre} prospect${pluriel(nombre)}`}
 			</BoutonPrincipal>
-		) : etape === 'resume' ? (
+		) : vue === 'attente' ? (
+			<BoutonSecondaire pleineLargeur onClick={onFermer}>
+				Fermer, {ajoutEnCours ? 'l’ajout' : 'la recherche'} continue
+			</BoutonSecondaire>
+		) : vue === 'bilan' || vue === 'resume' ? (
 			<BoutonPrincipal pleineLargeur onClick={onFermer}>
 				Voir les prospects
 			</BoutonPrincipal>
+		) : vue === 'echec' && recherche !== null ? (
+			<BoutonPrincipal
+				pleineLargeur
+				disabled={enCours}
+				onClick={() => void lancer(recherche, zone, Math.max(1, page + 1), lues)}
+			>
+				Relancer la recherche
+			</BoutonPrincipal>
 		) : undefined;
 
-	const retourDe: Partial<Record<Etape, Etape>> = { criteres: 'parcours', resultats: 'criteres' };
-	const precedente = retourDe[etape];
+	const precedente: Etape | undefined =
+		etape === 'criteres'
+			? 'parcours'
+			: etape === 'travail' && parcours !== null && !montreLaListe && vue !== 'bilan'
+				? 'criteres'
+				: undefined;
 	const [depuis] = useState(() => anneeDeDepart(jourDeParis(Date.now())).slice(0, 4));
 
 	return (
@@ -296,12 +394,12 @@ export function ParcoursTrouver({
 			ouverte
 			onFermer={precedente === undefined ? onFermer : () => setEtape(precedente)}
 			retour={precedente !== undefined}
-			titre={titres[etape]}
-			{...(etape === 'resultats' ? { sousTitre: ZONES[zone].libelle } : {})}
+			titre={titres[vue]}
+			{...(montreLaListe ? { sousTitre: ZONES[zone].libelle } : {})}
 			{...(pied === undefined ? {} : { pied })}
 		>
 			<div className="flex flex-col gap-cladd-sm">
-				{etape === 'parcours' ? (
+				{vue === 'parcours' ? (
 					<section className="flex flex-col gap-cladd-3xs">
 						<EnTeteDeGroupe libelle="Quel parcours" />
 						<ListeDeCartes>
@@ -321,7 +419,7 @@ export function ParcoursTrouver({
 					</section>
 				) : null}
 
-				{etape === 'criteres' && parcours !== null ? (
+				{vue === 'criteres' && parcours !== null ? (
 					<>
 						<p className="px-1 text-cladd-xs text-cladd-fg-soft">
 							{parcours === 'FOURNISSEUR_PUBLIC'
@@ -332,12 +430,18 @@ export function ParcoursTrouver({
 							<EnTeteDeGroupe libelle="Où" />
 							<Segmented activeColor="brand" activeVariant="solid-fill" className="w-full">
 								{CLES_ZONES.map((z) => (
-									<SegmentedButton key={z} active={zone === z} onClick={() => setZone(z)}>
+									<SegmentedButton
+										key={z}
+										active={zoneChoisie === z}
+										onClick={() => setZoneChoisie(z)}
+									>
 										{ZONES[z].court}
 									</SegmentedButton>
 								))}
 							</Segmented>
-							<p className="px-1 text-cladd-2xs text-cladd-fg-soft">{departementsEnClair(zone)}</p>
+							<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
+								{departementsEnClair(zoneChoisie)}
+							</p>
 						</section>
 						<section className="flex flex-col gap-cladd-3xs">
 							<EnTeteDeGroupe
@@ -352,7 +456,8 @@ export function ParcoursTrouver({
 												ligne={ACHETEURS[a].detail}
 												icone={<Icone de={ICONES_ACHETEURS[a]} />}
 												onClick={() => {
-													if (!enCours) void chercher({ source: 'DECP', acheteurs: a }, 1);
+													if (!enCours)
+														void lancer({ source: 'DECP', acheteurs: a }, zoneChoisie, 1, AUCUNE_PAGE);
 												}}
 											/>
 										))
@@ -363,23 +468,53 @@ export function ParcoursTrouver({
 												ligne={SECTEURS[s].detail}
 												icone={<Icone de={ICONES[s]} />}
 												onClick={() => {
-													if (!enCours) void chercher({ source: 'ANNUAIRE', secteur: s }, 1);
+													if (!enCours)
+														void lancer({ source: 'ANNUAIRE', secteur: s }, zoneChoisie, 1, AUCUNE_PAGE);
 												}}
 											/>
 										))}
 							</ListeDeCartes>
 						</section>
-						{enCours ? (
-							<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
-								{parcours === 'FOURNISSEUR_PUBLIC'
-									? 'Recherche dans la commande publique…'
-									: 'Recherche à l’annuaire…'}
-							</p>
-						) : null}
+						<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
+							La recherche tourne en arrière-plan : vous pouvez fermer, son résultat vous attend
+							dans la file d’attente.
+						</p>
 					</>
 				) : null}
 
-				{etape === 'resultats' ? (
+				{vue === 'chargement' ? (
+					<p className="px-1 text-cladd-xs text-cladd-fg-soft">Lecture du travail…</p>
+				) : null}
+
+				{vue === 'introuvable' ? (
+					<p className="px-1 text-cladd-xs text-cladd-fg-soft">
+						Ce travail n’est plus dans la file : il a été retiré. Lancez une recherche nouvelle.
+					</p>
+				) : null}
+
+				{vue === 'attente' && !suiteEnCours ? (
+					<div className="flex flex-col items-center gap-cladd-2xs py-cladd-sm text-center">
+						<IconeDeTravail etat={t?.etat ?? 'EN_ATTENTE'} />
+						<p className="text-cladd-xs font-medium">{t?.etape ?? 'Démarrage'}</p>
+						{t?.total !== undefined && t.total > 0 ? (
+							<span className="flex w-full max-w-xs flex-col gap-1">
+								<BarreDAvancement fait={t.fait ?? 0} total={t.total} />
+								{ajoutEnCours ? (
+									<span className="text-cladd-3xs text-cladd-fg-soft tabular-nums">
+										{t.fait ?? 0} sur {t.total}
+									</span>
+								) : null}
+							</span>
+						) : null}
+						<p className="max-w-sm text-cladd-2xs text-cladd-fg-soft">
+							{ajoutEnCours
+								? 'Chaque fournisseur se vérifie à l’annuaire, puis tous ses marchés se lisent pour l’estimer : une demi-minute chacun. Vous pouvez fermer, l’ajout continue sur le serveur.'
+								: 'Les sources publiques répondent en quelques secondes par page, parfois plus. Vous pouvez fermer : la recherche continue, et son résultat vous attend dans la file d’attente.'}
+						</p>
+					</div>
+				) : null}
+
+				{montreLaListe ? (
 					<section className="flex flex-col gap-cladd-3xs">
 						<div className="flex items-baseline justify-between gap-cladd-3xs">
 							<EnTeteDeGroupe
@@ -408,15 +543,15 @@ export function ParcoursTrouver({
 							</p>
 						) : decp ? (
 							<ListeDeCartes>
-								{titulaires.map((t) => (
+								{titulaires.map((x) => (
 									<LigneACocher
-										key={t.siren}
-										titre={t.nom}
-										ligne={`${t.marches} marché${pluriel(t.marches)} · ${t.nombreDAcheteurs} acheteur${pluriel(t.nombreDAcheteurs)}`}
-										detail={`Plafonds ${eurosRonds(t.plafondCentimes)} · dernier le ${dateCourteDeParis(Date.parse(`${t.dernierMarche}T12:00:00Z`))}`}
-										cochee={cochees.has(t.siren)}
-										onBasculer={() => basculer(t.siren)}
-										{...(t.connue ? { inerte: 'Déjà dans vos prospects' } : {})}
+										key={x.siren}
+										titre={x.nom}
+										ligne={`${x.marches} marché${pluriel(x.marches)} · ${x.nombreDAcheteurs} acheteur${pluriel(x.nombreDAcheteurs)}`}
+										detail={`Plafonds ${eurosRonds(x.plafondCentimes)} · dernier le ${dateCourteDeParis(Date.parse(`${x.dernierMarche}T12:00:00Z`))}`}
+										cochee={cochees.has(x.siren)}
+										onBasculer={() => basculer(x.siren)}
+										{...(x.connue ? { inerte: 'Déjà dans vos prospects' } : {})}
 									/>
 								))}
 							</ListeDeCartes>
@@ -448,13 +583,25 @@ export function ParcoursTrouver({
 									: ` ${nonDiffusibles} marché${pluriel(nonDiffusibles)} d’entrepreneurs non diffusibles écarté${pluriel(nonDiffusibles)}.`}
 							</p>
 						) : null}
-						{page < pages && recherche !== null ? (
+						{suiteEnCours ? (
+							<p className="flex items-center justify-center gap-2 px-1 text-cladd-2xs text-cladd-fg-soft">
+								<IconeDeTravail etat="EN_COURS" />
+								{t?.etape ?? 'La suite arrive'}
+							</p>
+						) : page < pages && recherche !== null ? (
 							<BoutonSecondaire
 								pleineLargeur
 								disabled={enCours}
-								onClick={() => void chercher(recherche, page + 1)}
+								onClick={() =>
+									void lancer(recherche, zone, page + 1, {
+										entreprises: trouvees,
+										titulaires,
+										nonDiffusibles,
+										pages
+									})
+								}
 							>
-								{enCours ? 'Recherche…' : 'Voir la suite'}
+								Voir la suite
 							</BoutonSecondaire>
 						) : null}
 						{pages > 1 ? (
@@ -465,19 +612,43 @@ export function ParcoursTrouver({
 					</section>
 				) : null}
 
-				{etape === 'resume' && resultat !== null ? (
+				{vue === 'echec' ? (
+					<p className="px-1 text-cladd-xs text-cladd-fg-soft">
+						{t?.erreur ?? 'Le travail s’est interrompu.'}
+					</p>
+				) : null}
+
+				{vue === 'bilan' && resultat?.genre === 'AJOUT' ? (
 					<div className="flex flex-col items-center gap-cladd-2xs py-cladd-xs text-center">
 						<NombreHero nombre={resultat.importes} surTitre="Prospects ajoutés" />
 						<p className="max-w-sm text-cladd-xs text-cladd-fg-soft">
-							{decp
-								? 'Ils attendent « À contacter » dans le parcours des fournisseurs publics, avec leur estimation et la commande publique pour source.'
-								: 'Ils attendent « À contacter », avec l’annuaire pour source. Sur chaque fiche, le lien vers le site de l’entreprise mène à son adresse.'}
+							Ils attendent « À contacter » dans le parcours des fournisseurs publics, avec leur
+							estimation et la commande publique pour source.
 							{resultat.ecartes <= 0
 								? ''
 								: ` ${resultat.ecartes} étai${resultat.ecartes > 1 ? 'en' : ''}t déjà connu${pluriel(resultat.ecartes)}.`}
-							{resultat.horsZone === undefined || resultat.horsZone === 0
+							{resultat.horsZone === 0
 								? ''
 								: ` ${resultat.horsZone} écarté${pluriel(resultat.horsZone)} : siège hors de la zone, ou entreprise absente de l’annuaire.`}
+						</p>
+						{resultat.echecs.length === 0 ? null : (
+							<p className="max-w-sm text-cladd-2xs text-cladd-fg-soft">
+								Les sources n’ont pas répondu pour {resultat.echecs.join(', ')}, même après trois
+								essais. Cherchez-les de nouveau un peu plus tard.
+							</p>
+						)}
+					</div>
+				) : null}
+
+				{vue === 'resume' && ajoutAnnuaire !== null ? (
+					<div className="flex flex-col items-center gap-cladd-2xs py-cladd-xs text-center">
+						<NombreHero nombre={ajoutAnnuaire.importes} surTitre="Prospects ajoutés" />
+						<p className="max-w-sm text-cladd-xs text-cladd-fg-soft">
+							Ils attendent « À contacter », avec l’annuaire pour source. Sur chaque fiche, le lien
+							vers le site de l’entreprise mène à son adresse.
+							{ajoutAnnuaire.ecartes <= 0
+								? ''
+								: ` ${ajoutAnnuaire.ecartes} étai${ajoutAnnuaire.ecartes > 1 ? 'en' : ''}t déjà connu${pluriel(ajoutAnnuaire.ecartes)}.`}
 						</p>
 					</div>
 				) : null}

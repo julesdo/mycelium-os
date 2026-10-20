@@ -37,7 +37,8 @@ import {
 	CalculatorIcon,
 	BriefcaseIcon,
 	HandshakeIcon,
-	NewspaperIcon
+	NewspaperIcon,
+	ListRestartIcon
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { RoleEquipe } from '../lib/admin/acces';
@@ -70,6 +71,7 @@ import { useMutation } from 'convex/react';
 import type { Id } from '../lib/convex/_generated/dataModel';
 import { bornesDuJourDeParis } from '../lib/admin/dates';
 import { useMinute } from '../ui/minute';
+import { PastilleDesTravaux } from '../ui/travaux';
 import { useQuery, useRequeteEphemere } from './donnees';
 import { usePlumeDit } from './parole-de-plume';
 import { usePreference } from './use-preference';
@@ -145,6 +147,19 @@ const TACHES: Destination = {
 };
 
 /**
+ * LA FILE D'ATTENTE (20/10/2026) : les recherches longues de la prospection, en arrière-plan.
+ * Le compte dit ce qui tourne et ce qui est prêt sans avoir été ouvert.
+ */
+const TRAVAUX: Destination = {
+	cle: 'travaux',
+	libelle: 'File d’attente',
+	vers: '/admin/travaux',
+	Icone: ListRestartIcon,
+	prefixes: ['/admin/travaux'],
+	compte: 'travaux'
+};
+
+/**
  * LE SUPPORT (16/10/2026, spec du service client § 6). « À vous » mène à la boîte ;
  * les autres entrées sont des vues de la même liste (`?vue=`).
  */
@@ -184,7 +199,7 @@ const GROUPES: readonly {
 	readonly fondateur?: boolean;
 	readonly destinations: readonly Destination[];
 }[] = [
-	{ cle: 'travail', destinations: [AUJOURDHUI, APPELS, TACHES] },
+	{ cle: 'travail', destinations: [AUJOURDHUI, APPELS, TACHES, TRAVAUX] },
 	{ cle: 'fiches', titre: 'Fiches', destinations: [COMPTES, PROSPECTS] },
 	{ cle: 'contenu', titre: 'Contenu', destinations: [BLOG] },
 	{
@@ -623,6 +638,16 @@ export function CoquilleAdmin({
 		Record<string, unknown>
 	>;
 	const compteurs = useQuery(api.admin.compteurs.compteurs, role === null ? 'skip' : {});
+	const travaux = useQuery(api.admin.travaux.fileDAttente, role === null ? 'skip' : {});
+	const travauxEnCours = (travaux ?? []).filter(
+		(t) => t.etat === 'EN_ATTENTE' || t.etat === 'EN_COURS'
+	).length;
+	const travauxPrets = (travaux ?? []).filter(
+		(t) => (t.etat === 'FAIT' || t.etat === 'ECHEC') && !t.vu
+	).length;
+	// La file et l'écran qui suit le travail le disent déjà : la pastille s'y tait.
+	const pastilleTue =
+		chemin.startsWith('/admin/travaux') || chemin.startsWith('/admin/prospects/trouver');
 
 	return (
 		<FournisseurDuTitreBureau value={emplacementDuTitre}>
@@ -643,6 +668,9 @@ export function CoquilleAdmin({
 					{role === null ? null : <HauteAdmin role={role} refTitre={setEmplacementDuTitre} />}
 					<main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
 				</div>
+				{role === null || pastilleTue ? null : (
+					<PastilleDesTravaux enCours={travauxEnCours} prets={travauxPrets} />
+				)}
 				{role === null || surUneFiche(chemin) ? null : (
 					<div className="lg:hidden">
 						<BarreDuBas

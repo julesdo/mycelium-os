@@ -38,7 +38,9 @@ export const compteurs = equipeQuery('LECTURE')({
 		supportAVous: v.number(),
 		supportOuvertes: v.number(),
 		supportEnAttente: v.number(),
-		supportPlume: v.number()
+		supportPlume: v.number(),
+		// La file des travaux (20/10/2026) : ce qui tourne, et ce qui est prêt sans avoir été ouvert.
+		travaux: v.number()
 	}),
 	handler: async (ctx) => {
 		const maintenant = Date.now();
@@ -63,6 +65,7 @@ export const compteurs = equipeQuery('LECTURE')({
 			).filter((c) => c.reserveeAuFondateur !== true || ctx.equipier.role === 'FONDATEUR');
 		const chezLEquipe = await conversations('A_NOUS');
 		const ouverts = prospects.filter((p) => !statutClos(p.statut));
+		const travaux = await ctx.db.query('travauxEquipe').withIndex('by_creeLe').order('desc').take(15);
 		const duParcours = (parcours: Parcours) =>
 			ouverts.filter((p) => parcoursDe(p) === parcours).length;
 
@@ -95,7 +98,10 @@ export const compteurs = equipeQuery('LECTURE')({
 			).length,
 			supportOuvertes: chezLEquipe.length,
 			supportEnAttente: (await conversations('EN_ATTENTE_CLIENT')).length,
-			supportPlume: (await conversations('PLUME')).length
+			supportPlume: (await conversations('PLUME')).length,
+			travaux: travaux.filter(
+				(t) => t.etat === 'EN_ATTENTE' || t.etat === 'EN_COURS' || !t.vu
+			).length
 		};
 	}
 });

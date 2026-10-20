@@ -157,6 +157,9 @@ crons.interval('support', { minutes: 15 }, internal.support.entretien.entretenir
 // La mesure du support, matérialisée d'heure en heure.
 crons.interval('mesureSupport', { hours: 1 }, internal.support.mesure.materialiser, {});
 
+// Les travaux de l'équipe restés muets dix minutes se closent : la file ne ment pas (20/10/2026).
+crons.interval('travauxMuets', { minutes: 10 }, internal.admin.travauxExecution.interrompre, {});
+
 export default crons;
 
 /*

@@ -697,7 +697,15 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   secteur, les PME de 3 à 49 salariés ; **le siège doit être dans la zone** (l'API retient une
   entreprise dès qu'un établissement y est), aucune date de naissance gardée, ni diffusion
   restreinte, ni association, ni commissaire aux comptes pris pour le dirigeant ; rien n'entre avant
-  « Ajouter ». **Écrire** (`crm/modeles.ts`, `crm/valeurs-loi.ts`) : la feuille « E-mail » d'un
+  « Ajouter ». **Depuis le 20/10, les recherches et les ajouts de fournisseurs tournent en
+  arrière-plan** (le fondateur : « on doit rester sur l'écran de chargement, c'est super chiant ») :
+  chacun est un TRAVAIL (`travauxEquipe`, `convex/admin/travaux.ts`) exécuté par le planificateur
+  (`travauxExecution.ts`, logique dans `admin/prospection.ts`), suivi en direct dans l'écran et dans la
+  **file d'attente** (`/admin/travaux`, une pastille flottante sur tout l'admin). Les sources publiques
+  hoquettent (la commande publique répond en 8 à 10 s et rend parfois 504) : chaque lecture se reprend
+  deux fois (`lectureHttp.ts`), un fournisseur qui échoue s'inscrit en échec sans arrêter le lot, un
+  ajout long se fait en passes de six minutes, et un travail muet dix minutes est clos (cron).
+  **Écrire** (`crm/modeles.ts`, `crm/valeurs-loi.ts`) : la feuille « E-mail » d'un
   prospect porte le modèle de son étape (premier, J+4, J+10), les chiffres de la loi lus au registre,
   la phrase personnelle entre crochets ; « Écrire » ouvre la messagerie de l'équipier — le CRM
   n'envoie rien — et « Je l'ai envoyé » pose la relance suivante (`historique.emailEcrit`).

@@ -37,6 +37,7 @@ import { Route as AdminAppelsRouteImport } from './routes/admin/appels'
 import { Route as AdminEquipeRouteImport } from './routes/admin/equipe'
 import { Route as AdminJournalRouteImport } from './routes/admin/journal'
 import { Route as AdminTachesRouteImport } from './routes/admin/taches'
+import { Route as AdminTravauxRouteImport } from './routes/admin/travaux'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
 import { Route as AppCoffreRouteImport } from './routes/app/coffre'
@@ -231,6 +232,11 @@ const AdminJournalRoute = AdminJournalRouteImport.update({
 const AdminTachesRoute = AdminTachesRouteImport.update({
   id: '/taches',
   path: '/taches',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTravauxRoute = AdminTravauxRouteImport.update({
+  id: '/travaux',
+  path: '/travaux',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -527,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
+  '/admin/travaux': typeof AdminTravauxRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -608,6 +615,7 @@ export interface FileRoutesByTo {
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
+  '/admin/travaux': typeof AdminTravauxRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -692,6 +700,7 @@ export interface FileRoutesById {
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
+  '/admin/travaux': typeof AdminTravauxRoute
   '/app/clients': typeof AppClientsRouteWithChildren
   '/app/coffre': typeof AppCoffreRoute
   '/app/compte': typeof AppCompteRoute
@@ -777,6 +786,7 @@ export interface FileRouteTypes {
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
+    | '/admin/travaux'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -858,6 +868,7 @@ export interface FileRouteTypes {
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
+    | '/admin/travaux'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -941,6 +952,7 @@ export interface FileRouteTypes {
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
+    | '/admin/travaux'
     | '/app/clients'
     | '/app/coffre'
     | '/app/compte'
@@ -1229,6 +1241,13 @@ declare module '@tanstack/react-router' {
       path: '/taches'
       fullPath: '/admin/taches'
       preLoaderRoute: typeof AdminTachesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/travaux': {
+      id: '/admin/travaux'
+      path: '/travaux'
+      fullPath: '/admin/travaux'
+      preLoaderRoute: typeof AdminTravauxRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/app/': {
@@ -1610,6 +1629,7 @@ interface AdminRouteRouteChildren {
   AdminEquipeRoute: typeof AdminEquipeRoute
   AdminJournalRoute: typeof AdminJournalRoute
   AdminTachesRoute: typeof AdminTachesRoute
+  AdminTravauxRoute: typeof AdminTravauxRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminBlogAdresseRoute: typeof AdminBlogAdresseRoute
   AdminBlogNouveauRoute: typeof AdminBlogNouveauRoute
@@ -1631,6 +1651,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminEquipeRoute: AdminEquipeRoute,
   AdminJournalRoute: AdminJournalRoute,
   AdminTachesRoute: AdminTachesRoute,
+  AdminTravauxRoute: AdminTravauxRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminBlogAdresseRoute: AdminBlogAdresseRoute,
   AdminBlogNouveauRoute: AdminBlogNouveauRoute,

@@ -18,9 +18,11 @@ import { ParcoursImport } from '../../screens/admin/import';
 import {
 	ParcoursTrouver,
 	type EntrepriseAffichee,
-	type PageDecpTrouvee
+	type TitulaireAffiche,
+	type TravailSuivi
 } from '../../screens/admin/trouver';
 import { EcranTaches } from '../../screens/admin/taches';
+import { EcranTravaux, type TravailDeLaFile } from '../../screens/admin/travaux';
 import { EcranAppels, type FileDAppels } from '../../screens/admin/appels';
 import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
 import { EcranJournal, type EntreeDuJournal } from '../../screens/admin/journal';
@@ -456,7 +458,7 @@ const TROUVEES_DEMO: readonly EntrepriseAffichee[] = [
 	}
 ];
 
-const TITULAIRES_DEMO: PageDecpTrouvee['titulaires'] = [
+const TITULAIRES_DEMO: readonly TitulaireAffiche[] = [
 	{
 		siren: '812698512',
 		siret: '81269851200041',
@@ -484,18 +486,75 @@ const TITULAIRES_DEMO: PageDecpTrouvee['titulaires'] = [
 ];
 
 function DemoTrouver() {
+	const [travail, setTravail] = useState<TravailSuivi | null>(null);
+	const [suivi, setSuivi] = useState<string | null>(null);
+	/** Un travail simulé : en cours tout de suite, fini une seconde et demie plus tard. */
+	function simuler(debut: TravailSuivi, resultat: TravailSuivi['resultat']): string {
+		setTravail(debut);
+		setTimeout(
+			() =>
+				setTravail({
+					...debut,
+					etat: 'FAIT',
+					...(resultat === undefined ? {} : { resultat }),
+					...(debut.total === undefined ? {} : { fait: debut.total })
+				}),
+			1500
+		);
+		return debut._id;
+	}
 	return (
 		<ParcoursTrouver
 			onFermer={RIEN}
-			onChercher={async () => ({ pages: 90, derniere: 1, entreprises: TROUVEES_DEMO })}
+			travail={suivi === null ? null : travail}
+			suivi={suivi}
+			onSuivre={setSuivi}
+			onLancerRecherche={async (r, zone, page) =>
+				r.source === 'ANNUAIRE'
+					? simuler(
+							{
+								_id: `demo-${page}-${r.secteur}`,
+								genre: 'CHERCHER_ANNUAIRE',
+								criteres: { secteur: r.secteur, zone, page },
+								etat: 'EN_COURS',
+								etape: `Page ${page} de l’annuaire`
+							},
+							{ genre: 'ANNUAIRE', pages: 90, derniere: page, entreprises: TROUVEES_DEMO }
+						)
+					: simuler(
+							{
+								_id: `demo-${page}-${r.acheteurs}`,
+								genre: 'CHERCHER_DECP',
+								criteres: { acheteurs: r.acheteurs, zone, page },
+								etat: 'EN_COURS',
+								etape: `Page ${page} de la commande publique`,
+								fait: 1,
+								total: 3
+							},
+							{
+								genre: 'DECP',
+								pages: 32,
+								derniere: page + 2,
+								nonDiffusibles: 2,
+								titulaires: TITULAIRES_DEMO
+							}
+						)
+			}
 			onAjouter={async (_s, _z, e) => ({ importes: e.length, ecartes: 0 })}
-			onChercherDecp={async () => ({
-				pages: 32,
-				derniere: 3,
-				nonDiffusibles: 2,
-				titulaires: TITULAIRES_DEMO
-			})}
-			onAjouterDecp={async (_a, _z, t) => ({ importes: t.length, ecartes: 0, horsZone: 0 })}
+			onLancerAjoutDecp={async (acheteurs, zone, t) =>
+				simuler(
+					{
+						_id: 'demo-ajout',
+						genre: 'AJOUTER_DECP',
+						criteres: { acheteurs, zone, page: 1 },
+						etat: 'EN_COURS',
+						etape: `${t[0]?.nom ?? 'Un fournisseur'} : ses marchés et son estimation`,
+						fait: 0,
+						total: t.length
+					},
+					{ genre: 'AJOUT', importes: t.length, ecartes: 0, horsZone: 0, echecs: [] }
+				)
+			}
 		/>
 	);
 }
@@ -560,6 +619,66 @@ function DemoAppels({ etat }: { etat: EtatDemo }) {
 			maintenant={MAINTENANT}
 			appelant="Jules"
 			onNoter={RIEN_ASYNC}
+		/>
+	);
+}
+
+/** La file d'attente : une recherche qui tourne, un ajout aux deux tiers, deux résultats prêts. */
+const TRAVAUX_DEMO: readonly TravailDeLaFile[] = [
+	{
+		_id: 't1',
+		genre: 'CHERCHER_DECP',
+		libelle: 'Fournisseurs d’hôpitaux · Petite couronne',
+		etat: 'EN_COURS',
+		etape: 'Page 2 de la commande publique',
+		fait: 1,
+		total: 3,
+		par: 'jules@letikette.com',
+		vu: false,
+		creeLe: MAINTENANT - 60_000
+	},
+	{
+		_id: 't2',
+		genre: 'AJOUTER_DECP',
+		libelle: 'Ajouter 12 fournisseurs · Fournisseurs de collectivités',
+		etat: 'EN_COURS',
+		etape: 'NETTOYAGE DU VAL : ses marchés et son estimation',
+		fait: 8,
+		total: 12,
+		par: 'jules@letikette.com',
+		vu: false,
+		creeLe: MAINTENANT - 5 * 60_000
+	},
+	{
+		_id: 't3',
+		genre: 'CHERCHER_ANNUAIRE',
+		libelle: 'Transport routier · Paris',
+		etat: 'FAIT',
+		nombre: 18,
+		par: 'jules@letikette.com',
+		vu: false,
+		creeLe: MAINTENANT - 40 * 60_000,
+		finiLe: MAINTENANT - 39 * 60_000
+	},
+	{
+		_id: 't4',
+		genre: 'CHERCHER_DECP',
+		libelle: 'Fournisseurs de collectivités · Île-de-France',
+		etat: 'ECHEC',
+		erreur: 'Les données de la commande publique sont surchargées (erreur 504).',
+		par: 'jules@letikette.com',
+		vu: true,
+		creeLe: MAINTENANT - 3 * 3_600_000,
+		finiLe: MAINTENANT - 3 * 3_600_000
+	}
+];
+
+function DemoTravaux({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranTravaux
+			lecture={lectureDemo(etat, TRAVAUX_DEMO, [])}
+			onOuvrir={RIEN}
+			onRetirerLesFinis={RIEN}
 		/>
 	);
 }
@@ -685,7 +804,8 @@ function DemoBarreLaterale({ variante }: { etat: EtatDemo; variante?: string }) 
 					supportAVous: 2,
 					supportOuvertes: 3,
 					supportEnAttente: 4,
-					supportPlume: 1
+					supportPlume: 1,
+					travaux: 2
 				}}
 				reduite={reduite}
 				onBasculer={() => setReduite(!reduite)}
@@ -743,6 +863,7 @@ export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
 	},
 	{ route: '/admin/appels', libelle: 'admin · appels du jour', vide: true, Demo: DemoAppels },
 	{ route: '/admin/taches', libelle: 'admin · tâches', vide: true, Demo: DemoTaches },
+	{ route: '/admin/travaux', libelle: 'admin · file d’attente', vide: true, Demo: DemoTravaux },
 	{ route: '/admin/equipe', libelle: 'admin · équipe', vide: false, Demo: DemoEquipe },
 	{ route: '/admin/journal', libelle: 'admin · journal', vide: true, Demo: DemoJournal }
 ];

@@ -1,19 +1,8 @@
-import { v, ConvexError, type Infer } from 'convex/values';
-import { internal } from '../_generated/api';
-import {
-	adresseDeRecherche,
-	lireReponseDeLAnnuaire,
-	type EntrepriseTrouvee,
-	type PageDeLAnnuaire,
-	SECTEURS,
-	versProspect,
-	ZONES,
-	type CleSecteur,
-	type CleZone
-} from '../../crm/annuaire';
-import { equipeAction } from './action';
+import { v, ConvexError } from 'convex/values';
+import { SECTEURS, versProspect, ZONES, type CleSecteur } from '../../crm/annuaire';
 import { equipeMutation, noterAuJournal } from './enveloppe';
 import { naissanceDuProspect } from './prospects';
+import { vEntrepriseTrouvee, vSecteur, vZone } from './validateursProspection';
 import type { Parcours } from '../../crm/parcours';
 
 /** Le parcours de prospection de chaque secteur cherché à l'annuaire. */
@@ -27,114 +16,13 @@ const PARCOURS_DU_SECTEUR: Readonly<Record<CleSecteur, Parcours>> = {
 /**
  * TROUVER DES ENTREPRISES À L'ANNUAIRE, PUIS LES AJOUTER (17/10/2026).
  *
- * `chercher` lit une page de l'API Recherche d'entreprises (logique pure dans
- * `crm/annuaire.ts`) et dit, pour chaque entreprise, si elle est déjà au CRM.
- * `ajouter` écrit celles que l'équipe a cochées, en revérifiant les doublons par
+ * La recherche tourne en arrière-plan, dans les travaux de l'équipe (`travaux.ts`,
+ * `prospection.ts`). `ajouter` écrit celles que l'équipe a cochées, en revérifiant les doublons par
  * SIREN au moment même, et inscrit l'ajout dans l'historique des imports.
  */
 
-const vSecteur = v.union(
-	v.literal('TRANSPORT'),
-	v.literal('BATIMENT'),
-	v.literal('SERVICES'),
-	v.literal('CABINETS')
-);
-const vZone = v.union(v.literal('PARIS'), v.literal('PETITE_COURONNE'), v.literal('ILE_DE_FRANCE'));
-// Les validateurs suivent les clés du module pur : un secteur ajouté là casse ici.
-const _secteurs: Record<CleSecteur, Infer<typeof vSecteur>> = {
-	TRANSPORT: 'TRANSPORT',
-	BATIMENT: 'BATIMENT',
-	SERVICES: 'SERVICES',
-	CABINETS: 'CABINETS'
-};
-const _zones: Record<CleZone, Infer<typeof vZone>> = {
-	PARIS: 'PARIS',
-	PETITE_COURONNE: 'PETITE_COURONNE',
-	ILE_DE_FRANCE: 'ILE_DE_FRANCE'
-};
-void _secteurs;
-void _zones;
-
-const vEntrepriseTrouvee = v.object({
-	siren: v.string(),
-	entreprise: v.string(),
-	activite: v.optional(v.string()),
-	effectif: v.optional(v.string()),
-	ville: v.optional(v.string()),
-	dirigeant: v.optional(v.string()),
-	fonction: v.optional(v.string())
-});
-
 /** Une page cochée entière, quatre fois : au-delà, on ajoute en plusieurs fois. */
 const AJOUT_MAX = 100;
-
-/** Une page de l'annuaire ne garde parfois que huit sièges dans la zone : on enchaîne. */
-const SIEGES_VISES = 15;
-const PAGES_PAR_APPEL = 3;
-
-async function lirePage(
-	secteur: CleSecteur,
-	zone: CleZone,
-	page: number
-): Promise<PageDeLAnnuaire> {
-	let reponse: Response;
-	try {
-		reponse = await fetch(adresseDeRecherche({ secteur, zone, page }), {
-			headers: { accept: 'application/json' },
-			signal: AbortSignal.timeout(10_000)
-		});
-	} catch {
-		throw new ConvexError('L’annuaire ne répond pas. Réessayez dans un instant.');
-	}
-	if (reponse.status === 429) {
-		throw new ConvexError('L’annuaire demande de ralentir. Réessayez dans quelques secondes.');
-	}
-	if (!reponse.ok) {
-		throw new ConvexError(`L’annuaire a refusé la recherche (erreur ${reponse.status}).`);
-	}
-	try {
-		return lireReponseDeLAnnuaire(await reponse.json(), ZONES[zone].departements);
-	} catch {
-		throw new ConvexError('L’annuaire a rendu une réponse inattendue.');
-	}
-}
-
-type EntrepriseMarquee = EntrepriseTrouvee & { connue: boolean };
-
-export const chercher = equipeAction('SUPPORT')({
-	args: { secteur: vSecteur, zone: vZone, page: v.number() },
-	returns: v.object({
-		pages: v.number(),
-		/** La dernière page lue : « Voir la suite » repart de la suivante. */
-		derniere: v.number(),
-		entreprises: v.array(v.object({ ...vEntrepriseTrouvee.fields, connue: v.boolean() }))
-	}),
-	handler: async (
-		ctx,
-		{ secteur, zone, page }
-	): Promise<{ pages: number; derniere: number; entreprises: EntrepriseMarquee[] }> => {
-		const trouvees: EntrepriseTrouvee[] = [];
-		let pages = 1;
-		let derniere = Math.max(1, Math.trunc(page));
-		for (let lues = 0; lues < PAGES_PAR_APPEL; lues += 1) {
-			const lue = await lirePage(secteur, zone, derniere);
-			pages = lue.pages;
-			trouvees.push(...lue.entreprises);
-			if (trouvees.length >= SIEGES_VISES || derniere >= pages) break;
-			derniere += 1;
-		}
-		const connus = new Set(
-			await ctx.runQuery(internal.admin.annuaireLecture.sirensConnus, {
-				sirens: trouvees.map((e) => e.siren)
-			})
-		);
-		return {
-			pages,
-			derniere,
-			entreprises: trouvees.map((e) => ({ ...e, connue: connus.has(e.siren) }))
-		};
-	}
-});
 
 export const ajouter = equipeMutation('SUPPORT')({
 	args: { secteur: vSecteur, zone: vZone, entreprises: v.array(vEntrepriseTrouvee) },

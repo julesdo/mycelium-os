@@ -1,5 +1,14 @@
 import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import {
+	vAcheteurs,
+	vEtatDeTravail,
+	vGenreDeTravail,
+	vResultatDeTravail,
+	vSecteur,
+	vTitulaireTrouve,
+	vZone
+} from './validateursProspection';
 
 /**
  * LES TABLES DE L'ADMIN (16/10/2026).
@@ -266,5 +275,44 @@ export const crmTables = {
 		oppositions: v.number(),
 		par: v.string(),
 		le: v.number()
-	}).index('by_le', ['le'])
+	}).index('by_le', ['le']),
+
+	/**
+	 * LES TRAVAUX DE L'ÉQUIPE EN ARRIÈRE-PLAN (20/10/2026). Le fondateur : « pourquoi elles ne
+	 * se font pas en arrière-plan ? On doit rester sur l'écran de chargement ». Une recherche
+	 * dans la commande publique ou à l'annuaire, un ajout de fournisseurs : chacun devient un
+	 * travail, lancé d'un toucher, exécuté par le planificateur, suivi en direct dans la file
+	 * de l'admin, et son résultat attend qu'on revienne. Données de Letikette, sans établissement.
+	 */
+	travauxEquipe: defineTable({
+		genre: vGenreDeTravail,
+		libelle: v.string(),
+		criteres: v.object({
+			secteur: v.optional(vSecteur),
+			acheteurs: v.optional(vAcheteurs),
+			zone: vZone,
+			page: v.number()
+		}),
+		/** Les fournisseurs à ajouter, pour un ajout. */
+		titulaires: v.optional(v.array(vTitulaireTrouve)),
+		etat: vEtatDeTravail,
+		/** Ce que fait le travail en ce moment : « Page 2 de la commande publique ». */
+		etape: v.optional(v.string()),
+		fait: v.optional(v.number()),
+		total: v.optional(v.number()),
+		/** L'import où un ajout écrit, passe après passe. */
+		importId: v.optional(v.id('importsProspects')),
+		resultat: v.optional(vResultatDeTravail),
+		erreur: v.optional(v.string()),
+		par: v.string(),
+		/** Le résultat a été ouvert : la file ne le signale plus. */
+		vu: v.boolean(),
+		creeLe: v.number(),
+		commenceLe: v.optional(v.number()),
+		/** La dernière fois que le travail a écrit : muet dix minutes, il est clos. */
+		majLe: v.optional(v.number()),
+		finiLe: v.optional(v.number())
+	})
+		.index('by_creeLe', ['creeLe'])
+		.index('by_etat', ['etat'])
 };
