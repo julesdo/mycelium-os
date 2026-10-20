@@ -59,14 +59,19 @@ async function sirensConnus(ctx: ActionCtx, sirens: readonly string[]): Promise<
 
 export async function chercherALAnnuaire(
 	ctx: ActionCtx,
-	{ secteur, zone, page }: { secteur: CleSecteur; zone: CleZone; page: number },
+	{
+		secteur,
+		zone,
+		page,
+		pagesMax = PAGES_ANNUAIRE
+	}: { secteur: CleSecteur; zone: CleZone; page: number; pagesMax?: number },
 	suivi: Suivi
 ): Promise<Extract<ResultatDeTravail, { genre: 'ANNUAIRE' }>> {
 	const trouvees: EntrepriseTrouvee[] = [];
 	let pages = 1;
 	let derniere = Math.max(1, Math.trunc(page));
-	for (let lues = 0; lues < PAGES_ANNUAIRE; lues += 1) {
-		await suivi(`Page ${derniere} de l’annuaire`, lues, PAGES_ANNUAIRE);
+	for (let lues = 0; lues < pagesMax; lues += 1) {
+		await suivi(`Page ${derniere} de l’annuaire`, lues, pagesMax);
 		let lue;
 		try {
 			lue = lireReponseDeLAnnuaire(
@@ -102,16 +107,17 @@ export async function chercherDansLaCommandePublique(
 		acheteurs,
 		zone,
 		page,
-		jour
-	}: { acheteurs: CleAcheteurs; zone: CleZone; page: number; jour: string },
+		jour,
+		pagesMax = PAGES_DECP
+	}: { acheteurs: CleAcheteurs; zone: CleZone; page: number; jour: string; pagesMax?: number },
 	suivi: Suivi
 ): Promise<Extract<ResultatDeTravail, { genre: 'DECP' }>> {
 	const lignes: LigneDecp[] = [];
 	let pages = 1;
 	let nonDiffusibles = 0;
 	let derniere = Math.max(1, Math.trunc(page));
-	for (let lues = 0; lues < PAGES_DECP; lues += 1) {
-		await suivi(`Page ${derniere} de la commande publique`, lues, PAGES_DECP);
+	for (let lues = 0; lues < pagesMax; lues += 1) {
+		await suivi(`Page ${derniere} de la commande publique`, lues, pagesMax);
 		let lue;
 		try {
 			lue = lirePageDecp(
@@ -124,7 +130,7 @@ export async function chercherDansLaCommandePublique(
 		pages = lue.pages;
 		nonDiffusibles += lue.nonDiffusibles;
 		lignes.push(...lue.lignes);
-		if (derniere >= pages || lues === PAGES_DECP - 1) break;
+		if (derniere >= pages || lues === pagesMax - 1) break;
 		derniere += 1;
 	}
 	const titulaires = regrouperParTitulaire(lignes).slice(0, 75);

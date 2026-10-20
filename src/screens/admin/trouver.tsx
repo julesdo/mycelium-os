@@ -136,7 +136,7 @@ export type Recherche =
 /** Ce qu'un travail de l'équipe rend à l'écran : son état en direct, puis son résultat. */
 export interface TravailSuivi {
 	readonly _id: string;
-	readonly genre: 'CHERCHER_ANNUAIRE' | 'CHERCHER_DECP' | 'AJOUTER_DECP';
+	readonly genre: 'CHERCHER_ANNUAIRE' | 'CHERCHER_DECP' | 'AJOUTER_DECP' | 'PROSPECTS_DU_JOUR';
 	readonly criteres: {
 		readonly secteur?: CleSecteur;
 		readonly acheteurs?: CleAcheteurs;
@@ -167,6 +167,18 @@ export interface TravailSuivi {
 				readonly importes: number;
 				readonly ecartes: number;
 				readonly horsZone: number;
+				readonly echecs: readonly string[];
+		  }
+		| {
+				readonly genre: 'SELECTION';
+				readonly examines: number;
+				readonly parPlume: boolean;
+				readonly ajoutes: readonly {
+					readonly siren: string;
+					readonly entreprise: string;
+					readonly segment: string;
+					readonly pourquoi: string;
+				}[];
 				readonly echecs: readonly string[];
 		  };
 }
@@ -253,7 +265,7 @@ export function ParcoursTrouver({
 				: travail === null
 					? 'introuvable'
 					: travail.etat === 'FAIT'
-						? travail.genre === 'AJOUTER_DECP'
+						? travail.genre === 'AJOUTER_DECP' || travail.genre === 'PROSPECTS_DU_JOUR'
 							? 'bilan'
 							: 'resultats'
 						: travail.etat === 'ECHEC'
@@ -637,6 +649,22 @@ export function ParcoursTrouver({
 								essais. Cherchez-les de nouveau un peu plus tard.
 							</p>
 						)}
+					</div>
+				) : null}
+
+				{vue === 'bilan' && resultat?.genre === 'SELECTION' ? (
+					<div className="flex flex-col gap-cladd-2xs py-cladd-xs">
+						<NombreHero nombre={resultat.ajoutes.length} surTitre="Prospects choisis par Plume" />
+						<ul className="flex flex-col gap-cladd-3xs px-1">
+							{resultat.ajoutes.map((p) => (
+								<li key={p.siren} className="flex flex-col">
+									<span className="text-cladd-xs font-medium">{p.entreprise}</span>
+									<span className="text-cladd-2xs text-cladd-fg-soft">
+										{p.segment} · {p.pourquoi}
+									</span>
+								</li>
+							))}
+						</ul>
 					</div>
 				) : null}
 

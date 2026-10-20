@@ -1,4 +1,11 @@
-import { CheckIcon, CircleAlertIcon, HourglassIcon, LoaderCircleIcon } from 'lucide-react';
+import { Segmented, SegmentedButton, Switch } from '@cladd-ui/react';
+import {
+	CheckIcon,
+	CircleAlertIcon,
+	HourglassIcon,
+	LoaderCircleIcon,
+	SparklesIcon
+} from 'lucide-react';
 import { cn } from './cn';
 import { Lien } from './lien';
 
@@ -86,5 +93,110 @@ export function PastilleDesTravaux({
 				</span>
 			) : null}
 		</Lien>
+	);
+}
+
+export interface ProspectChoisi {
+	readonly siren: string;
+	readonly entreprise: string;
+	readonly segment: string;
+	readonly pourquoi: string;
+}
+
+/**
+ * PLUME, CHAQUE MATIN (20/10/2026) : le réglage des prospects du jour et le dernier choix,
+ * chaque entreprise avec la phrase de Plume qui dit pourquoi. Éteint tant qu'un fondateur ne
+ * l'allume pas.
+ */
+export function CartePlumeDuMatin({
+	actif,
+	parJour,
+	explication,
+	peutRegler,
+	onRegler,
+	onLancer,
+	enCours,
+	dernier
+}: {
+	readonly actif: boolean;
+	readonly parJour: number;
+	readonly explication: string;
+	readonly peutRegler: boolean;
+	readonly onRegler: (actif: boolean, parJour: number) => void;
+	/** Absent : l'équipier ne peut pas lancer. */
+	readonly onLancer?: () => void;
+	readonly enCours: boolean;
+	readonly dernier: {
+		readonly quand: string;
+		readonly parPlume: boolean;
+		readonly examines: number;
+		readonly ajoutes: readonly ProspectChoisi[];
+	} | null;
+}) {
+	return (
+		<section className="verre-carte flex flex-col gap-cladd-2xs rounded-cladd-xl p-cladd-xs">
+			<div className="flex items-start justify-between gap-cladd-2xs">
+				<span className="flex flex-col gap-0.5">
+					<span className="text-cladd-xs font-semibold">Plume, chaque matin</span>
+					<span className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{explication}</span>
+				</span>
+				<Switch
+					checked={actif}
+					onChange={(oui: boolean) => onRegler(oui, parJour)}
+					disabled={!peutRegler}
+					aria-label="Plume ajoute des prospects chaque matin"
+				/>
+			</div>
+			<div className="flex flex-wrap items-center justify-between gap-cladd-2xs">
+				<Segmented
+					activeColor="brand"
+					activeVariant="solid-fill"
+					aria-label="Prospects par jour"
+					disabled={!peutRegler}
+				>
+					{[5, 10, 20].map((n) => (
+						<SegmentedButton key={n} active={parJour === n} onClick={() => onRegler(actif, n)}>
+							{n} par jour
+						</SegmentedButton>
+					))}
+				</Segmented>
+				{onLancer === undefined ? null : (
+					<button
+						type="button"
+						onClick={onLancer}
+						disabled={enCours}
+						className="flex h-9 items-center gap-1.5 rounded-full px-3 text-cladd-2xs font-medium hover:bg-cladd-surface-minus disabled:opacity-50"
+					>
+						{enCours ? (
+							<LoaderCircleIcon aria-hidden className="size-4 animate-spin" />
+						) : (
+							<SparklesIcon aria-hidden className="size-4" />
+						)}
+						{enCours ? 'Plume cherche…' : 'Chercher maintenant'}
+					</button>
+				)}
+			</div>
+			{dernier === null ? null : (
+				<div className="flex flex-col gap-1.5 border-t border-cladd-outline pt-cladd-2xs">
+					<span className="text-cladd-3xs text-cladd-fg-soft">
+						{dernier.quand} : {dernier.ajoutes.length} ajouté{dernier.ajoutes.length > 1 ? 's' : ''}{' '}
+						sur {dernier.examines} entreprise{dernier.examines > 1 ? 's' : ''} neuve
+						{dernier.examines > 1 ? 's' : ''},{' '}
+						{dernier.parPlume ? 'classées par Plume' : 'classées par les règles (Plume indisponible)'}.
+					</span>
+					<ul className="flex flex-col gap-1.5">
+						{dernier.ajoutes.map((p) => (
+							<li key={p.siren} className="flex flex-col">
+								<span className="text-cladd-2xs font-medium">
+									{p.entreprise}
+									<span className="font-normal text-cladd-fg-soft"> · {p.segment}</span>
+								</span>
+								<span className="text-cladd-3xs leading-relaxed text-cladd-fg-soft">{p.pourquoi}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+		</section>
 	);
 }

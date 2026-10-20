@@ -98,6 +98,8 @@ export const noter = internalMutation({
 });
 
 type Note = { [K in keyof typeof vNote]?: Infer<(typeof vNote)[K]> };
+/** Ce qu'un travail écrit de lui-même : son étape, son avancement, son résultat. */
+export type NoteDeTravail = Note;
 type BilanDAjout = Extract<ResultatDeTravail, { genre: 'AJOUT' }>;
 
 function messageDe(e: unknown): string {
@@ -111,6 +113,8 @@ export const executer = internalAction({
 	handler: async (ctx, { id }): Promise<null> => {
 		const t = await ctx.runQuery(internal.admin.travauxExecution.lire, { id });
 		if (t === null || t.etat === 'FAIT' || t.etat === 'ECHEC') return null;
+		// Le choix du matin de Plume a son exécution (`prospectsDuJourExecution.ts`).
+		if (t.genre === 'PROSPECTS_DU_JOUR') return null;
 		const debut = Date.now();
 		const noter = async (note: Note): Promise<void> => {
 			await ctx.runMutation(internal.admin.travauxExecution.noter, { id, ...note });

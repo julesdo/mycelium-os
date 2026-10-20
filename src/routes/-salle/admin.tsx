@@ -650,6 +650,17 @@ const TRAVAUX_DEMO: readonly TravailDeLaFile[] = [
 		creeLe: MAINTENANT - 5 * 60_000
 	},
 	{
+		_id: 't5',
+		genre: 'PROSPECTS_DU_JOUR',
+		libelle: 'Prospects du jour · Plume · Petite couronne',
+		etat: 'FAIT',
+		nombre: 10,
+		par: 'Plume',
+		vu: false,
+		creeLe: MAINTENANT - 3 * 3_600_000,
+		finiLe: MAINTENANT - 3 * 3_600_000 + 300_000
+	},
+	{
 		_id: 't3',
 		genre: 'CHERCHER_ANNUAIRE',
 		libelle: 'Transport routier · Paris',
@@ -679,6 +690,37 @@ function DemoTravaux({ etat }: { etat: EtatDemo }) {
 			lecture={lectureDemo(etat, TRAVAUX_DEMO, [])}
 			onOuvrir={RIEN}
 			onRetirerLesFinis={RIEN}
+			plume={{
+				actif: true,
+				parJour: 10,
+				explication:
+					'Chaque matin, Plume regarde les entreprises neuves (fournisseurs d’hôpitaux, fournisseurs de collectivités, transport routier ; Paris et petite couronne), garde les 10 plus prometteuses et les ajoute à vos prospects, chacune avec la raison de son choix.',
+				peutRegler: true,
+				onRegler: RIEN,
+				onLancer: RIEN,
+				enCours: false,
+				dernier: {
+					quand: 'mardi 20 octobre à 7:31',
+					parPlume: true,
+					examines: 46,
+					ajoutes: [
+						{
+							siren: '812698512',
+							entreprise: 'NETTOYAGE DU VAL',
+							segment: 'Fournisseurs d’hôpitaux',
+							pourquoi:
+								'Sept marchés avec trois hôpitaux, le dernier en septembre : beaucoup de factures publiques à surveiller.'
+						},
+						{
+							siren: '423456781',
+							entreprise: 'TRANSPORTS DU CANAL',
+							segment: 'Transport routier',
+							pourquoi:
+								'Transporteur de vingt salariés au moins, à Pantin : une date limite pour agir courte sur ses factures.'
+						}
+					]
+				}
+			}}
 		/>
 	);
 }

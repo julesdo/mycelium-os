@@ -6,7 +6,7 @@ import { vEntrepriseTrouvee, vSecteur, vZone } from './validateursProspection';
 import type { Parcours } from '../../crm/parcours';
 
 /** Le parcours de prospection de chaque secteur cherché à l'annuaire. */
-const PARCOURS_DU_SECTEUR: Readonly<Record<CleSecteur, Parcours>> = {
+export const PARCOURS_DU_SECTEUR: Readonly<Record<CleSecteur, Parcours>> = {
 	TRANSPORT: 'TRANSPORTEUR',
 	BATIMENT: 'PME_LOGICIEL',
 	SERVICES: 'PME_LOGICIEL',

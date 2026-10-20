@@ -63,7 +63,13 @@ export const vTitulaireTrouve = v.object({
 	dernierMarche: v.string()
 });
 
-/** Ce que rend un travail fini : une page de recherche, ou le bilan d'un ajout. */
+/** Un segment que Plume parcourt chaque matin : un secteur à l'annuaire, des acheteurs publics. */
+export const vSegment = v.union(
+	v.object({ source: v.literal('ANNUAIRE'), secteur: vSecteur }),
+	v.object({ source: v.literal('DECP'), acheteurs: vAcheteurs })
+);
+
+/** Ce que rend un travail fini : une page de recherche, le bilan d'un ajout, ou le choix de Plume. */
 export const vResultatDeTravail = v.union(
 	v.object({
 		genre: v.literal('ANNUAIRE'),
@@ -85,13 +91,30 @@ export const vResultatDeTravail = v.union(
 		horsZone: v.number(),
 		/** Les fournisseurs que les sources n'ont pas servis, même après reprises. */
 		echecs: v.array(v.string())
+	}),
+	v.object({
+		genre: v.literal('SELECTION'),
+		/** Combien d'entreprises neuves Plume a regardées. */
+		examines: v.number(),
+		/** Plume a classé ; sinon, les règles seules (clé absente, appel tombé). */
+		parPlume: v.boolean(),
+		ajoutes: v.array(
+			v.object({
+				siren: v.string(),
+				entreprise: v.string(),
+				segment: v.string(),
+				pourquoi: v.string()
+			})
+		),
+		echecs: v.array(v.string())
 	})
 );
 
 export const vGenreDeTravail = v.union(
 	v.literal('CHERCHER_ANNUAIRE'),
 	v.literal('CHERCHER_DECP'),
-	v.literal('AJOUTER_DECP')
+	v.literal('AJOUTER_DECP'),
+	v.literal('PROSPECTS_DU_JOUR')
 );
 
 export const vEtatDeTravail = v.union(

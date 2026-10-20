@@ -51,6 +51,7 @@ function nombreDe(travail: Doc<'travauxEquipe'>): number | undefined {
 	if (r === undefined) return undefined;
 	if (r.genre === 'ANNUAIRE') return r.entreprises.length;
 	if (r.genre === 'DECP') return r.titulaires.length;
+	if (r.genre === 'SELECTION') return r.ajoutes.length;
 	return r.importes;
 }
 

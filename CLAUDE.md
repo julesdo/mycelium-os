@@ -705,6 +705,12 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   hoquettent (la commande publique répond en 8 à 10 s et rend parfois 504) : chaque lecture se reprend
   deux fois (`lectureHttp.ts`), un fournisseur qui échoue s'inscrit en échec sans arrêter le lot, un
   ajout long se fait en passes de six minutes, et un travail muet dix minutes est clos (cron).
+  **Plume choisit les prospects du jour** (même jour, `crm/prospects-du-jour.ts`,
+  `admin/prospectsDuJour*.ts`) : allumé par un fondateur dans la file d'attente, il parcourt chaque
+  matin (5 h 30 UTC) une page par segment là où il s'était arrêté, écarte ce qui est déjà au CRM, note
+  le reste par des règles nommées, demande au modèle de classer les quarante meilleures avec une phrase
+  tirée des seuls faits de la ligne (aucune donnée personnelle ne part), et ajoute les N premières,
+  chacune avec sa raison dans ses notes. Sans le modèle, les règles choisissent seules, et le disent.
   **Écrire** (`crm/modeles.ts`, `crm/valeurs-loi.ts`) : la feuille « E-mail » d'un
   prospect porte le modèle de son étape (premier, J+4, J+10), les chiffres de la loi lus au registre,
   la phrase personnelle entre crochets ; « Écrire » ouvre la messagerie de l'équipier — le CRM

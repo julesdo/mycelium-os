@@ -160,6 +160,14 @@ crons.interval('mesureSupport', { hours: 1 }, internal.support.mesure.materialis
 // Les travaux de l'équipe restés muets dix minutes se closent : la file ne ment pas (20/10/2026).
 crons.interval('travauxMuets', { minutes: 10 }, internal.admin.travauxExecution.interrompre, {});
 
+// Plume choisit les prospects du jour à 5 h 30 UTC (7 h 30 à Paris l'été), s'il est allumé (20/10/2026).
+crons.daily(
+	'prospectsDuJour',
+	{ hourUTC: 5, minuteUTC: 30 },
+	internal.admin.prospectsDuJour.lancerDuJour,
+	{}
+);
+
 export default crons;
 
 /*

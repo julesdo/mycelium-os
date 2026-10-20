@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import {
 	BoutonTexte,
 	CarteLien,
@@ -7,7 +8,12 @@ import {
 	pluriel,
 	type Lecture
 } from '../../ui';
-import { BarreDAvancement, IconeDeTravail, type EtatAffiche } from '../../ui/travaux';
+import {
+	BarreDAvancement,
+	CartePlumeDuMatin,
+	IconeDeTravail,
+	type EtatAffiche
+} from '../../ui/travaux';
 
 /**
  * LA FILE DES TRAVAUX DE L'ÉQUIPE (20/10/2026). Le fondateur : « pourquoi elles ne se font
@@ -20,7 +26,7 @@ import { BarreDAvancement, IconeDeTravail, type EtatAffiche } from '../../ui/tra
 
 export interface TravailDeLaFile {
 	readonly _id: string;
-	readonly genre: 'CHERCHER_ANNUAIRE' | 'CHERCHER_DECP' | 'AJOUTER_DECP';
+	readonly genre: 'CHERCHER_ANNUAIRE' | 'CHERCHER_DECP' | 'AJOUTER_DECP' | 'PROSPECTS_DU_JOUR';
 	readonly libelle: string;
 	readonly etat: EtatAffiche;
 	readonly etape?: string;
@@ -47,6 +53,7 @@ function ligneDe(t: TravailDeLaFile): string {
 	if (t.etat === 'EN_COURS') return t.etape ?? 'En cours';
 	if (t.etat === 'ECHEC') return 'Arrêté, à relancer';
 	const n = t.nombre ?? 0;
+	if (t.genre === 'PROSPECTS_DU_JOUR') return `${n} prospect${pluriel(n)} choisi${pluriel(n)} par Plume`;
 	return t.genre === 'AJOUTER_DECP'
 		? `${n} prospect${pluriel(n)} ajouté${pluriel(n)}`
 		: `${n} résultat${pluriel(n)} à cocher`;
@@ -69,7 +76,8 @@ function CarteDeTravail({
 		...(travail.etat === 'ECHEC' ? { attention: true } : {})
 	};
 	const vers =
-		travail.genre === 'AJOUTER_DECP' && travail.etat === 'FAIT'
+		(travail.genre === 'AJOUTER_DECP' || travail.genre === 'PROSPECTS_DU_JOUR') &&
+		travail.etat === 'FAIT'
 			? ('/admin/prospects' as const)
 			: ('/admin/prospects/trouver' as const);
 	return (
@@ -92,17 +100,20 @@ function CarteDeTravail({
 export function EcranTravaux({
 	lecture,
 	onOuvrir,
-	onRetirerLesFinis
+	onRetirerLesFinis,
+	plume
 }: {
 	readonly lecture: Lecture<readonly TravailDeLaFile[]>;
 	readonly onOuvrir: (id: string) => void;
 	readonly onRetirerLesFinis?: (ids: readonly string[]) => void;
+	/** Les prospects du jour de Plume, quand le réglage est lu. */
+	readonly plume?: ComponentProps<typeof CartePlumeDuMatin>;
 }) {
 	const entete = { genre: 'onglet' as const, titre: 'File d’attente' };
 	if (lecture.etat !== 'pret') return <PageEcran entete={entete} etat={lecture.etat} />;
 	const enCours = lecture.valeur.filter((t) => t.etat === 'EN_ATTENTE' || t.etat === 'EN_COURS');
 	const finis = lecture.valeur.filter((t) => t.etat === 'FAIT' || t.etat === 'ECHEC');
-	if (lecture.valeur.length === 0) {
+	if (lecture.valeur.length === 0 && plume === undefined) {
 		return (
 			<PageEcran
 				entete={entete}
@@ -120,6 +131,7 @@ export function EcranTravaux({
 	}
 	return (
 		<PageEcran entete={entete}>
+			{plume === undefined ? null : <CartePlumeDuMatin {...plume} />}
 			{enCours.length === 0 ? null : (
 				<section className="flex flex-col gap-cladd-3xs">
 					<EnTeteDeGroupe libelle="En cours" nombre={enCours.length} />

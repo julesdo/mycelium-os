@@ -6,6 +6,7 @@ import {
 	vGenreDeTravail,
 	vResultatDeTravail,
 	vSecteur,
+	vSegment,
 	vTitulaireTrouve,
 	vZone
 } from './validateursProspection';
@@ -314,5 +315,19 @@ export const crmTables = {
 		finiLe: v.optional(v.number())
 	})
 		.index('by_creeLe', ['creeLe'])
-		.index('by_etat', ['etat'])
+		.index('by_etat', ['etat']),
+
+	/**
+	 * PLUME, LES PROSPECTS DU JOUR (20/10/2026) : un seul document. Éteint tant qu'un fondateur
+	 * ne l'allume pas ; les curseurs disent, segment par segment, la page où Plume reprendra.
+	 */
+	reglagesProspection: defineTable({
+		actif: v.boolean(),
+		parJour: v.number(),
+		zone: vZone,
+		segments: v.array(vSegment),
+		curseurs: v.array(v.object({ cle: v.string(), page: v.number() })),
+		modifiePar: v.optional(v.string()),
+		modifieLe: v.optional(v.number())
+	})
 };
