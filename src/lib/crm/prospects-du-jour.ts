@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ACHETEURS, type CleAcheteurs, type TitulaireDecp } from './decp';
 import { SECTEURS, type CleSecteur, type EntrepriseTrouvee } from './annuaire';
+import { texteAdmis } from '../support/filtres';
 
 /**
  * LES PROSPECTS DU JOUR, CHOISIS PAR PLUME (20/10/2026). Le fondateur : « est-ce qu'on ne
@@ -42,8 +43,16 @@ export function libelleDuSegment(segment: Segment): string {
 }
 
 export type Candidat =
-	| { readonly source: 'ANNUAIRE'; readonly secteur: CleSecteur; readonly entreprise: EntrepriseTrouvee }
-	| { readonly source: 'DECP'; readonly acheteurs: CleAcheteurs; readonly titulaire: TitulaireDecp };
+	| {
+			readonly source: 'ANNUAIRE';
+			readonly secteur: CleSecteur;
+			readonly entreprise: EntrepriseTrouvee;
+	  }
+	| {
+			readonly source: 'DECP';
+			readonly acheteurs: CleAcheteurs;
+			readonly titulaire: TitulaireDecp;
+	  };
 
 export function sirenDe(c: Candidat): string {
 	return c.source === 'ANNUAIRE' ? c.entreprise.siren : c.titulaire.siren;
@@ -60,7 +69,9 @@ function salariesDe(effectif: string | undefined): number | null {
 }
 
 function joursEntre(debut: string, fin: string): number {
-	return Math.round((Date.parse(`${fin}T12:00:00Z`) - Date.parse(`${debut}T12:00:00Z`)) / 86_400_000);
+	return Math.round(
+		(Date.parse(`${fin}T12:00:00Z`) - Date.parse(`${debut}T12:00:00Z`)) / 86_400_000
+	);
 }
 
 /** Les points d'une règle, et la phrase qui la dit. */
@@ -91,15 +102,16 @@ export function noter(c: Candidat, jour: string): { total: number; points: reado
 			points.push({ points: 8, raison: 'des marchés conséquents' });
 		if (joursEntre(t.dernierMarche, jour) <= 180)
 			points.push({ points: 10, raison: 'un marché gagné ces six derniers mois' });
-		if (c.acheteurs === 'HOPITAUX')
-			points.push({ points: 5, raison: 'des hôpitaux pour clients' });
+		if (c.acheteurs === 'HOPITAUX') points.push({ points: 5, raison: 'des hôpitaux pour clients' });
 	} else {
 		const e = c.entreprise;
 		points.push({ points: 30, raison: SECTEURS[c.secteur].libelle.toLowerCase() });
 		const salaries = salariesDe(e.effectif);
 		if (salaries !== null && salaries >= 20) points.push({ points: 20, raison: e.effectif ?? '' });
-		else if (salaries !== null && salaries >= 10) points.push({ points: 15, raison: e.effectif ?? '' });
-		else if (salaries !== null && salaries >= 6) points.push({ points: 8, raison: e.effectif ?? '' });
+		else if (salaries !== null && salaries >= 10)
+			points.push({ points: 15, raison: e.effectif ?? '' });
+		else if (salaries !== null && salaries >= 6)
+			points.push({ points: 8, raison: e.effectif ?? '' });
 		if (e.dirigeant !== undefined) points.push({ points: 5, raison: 'dirigeant identifié' });
 		if (c.secteur === 'TRANSPORT')
 			points.push({ points: 10, raison: 'une date limite pour agir courte' });
@@ -182,9 +194,7 @@ export function messagePourPlume(candidats: readonly Candidat[], combien: number
 }
 
 export const schemaChoixDePlume = z.object({
-	choix: z
-		.array(z.object({ siren: z.string(), pourquoi: z.string().max(300) }))
-		.max(40)
+	choix: z.array(z.object({ siren: z.string(), pourquoi: z.string().max(300) })).max(40)
 });
 export type ChoixDePlume = z.infer<typeof schemaChoixDePlume>;
 
@@ -193,10 +203,13 @@ export interface Retenu {
 	readonly pourquoi: string;
 }
 
-/** Une phrase de Plume qu'on garde : courte, sans promesse ni exclamation. */
+/**
+ * Une phrase de Plume qu'on garde : courte, sans exclamation, et qui passe les filtres
+ * du support — le mot interdit, les verdicts, les conseils, les voies de justice.
+ */
 function phraseAcceptable(phrase: string): boolean {
 	const nette = phrase.trim();
-	return nette.length >= 8 && nette.length <= 240 && !/garanti|!/i.test(nette);
+	return nette.length >= 8 && nette.length <= 240 && !nette.includes('!') && texteAdmis(nette);
 }
 
 /**
