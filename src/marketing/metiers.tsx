@@ -182,9 +182,6 @@ export function SceneDuMetier({
 					className="absolute bottom-24 -left-2 max-w-52 sm:bottom-32 sm:-left-6 sm:max-w-none"
 				/>
 			</div>
-			<figcaption className="text-cladd-xs text-encre-site-douce">
-				Exemple : {scene.etablissement}, entreprise fictive, et ses clients.
-			</figcaption>
 		</figure>
 	);
 }

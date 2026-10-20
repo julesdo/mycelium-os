@@ -201,7 +201,7 @@ function ecranDeTete(secteur: SecteurPublic, metier: string, texte: string): Ecr
 		capture: `metier-${secteur}`,
 		titre: 'Ce qu’on vous doit, au centime.',
 		texte,
-		description: `L’écran Aujourd’hui de Letikette pour ${metier}, dans un exemple fictif : ce que les clients doivent, pénalités et frais compris, rangé par ancienneté, et Plume qui prépare deux relances.`
+		description: `L’écran Aujourd’hui de Letikette pour ${metier} : ce que les clients doivent, pénalités et frais compris, rangé par ancienneté, et Plume qui prépare deux relances.`
 	};
 }
 
@@ -297,14 +297,14 @@ function pageDesFournisseursPublics(jour: string): PageDeSecteur {
 				texte:
 					'Le montant de chaque acheteur, pénalités et frais compris, au barème de la commande publique : un seul taux pour tout le retard. Plume relit chaque dépôt.',
 				description:
-					'L’écran Aujourd’hui de Letikette pour un fournisseur d’hôpitaux et de communes, dans un exemple fictif : ce que les acheteurs publics doivent, pénalités et frais compris, et deux rappels qui partent dans la matinée.'
+					'L’écran Aujourd’hui de Letikette pour un fournisseur d’hôpitaux et de communes : ce que les acheteurs publics doivent, pénalités et frais compris, et deux rappels qui partent dans la matinée.'
 			},
 			{
 				capture: 'metier-fournisseurs-publics-cartes',
 				titre: 'Chaque délai de paiement, compté.',
 				texte: `${delais.POUVOIR_ADJUDICATEUR} jours pour une commune, ${delais.SANTE} pour un hôpital : la carte dit quand le délai est passé, et la demande de paiement est prête à relire.`,
 				description:
-					'Les cartes des clients publics, dans un exemple fictif : un hôpital dont le délai de paiement est dépassé, une demande de paiement prête pour une commune, une facture payée en retard.'
+					'Les cartes des clients publics : un hôpital dont le délai de paiement est dépassé, une demande de paiement prête pour une commune, une facture payée en retard.'
 			}
 		],
 		offre: {
@@ -382,7 +382,7 @@ export function pageDuSecteur(secteur: SecteurPublic, jour: string): PageDeSecte
 					titre: 'Chaque date limite, surveillée.',
 					texte: `Une carte par client : ce qu’il doit et ce qui se passe. La date limite pour agir en justice d’une facture de transport tombe ${annees(transport.dureeAnnees)} après la livraison : elle remonte en tête bien avant.`,
 					description:
-						'Les cartes des clients d’un transporteur, dans un exemple fictif : une date limite pour agir dans 41 jours, un rappel prêt à partir, une facture payée en retard et ses frais.'
+						'Les cartes des clients d’un transporteur : une date limite pour agir dans 41 jours, un rappel prêt à partir, une facture payée en retard et ses frais.'
 				}
 			],
 			offre: offreDeLAbonnement(),
@@ -445,7 +445,7 @@ export function pageDuSecteur(secteur: SecteurPublic, jour: string): PageDeSecte
 					texte:
 						'Une carte par client : la situation impayée, la lettre officielle prête, la promesse de paiement et sa date. Rien ne part avant que vous l’ayez décidé.',
 					description:
-						'Les cartes des clients d’une menuiserie, dans un exemple fictif : une situation de travaux impayée, une lettre officielle prête, une promesse de paiement pour le 30.'
+						'Les cartes des clients d’une menuiserie : une situation de travaux impayée, une lettre officielle prête, une promesse de paiement pour le 30.'
 				}
 			],
 			offre: offreDeLAbonnement(),
@@ -496,7 +496,7 @@ export function pageDuSecteur(secteur: SecteurPublic, jour: string): PageDeSecte
 				titre: 'Les relances partent à votre nom.',
 				texte: `Le rappel, le deuxième rappel, puis la lettre officielle, au rythme que vous avez choisi. Chacun s’affiche ${dureePourRetenir()} avant de partir et se retient d’un geste.`,
 				description:
-					'Les cartes des clients d’une entreprise de propreté, dans un exemple fictif : un deuxième rappel sans réponse, un rappel prêt à partir, une promesse de paiement pour le 25.'
+					'Les cartes des clients d’une entreprise de propreté : un deuxième rappel sans réponse, un rappel prêt à partir, une promesse de paiement pour le 25.'
 			}
 		],
 		offre: offreDeLAbonnement(),

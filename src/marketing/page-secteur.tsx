@@ -192,13 +192,7 @@ function Ecrans({ page }: { page: PageDeSecteur }) {
 	const ecrans = [...page.ecrans, ECRAN_PAIEMENT];
 	return (
 		<SectionMarketing ton="creme" className="gap-cladd-xl">
-			<div className="flex flex-col gap-cladd-2xs">
-				<TitreSection>Letikette, sur des factures comme les vôtres.</TitreSection>
-				<Chapeau>
-					Les vrais écrans du produit, avec les clients d’un exemple : {scene.etablissement},
-					entreprise fictive.
-				</Chapeau>
-			</div>
+			<TitreSection>Letikette, sur des factures comme les vôtres.</TitreSection>
 			<div className="flex flex-col gap-cladd-xl">
 				{ecrans.map((ecran, rang) => (
 					<article
