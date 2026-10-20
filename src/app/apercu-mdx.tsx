@@ -19,7 +19,8 @@ export type Apercu =
 
 const PAUSE_MS = 400;
 
-async function compiler(corps: string): Promise<ContenuMdx> {
+/** Un morceau de MDX compilé avec le greffon du site : l'aperçu, et les blocs de l'éditeur. */
+export async function compilerMdx(corps: string): Promise<ContenuMdx> {
 	const [{ evaluate }, runtime, { default: remarkGfm }] = await Promise.all([
 		import('@mdx-js/mdx'),
 		import('react/jsx-runtime'),
@@ -35,7 +36,7 @@ export function useApercuMdx(corps: string): Apercu {
 	useEffect(() => {
 		let annule = false;
 		const minuterie = setTimeout(() => {
-			compiler(corps)
+			compilerMdx(corps)
 				.then((Contenu) => {
 					if (!annule) setApercu({ etat: 'pret', Contenu });
 				})

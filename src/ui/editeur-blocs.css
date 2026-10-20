@@ -1,0 +1,450 @@
+/*
+ * L'ÉDITEUR À BLOCS DU BLOG (20/10/2026) : BlockNote habillé comme la page d'un article.
+ * Ce qui s'écrit ici se lit sur le site presque à l'identique : l'encre sur le crème, la
+ * serif des intertitres, les encadrés teintés, les étapes numérotées et reliées d'un filet.
+ * L'aperçu exact reste dans le mode « Aperçu ».
+ */
+
+.bn-cms .bn-container,
+.bn-cms .bn-editor {
+	background: transparent;
+	color: var(--color-encre-site);
+	font-family: inherit;
+}
+
+.bn-cms .bn-editor {
+	padding-inline: 44px 12px;
+	font-size: var(--text-chapeau);
+	line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+	.bn-cms .bn-editor {
+		padding-inline: 28px 4px;
+	}
+}
+
+/* L'air entre les blocs, celui de la colonne de lecture du site. */
+.bn-cms .bn-block-group > .bn-block-outer + .bn-block-outer {
+	margin-top: 0.7em;
+}
+
+.bn-cms
+	.bn-block-outer:has(> .bn-block > [data-content-type$='ListItem'])
+	+ .bn-block-outer:has(> .bn-block > [data-content-type$='ListItem']) {
+	margin-top: 0.2em;
+}
+
+.bn-cms .bn-block-content {
+	padding-block: 2px;
+}
+
+/* Les intertitres : la serif du site, en moyenne graisse. */
+.bn-cms .bn-block-outer > .bn-block > .bn-block-content[data-content-type='heading'] {
+	font-family: var(--font-serif);
+	font-weight: 500;
+	letter-spacing: var(--tracking-titre-section);
+	line-height: 1.15;
+}
+
+.bn-cms .bn-block-content[data-content-type='heading']:not([data-level='3']) {
+	--level: clamp(26px, 2.6vw, 38px);
+}
+
+.bn-cms .bn-block-content[data-content-type='heading'][data-level='3'] {
+	--level: var(--text-intertitre);
+	font-family: inherit;
+	font-weight: 600;
+	letter-spacing: normal;
+}
+
+.bn-cms .bn-block-group > .bn-block-outer:has(> .bn-block > [data-content-type='heading']) {
+	margin-top: 1.5em;
+}
+
+.bn-cms .bn-block-group > .bn-block-outer:first-child {
+	margin-top: 0;
+}
+
+/* La citation : un filet d'encre, la serif en grand, comme le site. */
+.bn-cms .bn-block-content[data-content-type='quote'] blockquote,
+.bn-cms .bn-block-content[data-content-type='quote'] > .bn-inline-content {
+	border-left: 2px solid var(--color-encre-site);
+	padding-left: 18px;
+	font-family: var(--font-serif);
+	font-size: var(--text-intertitre);
+	line-height: 1.35;
+	color: var(--color-encre-site);
+}
+
+.bn-cms .bn-block-content[data-content-type='divider'] hr {
+	border-color: var(--color-filet-creme);
+}
+
+/* Les tableaux : les filets crème du site. */
+.bn-cms .bn-block-content[data-content-type='table'] table {
+	border-radius: 14px;
+	font-size: var(--text-cladd-md);
+}
+
+.bn-cms .bn-block-content[data-content-type='table'] th,
+.bn-cms .bn-block-content[data-content-type='table'] td {
+	border-color: var(--color-filet-creme);
+}
+
+.bn-cms .bn-block-content[data-content-type='table'] th {
+	background: var(--color-creme-profonde);
+	font-weight: 600;
+}
+
+.bn-cms a {
+	color: var(--color-encre-site);
+	text-decoration: underline;
+	text-decoration-color: oklch(0.27 0.05 266 / 0.3);
+	text-underline-offset: 4px;
+}
+
+/* ─── Les valeurs de la loi ─────────────────────────────────────────────────── */
+
+.bn-cms .bn-valeur {
+	border-radius: 6px;
+	background: var(--color-teinte-argent);
+	padding: 1px 5px;
+	box-decoration-break: clone;
+	cursor: pointer;
+	white-space: normal;
+	transition: box-shadow 0.15s;
+}
+
+.bn-cms .bn-valeur:hover {
+	box-shadow: 0 0 0 1.5px oklch(0.27 0.05 266 / 0.35);
+}
+
+.bn-cms .bn-valeur-source {
+	background: var(--color-creme-profonde);
+	color: var(--color-encre-site-douce);
+}
+
+.bn-cms .ProseMirror-selectednode > .bn-valeur,
+.bn-cms .bn-valeur.ProseMirror-selectednode {
+	box-shadow: 0 0 0 2px var(--color-encre-site);
+}
+
+/* ─── Les encadrés : l'en-tête et les enfants dans le même bloc teinté ─────── */
+
+.bn-cms .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='encadre']) > .bn-block {
+	border-radius: var(--radius-carte-site);
+	background: var(--color-teinte-argent);
+	padding: 14px 16px 16px;
+}
+
+.bn-cms
+	.bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='encadre'][data-variante='attention'])
+	> .bn-block {
+	background: var(--color-teinte-question);
+}
+
+.bn-cms .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='encadre']) > .bn-block > .bn-block-group,
+.bn-cms .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape']) > .bn-block > .bn-block-group {
+	margin-left: 0;
+}
+
+.bn-cms
+	.bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='encadre'])
+	> .bn-block
+	> .bn-block-group
+	> .bn-block-outer::before,
+.bn-cms
+	.bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape'])
+	> .bn-block
+	> .bn-block-group
+	> .bn-block-outer::before {
+	display: none;
+}
+
+.bn-cms .bn-encadre-tete,
+.bn-cms .bn-etape-tete {
+	display: flex;
+	width: 100%;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 10px;
+}
+
+.bn-cms .bn-encadre-titre,
+.bn-cms .bn-etape-titre {
+	min-width: 0;
+	flex: 1 1 12rem;
+	background: transparent;
+	font-size: var(--text-intertitre);
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--color-encre-site);
+	outline: none;
+}
+
+.bn-cms .bn-encadre-titre::placeholder,
+.bn-cms .bn-etape-titre::placeholder,
+.bn-cms .bn-etape-quand::placeholder {
+	color: var(--color-encre-site-claire);
+	opacity: 0.7;
+}
+
+.bn-cms .bn-encadre-variantes {
+	display: inline-flex;
+	gap: 2px;
+	border-radius: 999px;
+	background: oklch(1 0 0 / 0.55);
+	padding: 2px;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+
+.bn-cms .bn-block-outer:hover > .bn-block .bn-encadre-variantes,
+.bn-cms .bn-encadre-tete:focus-within .bn-encadre-variantes {
+	opacity: 1;
+}
+
+.bn-cms .bn-encadre-variantes button {
+	border-radius: 999px;
+	padding: 2px 10px;
+	font-size: var(--text-cladd-3xs);
+	font-weight: 600;
+	color: var(--color-encre-site-douce);
+}
+
+.bn-cms .bn-encadre-variantes button[aria-checked='true'] {
+	background: var(--color-encre-site);
+	color: var(--color-creme);
+}
+
+/* ─── Les étapes : numérotées en CSS, reliées d'un filet ────────────────────── */
+
+.bn-cms .bn-block-group > .bn-block-outer:not(:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape'])) {
+	counter-reset: etape;
+}
+
+.bn-cms .bn-block-group > .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape']) {
+	counter-increment: etape;
+	position: relative;
+}
+
+.bn-cms .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape']) > .bn-block > .bn-block-group {
+	margin-left: 46px;
+	font-size: var(--text-cladd-md);
+	color: var(--color-encre-site-douce);
+}
+
+.bn-cms
+	.bn-block-group
+	> .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape'])
+	+ .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape']) {
+	margin-top: 0.4em;
+}
+
+.bn-cms .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape'])::after {
+	content: '';
+	position: absolute;
+	top: 42px;
+	bottom: -6px;
+	left: 17px;
+	width: 1px;
+	background: var(--color-filet-creme);
+	pointer-events: none;
+}
+
+.bn-cms .bn-block-outer:has(> .bn-block > .react-renderer > .bn-block-content[data-content-type='etape']):not(:has(+ .bn-block-outer > .bn-block > .react-renderer > .bn-block-content[data-content-type='etape']))::after {
+	display: none;
+}
+
+.bn-cms .bn-etape-numero {
+	display: flex;
+	width: 36px;
+	height: 36px;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999px;
+	background: var(--color-encre-site);
+	color: var(--color-creme);
+	font-size: var(--text-cladd-sm);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.bn-cms .bn-etape-numero::before {
+	content: counter(etape);
+}
+
+.bn-cms .bn-etape-quand {
+	flex: 0 1 12rem;
+	min-width: 0;
+	background: transparent;
+	font-size: var(--text-cladd-xs);
+	color: var(--color-encre-site-claire);
+	outline: none;
+	text-align: right;
+}
+
+/* ─── Les illustrations : rendues, avec leur nom ────────────────────────────── */
+
+.bn-cms .bn-mdx {
+	position: relative;
+	width: 100%;
+	border-radius: var(--radius-carte-site);
+	outline: 1px dashed transparent;
+	outline-offset: 6px;
+	transition: outline-color 0.15s;
+}
+
+.bn-cms .bn-block-outer:hover .bn-mdx {
+	outline-color: var(--color-filet-creme);
+}
+
+.bn-cms .bn-mdx-etiquette {
+	position: absolute;
+	top: -2px;
+	right: 0;
+	z-index: 1;
+	border-radius: 999px;
+	background: var(--color-encre-site);
+	padding: 2px 10px;
+	font-size: var(--text-cladd-4xs);
+	font-weight: 600;
+	color: var(--color-creme);
+	opacity: 0;
+	transition: opacity 0.15s;
+	pointer-events: none;
+}
+
+.bn-cms .bn-block-outer:hover .bn-mdx-etiquette,
+.bn-cms .ProseMirror-selectednode .bn-mdx-etiquette {
+	opacity: 1;
+}
+
+.bn-cms .bn-mdx-rendu {
+	font-size: var(--text-chapeau);
+	transition: opacity 0.2s;
+}
+
+.bn-cms .bn-mdx-attente,
+.bn-cms .bn-mdx-erreur {
+	border-radius: 14px;
+	background: var(--color-creme-profonde);
+	padding: 14px 16px;
+	font-size: var(--text-cladd-2xs);
+	color: var(--color-encre-site-douce);
+}
+
+.bn-cms .bn-mdx-erreur {
+	background: var(--color-teinte-question);
+}
+
+.bn-cms .bn-preview-with-source-popup.ProseMirror-selectednode .bn-preview-container {
+	border-radius: var(--radius-carte-site);
+	box-shadow: 0 0 0 2px var(--color-encre-site);
+}
+
+.bn-cms .bn-code-block-source-popup-body {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 13px;
+}
+
+/* ─── Le trait qui dit où se posera le bloc glissé depuis le panneau ────────── */
+
+.bn-cms .bn-trait-de-depot {
+	position: absolute;
+	z-index: 30;
+	height: 3px;
+	margin-top: -2px;
+	border-radius: 3px;
+	background: var(--color-encre-site);
+	pointer-events: none;
+	box-shadow: 0 0 0 3px oklch(0.27 0.05 266 / 0.12);
+}
+
+/* ─── Le menu « @ » : la liste et l'aperçu de la valeur ─────────────────────── */
+
+.bn-menu-valeurs {
+	display: flex;
+	width: min(560px, calc(100vw - 32px));
+	max-height: 340px;
+	overflow: hidden;
+	border: 1px solid var(--color-filet-creme);
+	border-radius: 14px;
+	background: var(--color-papier);
+	box-shadow: 0 12px 32px oklch(0.27 0.05 266 / 0.16);
+	color: var(--color-encre-site);
+	font-size: var(--text-cladd-2xs);
+}
+
+.bn-menu-valeurs-vide {
+	padding: 14px 16px;
+	color: var(--color-encre-site-douce);
+}
+
+.bn-menu-valeurs-liste {
+	min-width: 0;
+	flex: 1;
+	overflow-y: auto;
+	padding: 6px;
+}
+
+.bn-menu-valeurs-groupe {
+	padding: 10px 10px 4px;
+	font-size: var(--text-cladd-4xs);
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--color-encre-site-claire);
+}
+
+.bn-menu-valeurs-item {
+	display: block;
+	width: 100%;
+	border-radius: 8px;
+	padding: 7px 10px;
+	text-align: left;
+	line-height: 1.35;
+}
+
+.bn-menu-valeurs-item[aria-selected='true'] {
+	background: var(--color-creme-profonde);
+}
+
+.bn-menu-valeurs-apercu {
+	display: none;
+	width: 210px;
+	flex-direction: column;
+	gap: 6px;
+	border-left: 1px solid var(--color-filet-creme);
+	background: var(--color-creme);
+	padding: 16px;
+}
+
+@media (min-width: 640px) {
+	.bn-menu-valeurs-apercu {
+		display: flex;
+	}
+}
+
+.bn-menu-valeurs-chiffre {
+	font-family: var(--font-serif);
+	font-size: 26px;
+	line-height: 1.15;
+}
+
+.bn-menu-valeurs-libelle {
+	font-weight: 600;
+}
+
+.bn-menu-valeurs-source,
+.bn-menu-valeurs-date {
+	color: var(--color-encre-site-douce);
+	line-height: 1.4;
+}
+
+.bn-menu-valeurs-date {
+	font-size: var(--text-cladd-4xs);
+	color: var(--color-encre-site-claire);
+}

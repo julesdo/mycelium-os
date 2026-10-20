@@ -1,12 +1,12 @@
 import { useRef, type ReactNode } from 'react';
-import { Input, Select } from '@cladd-ui/react';
-import { CircleAlertIcon, CircleCheckIcon, PlusIcon, TriangleAlertIcon, XIcon } from 'lucide-react';
+import { Select } from '@cladd-ui/react';
+import { CircleAlertIcon, CircleCheckIcon, PlusIcon, TriangleAlertIcon } from 'lucide-react';
 import { cn } from './cn';
 
 /**
- * LE CMS DU BLOG, SES PIÈCES D'ÉCRAN (19/10/2026). L'éditeur suit ceux de Ghost et de
- * Sanity : le formulaire de l'en-tête et le corps à gauche, l'aperçu fidèle à droite, la
- * relecture entre les deux. Au téléphone, une colonne.
+ * LE CMS DU BLOG, SES PIÈCES D'ÉCRAN (19/10/2026) : l'état d'un article, les choix fermés de
+ * l'en-tête, le corps en MDX, la relecture et l'aperçu. L'éditeur à blocs et son cadre vivent
+ * dans `cms-editeur.tsx` et `editeur-blocs.tsx` depuis le 20/10/2026.
  */
 
 export type StatutArticle = 'publie' | 'programme' | 'brouillon' | 'casse';
@@ -32,49 +32,6 @@ export function PastilleDArticle({ statut }: { readonly statut: StatutArticle })
 		>
 			{LIBELLES_STATUT[statut]}
 		</span>
-	);
-}
-
-/** Un champ de l'en-tête, avec ce que la construction exige de sa longueur. */
-export function ChampAvecCompteur({
-	libelle,
-	valeur,
-	onChange,
-	min,
-	max,
-	aide,
-	placeholder
-}: {
-	readonly libelle: string;
-	readonly valeur: string;
-	readonly onChange: (valeur: string) => void;
-	readonly min?: number;
-	readonly max?: number;
-	readonly aide?: string;
-	readonly placeholder?: string;
-}) {
-	const longueur = valeur.length;
-	const horsBornes = (min !== undefined && longueur < min) || (max !== undefined && longueur > max);
-	return (
-		<label className="flex flex-col gap-1.5">
-			<span className="flex items-baseline justify-between gap-2 px-1 text-cladd-2xs text-cladd-fg-soft">
-				<span>{libelle}</span>
-				{max === undefined ? null : (
-					<span className={cn('tabular-nums', horsBornes && 'text-cladd-red font-semibold')}>
-						{longueur} / {max}
-					</span>
-				)}
-			</span>
-			<Input
-				size="lg"
-				value={valeur}
-				onChange={onChange}
-				{...(placeholder === undefined ? {} : { placeholder })}
-			/>
-			{aide === undefined ? null : (
-				<span className="px-1 text-cladd-3xs text-cladd-fg-soft">{aide}</span>
-			)}
-		</label>
 	);
 }
 
@@ -109,59 +66,6 @@ export function ChoixDEntete({
 			>
 				{valeur === '' ? (vide ?? '') : valeur}
 			</Select>
-		</div>
-	);
-}
-
-/** Les phrases « En bref » : deux à cinq, chacune avec sa longueur. */
-export function PhrasesEnBref({
-	phrases,
-	onChange
-}: {
-	readonly phrases: readonly string[];
-	readonly onChange: (phrases: string[]) => void;
-}) {
-	return (
-		<div className="flex flex-col gap-1.5">
-			<span className="px-1 text-cladd-2xs text-cladd-fg-soft">En bref (deux à cinq phrases)</span>
-			{phrases.map((phrase, rang) => (
-				<div key={rang} className="flex items-center gap-2">
-					<div className="min-w-0 flex-1">
-						<Input
-							size="md"
-							value={phrase}
-							onChange={(v) => onChange(phrases.map((p, i) => (i === rang ? v : p)))}
-							aria-label={`Phrase ${rang + 1}`}
-						/>
-					</div>
-					<span
-						className={cn(
-							'w-14 text-right text-cladd-3xs text-cladd-fg-soft tabular-nums',
-							(phrase.length < 10 || phrase.length > 220) && 'text-cladd-red font-semibold'
-						)}
-					>
-						{phrase.length}/220
-					</span>
-					<button
-						type="button"
-						aria-label={`Retirer la phrase ${rang + 1}`}
-						onClick={() => onChange(phrases.filter((_, i) => i !== rang))}
-						className="flex size-9 shrink-0 items-center justify-center rounded-full text-cladd-fg-soft hover:bg-cladd-surface-minus"
-					>
-						<XIcon aria-hidden className="size-4" />
-					</button>
-				</div>
-			))}
-			{phrases.length >= 5 ? null : (
-				<button
-					type="button"
-					onClick={() => onChange([...phrases, ''])}
-					className="flex h-9 items-center gap-1.5 self-start rounded-full px-3 text-cladd-2xs font-medium text-cladd-fg-soft hover:bg-cladd-surface-minus"
-				>
-					<PlusIcon aria-hidden className="size-4" />
-					Ajouter une phrase
-				</button>
-			)}
 		</div>
 	);
 }
@@ -301,24 +205,6 @@ export function CadreDApercu({
 					</aside>
 				)}
 				<div className="flex min-w-0 flex-col gap-cladd-sm text-chapeau">{children}</div>
-			</div>
-		</div>
-	);
-}
-
-/** L'éditeur en deux volets au-delà de 1024 px ; l'aperçu reste collé pendant qu'on écrit. */
-export function EditeurEnDeuxVolets({
-	edition,
-	apercu
-}: {
-	readonly edition: ReactNode;
-	readonly apercu: ReactNode;
-}) {
-	return (
-		<div className="grid grid-cols-1 gap-cladd-sm lg:grid-cols-2 lg:items-start">
-			<div className="flex min-w-0 flex-col gap-cladd-sm">{edition}</div>
-			<div className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
-				{apercu}
 			</div>
 		</div>
 	);

@@ -2,6 +2,7 @@ import { parse, stringify } from 'yaml';
 import type { ZodError } from 'zod';
 import { PARAMETRES } from '../verticales/recouvrement/parametres';
 import { AUTEUR_PAR_DEFAUT, schemaEnteteArticle, type EnteteArticle } from './schema';
+import { capturesInconnues } from './captures';
 
 /**
  * LE FICHIER D'UN ARTICLE, LU ET RÉÉCRIT PAR LE CMS (19/10/2026).
@@ -173,6 +174,11 @@ export function relireArticle(
 		}
 	}
 
+	for (const ecran of capturesInconnues(corps)) {
+		avertissements.push(
+			`<Capture ecran="${ecran}" /> : cet écran n’a pas de capture, le site montrerait une image cassée.`
+		);
+	}
 	if (VALEUR_TAPEE.test(enTete)) {
 		avertissements.push(
 			'L’en-tête contient un chiffre : s’il vient de la loi (un taux, un délai, un montant), il doit disparaître, l’en-tête ne lit pas le registre. Une statistique sourcée peut rester.'

@@ -8,10 +8,16 @@ site et publié. Aucun CMS, aucun compte, aucun coût.
 
 ## Publier depuis l’admin
 
-L’admin a un CMS (`/admin/blog`) : la liste des articles lue sur GitHub, un éditeur avec
-l’aperçu fidèle, la relecture de cette charte, et un bouton qui publie (un commit sur `main`,
-que Vercel déploie ; un article daté du futur attend son jour). Seul un fondateur publie, et
-chaque publication va au journal de l’équipe.
+L’admin a un CMS (`/admin/blog`) : la liste des articles lue sur GitHub, un éditeur à blocs
+(la page telle que le site la montrera, « / » pour un bloc, « @ » pour une valeur de la loi,
+un panneau de blocs à glisser dans le texte), un mode Aperçu et un mode MDX, la relecture de
+cette charte, et un bouton qui publie (un commit sur `main`, que Vercel déploie ; un article
+daté du futur attend son jour). Seul un fondateur publie, et chaque publication va au journal
+de l’équipe.
+
+L’éditeur réécrit le MDX qu’il ouvre sans rien perdre : un composant qu’il ne sait pas
+dessiner reste tel quel dans un bloc « MDX », et un paragraphe auquel on n’a pas touché garde
+ses retours à la ligne. Un paragraphe corrigé s’écrit sur une seule ligne.
 
 Le brancher demande un jeton GitHub à portée fine, limité au dépôt du site, avec le droit
 « Contents : Read and write » (GitHub, Settings, Developer settings, Fine-grained tokens),

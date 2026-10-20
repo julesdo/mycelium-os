@@ -719,6 +719,19 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   Node) refuse ce que le build refuserait, compile le MDX, et va au journal. Seize articles par
   métier paraissent deux fois par semaine jusqu'au 10 décembre ; chaque page métier montre les
   siens (« À lire »).
+  **L'éditeur est à blocs depuis le 20/10/2026**, à la Notion (le fondateur : « des blocs en
+  drag & drop hyper intuitif »), sur BlockNote (épinglé, chargé à l'ouverture d'un article
+  seulement) et sur Notion, Craft, Ghost, beehiiv et GitBook : la page de l'article telle que le
+  site la montrera (couverture, titre, chapeau, « En bref » écrits en place), une poignée au
+  survol de chaque bloc (glisser, dupliquer, supprimer), « / » pour un bloc, « @ » pour une
+  valeur de la loi avec son chiffre du jour et sa source, et un panneau (Blocs qu'on glisse dans
+  le texte, Réglages, Plan, Relecture) à droite au-delà de 1280 px, en page pleine en dessous.
+  Encadrés, étapes et illustrations sont des blocs rendus par les composants du site ; une
+  illustration se règle dans un formulaire (`lib/blog/catalogue.ts`). **Le MDX reste la base, et
+  rien ne se perd** : `lib/blog/blocs.ts` lit le corps en blocs et le réécrit, ce qu'il ne sait
+  pas dessiner devient un bloc « MDX » gardé à l'octet, et un groupe qui n'a pas changé reprend
+  sa source d'origine (`blocs.test.ts` le vérifie sur tous les articles). La publication passe
+  par une feuille qui dit la date de parution, les lignes qui changent et la relecture.
 - **La trajectoire de l'audit** (19/10/2026, `docs/superpowers/specs/2026-10-19-trajectoire-de-l-audit.md`,
   lots 1 à 8 livrés le jour même). Le fondateur : « ce document est hyper important ». Ce qui est
   désormais vrai, et qu'un nouveau code doit respecter :
