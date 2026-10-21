@@ -4,6 +4,10 @@
  * La bibliothèque ne livre pas ses types, et `@types/web-push` ne s'installe pas ici
  * (bun se fige après l'extraction, scripts coupés ou non). Trois fonctions suffisent :
  * les déclarer ici garde le déploiement Convex typé, sans dépendance de plus.
+ *
+ * ⚠️ DEUX COPIES, UNE PAR PROJET, comme `env.d.ts` et `convex-env.d.ts` : le tsconfig de
+ * l’application exclut `src/lib/convex/**`, celui de Convex ne voit que son dossier.
+ * Celle de l’application : `src/web-push.d.ts`.
  */
 declare module 'web-push' {
 	interface AbonnementPush {

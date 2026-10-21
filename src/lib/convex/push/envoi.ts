@@ -1,4 +1,3 @@
-/// <reference path="./web-push.d.ts" />
 'use node';
 
 import webpush from 'web-push';

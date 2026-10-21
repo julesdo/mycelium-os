@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { regrouperLesPaiements } from '../paiements';
 
 /** Les espaces insécables du format français, rendues lisibles pour comparer. */
-const lisible = (s: string) => s.replace(/[  ]/g, ' ');
+const lisible = (s: string) => s.replace(/[\u00a0\u202f]/g, ' ');
 
 describe('les paiements reçus d’un import', () => {
 	it('ne dit rien quand rien n’est rentré', () => {
