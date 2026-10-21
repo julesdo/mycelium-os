@@ -66,6 +66,32 @@ function meilleureDepuis(
 	return plusAncienne <= lundiDe(arriveeLe) ? 'arrivee' : plusAncienne;
 }
 
+/**
+ * LE LUNDI, UN SEUL E-MAIL PAR PERSONNE. « Votre semaine » va à qui reçoit les e-mails
+ * du matin, ne l'a pas coupée et que le budget d'attention accorde, quand la semaine
+ * n'est pas vide ; le point du matin va aux autres. Jamais les deux.
+ */
+export function repartirLeLundi(
+	membres: readonly {
+		readonly userId: string;
+		/** Les e-mails du matin, réglés dans le profil. */
+		readonly pointDuMatin: boolean;
+		/** La catégorie « Votre semaine » coupée dans les réglages des notifications. */
+		readonly semaineCoupee: boolean;
+		readonly paroleAccordee: boolean;
+	}[],
+	semaineVide: boolean
+): { readonly semaine: string[]; readonly pointDuMatin: string[] } {
+	const semaine: string[] = [];
+	const pointDuMatin: string[] = [];
+	for (const m of membres) {
+		if (!m.pointDuMatin) continue;
+		if (!semaineVide && !m.semaineCoupee && m.paroleAccordee) semaine.push(m.userId);
+		else pointDuMatin.push(m.userId);
+	}
+	return { semaine, pointDuMatin };
+}
+
 export function composerLaSemaine(d: {
 	readonly debut: string;
 	readonly fin: string;

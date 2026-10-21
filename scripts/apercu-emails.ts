@@ -18,6 +18,7 @@ process.env.EMAIL_ASSET_URL = 'https://apercu.invalid';
 const { briefingHtml, invitationHtml, motDePasseHtml, rappelAbonnementHtml, verificationHtml } =
 	await import('../src/lib/convex/emails/modeles');
 const { relanceHtml } = await import('../src/lib/convex/emails/modeles/relance');
+const { semaineHtml } = await import('../src/lib/convex/emails/modeles/semaine');
 const { conseilHtml, objetDuConseil } = await import('../src/lib/convex/emails/modeles/conseils');
 const { CLES_CONSEILS_ENVOYES } = await import('../src/lib/croissance/conseils');
 const { rapportHtml, OBJET_DU_RAPPORT } =
@@ -109,6 +110,23 @@ const EMAILS: readonly { nom: string; objet: string; de: string; html: string }[
 			action: null,
 			montantLisible: null,
 			url: 'https://www.letikette.com/app'
+		})
+	},
+	{
+		nom: 'Votre semaine, le lundi',
+		objet: 'Votre semaine : 4 120 € rentrés, 3 clients ont payé.',
+		de: 'Plume de Letikette',
+		html: semaineHtml({
+			nomEntreprise: 'Menuiserie Dupont',
+			periode: 'la semaine du 12 octobre 2026',
+			rentreLisible: '4 120 €',
+			meilleure: 'Votre meilleure semaine depuis le 24 août 2026.',
+			rangees: [
+				{ libelle: 'Relances parties', valeur: '6' },
+				{ libelle: 'Clients qui ont payé', valeur: '3' },
+				{ libelle: 'Date limite la plus proche', valeur: 'dans 12 j' }
+			],
+			url: 'https://www.letikette.com/app/semaine'
 		})
 	},
 	{

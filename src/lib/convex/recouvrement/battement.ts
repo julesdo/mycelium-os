@@ -18,6 +18,7 @@ import { requireEnv } from '../env';
 import { authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { expediteurNomme } from '../emails/helpers';
+import { preparerLeLundi } from './semaine';
 
 /**
  * LE BATTEMENT QUOTIDIEN — la plomberie, et rien d'autre.
@@ -83,7 +84,8 @@ async function precedentDe(
 async function envoyer(
 	ctx: MutationCtx,
 	organizationId: Id<'organizations'>,
-	briefing: Briefing
+	briefing: Briefing,
+	recoiventLaSemaine: ReadonlySet<string>
 ): Promise<void> {
 	const organisation = await ctx.db.get(organizationId);
 	if (organisation === null) return;
@@ -94,7 +96,12 @@ async function envoyer(
 			.query('organizationMembers')
 			.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
 			.collect()
-	).filter((membre) => membre.pointDuMatinParCourriel !== false);
+	).filter(
+		(membre) =>
+			membre.pointDuMatinParCourriel !== false &&
+			// Le lundi, « Votre semaine » le remplace pour qui la reçoit : un seul e-mail.
+			!recoiventLaSemaine.has(membre.userId)
+	);
 	if (membres.length === 0) return;
 
 	// Après le retour anticipé ci-dessus : on ne vérifie une clé qu'au moment où
@@ -206,9 +213,15 @@ export const executerPourOrganisation = internalMutation({
 			//   transaction ne part pas non plus, et le cron rejouera proprement
 			//   au prochain passage.
 			// Dans les deux cas : un seul relevé, ou aucun. Jamais deux.
+			// LE LUNDI, « VOTRE SEMAINE » (21/10/2026, `semaine.ts`) : programmée pour 9 h,
+			// elle remplace le point du matin de ceux qui la reçoivent.
+			const recoiventLaSemaine =
+				new Date(`${jour}T12:00:00Z`).getUTCDay() === 1
+					? await preparerLeLundi(ctx, organizationId, Date.now())
+					: new Set<string>();
 			if (verdict.decision === 'PARLER') {
 				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
-				await envoyer(ctx, organizationId, briefing);
+				await envoyer(ctx, organizationId, briefing, recoiventLaSemaine);
 			}
 
 			/**

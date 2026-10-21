@@ -1,16 +1,26 @@
 import { v } from 'convex/values';
-import type { QueryCtx } from '../_generated/server';
+import { internalMutation } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
+import { components, internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { organisationCouranteOuNull } from '../lib/auth';
 import { demanderLaParole, noterOuverte, paroleAccordee } from '../croissance/attention';
-import { ajouterJours, ecartJours } from '../../verticales/recouvrement/calendrier';
+import { notifier } from '../notifier';
+import { requireEnv } from '../env';
+import { assertResendApiKey, resend } from '../emails/resend';
+import { expediteurNomme } from '../emails/helpers';
+import { semaineHtml, semaineTexte } from '../emails/modeles/semaine';
+import { enEuros } from '../../notifications/paiements';
+import { ajouterJours, dateLisible, ecartJours } from '../../verticales/recouvrement/calendrier';
+import { prochainCreneauDEnvoi } from '../../verticales/recouvrement/plan-relance';
 import { jourDeParis } from '../../verticales/recouvrement/compagnon/journee';
 import { prescriptionDe } from '../../verticales/recouvrement/pays/france/prescription';
 import {
 	bornesDeLaSemaineEcoulee,
 	composerLaSemaine,
 	lundiDe,
+	repartirLeLundi,
 	type VotreSemaine
 } from '../../verticales/recouvrement/votre-semaine';
 
@@ -289,6 +299,154 @@ export const semaineVue = authedMutation({
 				ouverteLe: maintenant
 			});
 		} else await noterOuverte(ctx, userId, cle, maintenant);
+		return null;
+	}
+});
+
+/* ── LE LUNDI : L'E-MAIL ET LA NOTIFICATION ─────────────────────────────────── */
+
+function cleDeLEmail(debut: string): string {
+	return `semaine-email:${debut}`;
+}
+
+/** Ce que disent la notification et l'objet : en une phrase, sans cadran à zéro. */
+function enUnePhrase(s: VotreSemaine): string {
+	if (s.rentre > 0n) {
+		const ont = s.clientsQuiOntPaye > 1 ? 'clients ont' : 'client a';
+		return `${enEuros(s.rentre)} rentrés, ${s.clientsQuiOntPaye} ${ont} payé.`;
+	}
+	if (s.relancesParties > 0) {
+		const pl = s.relancesParties > 1 ? 's' : '';
+		return `${s.relancesParties} relance${pl} partie${pl}.`;
+	}
+	return `Une date limite pour agir dans ${s.dateLimiteDansJours ?? 0} jours.`;
+}
+
+/**
+ * LE LUNDI, AU PASSAGE DU POINT DU MATIN (`battement.ts`) : « Votre semaine » part à 9 h
+ * à qui la reçoit, la notification et son push à qui ne l'a pas coupée. Rend ceux qui
+ * la reçoivent par e-mail : le point du matin ne leur part pas. Un seul e-mail.
+ */
+export async function preparerLeLundi(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	maintenant: number
+): Promise<ReadonlySet<string>> {
+	const org = await ctx.db.get(organizationId);
+	if (org === null) return new Set();
+	const semaine = await lireLaSemaine(ctx, org, maintenant);
+	if (semaine === null) return new Set();
+	const membres = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+		.take(100);
+	const cle = cleDeLEmail(semaine.debut);
+	const repartition = repartirLeLundi(
+		await Promise.all(
+			membres.map(async (m) => ({
+				userId: m.userId,
+				pointDuMatin: m.pointDuMatinParCourriel !== false,
+				semaineCoupee: m.categoriesCoupees?.includes('SEMAINE') === true,
+				paroleAccordee: await paroleAccordee(
+					ctx,
+					{ organizationId, userId: m.userId, canal: 'EMAIL', genre: 'semaine', cle },
+					maintenant
+				)
+			}))
+		),
+		false
+	);
+	for (const m of membres) {
+		if (m.categoriesCoupees?.includes('SEMAINE') === true) continue;
+		await notifier(ctx, {
+			organizationId,
+			userId: m.userId,
+			type: 'SEMAINE',
+			title: 'Votre semaine',
+			message: enUnePhrase(semaine),
+			link: '/app/semaine'
+		});
+	}
+	const creneau = prochainCreneauDEnvoi(maintenant);
+	for (const userId of repartition.semaine) {
+		await ctx.scheduler.runAt(creneau, internal.recouvrement.semaine.envoyerLaSemaine, {
+			organizationId,
+			userId,
+			debut: semaine.debut
+		});
+	}
+	return new Set(repartition.semaine);
+}
+
+/**
+ * L'E-MAIL « VOTRE SEMAINE », à 9 h. La parole s'inscrit au départ ; une semaine
+ * devenue vide entre-temps, ou une clé d'envoi absente, ne fait rien partir.
+ */
+export const envoyerLaSemaine = internalMutation({
+	args: { organizationId: v.id('organizations'), userId: v.string(), debut: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, userId, debut }): Promise<null> => {
+		const org = await ctx.db.get(organizationId);
+		if (org === null) return null;
+		const maintenant = Date.now();
+		const semaine = await lireLaSemaine(ctx, org, maintenant);
+		if (semaine === null || semaine.debut !== debut) return null;
+		const accordee = await demanderLaParole(
+			ctx,
+			{ organizationId, userId, canal: 'EMAIL', genre: 'semaine', cle: cleDeLEmail(debut) },
+			maintenant
+		);
+		if (!accordee) return null;
+		const utilisateur = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+			model: 'user',
+			where: [{ field: '_id', operator: 'eq', value: userId }]
+		})) as { email?: string } | null;
+		const email = utilisateur?.email;
+		if (!email) return null;
+		let expediteur: string;
+		let url: string;
+		try {
+			assertResendApiKey();
+			expediteur = expediteurNomme(
+				requireEnv('AUTH_EMAIL', { feature: 'votre semaine' }),
+				'Plume de Letikette'
+			);
+			url = `${requireEnv('SITE_URL', { feature: 'votre semaine' })}/app/semaine`;
+		} catch {
+			return null;
+		}
+		const rangees = [
+			{ libelle: 'Relances parties', valeur: String(semaine.relancesParties) },
+			{ libelle: 'Clients qui ont payé', valeur: String(semaine.clientsQuiOntPaye) },
+			...(semaine.dateLimiteDansJours === null
+				? []
+				: [
+						{
+							libelle: 'Date limite la plus proche',
+							valeur: `dans ${semaine.dateLimiteDansJours} j`
+						}
+					])
+		];
+		const donnees = {
+			nomEntreprise: org.name,
+			periode: `la semaine du ${dateLisible(semaine.debut)}`,
+			rentreLisible: semaine.rentre > 0n ? enEuros(semaine.rentre) : null,
+			meilleure:
+				semaine.meilleureDepuis === null
+					? null
+					: semaine.meilleureDepuis === 'arrivee'
+						? 'Votre meilleure semaine depuis votre arrivée.'
+						: `Votre meilleure semaine depuis le ${dateLisible(semaine.meilleureDepuis)}.`,
+			rangees,
+			url
+		};
+		await resend.sendEmail(ctx, {
+			from: expediteur,
+			to: email,
+			subject: `Votre semaine : ${enUnePhrase(semaine)}`,
+			html: semaineHtml(donnees),
+			text: semaineTexte(donnees)
+		});
 		return null;
 	}
 });

@@ -76,7 +76,7 @@ const ROUTES_D_UN_CLIENT: readonly string[] = ['/app/clients/$id', '/app/risque/
 const SEUIL_DE_DEFILEMENT = 120;
 
 /** Ce que la bulle ne redit pas : la fête du paiement ou la célébration le disent déjà. */
-const SANS_PAROLE: ReadonlySet<string> = new Set(['PAIEMENT_RECU', 'JALON']);
+const SANS_PAROLE: ReadonlySet<string> = new Set(['PAIEMENT_RECU', 'JALON', 'SEMAINE']);
 
 type Journee = FunctionReturnType<typeof api.recouvrement.journee.etat>;
 
