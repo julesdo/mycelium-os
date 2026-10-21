@@ -676,7 +676,16 @@ const CAISSE_DEMO: CaisseAffichee = {
 	erreur: null,
 	bienvenue: { pourcent: 20, mois: 3, dernierJour: '2026-11-01' },
 	fondateurs: { prixId: 'pri_demo', restantes: 37, jusquAu: '2026-12-31' },
-	onChoisirFondateurs: () => undefined
+	onChoisirFondateurs: () => undefined,
+	// Ce que `PricePreview` de Paddle rend pour un client en France (relevé le 21/10/2026).
+	ttc: {
+		'solo-mensuel': 1440,
+		'solo-annuel': 14400,
+		'equipe-mensuel': 7080,
+		'equipe-annuel': 70800,
+		'pro-mensuel': 17880,
+		'pro-annuel': 178800
+	}
 };
 
 /**

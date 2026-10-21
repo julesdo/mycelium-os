@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Chip, Segmented, SegmentedButton, SurfaceCut } from '@cladd-ui/react';
 import {
 	BellIcon,
@@ -44,6 +44,13 @@ import { FeuillePleinEcran } from './plein-ecran';
  *
  * Ni compte à rebours, ni offre « dernière chance » : le fondateur veut une
  * expérience fiable, pas « cheap ».
+ *
+ * ⚠️ LE MONTANT PRÉLEVÉ EST ÉCRIT TTC, À CÔTÉ DU PRIX HT (21/10/2026). La grille est
+ * hors taxes, et Paddle fait accepter au client le montant TVA comprise : « 12 € »
+ * sur notre page, « 14,40 €/mois » dans sa case à cocher, et le fondateur : « c'est
+ * pas clair pour l'utilisateur ». Le montant TTC vient de Paddle lui-même
+ * (`PricePreview`, la TVA du pays du client) : aucun taux n'est écrit ici. Tant
+ * qu'il n'est pas lu, la page dit « TVA en plus ».
  */
 export function ChoixDeFormule({
 	ouverte,
@@ -57,7 +64,9 @@ export function ChoixDeFormule({
 	retour = false,
 	utilisateurs = 1,
 	actuelle,
-	bienvenue
+	bienvenue,
+	ttc,
+	onVoirLesPrix
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -87,13 +96,23 @@ export function ChoixDeFormule({
 		readonly mois: number;
 		readonly dernierJour: string;
 	};
+	/** Les montants TVA comprise, en centimes, tels que Paddle les prélèvera. */
+	readonly ttc?: MontantsTTC | null;
+	/** Demande ces montants à Paddle : la page vient de s'ouvrir. */
+	readonly onVoirLesPrix?: () => void;
 }) {
+	// Paddle.js est un système extérieur : la page ouverte, on lui demande ses montants.
+	useEffect(() => {
+		if (ouverte) onVoirLesPrix?.();
+	}, [ouverte, onVoirLesPrix]);
+
 	const [formule, setFormule] = useState<Formule>(actuelle?.formule ?? recommandee);
 	const [rythme, setRythme] = useState<Rythme>(actuelle?.rythme ?? 'annuel');
 	const inchangee =
 		actuelle !== undefined && actuelle.formule === formule && actuelle.rythme === rythme;
 
 	const montant = montantDuRythme(formule, rythme);
+	const montantTTC = ttc?.[`${formule}-${rythme}`];
 	const premierPrelevement = maintenant + DUREE_ESSAI_JOURS * JOUR;
 	const offerts = moisOfferts(formule);
 
@@ -117,14 +136,16 @@ export function ChoixDeFormule({
 								: 'Continuer'
 							: essaiDisponible
 								? 'Commencer l’essai, 0 € aujourd’hui'
-								: `M’abonner, ${prixAffiche(montant * 100)} HT`}
+								: montantTTC === undefined
+									? `M’abonner, ${prixAffiche(montant * 100)} HT`
+									: `M’abonner, ${prixAffiche(montantTTC)}${INSECABLE}TTC`}
 					</BoutonPrincipal>
 					<p className="text-center text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						{actuelle !== undefined
 							? 'Vous voyez ce que le changement coûte avant de le confirmer.'
 							: essaiDisponible
-								? `Premier prélèvement le ${dateEnLettres(premierPrelevement)} : ${prixAffiche(montant * 100)} HT, puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Annulable jusqu’à la veille.`
-								: `Puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Résiliable à tout moment depuis Compte › Abonnement.`}
+								? `Premier prélèvement le ${dateEnLettres(premierPrelevement)} : ${ceQuiEstPreleve(montant * 100, montantTTC)}, puis ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Annulable jusqu’à la veille.`
+								: `${montantTTC === undefined ? 'TVA en plus, puis' : `Soit ${prixAffiche(montant * 100)} HT, puis`} ${rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. Résiliable à tout moment depuis Compte › Abonnement.`}
 					</p>
 					{plusTard ? (
 						<BoutonTexte className="self-center" onClick={plusTard.onClick}>
@@ -135,7 +156,7 @@ export function ChoixDeFormule({
 			}
 		>
 			{essaiDisponible && actuelle === undefined ? (
-				<FriseDeLEssai maintenant={maintenant} montant={montant} />
+				<FriseDeLEssai maintenant={maintenant} montant={montant} montantTTC={montantTTC} />
 			) : null}
 
 			<SurfaceCut
@@ -169,19 +190,38 @@ export function ChoixDeFormule({
 						recommandee={actuelle === undefined && f === recommandee}
 						actuelle={actuelle?.formule === f}
 						utilisateurs={utilisateurs}
+						montantTTC={ttc?.[`${f}-${rythme}`]}
 						onChoisir={() => setFormule(f)}
 					/>
 				))}
 			</div>
 
 			<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-				Prix hors taxes. Paddle, notre revendeur, encaisse le paiement, émet la facture et ajoute la
-				TVA de votre pays. Votre carte ne passe jamais par nos serveurs. Un paiement se rembourse
-				sur demande dans les {JOURS_DE_REMBOURSEMENT} jours.
+				Prix hors taxes ; le montant TTC est celui que Paddle prélève, avec la TVA de votre pays.
+				Paddle, notre revendeur, encaisse le paiement et émet la facture. Votre carte ne passe
+				jamais par nos serveurs. Un paiement se rembourse sur demande dans les{' '}
+				{JOURS_DE_REMBOURSEMENT} jours.
 			</p>
 		</FeuillePleinEcran>
 	);
 }
+
+/** Les montants TVA comprise, par formule et par rythme, en centimes. */
+export type MontantsTTC = Readonly<Partial<Record<`${Formule}-${Rythme}`, number>>>;
+
+/**
+ * Ce qui sera prélevé : « 14,40 € TTC (12 € HT) » quand Paddle a donné le montant,
+ * « 12 € HT, TVA en plus » sinon. Jamais un HT seul, que la case de Paddle contredirait.
+ * HT et TTC tiennent à leur montant (espace insécable) : « (12 € » et « HT) » se
+ * séparaient en fin de ligne.
+ */
+function ceQuiEstPreleve(htCentimes: number, ttcCentimes: number | undefined): string {
+	return ttcCentimes === undefined
+		? `${prixAffiche(htCentimes)}${INSECABLE}HT, TVA en plus`
+		: `${prixAffiche(ttcCentimes)}${INSECABLE}TTC (${prixAffiche(htCentimes)}${INSECABLE}HT)`;
+}
+
+const INSECABLE = '\u00a0';
 
 const JOUR = 24 * 60 * 60 * 1000;
 const MOIS_EN_LETTRES = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six'];
@@ -201,6 +241,7 @@ function CarteDeFormule({
 	recommandee,
 	actuelle,
 	utilisateurs,
+	montantTTC,
 	onChoisir
 }: {
 	readonly formule: Formule;
@@ -209,6 +250,8 @@ function CarteDeFormule({
 	readonly recommandee: boolean;
 	readonly actuelle: boolean;
 	readonly utilisateurs: number;
+	/** Le même prix TVA comprise, en centimes, quand Paddle l'a donné. */
+	readonly montantTTC: number | undefined;
 	readonly onChoisir: () => void;
 }) {
 	const grille = GRILLE[formule];
@@ -246,8 +289,8 @@ function CarteDeFormule({
 					<span className="text-cladd-md font-extrabold tabular-nums">{prixAffiche(prix)}</span>
 					<span className="text-cladd-2xs text-cladd-fg-soft">
 						{rythme === 'annuel'
-							? `HT par an, soit ${moisOfferts(formule)} mois offerts`
-							: 'HT par mois, sans engagement'}
+							? `HT par an${montantTTC === undefined ? '' : ` (${prixAffiche(montantTTC)}${INSECABLE}TTC)`}, soit ${moisOfferts(formule)} mois offerts`
+							: `HT par mois${montantTTC === undefined ? '' : ` (${prixAffiche(montantTTC)}${INSECABLE}TTC)`}, sans engagement`}
 					</span>
 				</span>
 				<span className="text-cladd-2xs text-cladd-fg-soft">
@@ -284,10 +327,12 @@ function CarteDeFormule({
  */
 function FriseDeLEssai({
 	maintenant,
-	montant
+	montant,
+	montantTTC
 }: {
 	readonly maintenant: number;
 	readonly montant: number;
+	readonly montantTTC: number | undefined;
 }) {
 	const [premier, second] = RAPPELS_AVANT_PRELEVEMENT_JOURS;
 	const fin = maintenant + DUREE_ESSAI_JOURS * JOUR;
@@ -310,7 +355,7 @@ function FriseDeLEssai({
 		{
 			icone: <CalendarCheckIcon />,
 			quand: dateEnLettres(fin),
-			quoi: `Premier prélèvement de ${prixAffiche(montant * 100)} HT, sauf si vous annulez avant.`
+			quoi: `Premier prélèvement de ${ceQuiEstPreleve(montant * 100, montantTTC)}, sauf si vous annulez avant.`
 		}
 	];
 

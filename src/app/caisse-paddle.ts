@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Paddle, PaddleEventData } from '@paddle/paddle-js';
 import type { CaisseServeur } from '../lib/convex/paddle';
 import type { CaisseAffichee, Souscription } from '../screens/compte/facturation';
+import type { MontantsTTC } from '../ui/choix-formule';
 import { useAction, useMutation } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
 import { suivre } from './analytique';
@@ -9,9 +10,11 @@ import { suivre } from './analytique';
 /**
  * LE PAIEMENT PADDLE, BRANCHÉ SUR L'ÉCRAN.
  *
- * Paddle.js se charge AU PREMIER TOUCHER, jamais avec l'application : c'est un
- * script de Paddle (cdn.paddle.com) dont seul le choix de formule a besoin, et
- * le paquet d'entrée ne porte que le socle. Le paiement s'ouvre en
+ * Paddle.js se charge QUAND LA PAGE DE CHOIX S'OUVRE, jamais avec l'application :
+ * c'est un script de Paddle (cdn.paddle.com) dont seul le choix de formule a
+ * besoin, et le paquet d'entrée ne porte que le socle. Il y lit d'abord les
+ * montants TVA comprise (`PricePreview`), que la page écrit à côté du prix HT :
+ * c'est le montant que la case de Paddle fera accepter. Le paiement s'ouvre en
  * surimpression, chez Paddle : la carte ne passe jamais par nos serveurs.
  *
  * Ce que le paiement emporte (le prix, l'essai, l'établissement scellé) vient du
@@ -65,6 +68,9 @@ export function useCaissePaddle({
 	const [choix, setChoix] = useState<Souscription | null>(null);
 	const [souscrite, setSouscrite] = useState<Souscription | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
+	const [ttc, setTtc] = useState<MontantsTTC | null>(null);
+	/** Les prix déjà demandés à Paddle : une demande par jeu de prix. */
+	const demandes = useRef<string | null>(null);
 	// L'intérêt pour une formule nourrit le score du compte (`croissance/`) ; il
 	// part sans attendre et n'arrête jamais le paiement.
 	const noterInteret = useMutation(api.croissance.interet.noterInteretFormule);
@@ -131,8 +137,45 @@ export function useCaissePaddle({
 			});
 	}
 
+	/** Demande à Paddle ce que chaque prix coûte TVA comprise, pour le pays du client. */
+	function voirLesPrix(p: Extract<CaisseServeur, { pret: true }>): void {
+		const entrees = Object.entries(p.prix).filter(
+			(e): e is [string, string] => typeof e[1] === 'string'
+		);
+		const cle = `${p.jeton}|${entrees.map(([, id]) => id).join(',')}`;
+		if (entrees.length === 0 || demandes.current === cle) return;
+		demandes.current = cle;
+		paddlePour(p)
+			.then((paddle) => {
+				if (!paddle) throw new Error('Paddle.js absent');
+				return paddle.PricePreview({
+					items: entrees.map(([, priceId]) => ({ priceId, quantity: 1 }))
+				});
+			})
+			.then((reponse) => {
+				const parPrix = new Map(
+					reponse.data.details.lineItems.map((l) => [
+						l.price.id,
+						Number.parseInt(l.totals.total, 10)
+					])
+				);
+				const montants: Record<string, number> = {};
+				for (const [cleDePrix, id] of entrees) {
+					const total = parPrix.get(id);
+					if (total !== undefined && Number.isFinite(total)) montants[cleDePrix] = total;
+				}
+				setTtc(montants);
+			})
+			.catch(() => {
+				// Sans réponse, la page dit « TVA en plus » ; la prochaine ouverture redemande.
+				demandes.current = null;
+			});
+	}
+
 	return {
 		disponible: pret !== null,
+		ttc,
+		...(pret === null ? {} : { onVoirLesPrix: () => voirLesPrix(pret) }),
 		essai: pret?.essai ?? false,
 		bienvenue: pret?.bienvenue ?? null,
 		fondateurs: pret?.fondateurs ?? null,

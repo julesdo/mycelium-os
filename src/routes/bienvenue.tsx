@@ -762,6 +762,8 @@ function EtapeRelances({
 					maintenant={maintenant}
 					utilisateurs={abonnement.utilisateurs}
 					onChoisir={caisse.onChoisir}
+					ttc={caisse.ttc ?? null}
+					{...(caisse.onVoirLesPrix ? { onVoirLesPrix: caisse.onVoirLesPrix } : {})}
 					plusTard={{ libelle: 'Plus tard : rien ne part', onClick: () => setChoixOuvert(false) }}
 				/>
 			) : null}

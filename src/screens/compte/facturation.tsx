@@ -23,6 +23,7 @@ import {
 	prixAffiche
 } from '../../ui';
 import { montantPreleve } from '../../lib/paiement/paddle';
+import type { MontantsTTC } from '../../ui/choix-formule';
 import { OuvertureEnCours } from './offre';
 import { GestionDeLaFormule, type GestionAffichee } from './gestion-formule';
 import { etatDeLaFacturation, type CauseDeFermeture, type EtatFacturation } from './presse';
@@ -100,6 +101,9 @@ export interface CaisseAffichee {
 	readonly souscrite: Souscription | null;
 	readonly onFermerLaReussite: () => void;
 	readonly erreur: string | null;
+	/** Les montants TVA comprise que Paddle prélèvera, une fois lus (`PricePreview`). */
+	readonly ttc?: MontantsTTC | null;
+	readonly onVoirLesPrix?: () => void;
 }
 
 /**
@@ -205,6 +209,8 @@ export function SectionFacturation({
 					utilisateurs={abonnement.utilisateurs}
 					onChoisir={caisse.onChoisir}
 					{...(caisse.bienvenue ? { bienvenue: caisse.bienvenue } : {})}
+					ttc={caisse.ttc ?? null}
+					{...(caisse.onVoirLesPrix ? { onVoirLesPrix: caisse.onVoirLesPrix } : {})}
 				/>
 			) : null}
 
