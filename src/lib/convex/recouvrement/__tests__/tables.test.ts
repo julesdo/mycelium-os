@@ -98,6 +98,8 @@ describe('schéma du recouvrement', () => {
 			'facturesVente',
 			'importsRecouvrement',
 			'intervenants',
+			// Les réussites du gérant, relevées une fois chacune (21/10/2026).
+			'jalonsAtteints',
 			'journal',
 			// La journée de Plume, ses défis et sa série (13/10/2026).
 			'journeesPlume',
@@ -155,6 +157,7 @@ describe('schéma du recouvrement', () => {
 			['facturesVente', 'montantHT'],
 			['facturesVente', 'montantTTC'],
 			['reglements', 'montant'],
+			['jalonsAtteints', 'montant'],
 			['decomptes', 'principalRestantDu'],
 			['decomptes', 'interets'],
 			['decomptes', 'indemniteForfaitaire'],
