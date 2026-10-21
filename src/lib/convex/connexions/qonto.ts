@@ -349,6 +349,8 @@ export const synchroniser = internalAction({
 										}
 									]
 						),
+						// Une synchronisation suivante prévient des paiements ; la première lit l’historique.
+						paiementsANotifier: connexion.curseur !== undefined,
 						aujourdHui
 					});
 				}

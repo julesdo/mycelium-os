@@ -6,6 +6,8 @@ import type { Id } from '../_generated/dataModel';
 import { normaliserFournisseur } from '../../socle/normalisation';
 import { rejouerQualificationDuDebiteur } from './creances';
 import { complementDeReglement } from '../../socle/connecteurs/qonto';
+import { notifier } from '../notifier';
+import { regrouperLesPaiements } from '../../notifications/paiements';
 
 /**
  * L'enregistrement d'un import de factures de vente.
@@ -218,6 +220,14 @@ export const enregistrerImport = internalMutation({
 		 */
 		documentId: v.optional(v.id('_storage')),
 		/**
+		 * PRÉVENIR DES PAIEMENTS DE CE LOT (21/10/2026, le parcours de l'habitude). Seule
+		 * une SYNCHRONISATION SUIVANTE le demande (Qonto avec son curseur, Nango avec son
+		 * « depuis ») : une première lecture ou un dépôt apporte des années de règlements,
+		 * et « X vous a payé » sur l'historique serait du bruit. Une seule notification
+		 * pour le lot, et seulement pour des factures déjà échues.
+		 */
+		paiementsANotifier: v.optional(v.boolean()),
+		/**
 		 * LE JOUR OÙ L'ON COMPTE LES RETARDS OBSERVÉS.
 		 *
 		 * Les factures de ce lot entrent dans les retards antérieurs du débiteur,
@@ -236,9 +246,23 @@ export const enregistrerImport = internalMutation({
 	}),
 	handler: async (
 		ctx,
-		{ organizationId, factures, reglements, reglementsCumules, documentId, aujourdHui }
+		{
+			organizationId,
+			factures,
+			reglements,
+			reglementsCumules,
+			documentId,
+			paiementsANotifier,
+			aujourdHui
+		}
 	) => {
 		let debiteursCrees = 0;
+		/** Ce qui est rentré dans ce lot, pour prévenir une fois (`paiementsANotifier`). */
+		const paiementsDuLot: {
+			factureId: Id<'facturesVente'>;
+			debiteurId: Id<'debiteurs'>;
+			montant: bigint;
+		}[] = [];
 		let facturesCreees = 0;
 		let facturesDejaConnues = 0;
 
@@ -360,6 +384,13 @@ export const enregistrerImport = internalMutation({
 				dateSource: 'REELLE'
 			});
 			reglementsCrees++;
+			if (reglement.nature !== 'AVOIR') {
+				paiementsDuLot.push({
+					factureId: cible.id,
+					debiteurId: cible.debiteurId,
+					montant: reglement.montant
+				});
+			}
 		}
 
 		for (const cumul of reglementsCumules ?? []) {
@@ -401,6 +432,7 @@ export const enregistrerImport = internalMutation({
 				dateSource: cumul.dateSure === false ? 'LECTURE' : 'REELLE'
 			});
 			reglementsCrees++;
+			paiementsDuLot.push({ factureId, debiteurId: cible.debiteurId, montant: complement });
 		}
 
 		// Le statut se recalcule depuis TOUS les règlements de la facture, pas
@@ -453,6 +485,10 @@ export const enregistrerImport = internalMutation({
 			});
 		}
 
+		if (paiementsANotifier === true && paiementsDuLot.length > 0) {
+			await prevenirDesPaiements(ctx, organizationId, paiementsDuLot, aujourdHui);
+		}
+
 		return {
 			debiteursCrees,
 			facturesCreees,
@@ -462,3 +498,50 @@ export const enregistrerImport = internalMutation({
 		};
 	}
 });
+
+/**
+ * UNE NOTIFICATION « PAIEMENTS REÇUS » POUR LE LOT (21/10/2026, le parcours de
+ * l'habitude). Seulement les factures déjà échues : ce qu'on attendait et qui est arrivé.
+ * Chaque membre de l'établissement la reçoit, et son push suit ses réglages.
+ */
+async function prevenirDesPaiements(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	paiements: readonly {
+		factureId: Id<'facturesVente'>;
+		debiteurId: Id<'debiteurs'>;
+		montant: bigint;
+	}[],
+	aujourdHui: string
+): Promise<void> {
+	const recus: { client: string; montant: bigint }[] = [];
+	const noms = new Map<string, string>();
+	for (const p of paiements) {
+		const facture = await ctx.db.get(p.factureId);
+		if (facture === null || facture.dateEcheance === undefined) continue;
+		if (facture.dateEcheance >= aujourdHui) continue;
+		let nom = noms.get(p.debiteurId);
+		if (nom === undefined) {
+			nom = (await ctx.db.get(p.debiteurId))?.denomination ?? 'Un client';
+			noms.set(p.debiteurId, nom);
+		}
+		recus.push({ client: nom, montant: p.montant });
+	}
+	const texte = regrouperLesPaiements(recus);
+	if (texte === null) return;
+	const seulDebiteur = new Set(paiements.map((p) => p.debiteurId)).size === 1;
+	const membres = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+		.take(50);
+	for (const membre of membres) {
+		await notifier(ctx, {
+			organizationId,
+			userId: membre.userId,
+			type: 'PAIEMENT_RECU',
+			title: texte.titre,
+			message: texte.message,
+			link: seulDebiteur ? `/app/clients/${paiements[0]!.debiteurId}` : '/app'
+		});
+	}
+}

@@ -157,7 +157,9 @@ async function ecrireFactures(
 	ctx: ActionCtx,
 	organizationId: Id<'organizations'>,
 	factures: readonly FactureDepuisConnecteur[],
-	aujourdHui: string
+	aujourdHui: string,
+	/** Une lecture suivante (`passe.depuis`) prévient des paiements ; la première lit l’historique. */
+	paiementsANotifier: boolean
 ): Promise<void> {
 	if (factures.length === 0) return;
 	await ctx.runMutation(internal.recouvrement.import.enregistrerImport, {
@@ -187,6 +189,7 @@ async function ecrireFactures(
 						}
 					]
 		),
+		paiementsANotifier,
 		aujourdHui
 	});
 }
@@ -541,7 +544,13 @@ export const lire = internalAction({
 					else if (traduction.genre === 'ILLISIBLE') nonLues += 1;
 					else if (traduction.genre === 'ANNULEE') annulees.push(traduction.reference);
 				}
-				await ecrireFactures(ctx, passe.organizationId, factures, aujourdHui);
+				await ecrireFactures(
+					ctx,
+					passe.organizationId,
+					factures,
+					aujourdHui,
+					passe.depuis !== null
+				);
 				lues += factures.length;
 				suite = page.suite;
 				await ctx.runMutation(internal.connexions.nangoDonnees.noterPage, {
