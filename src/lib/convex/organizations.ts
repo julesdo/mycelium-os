@@ -53,6 +53,26 @@ export const getMyOrgMembership = authedQuery({
 });
 
 /**
+ * CE QU'UN ÉTABLISSEMENT PORTE À SA NAISSANCE.
+ *
+ * ⚠️ `jalonsRelevesLe` EST POSÉ DÈS LA CRÉATION (21/10/2026). Le premier relevé des
+ * jalons inscrit « vu de tous » ce qui est déjà franchi : c'est pour les comptes nés
+ * avant la mise en service. Un compte né après fête sa première réussite — souvent sa
+ * première relance partie, et la proposition des notifications qu'elle porte.
+ */
+export function champsDUnNouvelEtablissement(nom: string, maintenant: number) {
+	return {
+		name: nom,
+		country: 'FR',
+		currency: 'EUR',
+		timezone: 'Europe/Paris',
+		locale: 'fr-FR',
+		createdAt: maintenant,
+		jalonsRelevesLe: maintenant
+	};
+}
+
+/**
  * LA CRÉATION DE L'ÉTABLISSEMENT, ET L'IDENTITÉ AVEC LUI.
  *
  * ⚠️ LES DEUX ÉCRITURES TIENNENT DANS LA MÊME MUTATION, et c'est une question
@@ -108,14 +128,10 @@ export const createOrganization = authedMutation({
 			.withIndex('by_userId', (q) => q.eq('userId', ctx.user._id))
 			.unique();
 
-		const orgId = await ctx.db.insert('organizations', {
-			name: args.name.trim(),
-			country: 'FR',
-			currency: 'EUR',
-			timezone: 'Europe/Paris',
-			locale: 'fr-FR',
-			createdAt: Date.now()
-		});
+		const orgId = await ctx.db.insert(
+			'organizations',
+			champsDUnNouvelEtablissement(args.name.trim(), Date.now())
+		);
 
 		await ctx.db.insert('organizationMembers', {
 			organizationId: orgId,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { semaineHtml, semaineTexte, type SemaineData } from '../modeles/semaine';
-import { repartirLeLundi } from '../../../verticales/recouvrement/votre-semaine';
+import { rangeesDeLaSemaine, repartirLeLundi } from '../../../verticales/recouvrement/votre-semaine';
 
 /**
  * L'E-MAIL DU LUNDI (21/10/2026, le parcours de l'habitude) : « Votre semaine » remplace
@@ -43,29 +43,54 @@ describe('un seul e-mail le lundi', () => {
 	it('envoie « Votre semaine » et pas le point du matin', () => {
 		expect(repartirLeLundi([{ userId: 'gerant', ...MEMBRE }], false)).toEqual({
 			semaine: ['gerant'],
-			pointDuMatin: []
+			pointDuMatin: [],
+			notification: []
 		});
 	});
 
 	it('envoie le point du matin à qui a coupé « Votre semaine »', () => {
 		expect(
 			repartirLeLundi([{ userId: 'associe', ...MEMBRE, semaineCoupee: true }], false)
-		).toEqual({ semaine: [], pointDuMatin: ['associe'] });
+		).toEqual({ semaine: [], pointDuMatin: ['associe'], notification: [] });
 	});
 
 	it('envoie le point du matin quand la semaine est vide ou le budget dit non', () => {
 		expect(repartirLeLundi([{ userId: 'gerant', ...MEMBRE }], true)).toEqual({
 			semaine: [],
-			pointDuMatin: ['gerant']
+			pointDuMatin: ['gerant'],
+			notification: []
 		});
 		expect(
 			repartirLeLundi([{ userId: 'gerant', ...MEMBRE, paroleAccordee: false }], false)
-		).toEqual({ semaine: [], pointDuMatin: ['gerant'] });
+		).toEqual({ semaine: [], pointDuMatin: ['gerant'], notification: ['gerant'] });
 	});
 
-	it('n’envoie rien à qui a coupé les e-mails du matin', () => {
+	it('prévient par la notification qui a coupé les e-mails du matin, jamais par les deux', () => {
 		expect(repartirLeLundi([{ userId: 'gerant', ...MEMBRE, pointDuMatin: false }], false)).toEqual(
-			{ semaine: [], pointDuMatin: [] }
+			{ semaine: [], pointDuMatin: [], notification: ['gerant'] }
 		);
+		expect(
+			repartirLeLundi(
+				[{ userId: 'gerant', ...MEMBRE, pointDuMatin: false, semaineCoupee: true }],
+				false
+			)
+		).toEqual({ semaine: [], pointDuMatin: [], notification: [] });
+	});
+});
+
+describe('les rangées de l’e-mail', () => {
+	it('ne portent aucune valeur nulle', () => {
+		expect(
+			rangeesDeLaSemaine({
+				debut: '2026-10-12',
+				fin: '2026-10-18',
+				rentre: 0n,
+				relancesParties: 6,
+				clientsQuiOntPaye: 0,
+				dateLimiteDansJours: null,
+				huitSemaines: [],
+				meilleureDepuis: null
+			})
+		).toEqual([{ libelle: 'Relances parties', valeur: '6' }]);
 	});
 });

@@ -13,6 +13,8 @@ import {
 	paroleAccordee
 } from '../croissance/attention';
 import { vCleJalon } from './tables';
+import { formuleSouscrite } from '../billing';
+import { moisOfferts } from '../../config/tarifs';
 import { jourDeParis } from '../../admin/dates';
 import { cleDeSilence } from '../../croissance/attention';
 import { enEuros } from '../../notifications/paiements';
@@ -74,10 +76,13 @@ async function uneRelancePartie(
 }
 
 /**
- * CE QUI EST RENTRÉ SUR LES DOSSIERS SUIVIS DEPUIS L'ARRIVÉE : les paiements et acomptes
- * rapprochés sur une facture qui appartient à un dossier. Un règlement daté du jour où
- * il a été lu (`LECTURE`) ne compte pas : la source ne dit pas quand il est arrivé, et
- * un premier import ramènerait l'historique comme s'il venait de rentrer.
+ * CE QUI EST RENTRÉ SUR LES DOSSIERS SUIVIS DEPUIS L'ARRIVÉE : les paiements, acomptes et
+ * crédits rapprochés sur une facture qui appartient à un dossier. Les synchronisations
+ * (Qonto, Nango) inscrivent leurs paiements en crédit (`import.ts`) : sans eux, un compte
+ * branché à son logiciel ne franchirait jamais rien, alors qu'on lui dit « X vous a
+ * payé ». Un avoir n'est pas de l'argent qui rentre. Un règlement daté du jour où il a
+ * été lu (`LECTURE`) ne compte pas : la source ne dit pas quand il est arrivé, et un
+ * premier import ramènerait l'historique comme s'il venait de rentrer.
  */
 async function ceQuiEstRentre(
 	ctx: MutationCtx,
@@ -95,7 +100,7 @@ async function ceQuiEstRentre(
 	let paiements = 0;
 	let premier: Nomme | null = null;
 	for (const r of reglements) {
-		if ((r.nature !== 'PAIEMENT' && r.nature !== 'ACOMPTE') || r.dateSource === 'LECTURE') continue;
+		if (!estRentre(r)) continue;
 		if (!factures.has(r.factureId)) factures.set(r.factureId, await ctx.db.get(r.factureId));
 		const facture = factures.get(r.factureId);
 		if (facture === null || facture === undefined || facture.creanceId === undefined) continue;
@@ -105,6 +110,11 @@ async function ceQuiEstRentre(
 		premier ??= { montant: r.montant, debiteurId: facture.debiteurId };
 	}
 	return { total, paiements, clients: clients.size, premier };
+}
+
+/** De l'argent qui est arrivé, à une date connue (`ceQuiEstRentre`, « Votre semaine »). */
+export function estRentre(r: Doc<'reglements'>): boolean {
+	return r.nature !== 'AVOIR' && r.dateSource !== 'LECTURE';
 }
 
 /** Le premier dossier dont toutes les factures sont réglées. */
@@ -292,6 +302,22 @@ export function jalonEnAttente(
 }
 
 /**
+ * L'ANNÉE SE PROPOSE à l'administrateur d'un abonnement au mois, en cours ou à l'essai, et
+ * jamais à un abonnement dont la résiliation est programmée.
+ */
+export function proposerLAnnee(
+	org: Pick<Doc<'organizations'>, 'paddleRythme' | 'paddleStatus' | 'paddleResiliationLe'>,
+	role: string
+): boolean {
+	return (
+		role === 'ORG_ADMIN' &&
+		org.paddleRythme === 'mensuel' &&
+		(org.paddleStatus === 'active' || org.paddleStatus === 'trialing') &&
+		org.paddleResiliationLe === undefined
+	);
+}
+
+/**
  * LA RÉUSSITE À FÊTER, à la visite suivante : la plus haute que la personne n'a pas vue,
  * franchie depuis qu'elle est là et il y a moins d'un mois, si le budget d'attention
  * l'accorde aujourd'hui. Avec au plus une ligne sous le bouton.
@@ -307,6 +333,8 @@ export const jalonAMontrer = authedQuery({
 			montant: v.union(v.int64(), v.null()),
 			detail: v.string(),
 			secondaire: v.union(vLigne, v.null()),
+			/** Ce que l'année fait gagner, lu sur la grille (`config/tarifs.ts`). */
+			moisOfferts: v.union(v.number(), v.null()),
 			atteintLe: v.number()
 		})
 	),
@@ -346,10 +374,7 @@ export const jalonAMontrer = authedQuery({
 			pushActif:
 				!process.env.VAPID_PUBLIC_KEY || appareil !== null || coupes.has(cleDeSilence('push')),
 			// L'année ne se propose qu'à qui peut changer la formule.
-			mensuel:
-				membre.role === 'ORG_ADMIN' &&
-				org.paddleRythme === 'mensuel' &&
-				(org.paddleStatus === 'active' || org.paddleStatus === 'trialing'),
+			mensuel: proposerLAnnee(org, membre.role),
 			anneeProposee:
 				tous.some((j) => j.secondaire === 'ANNEE') || coupes.has(cleDeSilence('annee')),
 			recommandationCoupee: !PARRAINAGE_OUVERT || coupes.has(cleDeSilence('recommandation'))
@@ -368,6 +393,10 @@ export const jalonAMontrer = authedQuery({
 			montant: texte.montant,
 			detail: texte.detail,
 			secondaire,
+			moisOfferts: (() => {
+				const formule = formuleSouscrite(org);
+				return secondaire === 'ANNEE' && formule !== null ? moisOfferts(formule) : null;
+			})(),
 			atteintLe: jalon.atteintLe
 		};
 	}

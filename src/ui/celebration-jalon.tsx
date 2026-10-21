@@ -30,14 +30,18 @@ export interface JalonAffiche {
 	readonly montant: bigint | null;
 	readonly detail: string;
 	readonly secondaire: LigneDeCelebration | null;
+	/** Ce que l'année fait gagner, lu sur la grille : jamais écrit ici. */
+	readonly moisOfferts?: number | null;
 }
 
 export type IssueDeLaLigne = 'TOUCHEE' | 'PASSEE' | 'AUCUNE';
 
-const LIBELLE_DE_LA_LIGNE: Readonly<Record<'PUSH' | 'ANNEE', string>> = {
-	PUSH: 'Être prévenu quand un client paie',
-	ANNEE: 'Passer à l’année : 2 mois offerts'
-};
+function libelleDeLaLigne(ligne: 'PUSH' | 'ANNEE', moisOfferts: number | null | undefined): string {
+	if (ligne === 'PUSH') return 'Être prévenu quand un client paie';
+	return moisOfferts === null || moisOfferts === undefined
+		? 'Passer à l’année'
+		: `Passer à l’année : ${moisOfferts} mois offerts`;
+}
 
 export function CelebrationDeJalon({
 	jalon,
@@ -87,7 +91,7 @@ export function CelebrationDeJalon({
 					? {}
 					: {
 							secondaire: {
-								libelle: LIBELLE_DE_LA_LIGNE[ligne],
+								libelle: libelleDeLaLigne(ligne, jalon.moisOfferts),
 								onClick: () => {
 									if (ligne === 'PUSH') {
 										setEtape('push');

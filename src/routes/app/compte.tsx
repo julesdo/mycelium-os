@@ -72,6 +72,8 @@ function CompteEnErreur() {
 function PageCompte() {
 	const navigate = useNavigate();
 	const { ouvrir } = Route.useSearch();
+	// « Passer à l'année » depuis une célébration : la confirmation s'ouvre une fois.
+	const [anneeEnAttente, setAnneeEnAttente] = useState(ouvrir === 'annee');
 	const { theme, setTheme } = useTheme();
 
 	// ── L'établissement et l'identité du créancier ───────────────────────────
@@ -630,7 +632,14 @@ function PageCompte() {
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};
 
-	return <EcranCompte donnees={{ etat: 'pret', valeur: compteAffiche }} ouvrir={ouvrir} />;
+	return (
+		<EcranCompte
+			donnees={{ etat: 'pret', valeur: compteAffiche }}
+			ouvrir={ouvrir}
+			passerALAnnee={anneeEnAttente}
+			onAnneeOuverte={() => setAnneeEnAttente(false)}
+		/>
+	);
 }
 
 /** L'origine réellement servie, jamais celle d'une variable d'environnement. */

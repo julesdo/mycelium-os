@@ -189,11 +189,16 @@ function valeurUrgente(fait: string): string | null {
 
 export function EcranCompte({
 	donnees,
-	ouvrir
+	ouvrir,
+	passerALAnnee = false,
+	onAnneeOuverte
 }: {
 	donnees: Lecture<CompteAffiche>;
 	/** Une rangée ouverte à l'arrivée (`?ouvrir=`), là où mène un rappel. */
 	ouvrir?: string | undefined;
+	/** `?ouvrir=annee`, pas encore ouverte : la confirmation de l'année s'ouvre d'emblée. */
+	passerALAnnee?: boolean;
+	onAnneeOuverte?: () => void;
 }) {
 	/**
 	 * ⚠️ TOUT PART REPLIÉ, ET C'EST LA DÉCISION. Une rangée qui attend quelque
@@ -366,7 +371,8 @@ export function EcranCompte({
 									maintenant={maintenant}
 									caisse={pret.caisse}
 									gestion={pret.gestion}
-									passerALAnnee={ouvrir === 'annee'}
+									passerALAnnee={passerALAnnee}
+									{...(onAnneeOuverte === undefined ? {} : { onAnneeOuverte })}
 								/>
 							)}
 						</AvecLaLecture>

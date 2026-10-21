@@ -104,13 +104,13 @@ describe('la célébration d’un jalon', () => {
 	});
 
 	it('compte la ligne passée quand on continue sans la toucher', async () => {
-		const { onVu } = monter({ ...DIX_MILLE, secondaire: 'ANNEE' });
+		const { onVu } = monter({ ...DIX_MILLE, secondaire: 'ANNEE', moisOfferts: 2 });
 		await toucher('Continuer');
 		expect(onVu).toHaveBeenCalledWith('PASSEE');
 	});
 
 	it('mène à la confirmation de l’année depuis sa ligne', async () => {
-		const { onVu, onAnnee } = monter({ ...DIX_MILLE, secondaire: 'ANNEE' });
+		const { onVu, onAnnee } = monter({ ...DIX_MILLE, secondaire: 'ANNEE', moisOfferts: 2 });
 		await toucher('Passer à l’année : 2 mois offerts');
 		expect(onVu).toHaveBeenCalledWith('TOUCHEE');
 		expect(onAnnee).toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('la célébration d’un jalon', () => {
 		act(() =>
 			racine.render(
 				<CelebrationDeJalon
-					jalon={{ ...DIX_MILLE, secondaire: 'ANNEE' }}
+					jalon={{ ...DIX_MILLE, secondaire: 'ANNEE', moisOfferts: 2 }}
 					bloquee={false}
 					push={undefined}
 					onVu={onVu}
@@ -134,6 +134,11 @@ describe('la célébration d’un jalon', () => {
 		await toucher('Ne plus me le proposer');
 		expect(onNePlusProposer).toHaveBeenCalledWith('ANNEE');
 		expect(onVu).toHaveBeenCalledWith('TOUCHEE');
+	});
+
+	it('dit les mois offerts que la grille donne', () => {
+		monter({ ...DIX_MILLE, secondaire: 'ANNEE', moisOfferts: 3 });
+		expect(document.body.textContent).toContain('Passer à l’année : 3 mois offerts');
 	});
 
 	it('tait la recommandation tant que le parrainage n’est pas ouvert', () => {

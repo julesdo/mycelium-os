@@ -6,6 +6,7 @@ import {
 	LigneDeReleve,
 	Lien,
 	ListeDeReleve,
+	NombreHero,
 	PageEcran,
 	dateCourte,
 	type Lecture
@@ -36,6 +37,67 @@ function meilleure(depuis: string | null): string | null {
 	return depuis === 'arrivee'
 		? 'Votre meilleure semaine depuis votre arrivée'
 		: `Votre meilleure semaine depuis le ${dateCourte(depuis)}`;
+}
+
+/**
+ * CE QUE L'ÉCRAN POSE, SANS AUCUN CADRAN À ZÉRO (relecture du 21/10/2026, règle d'écran
+ * n° 4). Le montant en grand quand de l'argent est rentré ; sinon les relances parties,
+ * sinon les jours avant la date limite. Le relevé ne porte que ce qui n'est pas nul, et
+ * jamais deux fois le chiffre déjà posé en grand.
+ */
+export function compositionDeLaSemaine(
+	semaine: VotreSemaine,
+	relancesProgrammees: number
+): {
+	heros:
+		| { readonly genre: 'MONTANT'; readonly centimes: bigint }
+		| { readonly genre: 'NOMBRE'; readonly nombre: number; readonly surTitre: string };
+	lignes: { readonly titre: string; readonly ligne?: string; readonly valeur: string }[];
+	cetteSemaine: string;
+} {
+	const heros =
+		semaine.rentre > 0n
+			? ({ genre: 'MONTANT', centimes: semaine.rentre } as const)
+			: semaine.relancesParties > 0
+				? ({
+						genre: 'NOMBRE',
+						nombre: semaine.relancesParties,
+						surTitre: 'Relances parties'
+					} as const)
+				: ({
+						genre: 'NOMBRE',
+						nombre: semaine.dateLimiteDansJours ?? 0,
+						surTitre: 'Jours avant la date limite la plus proche'
+					} as const);
+	const lignes: { titre: string; ligne?: string; valeur: string }[] = [];
+	if (heros.genre === 'MONTANT' && semaine.relancesParties > 0) {
+		lignes.push({
+			titre: 'Relances parties',
+			ligne: 'À votre nom',
+			valeur: String(semaine.relancesParties)
+		});
+	}
+	if (semaine.clientsQuiOntPaye > 0) {
+		lignes.push({ titre: 'Clients qui ont payé', valeur: String(semaine.clientsQuiOntPaye) });
+	}
+	if (
+		semaine.dateLimiteDansJours !== null &&
+		!(heros.genre === 'NOMBRE' && heros.surTitre !== 'Relances parties')
+	) {
+		lignes.push({
+			titre: 'Date limite la plus proche',
+			ligne: 'Pour agir en justice, sur un dossier ouvert',
+			valeur: `dans ${semaine.dateLimiteDansJours} j`
+		});
+	}
+	return {
+		heros,
+		lignes,
+		cetteSemaine:
+			relancesProgrammees === 0
+				? 'Aucune relance programmée pour l’instant.'
+				: `${pluriel(relancesProgrammees, 'relance programmée', 'relances programmées')} par Plume : chacune s’affiche avant de partir et se retient d’un geste.`
+	};
 }
 
 export function EcranSemaine({ donnees }: { readonly donnees: Lecture<SemaineAffichee> }) {
@@ -74,50 +136,44 @@ export function EcranSemaine({ donnees }: { readonly donnees: Lecture<SemaineAff
 	}
 
 	const ligneMeilleure = meilleure(semaine.meilleureDepuis);
+	const { heros, lignes, cetteSemaine } = compositionDeLaSemaine(semaine, relancesProgrammees);
+	const periode = `La semaine du ${dateCourte(semaine.debut)}`;
 
 	return (
 		<PageEcran entete={entete}>
 			<div className="flex flex-col gap-cladd-sm">
-				<ChiffreHero
-					centimes={semaine.rentre}
-					surTitre={`Rentré la semaine du ${dateCourte(semaine.debut)}`}
-					legende={
-						ligneMeilleure ??
-						(semaine.clientsQuiOntPaye === 0
-							? 'Aucun paiement cette semaine-là'
-							: `${pluriel(semaine.clientsQuiOntPaye, 'client a payé', 'clients ont payé')}`)
-					}
-					defile
-				/>
+				{heros.genre === 'MONTANT' ? (
+					<ChiffreHero
+						centimes={heros.centimes}
+						surTitre={`Rentré la semaine du ${dateCourte(semaine.debut)}`}
+						legende={
+							ligneMeilleure ??
+							pluriel(semaine.clientsQuiOntPaye, 'client a payé', 'clients ont payé')
+						}
+						defile
+					/>
+				) : (
+					<NombreHero nombre={heros.nombre} surTitre={heros.surTitre} legende={periode} />
+				)}
 
 				<BarresDesSemaines semaines={semaine.huitSemaines} />
 
-				<ListeDeReleve>
-					<LigneDeReleve
-						titre="Relances parties"
-						ligne="À votre nom, par e-mail"
-						montant={String(semaine.relancesParties)}
-					/>
-					<LigneDeReleve
-						titre="Clients qui ont payé"
-						montant={String(semaine.clientsQuiOntPaye)}
-					/>
-					{semaine.dateLimiteDansJours === null ? null : (
-						<LigneDeReleve
-							titre="Date limite la plus proche"
-							ligne="Pour agir en justice, sur un dossier ouvert"
-							montant={`dans ${semaine.dateLimiteDansJours} j`}
-						/>
-					)}
-				</ListeDeReleve>
+				{lignes.length === 0 ? null : (
+					<ListeDeReleve>
+						{lignes.map((l) => (
+							<LigneDeReleve
+								key={l.titre}
+								titre={l.titre}
+								{...(l.ligne === undefined ? {} : { ligne: l.ligne })}
+								montant={l.valeur}
+							/>
+						))}
+					</ListeDeReleve>
+				)}
 
 				<section className="flex flex-col gap-cladd-3xs">
 					<EnTeteDeGroupe libelle="Cette semaine" />
-					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-						{relancesProgrammees === 0
-							? 'Aucune relance programmée pour l’instant. Plume en pose dès qu’une facture arrive à son étape.'
-							: `${pluriel(relancesProgrammees, 'relance programmée', 'relances programmées')} par Plume : chacune s’affiche avant de partir et se retient d’un geste.`}
-					</p>
+					<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">{cetteSemaine}</p>
 				</section>
 			</div>
 		</PageEcran>

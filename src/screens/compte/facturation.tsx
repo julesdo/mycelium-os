@@ -135,7 +135,8 @@ export function SectionFacturation({
 	maintenant,
 	caisse,
 	gestion,
-	passerALAnnee = false
+	passerALAnnee = false,
+	onAnneeOuverte
 }: {
 	abonnement: AbonnementAffiche | null;
 	/** L'heure lue une fois par l'écran : deux horloges donneraient deux comptes de jours. */
@@ -145,6 +146,7 @@ export function SectionFacturation({
 	gestion?: GestionAffichee;
 	/** Arrivé de la ligne « Passer à l'année » d'une célébration : sa confirmation s'ouvre. */
 	passerALAnnee?: boolean;
+	onAnneeOuverte?: () => void;
 }) {
 	const [choixOuvert, setChoixOuvert] = useState(false);
 	// Les montants TVA comprise viennent de Paddle.js : on les demande dès que la caisse
@@ -197,6 +199,7 @@ export function SectionFacturation({
 					gestion={gestion}
 					maintenant={maintenant}
 					passerALAnnee={passerALAnnee}
+					{...(onAnneeOuverte === undefined ? {} : { onAnneeOuverte })}
 				/>
 			) : null}
 

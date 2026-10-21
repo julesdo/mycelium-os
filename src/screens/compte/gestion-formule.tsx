@@ -54,7 +54,8 @@ export function GestionDeLaFormule({
 	abonnement,
 	gestion,
 	maintenant,
-	passerALAnnee = false
+	passerALAnnee = false,
+	onAnneeOuverte
 }: {
 	abonnement: AbonnementAffiche;
 	gestion: GestionAffichee;
@@ -64,6 +65,11 @@ export function GestionDeLaFormule({
 	 * ligne « Passer à l'année » d'une célébration, et elle montre déjà son prix.
 	 */
 	passerALAnnee?: boolean;
+	/**
+	 * La confirmation s'est ouverte d'emblée : l'écran oublie la demande, et rouvrir la
+	 * rangée « Abonnement » ne la rouvre pas.
+	 */
+	onAnneeOuverte?: () => void;
 }) {
 	const [choixOuvert, setChoixOuvert] = useState(false);
 	const [annee] = useState(() =>
@@ -84,6 +90,7 @@ export function GestionDeLaFormule({
 	// Le prix de l'année, demandé une fois à Paddle quand la confirmation s'ouvre d'emblée.
 	useEffect(() => {
 		if (annee === null) return;
+		onAnneeOuverte?.();
 		gestion
 			.apercu(annee.formule, annee.rythme)
 			.then((a) => setApercu({ etat: 'pret', ...a }))

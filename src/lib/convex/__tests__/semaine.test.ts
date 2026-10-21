@@ -121,3 +121,121 @@ describe('la semaine lue en base', () => {
 		DELAI_CONVEX
 	);
 });
+
+describe('ce que la semaine compte (relecture du 21/10/2026)', () => {
+	async function avecDossier(t: ReturnType<typeof convexTest>) {
+		return t.run(async (ctx) => {
+			const organizationId = await ctx.db.insert('organizations', {
+				name: 'Garnier Bâtiment',
+				createdAt: Date.now()
+			});
+			const debiteurId = await ctx.db.insert('debiteurs', {
+				organizationId,
+				denomination: 'Garage Martin',
+				denominationNormalisee: 'GARAGE MARTIN',
+				denominationsBrutes: ['Garage Martin'],
+				estCommercant: 'ok',
+				santeFinanciere: 'SAINE',
+				creeLe: Date.now()
+			});
+			const creanceId = await ctx.db.insert('creances', {
+				organizationId,
+				debiteurId,
+				statut: 'QUALIFIEE',
+				certaine: 'ok',
+				liquide: 'ok',
+				exigible: 'ok',
+				entreCommercants: 'ok',
+				creeLe: Date.now()
+			});
+			const factureId = await ctx.db.insert('facturesVente', {
+				organizationId,
+				debiteurId,
+				creanceId,
+				reference: 'FA-001',
+				montantHT: 0n,
+				montantTTC: 300_000n,
+				dateEmission: '2026-01-01',
+				dateEcheance: '2026-02-01',
+				dateExigibilite: '2026-02-01',
+				statutPaiement: 'SOLDEE',
+				creeLe: Date.now()
+			});
+			return { organizationId, creanceId, factureId };
+		});
+	}
+
+	const ENVOI = {
+		destinataire: 'compta@garage-martin.fr',
+		canal: 'MESSAGERIE' as const,
+		objet: 'Rappel',
+		corps: 'Bonjour',
+		resume: [],
+		choix: '{}',
+		etat: 'PARTI' as const,
+		preparePar: 'pilote',
+		prepareLe: Date.now()
+	};
+
+	it(
+		'compte un paiement synchronisé (Qonto, Nango), entré comme crédit daté',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, factureId } = await avecDossier(t);
+			await t.run(async (ctx) => {
+				await ctx.db.insert('reglements', {
+					organizationId,
+					factureId,
+					date: SEMAINE.fin,
+					montant: 300_000n,
+					nature: 'CREDIT',
+					creeLe: Date.now(),
+					dateSource: 'REELLE'
+				});
+			});
+			const semaine = await t.run(async (ctx) =>
+				lireLaSemaine(ctx, (await ctx.db.get(organizationId))!, PLUS_TARD)
+			);
+			expect(semaine?.rentre).toBe(300_000n);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne compte comme relances que les rappels et lettres au client, même au-delà de mille envois',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, creanceId } = await avecDossier(t);
+			await t.run(async (ctx) => {
+				for (let i = 0; i < 1000; i++) {
+					await ctx.db.insert('envois', {
+						organizationId,
+						creanceId,
+						modele: 'RAPPEL',
+						...ENVOI,
+						partiLe: '2026-01-05'
+					});
+				}
+				await ctx.db.insert('envois', {
+					organizationId,
+					creanceId,
+					modele: 'TRANSMISSION_AVOCAT',
+					...ENVOI,
+					partiLe: SEMAINE.fin
+				});
+				await ctx.db.insert('envois', {
+					organizationId,
+					creanceId,
+					modele: 'RAPPEL',
+					...ENVOI,
+					partiLe: SEMAINE.fin
+				});
+			});
+			const semaine = await t.run(async (ctx) =>
+				lireLaSemaine(ctx, (await ctx.db.get(organizationId))!, PLUS_TARD)
+			);
+			expect(semaine?.relancesParties).toBe(1);
+		},
+		DELAI_CONVEX * 2
+	);
+});

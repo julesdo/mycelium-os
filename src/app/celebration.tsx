@@ -18,37 +18,21 @@ export function CelebrationALaVisite() {
 	const jalon = useQuery(api.recouvrement.jalons.jalonAMontrer, {});
 	const [arriveeLe] = useState(() => Date.now());
 	if (jalon === undefined || jalon === null || jalon.atteintLe > arriveeLe) return null;
-	return jalon.secondaire === 'PUSH' ? (
-		<AvecLePush key={jalon.id} jalon={jalon} />
-	) : (
-		<Celebration key={jalon.id} jalon={jalon} push={undefined} />
-	);
+	return <Celebration key={jalon.id} jalon={jalon} />;
 }
 
 type JalonLu = NonNullable<FunctionReturnType<typeof api.recouvrement.jalons.jalonAMontrer>>;
 
-/** Le push ne s'abonne que si la célébration le propose. */
-function AvecLePush({ jalon }: { jalon: JalonLu }) {
-	const push = usePush();
-	return (
-		<Celebration
-			jalon={jalon}
-			push={
-				push === undefined
-					? undefined
-					: { etat: push.etat, enCours: push.enCours, onActiver: push.onActiver }
-			}
-		/>
-	);
-}
-
-function Celebration({
-	jalon,
-	push
-}: {
-	jalon: JalonLu;
-	push: Parameters<typeof CelebrationDeJalon>[0]['push'];
-}) {
+/**
+ * ⚠️ UN SEUL COMPOSANT, QUI LIT TOUJOURS LE PUSH (relecture du 21/10/2026). Activer le push
+ * depuis la ligne de la célébration fait disparaître la ligne côté serveur : un composant
+ * choisi selon la ligne se remontait alors, et la célébration se rouvrait par-dessus la
+ * feuille des notifications.
+ */
+function Celebration({ jalon }: { jalon: JalonLu }) {
+	const lu = usePush();
+	const push =
+		lu === undefined ? undefined : { etat: lu.etat, enCours: lu.enCours, onActiver: lu.onActiver };
 	const navigate = useNavigate();
 	const bloquee = useUneFeuilleOuverte();
 	const jalonVu = useMutation(api.recouvrement.jalons.jalonVu).withOptimisticUpdate((local) => {

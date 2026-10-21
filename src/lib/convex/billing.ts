@@ -28,7 +28,9 @@ import { debiteursSuivis } from './suivis';
 export { limitesDe, type PlanTier };
 
 /** Les étages d'avant le 14/10/2026, relus dans la grille d'aujourd'hui. */
-function formuleSouscrite(org: Doc<'organizations'>): Formule | null {
+export function formuleSouscrite(
+	org: Pick<Doc<'organizations'>, 'paddlePlanTier'>
+): Formule | null {
 	switch (org.paddlePlanTier) {
 		case 'solo':
 		case 'equipe':

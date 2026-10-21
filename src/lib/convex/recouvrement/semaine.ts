@@ -7,7 +7,7 @@ import { authedMutation, authedQuery } from '../functions';
 import { organisationCouranteOuNull } from '../lib/auth';
 import { demanderLaParole, noterOuverte, paroleAccordee } from '../croissance/attention';
 import { notifier } from '../notifier';
-import { jalonEnAttente, lireLesJalons } from './jalons';
+import { estRentre, jalonEnAttente, lireLesJalons } from './jalons';
 import { requireEnv } from '../env';
 import { assertResendApiKey, resend } from '../emails/resend';
 import { expediteurNomme } from '../emails/helpers';
@@ -21,6 +21,7 @@ import {
 	bornesDeLaSemaineEcoulee,
 	composerLaSemaine,
 	lundiDe,
+	rangeesDeLaSemaine,
 	repartirLeLundi,
 	type VotreSemaine
 } from '../../verticales/recouvrement/votre-semaine';
@@ -104,16 +105,16 @@ export async function lireLaSemaine(
 	const semaineDArrivee = lundiDe(arriveeLe);
 	const depuis = semaineDArrivee > plusTot ? semaineDArrivee : plusTot;
 
+	// Les plus récents d'abord : une borne coupe le passé lointain, jamais la semaine.
 	const reglements = (
 		await ctx.db
 			.query('reglements')
 			.withIndex('by_org_and_date', (q) =>
 				q.eq('organizationId', org._id).gte('date', depuis).lte('date', fin)
 			)
+			.order('desc')
 			.take(5000)
-	).filter(
-		(r) => (r.nature === 'PAIEMENT' || r.nature === 'ACOMPTE') && r.dateSource !== 'LECTURE'
-	);
+	).filter(estRentre);
 
 	// Le client de chaque paiement de la semaine : « 2 clients ont payé ».
 	const factures = new Map<Id<'facturesVente'>, Doc<'facturesVente'> | null>();
@@ -144,10 +145,15 @@ export async function lireLaSemaine(
 		datesDesSemaines.push(lundi);
 	}
 
-	const parties = await ctx.db
-		.query('envois')
-		.withIndex('by_org_and_etat', (q) => q.eq('organizationId', org._id).eq('etat', 'PARTI'))
-		.take(1000);
+	// Les plus récents d'abord, et seulement ce qui s'adresse au client : un rappel ou la
+	// lettre officielle, pas la lettre à l'avocat ni la déclaration au mandataire.
+	const parties = (
+		await ctx.db
+			.query('envois')
+			.withIndex('by_org_and_etat', (q) => q.eq('organizationId', org._id).eq('etat', 'PARTI'))
+			.order('desc')
+			.take(1000)
+	).filter((e) => e.modele === 'RAPPEL' || e.modele === 'RELANCE_OFFICIELLE');
 
 	return composerLaSemaine({
 		debut,
@@ -375,11 +381,11 @@ export async function preparerLeLundi(
 		),
 		false
 	);
-	for (const m of membres) {
-		if (m.categoriesCoupees?.includes('SEMAINE') === true) continue;
+	// La notification et son push, pour qui ne reçoit pas l'e-mail : un seul canal.
+	for (const userId of repartition.notification) {
 		await notifier(ctx, {
 			organizationId,
-			userId: m.userId,
+			userId,
 			type: 'SEMAINE',
 			title: 'Votre semaine',
 			message: enUnePhrase(semaine),
@@ -434,18 +440,7 @@ export const envoyerLaSemaine = internalMutation({
 		} catch {
 			return null;
 		}
-		const rangees = [
-			{ libelle: 'Relances parties', valeur: String(semaine.relancesParties) },
-			{ libelle: 'Clients qui ont payé', valeur: String(semaine.clientsQuiOntPaye) },
-			...(semaine.dateLimiteDansJours === null
-				? []
-				: [
-						{
-							libelle: 'Date limite la plus proche',
-							valeur: `dans ${semaine.dateLimiteDansJours} j`
-						}
-					])
-		];
+		const rangees = rangeesDeLaSemaine(semaine);
 		const donnees = {
 			nomEntreprise: org.name,
 			periode: `la semaine du ${dateLisible(semaine.debut)}`,

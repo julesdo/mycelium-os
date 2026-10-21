@@ -66,10 +66,31 @@ function meilleureDepuis(
 	return plusAncienne <= lundiDe(arriveeLe) ? 'arrivee' : plusAncienne;
 }
 
+/** Les rangées de l'e-mail du lundi : ce qui n'est pas nul, jamais un compteur à zéro. */
+export function rangeesDeLaSemaine(
+	s: VotreSemaine
+): { readonly libelle: string; readonly valeur: string }[] {
+	return [
+		...(s.relancesParties > 0
+			? [{ libelle: 'Relances parties', valeur: String(s.relancesParties) }]
+			: []),
+		...(s.clientsQuiOntPaye > 0
+			? [{ libelle: 'Clients qui ont payé', valeur: String(s.clientsQuiOntPaye) }]
+			: []),
+		...(s.dateLimiteDansJours === null
+			? []
+			: [{ libelle: 'Date limite la plus proche', valeur: `dans ${s.dateLimiteDansJours} j` }])
+	];
+}
+
 /**
  * LE LUNDI, UN SEUL E-MAIL PAR PERSONNE. « Votre semaine » va à qui reçoit les e-mails
  * du matin, ne l'a pas coupée et que le budget d'attention accorde, quand la semaine
  * n'est pas vide ; le point du matin va aux autres. Jamais les deux.
+ *
+ * ET UN SEUL CANAL HORS DE L'APPLICATION : qui reçoit l'e-mail ne reçoit pas en plus la
+ * notification et son push ; les autres, s'ils n'ont pas coupé « Votre semaine », la
+ * reçoivent à sa place. Dans l'application, la carte du lundi suffit.
  */
 export function repartirLeLundi(
 	membres: readonly {
@@ -81,15 +102,21 @@ export function repartirLeLundi(
 		readonly paroleAccordee: boolean;
 	}[],
 	semaineVide: boolean
-): { readonly semaine: string[]; readonly pointDuMatin: string[] } {
+): {
+	readonly semaine: string[];
+	readonly pointDuMatin: string[];
+	readonly notification: string[];
+} {
 	const semaine: string[] = [];
 	const pointDuMatin: string[] = [];
+	const notification: string[] = [];
 	for (const m of membres) {
-		if (!m.pointDuMatin) continue;
-		if (!semaineVide && !m.semaineCoupee && m.paroleAccordee) semaine.push(m.userId);
-		else pointDuMatin.push(m.userId);
+		const parEmail = m.pointDuMatin && !semaineVide && !m.semaineCoupee && m.paroleAccordee;
+		if (parEmail) semaine.push(m.userId);
+		else if (m.pointDuMatin) pointDuMatin.push(m.userId);
+		if (!parEmail && !semaineVide && !m.semaineCoupee) notification.push(m.userId);
 	}
-	return { semaine, pointDuMatin };
+	return { semaine, pointDuMatin, notification };
 }
 
 export function composerLaSemaine(d: {

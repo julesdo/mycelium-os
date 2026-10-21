@@ -8,6 +8,7 @@ import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexio
 import { DemoLogiciels, VARIANTES_LOGICIELS } from './logiciels';
 import { formesDesMetiers } from './metiers';
 import { texteDuJalon, type CleJalon } from '../../lib/verticales/recouvrement/jalons';
+import { moisOfferts } from '../../lib/config/tarifs';
 import {
 	CelebrationDeJalon,
 	type JalonAffiche,
@@ -602,7 +603,10 @@ function reussite(
 }
 
 const REUSSITES: Readonly<Record<string, JalonAffiche>> = {
-	'10 000 € et l’année': reussite('RENTRE_10000', 'ANNEE', { client: null }),
+	'10 000 € et l’année': {
+		...reussite('RENTRE_10000', 'ANNEE', { client: null }),
+		moisOfferts: moisOfferts('equipe')
+	},
 	'la première relance': reussite('PREMIERE_RELANCE', 'PUSH', { client: null }),
 	'le premier paiement': reussite('PREMIER_PAIEMENT', null, {
 		client: 'Garage Martin',
