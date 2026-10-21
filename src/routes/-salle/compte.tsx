@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CATEGORIES_PUSH, NOM_DE_LA_CATEGORIE } from '../../lib/notifications/categories';
 import type { Theme } from '../../app/use-theme';
 import {
 	limitesDe,
@@ -882,6 +883,20 @@ function compteDe(
 		// Le point du matin par e-mail : reçu, comme pour tout membre qui n'a rien changé.
 		pointDuMatin: { parCourriel: true, onRegler: () => undefined },
 		conseils: { parCourriel: true, onRegler: () => undefined },
+		// Le push activé sur cet appareil, ses quatre catégories (21/10/2026).
+		push: {
+			etat: 'ACTIF',
+			enCours: false,
+			categories: CATEGORIES_PUSH.map((categorie) => ({
+				categorie,
+				nom: NOM_DE_LA_CATEGORIE[categorie],
+				aide: 'Ce qui arrive dans cette catégorie, en une ligne.',
+				active: categorie !== 'SEMAINE'
+			})),
+			onActiver: () => undefined,
+			onCouper: () => undefined,
+			onRegler: () => undefined
+		},
 		doubleAuth: {
 			active: false,
 			onCommencer: async () => ({

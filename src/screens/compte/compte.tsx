@@ -33,7 +33,9 @@ import {
 	RangeeLien,
 	SectionsDepliables,
 	type GestesDoubleAuth,
-	type Lecture
+	type Lecture,
+	ReglagesDuPush,
+	type PushAffiche
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
 import { TITRE_ECRAN } from '../titres';
@@ -161,6 +163,8 @@ export interface CompteAffiche {
 		readonly parCourriel: boolean | undefined;
 		readonly onRegler: (parCourriel: boolean) => void;
 	};
+	/** Les notifications push de cet appareil (21/10/2026) : absent quand le push dort. */
+	readonly push?: PushAffiche;
 	/** La double authentification de la personne connectée (16/10/2026). */
 	readonly doubleAuth?: GestesDoubleAuth;
 	/** Vrai pour un membre de l'équipe de Letikette : la rangée « Admin » y mène (16/10/2026). */
@@ -447,6 +451,7 @@ export function EcranCompte({
 						{pret.pointDuMatin === undefined ? null : (
 							<>
 								<SectionTitle>Notifications</SectionTitle>
+								{pret.push === undefined ? null : <ReglagesDuPush {...pret.push} />}
 								<ContenuNotifications
 									{...pret.pointDuMatin}
 									libelle="Le point du matin, par e-mail"

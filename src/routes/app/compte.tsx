@@ -8,6 +8,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { authClient } from '../../lib/client/auth';
 import { useTheme } from '../../app/use-theme';
 import { useCaissePaddle } from '../../app/caisse-paddle';
+import { usePush } from '../../app/push';
 import { useGestionAbonnement } from '../../app/gestion-abonnement';
 import { messageDeRefus, televerser } from '../../app/televerser';
 import { CarteQontoBranchee } from '../../app/connexion-qonto';
@@ -98,6 +99,8 @@ function PageCompte() {
 	const aideNonLues = useQuery(api.support.fil.nonLues, {});
 	/** Les conseils de Plume par e-mail, pour la personne connectée. */
 	const conseils = useQuery(api.croissance.reglage.mesConseils, {});
+	// Les notifications push de cet appareil (21/10/2026).
+	const push = usePush();
 	const reglerConseils = useMutation(api.croissance.reglage.reglerMesConseils).withOptimisticUpdate(
 		(local, { parCourriel }) => {
 			local.setQuery(api.croissance.reglage.mesConseils, {}, parCourriel);
@@ -623,6 +626,7 @@ function PageCompte() {
 			parCourriel: conseils,
 			onRegler: (parCourriel) => void reglerConseils({ parCourriel })
 		},
+		...(push === undefined ? {} : { push }),
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};
 

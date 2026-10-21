@@ -218,6 +218,13 @@ export {
 	FeuillePleinEcran,
 	SectionDeFeuille
 } from './plein-ecran';
+export {
+	FeuilleDuPush,
+	ReglagesDuPush,
+	type CategorieAffichee,
+	type EtatDuPush,
+	type PushAffiche
+} from './notifications-push';
 export { MINUTES_SANS_NOUVELLE, delaiLisible, minutesDepuis, useMinute } from './minute';
 export {
 	PastillesDeFiltre,

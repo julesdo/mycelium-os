@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { Outlet, createFileRoute, Link, Navigate } from '@tanstack/react-router';
 import { BoutonPrincipal, PageEcran } from '../../ui';
 import { useConvexAuth } from 'convex/react';
 import { useQuery } from '../../app/donnees';
 import { api } from '../../lib/convex/_generated/api';
 import { Shell } from '../../app/shell';
+import { enregistrerLeServiceWorker } from '../../app/service-worker';
 
 /**
  * Le layout de l'espace authentifié.
@@ -41,9 +43,7 @@ function LayoutApp() {
 	  tout de suite ; seul son milieu passe du squelette à l'écran.
 	*/
 	return (
-		<Shell sessionOuverte={!isLoading}>
-			{isLoading ? <Ouverture /> : <AvecEtablissement />}
-		</Shell>
+		<Shell sessionOuverte={!isLoading}>{isLoading ? <Ouverture /> : <AvecEtablissement />}</Shell>
 	);
 }
 
@@ -54,6 +54,11 @@ function LayoutApp() {
  */
 function AvecEtablissement() {
 	const org = useQuery(api.organizations.getMyOrg, {});
+	// Le service worker du push, enregistré au repos une fois l'établissement ouvert :
+	// il ne fait que le push, aucune mise en cache (`public/sw.js`).
+	useEffect(() => {
+		enregistrerLeServiceWorker();
+	}, []);
 
 	if (org === undefined) return <Ouverture />;
 	if (org === null) return <Navigate to="/bienvenue" replace />;
