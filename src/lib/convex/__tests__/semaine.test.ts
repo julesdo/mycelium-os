@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
-import { lireLaSemaine } from '../recouvrement/semaine';
+import { carteDuLundiPour, lireLaSemaine } from '../recouvrement/semaine';
 import { bornesDeLaSemaineEcoulee } from '../../verticales/recouvrement/votre-semaine';
 
 /**
@@ -19,6 +19,8 @@ const DELAI_CONVEX = 30_000;
 // Dans sept jours, la semaine écoulée est celle de l'arrivée (l'établissement naît au test).
 const PLUS_TARD = Date.now() + 7 * 24 * 60 * 60 * 1000;
 const SEMAINE = bornesDeLaSemaineEcoulee(PLUS_TARD);
+// Le lundi qui suit, à midi : la carte se montre, et la semaine écoulée est la même.
+const LUNDI_PROCHAIN = Date.parse(`${SEMAINE.fin}T10:00:00Z`) + 24 * 60 * 60 * 1000;
 
 async function unEtablissement(t: ReturnType<typeof convexTest>, avecPaiement: boolean) {
 	return t.run(async (ctx) => {
@@ -73,6 +75,35 @@ describe('la semaine lue en base', () => {
 			expect(semaine?.debut).toBe(SEMAINE.debut);
 			expect(semaine?.rentre).toBe(300_000n);
 			expect(semaine?.clientsQuiOntPaye).toBe(1);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'laisse passer la célébration en attente avant la carte du lundi : une parole par jour',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await unEtablissement(t, true);
+			const jalonId = await t.run(async (ctx) => {
+				await ctx.db.insert('organizationMembers', {
+					organizationId,
+					userId: 'gerant',
+					role: 'ORG_ADMIN',
+					joinedAt: Date.now()
+				});
+				return ctx.db.insert('jalonsAtteints', {
+					organizationId,
+					cle: 'PREMIER_PAIEMENT',
+					// Franchie après l’arrivée du gérant (les dates de création de convex-test avancent).
+					atteintLe: Date.now() + 60_000,
+					vusPar: []
+				});
+			});
+			const carte = () =>
+				t.run(async (ctx) => carteDuLundiPour(ctx, organizationId, 'gerant', LUNDI_PROCHAIN));
+			expect(await carte()).toBeNull();
+			await t.run(async (ctx) => ctx.db.patch(jalonId, { vusPar: ['gerant'] }));
+			expect((await carte())?.rentre).toBe(300_000n);
 		},
 		DELAI_CONVEX
 	);

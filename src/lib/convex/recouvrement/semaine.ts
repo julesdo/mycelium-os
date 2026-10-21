@@ -7,6 +7,7 @@ import { authedMutation, authedQuery } from '../functions';
 import { organisationCouranteOuNull } from '../lib/auth';
 import { demanderLaParole, noterOuverte, paroleAccordee } from '../croissance/attention';
 import { notifier } from '../notifier';
+import { jalonEnAttente, lireLesJalons } from './jalons';
 import { requireEnv } from '../env';
 import { assertResendApiKey, resend } from '../emails/resend';
 import { expediteurNomme } from '../emails/helpers';
@@ -211,46 +212,64 @@ export const carteDuLundi = authedQuery({
 	),
 	handler: async (ctx) => {
 		const userId = ctx.user._id;
-		const maintenant = Date.now();
-		if (jourDeLaSemaine(maintenant) > 3) return null;
 		const organizationId = await organisationCouranteOuNull(ctx, userId);
 		if (organizationId === null) return null;
-		const [org, membre] = await Promise.all([
-			ctx.db.get(organizationId),
-			ctx.db
-				.query('organizationMembers')
-				.withIndex('by_org_and_user', (q) =>
-					q.eq('organizationId', organizationId).eq('userId', userId)
-				)
-				.unique()
-		]);
-		if (org === null || membre === null) return null;
-		// « Votre semaine » coupée dans les réglages des notifications : ni carte ni e-mail.
-		if (membre.categoriesCoupees?.includes('SEMAINE') === true) return null;
-		const { debut } = bornesDeLaSemaineEcoulee(maintenant);
-		const cle = cleDeLaSemaine(debut);
-		const prise = await ctx.db
-			.query('prisesDeParole')
-			.withIndex('by_user_and_cle', (q) => q.eq('userId', userId).eq('cle', cle))
-			.first();
-		if (prise?.ouverteLe !== undefined) return null;
-		const accordee = await paroleAccordee(
-			ctx,
-			{ organizationId, userId, canal: 'APP', genre: 'semaine', cle },
-			maintenant
-		);
-		if (!accordee) return null;
-		const semaine = await lireLaSemaine(ctx, org, maintenant);
-		if (semaine === null) return null;
-		return {
-			debut: semaine.debut,
-			rentre: semaine.rentre,
-			relancesParties: semaine.relancesParties,
-			clientsQuiOntPaye: semaine.clientsQuiOntPaye,
-			dateLimiteDansJours: semaine.dateLimiteDansJours
-		};
+		return carteDuLundiPour(ctx, organizationId, userId, Date.now());
 	}
 });
+
+/** Le cœur de la carte du lundi, sans session : ce que les tests appellent. */
+export async function carteDuLundiPour(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	maintenant: number
+): Promise<{
+	debut: string;
+	rentre: bigint;
+	relancesParties: number;
+	clientsQuiOntPaye: number;
+	dateLimiteDansJours: number | null;
+} | null> {
+	if (jourDeLaSemaine(maintenant) > 3) return null;
+	const [org, membre] = await Promise.all([
+		ctx.db.get(organizationId),
+		ctx.db
+			.query('organizationMembers')
+			.withIndex('by_org_and_user', (q) =>
+				q.eq('organizationId', organizationId).eq('userId', userId)
+			)
+			.unique()
+	]);
+	if (org === null || membre === null) return null;
+	// « Votre semaine » coupée dans les réglages des notifications : ni carte ni e-mail.
+	if (membre.categoriesCoupees?.includes('SEMAINE') === true) return null;
+	// Une réussite attend d'être fêtée : elle passe d'abord, la carte attend demain.
+	const jalons = await lireLesJalons(ctx, organizationId);
+	if (jalonEnAttente(jalons, userId, membre._creationTime, maintenant) !== null) return null;
+	const { debut } = bornesDeLaSemaineEcoulee(maintenant);
+	const cle = cleDeLaSemaine(debut);
+	const prise = await ctx.db
+		.query('prisesDeParole')
+		.withIndex('by_user_and_cle', (q) => q.eq('userId', userId).eq('cle', cle))
+		.first();
+	if (prise?.ouverteLe !== undefined) return null;
+	const accordee = await paroleAccordee(
+		ctx,
+		{ organizationId, userId, canal: 'APP', genre: 'semaine', cle },
+		maintenant
+	);
+	if (!accordee) return null;
+	const semaine = await lireLaSemaine(ctx, org, maintenant);
+	if (semaine === null) return null;
+	return {
+		debut: semaine.debut,
+		rentre: semaine.rentre,
+		relancesParties: semaine.relancesParties,
+		clientsQuiOntPaye: semaine.clientsQuiOntPaye,
+		dateLimiteDansJours: semaine.dateLimiteDansJours
+	};
+}
 
 /** La carte s'est montrée : la parole s'inscrit, avec son expiration du jeudi. */
 export const carteMontree = authedMutation({

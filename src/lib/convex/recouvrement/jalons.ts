@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
-import type { MutationCtx } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { authedMutation, authedQuery } from '../functions';
 import { organisationCouranteOuNull } from '../lib/auth';
@@ -140,7 +140,12 @@ async function releverLEtat(
 	const argentFranchi =
 		atteints.has('PREMIER_PAIEMENT') && PALIERS_RENTRE.every((p) => atteints.has(p.cle));
 	const rentre = argentFranchi
-		? { total: PALIERS_RENTRE[PALIERS_RENTRE.length - 1]!.seuil, paiements: 1, clients: 0, premier: null }
+		? {
+				total: PALIERS_RENTRE[PALIERS_RENTRE.length - 1]!.seuil,
+				paiements: 1,
+				clients: 0,
+				premier: null
+			}
 		: await ceQuiEstRentre(ctx, org);
 	const relance = atteints.has('PREMIERE_RELANCE') || (await uneRelancePartie(ctx, org._id));
 	const dossierSolde = atteints.has('PREMIER_DOSSIER_SOLDE')
@@ -254,6 +259,38 @@ export const relever = internalMutation({
 	}
 });
 
+/** Les réussites d'un établissement : sept au plus. */
+export async function lireLesJalons(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>
+): Promise<Doc<'jalonsAtteints'>[]> {
+	return ctx.db
+		.query('jalonsAtteints')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.take(CLES_JALONS.length * 2);
+}
+
+/**
+ * LA RÉUSSITE QUI ATTEND D'ÊTRE FÊTÉE par cette personne : la plus haute qu'elle n'a pas
+ * vue, franchie depuis qu'elle est là et il y a moins d'un mois. La carte du lundi lui
+ * cède la place : une seule prise de parole par jour.
+ */
+export function jalonEnAttente(
+	tous: readonly Doc<'jalonsAtteints'>[],
+	userId: string,
+	membreDepuis: number,
+	maintenant: number
+): Doc<'jalonsAtteints'> | null {
+	const enAttente = tous.filter(
+		(j) =>
+			!j.vusPar.includes(userId) &&
+			j.atteintLe >= membreDepuis &&
+			j.atteintLe >= maintenant - FRAICHEUR_MS
+	);
+	const cle = plusHautJalon(enAttente.map((j) => j.cle));
+	return enAttente.find((j) => j.cle === cle) ?? null;
+}
+
 /**
  * LA RÉUSSITE À FÊTER, à la visite suivante : la plus haute que la personne n'a pas vue,
  * franchie depuis qu'elle est là et il y a moins d'un mois, si le budget d'attention
@@ -288,19 +325,10 @@ export const jalonAMontrer = authedQuery({
 		]);
 		if (org === null || membre === null) return null;
 		const maintenant = Date.now();
-		const tous = await ctx.db
-			.query('jalonsAtteints')
-			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-			.take(CLES_JALONS.length * 2);
-		const enAttente = tous.filter(
-			(j) =>
-				!j.vusPar.includes(userId) &&
-				j.atteintLe >= membre._creationTime &&
-				j.atteintLe >= maintenant - FRAICHEUR_MS
-		);
-		const cle = plusHautJalon(enAttente.map((j) => j.cle));
-		const jalon = enAttente.find((j) => j.cle === cle);
-		if (cle === null || jalon === undefined) return null;
+		const tous = await lireLesJalons(ctx, organizationId);
+		const jalon = jalonEnAttente(tous, userId, membre._creationTime, maintenant);
+		if (jalon === null) return null;
+		const cle = jalon.cle;
 		const accordee = await paroleAccordee(
 			ctx,
 			{ organizationId, userId, canal: 'APP', genre: 'jalon', cle: `jalon:${jalon._id}` },
@@ -372,7 +400,10 @@ export const jalonVu = authedMutation({
 		).filter((j) => !j.vusPar.includes(userId));
 		for (const j of enAttente) {
 			const proposee =
-				j._id === id && ligne !== 'AUCUNE' && secondaire !== undefined && j.secondaire === undefined;
+				j._id === id &&
+				ligne !== 'AUCUNE' &&
+				secondaire !== undefined &&
+				j.secondaire === undefined;
 			await ctx.db.patch(j._id, {
 				vusPar: [...j.vusPar, userId],
 				...(proposee ? { secondaire } : {})
