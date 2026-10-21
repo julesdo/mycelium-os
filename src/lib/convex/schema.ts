@@ -6,6 +6,7 @@ import { risqueTables } from './risque/tables';
 import { croissanceTables } from './croissance/tables';
 import { adminTables, crmTables } from './admin/tables';
 import { supportTables } from './support/tables';
+import { pushTables } from './push/tables';
 import { vStatutConnexion, vStatutConnexionQonto } from './connexions/validateurs';
 
 export default defineSchema({
@@ -258,7 +259,12 @@ export default defineSchema({
 		/** Les conseils de Plume par e-mail (`croissance/conseils.ts`). Absent : ils partent. */
 		conseilsParCourriel: v.optional(v.boolean()),
 		/** Le jeton du lien de désinscription des conseils, tiré au premier envoi. */
-		jetonConseils: v.optional(v.string())
+		jetonConseils: v.optional(v.string()),
+		/**
+		 * Les catégories de notifications coupées par ce membre (`notifications/categories.ts`) :
+		 * le push et l'e-mail « Votre semaine » s'y taisent. Absent : tout parle.
+		 */
+		categoriesCoupees: v.optional(v.array(v.string()))
 	})
 		.index('by_organization', ['organizationId'])
 		.index('by_jeton_conseils', ['jetonConseils'])
@@ -330,7 +336,13 @@ export default defineSchema({
 			/** La santé d'un client a baissé franchement à sa relecture (`risque/analyse.ts`). */
 			v.literal('RISQUE_EN_BAISSE'),
 			/** Un rappel d'abonnement : fin d'essai, renouvellement (`abonnementRappels.ts`). */
-			v.literal('ABONNEMENT')
+			v.literal('ABONNEMENT'),
+			/** Des clients ont payé, d'un import (le parcours de l'habitude, 21/10/2026). */
+			v.literal('PAIEMENT_RECU'),
+			/** Une réussite franchie : premier paiement, 10 000 € rentrés (`jalons.ts`). */
+			v.literal('JALON'),
+			/** « Votre semaine », le lundi. */
+			v.literal('SEMAINE')
 		),
 		title: v.string(),
 		message: v.string(),
@@ -356,5 +368,6 @@ export default defineSchema({
 	...croissanceTables,
 	...adminTables,
 	...crmTables,
-	...supportTables
+	...supportTables,
+	...pushTables
 });

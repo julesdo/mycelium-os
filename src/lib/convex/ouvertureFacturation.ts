@@ -6,6 +6,7 @@ import { rappelAbonnementHtml, rappelAbonnementTexte } from './emails/modeles/ab
 import { requireEnv } from './env';
 import { DUREE_ESSAI_JOURS, FORMULES, GRILLE } from '../config/tarifs';
 import { expediteurNomme } from './emails/helpers';
+import { notifier } from './notifier';
 
 /**
  * L'OUVERTURE DE LA FACTURATION — le préavis aux comptes qui existent déjà
@@ -112,15 +113,13 @@ export const prevenir = internalMutation({
 					.collect()
 			).filter((m) => m.role === 'ORG_ADMIN');
 			for (const admin of admins) {
-				await ctx.db.insert('notifications', {
+				await notifier(ctx, {
 					organizationId: org._id,
 					userId: admin.userId,
 					type: 'ABONNEMENT',
 					title: titre,
 					message,
-					link: '/app/compte?ouvrir=facturation',
-					isRead: false,
-					createdAt: Date.now()
+					link: '/app/compte?ouvrir=facturation'
 				});
 				if (email === null) continue;
 				const utilisateur = (await ctx.runQuery(components.betterAuth.adapter.findOne, {

@@ -21,6 +21,7 @@ import {
 	vSujet
 } from '../support/tables';
 import { equipeMutation, equipeQuery, noterAuJournal, type Equipier } from './enveloppe';
+import { notifier } from '../notifier';
 
 /**
  * LA BOÎTE DU SUPPORT, CÔTÉ ÉQUIPE (16/10/2026, spec du service client § 6).
@@ -380,15 +381,13 @@ export async function repondreCommeEquipe(
 	if (terminer) await ajouterEvenement(ctx, c, 'TERMINEE', 'Conversation terminée');
 
 	if (c.organizationId !== undefined && c.auteurUserId !== undefined) {
-		await ctx.db.insert('notifications', {
+		await notifier(ctx, {
 			organizationId: c.organizationId,
 			userId: c.auteurUserId,
 			type: 'HUMAN_ASSIST_REPLY',
 			title: `${prenom} vous a répondu`,
 			message: `Votre question : « ${c.titre} »`,
-			link: `/app/aide/${conversationId}`,
-			isRead: false,
-			createdAt: maintenant
+			link: `/app/aide/${conversationId}`
 		});
 		const depart = await ctx.scheduler.runAfter(
 			10 * 60 * 1000,

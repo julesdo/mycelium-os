@@ -17,6 +17,7 @@ import {
 	type ClientDuPortefeuille
 } from '../../verticales/recouvrement/risque/portefeuille';
 import { AGE_AVANT_RELECTURE_MS } from '../../verticales/recouvrement/risque/regles';
+import { notifier } from '../notifier';
 
 /**
  * LES LECTURES ET ÉCRITURES DE L'ANALYSE DU RISQUE. Les appels à Pappers et au
@@ -622,15 +623,13 @@ export const prevenirDUneBaisse = internalMutation({
 			`${args.denomination} passe de ${args.indiceAvant} à ${args.indiceApres} (${args.niveau.toLowerCase()})` +
 			(args.fait === null ? '.' : ` : ${args.fait.charAt(0).toLowerCase()}${args.fait.slice(1)}.`);
 		for (const membre of membres) {
-			await ctx.db.insert('notifications', {
+			await notifier(ctx, {
 				organizationId: args.organizationId,
 				userId: membre.userId,
 				type: 'RISQUE_EN_BAISSE',
 				title: 'La santé d’un client baisse',
 				message,
-				link: args.lien,
-				isRead: false,
-				createdAt: Date.now()
+				...(args.lien === undefined ? {} : { link: args.lien })
 			});
 		}
 		return null;

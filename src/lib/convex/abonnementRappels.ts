@@ -14,6 +14,7 @@ import {
 	type RappelDu
 } from '../paiement/rappels';
 import { expediteurNomme } from './emails/helpers';
+import { notifier } from './notifier';
 
 /**
  * LES RAPPELS D'ABONNEMENT, CHAQUE MATIN (14/10/2026).
@@ -113,15 +114,13 @@ export const rappeler = internalMutation({
 		).filter((m) => m.role === 'ORG_ADMIN');
 
 		for (const admin of admins) {
-			await ctx.db.insert('notifications', {
+			await notifier(ctx, {
 				organizationId,
 				userId: admin.userId,
 				type: 'ABONNEMENT',
 				title: texte.titre,
 				message: texte.message,
-				link: '/app/compte?ouvrir=facturation',
-				isRead: false,
-				createdAt: Date.now()
+				link: '/app/compte?ouvrir=facturation'
 			});
 		}
 

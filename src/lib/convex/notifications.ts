@@ -2,6 +2,7 @@ import { internalMutation, internalQuery } from './_generated/server';
 import { v } from 'convex/values';
 import { authedQuery, authedMutation } from './functions';
 import { pluriel } from '../socle/francais';
+import { notifier } from './notifier';
 
 // ─── Notification type shared validator ───────────────────────────────────────
 const notificationTypeValidator = v.union(
@@ -15,7 +16,10 @@ const notificationTypeValidator = v.union(
 	v.literal('HUMAN_ASSIST_REPLY'),
 	v.literal('PILOTE_BLOQUE'),
 	v.literal('RISQUE_EN_BAISSE'),
-	v.literal('ABONNEMENT')
+	v.literal('ABONNEMENT'),
+	v.literal('PAIEMENT_RECU'),
+	v.literal('JALON'),
+	v.literal('SEMAINE')
 );
 
 export type NotificationType =
@@ -163,18 +167,15 @@ export const createNotification = internalMutation({
 		link: v.optional(v.string())
 	},
 	returns: v.null(),
-	handler: async (ctx, args) => {
-		await ctx.db.insert('notifications', {
+	handler: async (ctx, args): Promise<null> => {
+		await notifier(ctx, {
 			organizationId: args.organizationId,
 			userId: args.userId,
 			type: args.type,
 			title: args.title,
 			message: args.message,
-			link: args.link,
-			isRead: false,
-			createdAt: Date.now()
+			...(args.link === undefined ? {} : { link: args.link })
 		});
-
 		return null;
 	}
 });

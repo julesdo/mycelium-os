@@ -53,7 +53,11 @@ const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
 	// La relecture de la santé d'un client : le travail de la machine.
 	RISQUE_EN_BAISSE: 'MACHINE',
 	// Un prélèvement qui approche : de l'argent.
-	ABONNEMENT: 'ARGENT'
+	ABONNEMENT: 'ARGENT',
+	// Ce qui est rentré, une réussite, la semaine : de l'argent.
+	PAIEMENT_RECU: 'ARGENT',
+	JALON: 'ARGENT',
+	SEMAINE: 'ARGENT'
 };
 
 export interface NotificationAffichee {

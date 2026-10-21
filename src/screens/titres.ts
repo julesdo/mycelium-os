@@ -1,4 +1,5 @@
 import { NOM_DU_PILOTE } from '../ui/plume';
+import type { TypeDeNotification } from '../lib/notifications/categories';
 
 /**
  * LE NOM DES ÉCRANS QU'UNE PAGE POUSSÉE NOMME EN REPLI.
@@ -27,16 +28,8 @@ export const TITRE_ECRAN = {
 } as const;
 
 /** Les genres d'une notification, tels que la base les écrit. */
-export type GenreNotification =
-	| 'IMPORT_TERMINE'
-	| 'CREANCE_MURE'
-	| 'ECHEANCE_PROCHE'
-	| 'PRESCRIPTION_PROCHE'
-	| 'DEBITEUR_DEGRADE'
-	| 'HUMAN_ASSIST_REPLY'
-	| 'PILOTE_BLOQUE'
-	| 'RISQUE_EN_BAISSE'
-	| 'ABONNEMENT';
+/** Les genres de la boîte de réception : ceux des notifications, à une seule source. */
+export type GenreNotification = TypeDeNotification;
 
 /**
  * LE TITRE D'UNE NOTIFICATION VIENT DE SON GENRE, PAS DE LA BASE.
@@ -60,5 +53,8 @@ export const TITRE_DE_NOTIFICATION: Readonly<Record<GenreNotification, string>> 
 	CREANCE_MURE: 'Un dossier à regarder',
 	PILOTE_BLOQUE: `${NOM_DU_PILOTE} a besoin de vous`,
 	RISQUE_EN_BAISSE: 'La santé d’un client baisse',
-	ABONNEMENT: 'Votre abonnement'
+	ABONNEMENT: 'Votre abonnement',
+	PAIEMENT_RECU: 'Paiement reçu',
+	JALON: 'Une réussite',
+	SEMAINE: 'Votre semaine'
 };
