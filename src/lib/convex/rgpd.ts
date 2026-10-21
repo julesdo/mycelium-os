@@ -733,6 +733,8 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'journeesPlume', organizationId, budget);
 		// Les appareils abonnés au push : leurs adresses chez les services de push.
 		budget = await viderParIndexOrg(ctx, 'abonnementsPush', organizationId, budget);
+		// Les réussites nomment des clients et des montants.
+		budget = await viderParIndexOrg(ctx, 'jalonsAtteints', organizationId, budget);
 		// Ce que Letikette savait de ce compte : sa source, ses étapes, ses conseils.
 		budget = await viderParIndexOrg(ctx, 'envoisCroissance', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'prisesDeParole', organizationId, budget);
@@ -1000,6 +1002,7 @@ async function viderParIndexOrg(
 		| 'silencesPlume'
 		| 'journeesPlume'
 		| 'abonnementsPush'
+		| 'jalonsAtteints'
 		| 'envoisCroissance'
 		| 'prisesDeParole'
 		| 'parcoursComptes'

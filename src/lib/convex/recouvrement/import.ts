@@ -488,6 +488,10 @@ export const enregistrerImport = internalMutation({
 		if (paiementsANotifier === true && paiementsDuLot.length > 0) {
 			await prevenirDesPaiements(ctx, organizationId, paiementsDuLot, aujourdHui);
 		}
+		if (reglementsCrees > 0) {
+			// Un paiement peut faire franchir un jalon (`recouvrement/jalons.ts`).
+			await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, { organizationId });
+		}
 
 		return {
 			debiteursCrees,

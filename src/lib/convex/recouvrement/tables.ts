@@ -1,5 +1,8 @@
 import { defineTable } from 'convex/server';
 import { v, type GenericId } from 'convex/values';
+import { CLES_JALONS } from '../../verticales/recouvrement/jalons';
+
+export const vCleJalon = v.union(...CLES_JALONS.map((c) => v.literal(c)));
 
 /**
  * Le modèle de domaine du recouvrement (phase 2 du brief de remodelage).
@@ -752,6 +755,29 @@ export const recouvrementTables = {
 		.index('by_facture', ['factureId'])
 		.index('by_org', ['organizationId'])
 		.index('by_org_and_date', ['organizationId', 'date']),
+
+	/**
+	 * LES RÉUSSITES DU GÉRANT (21/10/2026, le parcours de l'habitude) : une ligne par
+	 * jalon franchi, une fois chacune par établissement (`verticales/recouvrement/jalons.ts`).
+	 * `vusPar` dit qui l'a vue fêtée ; au premier relevé d'un établissement, ce qui était
+	 * déjà franchi s'inscrit vu de tous, sans célébration.
+	 */
+	jalonsAtteints: defineTable({
+		organizationId: v.id('organizations'),
+		cle: vCleJalon,
+		atteintLe: v.number(),
+		/** Le montant de la réussite (le premier paiement, le dossier soldé), en centimes. */
+		montant: v.optional(v.int64()),
+		/** Le client qu'elle nomme (le premier paiement, le premier dossier soldé). */
+		debiteurId: v.optional(v.id('debiteurs')),
+		/** Sur combien de clients ce qui est rentré l'a été (les paliers d'argent). */
+		clients: v.optional(v.number()),
+		vusPar: v.array(v.string()),
+		/** La ligne proposée sous la célébration, la première fois qu'elle s'est montrée. */
+		secondaire: v.optional(
+			v.union(v.literal('PUSH'), v.literal('ANNEE'), v.literal('RECOMMANDATION'))
+		)
+	}).index('by_org', ['organizationId']),
 
 	/**
 	 * LES PIÈCES QUI PORTENT LE DOSSIER — module 1.2.

@@ -263,6 +263,8 @@ export const appliquerInterne = internalMutation({
 			});
 			await ctx.db.patch(facture._id, { statutPaiement: 'SOLDEE' });
 		}
+		// Un paiement peut faire franchir un jalon (`recouvrement/jalons.ts`).
+		await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, { organizationId });
 		return null;
 	}
 });
@@ -353,5 +355,7 @@ export async function appliquerLaRepartition(
 			statutPaiement: ligne.solde ? 'SOLDEE' : 'PARTIELLEMENT_PAYEE'
 		});
 	}
+	// Un paiement peut faire franchir un jalon (`recouvrement/jalons.ts`).
+	await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, { organizationId });
 	return repartition.lignes;
 }

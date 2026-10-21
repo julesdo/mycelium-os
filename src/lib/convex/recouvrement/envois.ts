@@ -2,6 +2,7 @@ import { v, ConvexError, type Infer } from 'convex/values';
 import { exigerDeQuoiAgir } from '../limites';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
+import { internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg, requireOrgAdmin } from '../lib/auth';
 import { depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
@@ -733,6 +734,7 @@ export const declarerParti = authedMutation({
 			throw new ConvexError(`« ${partiLe} » n’est pas une date de départ possible.`);
 		}
 		await ctx.db.patch(envoiId, { etat: 'PARTI', partiLe, partiDeclarePar: user._id });
+		await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, { organizationId });
 
 		/*
 		  ⚠️ LE RAPPEL EST POSÉ SUR LE DÉLAI DE LA LETTRE, PAS SUR UN NOMBRE ROND.

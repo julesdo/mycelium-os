@@ -104,6 +104,11 @@ export default defineSchema({
 		remiseBienvenueExpireLe: v.optional(v.number()),
 		/** Les rappels d'abonnement déjà envoyés (« essai-7:2026-11-13 ») : jamais deux fois. */
 		rappelsAbonnement: v.optional(v.array(v.string())),
+		/**
+		 * Le premier relevé des jalons (21/10/2026) : avant lui, ce qui est déjà franchi
+		 * s'inscrit vu de tous, sans célébration (`recouvrement/jalons.ts`).
+		 */
+		jalonsRelevesLe: v.optional(v.number()),
 		paddleStatus: v.optional(
 			v.union(
 				v.literal('active'),

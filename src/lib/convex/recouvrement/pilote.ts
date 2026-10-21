@@ -1299,6 +1299,10 @@ async function envoyerMaintenant(ctx: MutationCtx, envoiId: Id<'envois'>): Promi
 		valideLe: Date.now(),
 		envoiProgramme: undefined
 	});
+	// La première relance partie est une réussite (`recouvrement/jalons.ts`).
+	await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, {
+		organizationId: envoi.organizationId
+	});
 }
 
 /**

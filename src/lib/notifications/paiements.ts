@@ -27,6 +27,6 @@ export function regrouperLesPaiements(
 const INSECABLE = String.fromCharCode(160);
 
 /** « 1 240 € », « 1 240,50 € » : les centimes seulement quand il y en a. */
-function enEuros(centimes: bigint): string {
+export function enEuros(centimes: bigint): string {
 	return `${versEuros(depuisCentimes(centimes)).replace(/,00$/, '')}${INSECABLE}€`;
 }
