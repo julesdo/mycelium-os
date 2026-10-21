@@ -333,6 +333,18 @@ export interface TeteDeFile {
 	 * la bande d'ancienneté sous le montant héros (`BandeDAnciennete`).
 	 */
 	readonly anciennete: readonly LigneDAnciennete[];
+	/**
+	 * LA CARTE DU MOMENT (21/10/2026, le parcours de l'habitude) : « Votre semaine », du
+	 * lundi au mercredi. Une seule à la fois, sous la bande d'ancienneté ; elle mène à son
+	 * écran et disparaît une fois l'écran ouvert.
+	 */
+	readonly carteDuMoment?: CarteDuMoment;
+}
+
+export interface CarteDuMoment {
+	readonly titre: string;
+	readonly ligne: string;
+	readonly montant: bigint | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1002,6 +1014,18 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 
 			{/* DEPUIS COMBIEN DE TEMPS : la forme sous le nombre (Afterpay). */}
 			<BandeDAnciennete lignes={tete.anciennete} aujourdHui={aujourdHui} />
+
+			{tete.carteDuMoment === undefined ? null : (
+				<CarteLien
+					vers="/app/semaine"
+					icone={<VignetteRangee famille="ARGENT" className="size-10" />}
+					titre={tete.carteDuMoment.titre}
+					ligne={tete.carteDuMoment.ligne}
+					{...(tete.carteDuMoment.montant === null
+						? {}
+						: { montant: eurosCentimes(tete.carteDuMoment.montant) })}
+				/>
+			)}
 
 			{/*
 			  ⚠️ ELLE NE S'AFFICHE QUE QUAND IL Y A QUELQUE CHOSE À MONTRER. Une rangée

@@ -81,6 +81,8 @@ interface Demande {
 	readonly canal: Canal;
 	readonly genre: string;
 	readonly cle: string;
+	/** Une parole qui court jusqu'à une date (la carte du lundi, jusqu'au jeudi). */
+	readonly expireLe?: number;
 }
 
 /** La parole serait-elle accordée ? En lecture seule : pour une requête (la carte du lundi). */
@@ -121,7 +123,8 @@ export async function demanderLaParole(
 		canal: d.canal,
 		genre: d.genre,
 		cle: d.cle,
-		le: maintenant
+		le: maintenant,
+		...(d.expireLe === undefined ? {} : { expireeLe: d.expireLe })
 	});
 	return true;
 }

@@ -563,6 +563,14 @@ const RIEN_A_TRANCHER: FileAffichee = {
 
 const FORMES_FILE: Readonly<Record<string, FileAffichee>> = {
 	'rien à trancher': RIEN_A_TRANCHER,
+	// « Votre semaine », du lundi au mercredi, sous la bande d'ancienneté (21/10/2026).
+	'la carte du lundi': {
+		...GARNIE,
+		tete: {
+			...GARNIE.tete,
+			carteDuMoment: { titre: 'Votre semaine', ligne: '3 clients ont payé', montant: 412_000n }
+		}
+	},
 	// Le branchement d'un logiciel par Nango, étape par étape, sur l'écran du premier jour.
 	...Object.fromEntries(
 		VARIANTES_LOGICIELS.map((variante) => [

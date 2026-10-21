@@ -58,8 +58,9 @@ export function peutParler(
 			return { ok: false, raison: 'DEJA_AUJOURDHUI' };
 		}
 		const [derniere, avantDerniere] = memeCanal;
+		// Une expiration encore à venir (la carte du lundi court jusqu'au jeudi) n'est pas un oubli.
 		const ignoree = (p: PriseDeParole | undefined) =>
-			p !== undefined && p.ouverteLe === null && p.expireeLe !== null;
+			p !== undefined && p.ouverteLe === null && p.expireeLe !== null && p.expireeLe <= maintenant;
 		if (
 			ignoree(derniere) &&
 			ignoree(avantDerniere) &&

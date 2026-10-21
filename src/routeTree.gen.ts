@@ -50,6 +50,7 @@ import { Route as AppImportFacturesRouteImport } from './routes/app/import-factu
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
+import { Route as AppSemaineRouteImport } from './routes/app/semaine'
 import { Route as AttenteJetonRouteImport } from './routes/attente.$jeton'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogAdresseRouteImport } from './routes/blog/$adresse'
@@ -299,6 +300,11 @@ const AppRevelationRoute = AppRevelationRouteImport.update({
   path: '/revelation',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppSemaineRoute = AppSemaineRouteImport.update({
+  id: '/semaine',
+  path: '/semaine',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AttenteJetonRoute = AttenteJetonRouteImport.update({
   id: '/attente/$jeton',
   path: '/attente/$jeton',
@@ -545,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/app/semaine': typeof AppSemaineRoute
   '/attente/$jeton': typeof AttenteJetonRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
@@ -627,6 +634,7 @@ export interface FileRoutesByTo {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/app/semaine': typeof AppSemaineRoute
   '/attente/$jeton': typeof AttenteJetonRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
@@ -712,6 +720,7 @@ export interface FileRoutesById {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
   '/app/revelation': typeof AppRevelationRoute
+  '/app/semaine': typeof AppSemaineRoute
   '/attente/$jeton': typeof AttenteJetonRoute
   '/blog/$adresse': typeof BlogAdresseRoute
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
@@ -798,6 +807,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
+    | '/app/semaine'
     | '/attente/$jeton'
     | '/blog/$adresse'
     | '/blog/rss.xml'
@@ -880,6 +890,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
+    | '/app/semaine'
     | '/attente/$jeton'
     | '/blog/$adresse'
     | '/blog/rss.xml'
@@ -964,6 +975,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/procedures'
     | '/app/revelation'
+    | '/app/semaine'
     | '/attente/$jeton'
     | '/blog/$adresse'
     | '/blog/rss.xml'
@@ -1332,6 +1344,13 @@ declare module '@tanstack/react-router' {
       path: '/revelation'
       fullPath: '/app/revelation'
       preLoaderRoute: typeof AppRevelationRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/semaine': {
+      id: '/app/semaine'
+      path: '/semaine'
+      fullPath: '/app/semaine'
+      preLoaderRoute: typeof AppSemaineRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/attente/$jeton': {
@@ -1719,6 +1738,7 @@ interface AppRouteRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProceduresRoute: typeof AppProceduresRoute
   AppRevelationRoute: typeof AppRevelationRoute
+  AppSemaineRoute: typeof AppSemaineRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAideIdRoute: typeof AppAideIdRoute
   AppAideNouvelleRoute: typeof AppAideNouvelleRoute
@@ -1749,6 +1769,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppProceduresRoute: AppProceduresRoute,
   AppRevelationRoute: AppRevelationRoute,
+  AppSemaineRoute: AppSemaineRoute,
   AppIndexRoute: AppIndexRoute,
   AppAideIdRoute: AppAideIdRoute,
   AppAideNouvelleRoute: AppAideNouvelleRoute,

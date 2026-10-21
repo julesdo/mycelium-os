@@ -225,6 +225,23 @@ function delaiDeLecture(id: string): number {
  *
  * La même lecture qu'à `decompte.$id.tsx` et `debiteurs.tsx`.
  */
+/** Ce que dit la carte du lundi : le montant rentré, et ce qui s'est passé en cinq mots. */
+function carteDeLaSemaine(c: {
+	rentre: bigint;
+	relancesParties: number;
+	clientsQuiOntPaye: number;
+	dateLimiteDansJours: number | null;
+}): { titre: string; ligne: string; montant: bigint | null } {
+	const s = (n: number) => (n > 1 ? 's' : '');
+	const ligne =
+		c.clientsQuiOntPaye > 0
+			? `${c.clientsQuiOntPaye} client${s(c.clientsQuiOntPaye)} ${c.clientsQuiOntPaye > 1 ? 'ont' : 'a'} payé`
+			: c.relancesParties > 0
+				? `${c.relancesParties} relance${s(c.relancesParties)} partie${s(c.relancesParties)}`
+				: `Une date limite dans ${c.dateLimiteDansJours ?? 0} j`;
+	return { titre: 'Votre semaine', ligne, montant: c.rentre > 0n ? c.rentre : null };
+}
+
 function messageDuRefus(e: unknown): string {
 	if (typeof e === 'object' && e !== null && 'data' in e) {
 		const data = (e as { data: unknown }).data;
@@ -293,6 +310,17 @@ function File() {
 	 */
 	const questionsDeLitige = useQuery(api.recouvrement.lecture.questionsDeLitige, {});
 	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
+
+	/*
+	  LA CARTE DU LUNDI (21/10/2026, le parcours de l'habitude) : « Votre semaine », du lundi
+	  au mercredi, quand le budget d'attention l'accorde. Montrée, elle s'inscrit.
+	*/
+	const carteDuLundi = useQuery(api.recouvrement.semaine.carteDuLundi, {});
+	const carteMontree = useMutation(api.recouvrement.semaine.carteMontree);
+	const debutDeLaCarte = carteDuLundi?.debut ?? null;
+	useEffect(() => {
+		if (debutDeLaCarte !== null) void carteMontree({ debut: debutDeLaCarte }).catch(() => undefined);
+	}, [debutDeLaCarte, carteMontree]);
 
 	/*
 	  CE QUE PLUME DIT EN ARRIVANT (13/10/2026) : sa présentation la première fois,
@@ -931,7 +959,10 @@ function File() {
 			anciennete: revelation.lignes.map((ligne) => ({
 				montant: ligne.principalRestantDu + ligne.supplement,
 				...(ligne.exigibleDepuis === undefined ? {} : { exigibleDepuis: ligne.exigibleDepuis })
-			}))
+			})),
+			...(carteDuLundi === undefined || carteDuLundi === null
+				? {}
+				: { carteDuMoment: carteDeLaSemaine(carteDuLundi) })
 		},
 		rangees,
 		travaux,

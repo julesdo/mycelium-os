@@ -27,12 +27,13 @@ export interface VotreSemaine {
 	readonly clientsQuiOntPaye: number;
 	readonly dateLimiteDansJours: number | null;
 	/** Les semaines depuis l'arrivée, huit au plus, de la plus ancienne à celle-ci. */
-	readonly huitSemaines: readonly bigint[];
+	readonly huitSemaines: bigint[];
 	/** Le lundi de la dernière semaine qui la dépassait, ou `'arrivee'`. */
 	readonly meilleureDepuis: string | null;
 }
 
-function lundiDe(date: string): string {
+/** Le lundi de la semaine d'un jour (AAAA-MM-JJ). */
+export function lundiDe(date: string): string {
 	const jour = new Date(`${date}T12:00:00Z`).getUTCDay();
 	return ajouterJours(date, -((jour + 6) % 7));
 }

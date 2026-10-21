@@ -87,6 +87,16 @@ describe('le budget d’attention', () => {
 				AUCUNE
 			)
 		).toEqual({ ok: true });
+		// La carte du lundi s'inscrit avec son expiration du jeudi : avant, elle n'est pas ignorée.
+		const enCours = prise({ canal: 'APP', le: MAINTENANT - 2 * JOUR, expireeLe: MAINTENANT + JOUR });
+		expect(
+			peutParler(
+				[enCours, ignoree(3 * JOUR)],
+				{ canal: 'APP', genre: 'jalon' },
+				MAINTENANT,
+				AUCUNE
+			)
+		).toEqual({ ok: true });
 		const ouverte = prise({
 			canal: 'APP',
 			le: MAINTENANT - 2 * JOUR,

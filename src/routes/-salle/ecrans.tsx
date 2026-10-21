@@ -9,6 +9,7 @@ import { ECRANS_DEFENSE } from './defense';
 import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_FILE } from './file';
+import { ECRANS_SEMAINE } from './semaine';
 import { ECRANS_COFFRE } from './coffre';
 import { ECRANS_SANTE } from './sante';
 import { ECRANS_ONGLETS } from './onglets';
@@ -63,6 +64,7 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	 * choisirait par la route et ne rendrait jamais que l'accueil.
 	 */
 	...ECRANS_FILE,
+	...ECRANS_SEMAINE,
 	...ECRANS_ONGLETS,
 	/*
 	  ⚠️ `ECRANS_VOLET` A DISPARU AVEC LE VOLET DE PREUVE (écran/aujourdhui).

@@ -174,6 +174,7 @@ export {
 	type RetardEnCours,
 	type RuptureAffichee
 } from './habitude';
+export { BarresDesSemaines } from './semaines';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export {
 	QuestionnaireLitige,
