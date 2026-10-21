@@ -587,6 +587,24 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   (`releverLeProchainPrelevement`, champs `paddleProchainHT`/`TTC`), son rapport TTC/HT pour
   ses autres prix ; à défaut, « HT, TVA en plus », jamais un HT seul. Quand les places sont
   prises, l'invitation ouvre la formule du dessus et part seule une fois la place arrivée.
+- **Le parcours de l'habitude, lots 1 à 4** (21/10/2026, `docs/superpowers/specs/2026-10-21-parcours-habitude-design.md`,
+  plan `docs/superpowers/plans/2026-10-21-parcours-habitude-lots-1-4.md`). Le fondateur : « cohérent
+  et pas envahissant […] rendre nos utilisateurs accro ». **Toute notification passe par
+  `notifier()`**, qui programme son push (`push/envoi.ts`, `web-push`, clés VAPID posées en dev et en
+  prod) ; le service worker (`public/sw.js`) ne fait QUE le push, aucun cache. Quatre catégories
+  réglables dans le profil (Paiements, Réponses, Votre semaine, Compte) ; la permission ne se demande
+  jamais au lancement. **Le budget d'attention** (`croissance/attention.ts`) tient toute parole qui
+  n'est pas transactionnelle : une par jour dans l'application, deux jours d'écart et deux par semaine
+  par e-mail, quatorze jours de silence après deux paroles ignorées, « Ne plus me le proposer »
+  rangé avec les silences de Plume (`marketing:<genre>`). **Les jalons** (`recouvrement/jalons.ts`) :
+  sept réussites relevées une fois chacune, « rentrés sur les dossiers suivis », jamais « grâce à » ;
+  au premier relevé d'un compte, tout ce qui est franchi s'inscrit vu ; la célébration se montre à la
+  visite SUIVANTE sur Aujourd'hui, jamais par-dessus une feuille ouverte (`feuilles-ouvertes.ts`), avec
+  au plus une ligne dessous (les notifications, l'année), et remplace la bulle du paiement.
+  **« Votre semaine »** (`/app/semaine`, `recouvrement/semaine.ts`) : la carte du lundi au mercredi
+  sous la bande d'ancienneté, l'écran, et l'e-mail de 9 h qui remplace le point du matin de ce lundi.
+  Une semaine vide ne fait rien. Les lots 5 à 7 (moment du besoin, réveil utile, parrainage) auront
+  leur plan après la mise en production.
 - **Le moteur de croissance** (16/10/2026, stratégie `docs/superpowers/specs/2026-10-16-strategie-de-croissance.md`,
   moteur `2026-10-16-moteur-de-croissance-design.md`). Le fondateur : « commencer à la main au lieu
   d'exploser un budget ». La prospection se fait d'abord à la main (`docs/croissance/phase-manuelle.md`,
