@@ -313,14 +313,11 @@ function File() {
 
 	/*
 	  LA CARTE DU LUNDI (21/10/2026, le parcours de l'habitude) : « Votre semaine », du lundi
-	  au mercredi, quand le budget d'attention l'accorde. Montrée, elle s'inscrit.
+	  au mercredi, quand le budget d'attention l'accorde. Elle s'inscrit montrée quand l'écran
+	  la pose (`SignalDeVue`), jamais le jour où Aujourd'hui montre son premier jour.
 	*/
 	const carteDuLundi = useQuery(api.recouvrement.semaine.carteDuLundi, {});
 	const carteMontree = useMutation(api.recouvrement.semaine.carteMontree);
-	const debutDeLaCarte = carteDuLundi?.debut ?? null;
-	useEffect(() => {
-		if (debutDeLaCarte !== null) void carteMontree({ debut: debutDeLaCarte }).catch(() => undefined);
-	}, [debutDeLaCarte, carteMontree]);
 
 	/*
 	  CE QUE PLUME DIT EN ARRIVANT (13/10/2026) : sa présentation la première fois,
@@ -962,7 +959,13 @@ function File() {
 			})),
 			...(carteDuLundi === undefined || carteDuLundi === null
 				? {}
-				: { carteDuMoment: carteDeLaSemaine(carteDuLundi) })
+				: {
+						carteDuMoment: {
+							...carteDeLaSemaine(carteDuLundi),
+							cle: carteDuLundi.debut,
+							onVue: () => void carteMontree({ debut: carteDuLundi.debut }).catch(() => undefined)
+						}
+					})
 		},
 		rangees,
 		travaux,

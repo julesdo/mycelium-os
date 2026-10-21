@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { bornesDeLaSemaineEcoulee, composerLaSemaine } from '../votre-semaine';
+import {
+	bornesDeLaSemaineEcoulee,
+	composerLaSemaine,
+	delaiLisible,
+	phraseDeLaSemaine
+} from '../votre-semaine';
 
 /**
  * « VOTRE SEMAINE » (21/10/2026, le parcours de l'habitude) : la semaine écoulée, du
@@ -96,5 +101,33 @@ describe('la semaine composée', () => {
 			historique: [10_000n, 10_000n, 500_000n, 10_000n, 10_000n, 10_000n, 10_000n]
 		});
 		expect(s?.meilleureDepuis).toBeNull();
+	});
+});
+
+describe('les mots de la semaine (relecture du 21/10/2026)', () => {
+	const SEMAINE = {
+		debut: '2026-10-12',
+		fin: '2026-10-18',
+		rentre: 0n,
+		relancesParties: 0,
+		clientsQuiOntPaye: 0,
+		dateLimiteDansJours: 1,
+		huitSemaines: [],
+		meilleureDepuis: null
+	};
+
+	it('accorde les jours et dit « aujourd’hui » plutôt que « dans 0 jours »', () => {
+		expect(phraseDeLaSemaine(SEMAINE)).toBe('Une date limite pour agir dans 1 jour.');
+		expect(phraseDeLaSemaine({ ...SEMAINE, dateLimiteDansJours: 0 })).toBe(
+			'Une date limite pour agir tombe aujourd’hui.'
+		);
+		expect(delaiLisible(0)).toBe('aujourd’hui');
+		expect(delaiLisible(12)).toBe('dans 12 j');
+	});
+
+	it('dit l’argent rentré quand il y en a', () => {
+		expect(
+			phraseDeLaSemaine({ ...SEMAINE, rentre: 412_000n, clientsQuiOntPaye: 1 })
+		).toMatch(/^4 120\s€ rentrés, 1 client a payé\.$/);
 	});
 });

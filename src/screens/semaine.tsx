@@ -11,7 +11,7 @@ import {
 	dateCourte,
 	type Lecture
 } from '../ui';
-import type { VotreSemaine } from '../lib/verticales/recouvrement/votre-semaine';
+import { delaiLisible, type VotreSemaine } from '../lib/verticales/recouvrement/votre-semaine';
 import { TITRE_ECRAN } from './titres';
 
 /**
@@ -87,7 +87,7 @@ export function compositionDeLaSemaine(
 		lignes.push({
 			titre: 'Date limite la plus proche',
 			ligne: 'Pour agir en justice, sur un dossier ouvert',
-			valeur: `dans ${semaine.dateLimiteDansJours} j`
+			valeur: delaiLisible(semaine.dateLimiteDansJours)
 		});
 	}
 	return {

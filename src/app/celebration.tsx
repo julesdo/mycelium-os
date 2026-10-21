@@ -15,10 +15,12 @@ import { usePush } from './push';
  * Elle attend aussi qu'aucune feuille ne soit ouverte.
  */
 export function CelebrationALaVisite() {
-	const jalon = useQuery(api.recouvrement.jalons.jalonAMontrer, {});
 	const [arriveeLe] = useState(() => Date.now());
-	if (jalon === undefined || jalon === null || jalon.atteintLe > arriveeLe) return null;
-	return <Celebration key={jalon.id} jalon={jalon} />;
+	// Le serveur ne rend que ce qui a été franchi AVANT l'arrivée : une réussite plus haute
+	// franchie pendant la visite ne remplace pas celle qui est à l'écran.
+	const jalon = useQuery(api.recouvrement.jalons.jalonAMontrer, { avant: arriveeLe });
+	if (jalon === undefined || jalon === null) return null;
+	return <Celebration key={jalon.id} jalon={jalon} arriveeLe={arriveeLe} />;
 }
 
 type JalonLu = NonNullable<FunctionReturnType<typeof api.recouvrement.jalons.jalonAMontrer>>;
@@ -29,14 +31,14 @@ type JalonLu = NonNullable<FunctionReturnType<typeof api.recouvrement.jalons.jal
  * choisi selon la ligne se remontait alors, et la célébration se rouvrait par-dessus la
  * feuille des notifications.
  */
-function Celebration({ jalon }: { jalon: JalonLu }) {
+function Celebration({ jalon, arriveeLe }: { jalon: JalonLu; arriveeLe: number }) {
 	const lu = usePush();
 	const push =
 		lu === undefined ? undefined : { etat: lu.etat, enCours: lu.enCours, onActiver: lu.onActiver };
 	const navigate = useNavigate();
 	const bloquee = useUneFeuilleOuverte();
 	const jalonVu = useMutation(api.recouvrement.jalons.jalonVu).withOptimisticUpdate((local) => {
-		local.setQuery(api.recouvrement.jalons.jalonAMontrer, {}, null);
+		local.setQuery(api.recouvrement.jalons.jalonAMontrer, { avant: arriveeLe }, null);
 	});
 	const taire = useMutation(api.recouvrement.presence.taire);
 	const secondaire = jalon.secondaire;
@@ -49,6 +51,7 @@ function Celebration({ jalon }: { jalon: JalonLu }) {
 				void jalonVu({
 					id: jalon.id,
 					ligne,
+					avant: arriveeLe,
 					...(ligne !== 'AUCUNE' && secondaire !== null ? { secondaire } : {})
 				}).catch(() => undefined);
 			}}

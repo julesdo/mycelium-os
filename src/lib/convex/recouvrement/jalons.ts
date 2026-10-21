@@ -50,6 +50,8 @@ const FRAICHEUR_MS = 30 * JOUR_MS;
 const PARRAINAGE_OUVERT = false;
 
 const vLigne = v.union(v.literal('PUSH'), v.literal('ANNEE'), v.literal('RECOMMANDATION'));
+/** Ce qu'un relevé lit de règlements au plus, loin de la limite d'une transaction. */
+const LECTURES_MAX = 8000;
 
 interface Nomme {
 	readonly montant: bigint;
@@ -86,20 +88,29 @@ async function uneRelancePartie(
  */
 async function ceQuiEstRentre(
 	ctx: MutationCtx,
-	org: Doc<'organizations'>
+	org: Doc<'organizations'>,
+	plafond: bigint
 ): Promise<{ total: bigint; paiements: number; clients: number; premier: Nomme | null }> {
-	const reglements = await ctx.db
+	const reglements = ctx.db
 		.query('reglements')
 		.withIndex('by_org_and_date', (q) =>
 			q.eq('organizationId', org._id).gte('date', jourDeParis(org._creationTime))
-		)
-		.take(4000);
+		);
 	const factures = new Map<Id<'facturesVente'>, Doc<'facturesVente'> | null>();
 	const clients = new Set<Id<'debiteurs'>>();
 	let total = 0n;
 	let paiements = 0;
 	let premier: Nomme | null = null;
-	for (const r of reglements) {
+	let lus = 0;
+	/*
+	  ⚠️ JUSQU'AU PLUS HAUT PALIER ENCORE À FRANCHIR, PAS UN NOMBRE FIXE DE RÈGLEMENTS. Une
+	  borne fixe figeait le cumul au-delà de quatre mille petits règlements. On lit dans
+	  l'ordre des dates et on s'arrête dès que tout palier possible est franchi : « sur
+	  combien de clients » se compte alors jusqu'au franchissement. La borne de lecture
+	  ne protège que la transaction.
+	*/
+	for await (const r of reglements) {
+		if (total >= plafond || ++lus > LECTURES_MAX) break;
 		if (!estRentre(r)) continue;
 		if (!factures.has(r.factureId)) factures.set(r.factureId, await ctx.db.get(r.factureId));
 		const facture = factures.get(r.factureId);
@@ -156,7 +167,14 @@ async function releverLEtat(
 				clients: 0,
 				premier: null
 			}
-		: await ceQuiEstRentre(ctx, org);
+		: await ceQuiEstRentre(
+				ctx,
+				org,
+				PALIERS_RENTRE.filter((p) => !atteints.has(p.cle)).reduce(
+					(haut, p) => (p.seuil > haut ? p.seuil : haut),
+					0n
+				) || 1n
+			);
 	const relance = atteints.has('PREMIERE_RELANCE') || (await uneRelancePartie(ctx, org._id));
 	const dossierSolde = atteints.has('PREMIER_DOSSIER_SOLDE')
 		? null
@@ -289,16 +307,34 @@ export function jalonEnAttente(
 	tous: readonly Doc<'jalonsAtteints'>[],
 	userId: string,
 	membreDepuis: number,
-	maintenant: number
+	maintenant: number,
+	/** L'arrivée sur l'écran : une réussite franchie depuis attend la visite suivante. */
+	avant?: number
 ): Doc<'jalonsAtteints'> | null {
 	const enAttente = tous.filter(
 		(j) =>
 			!j.vusPar.includes(userId) &&
 			j.atteintLe >= membreDepuis &&
-			j.atteintLe >= maintenant - FRAICHEUR_MS
+			j.atteintLe >= maintenant - FRAICHEUR_MS &&
+			(avant === undefined || j.atteintLe <= avant)
 	);
 	const cle = plusHautJalon(enAttente.map((j) => j.cle));
 	return enAttente.find((j) => j.cle === cle) ?? null;
+}
+
+/**
+ * CE QUE LA CÉLÉBRATION MARQUE VU : les réussites en attente à l'arrivée sur l'écran (la
+ * plus haute fêtée, les autres avec elle). Une réussite franchie pendant la visite reste
+ * pour la suivante.
+ */
+export function aMarquerVus(
+	tous: readonly Doc<'jalonsAtteints'>[],
+	userId: string,
+	avant?: number
+): Doc<'jalonsAtteints'>[] {
+	return tous.filter(
+		(j) => !j.vusPar.includes(userId) && (avant === undefined || j.atteintLe <= avant)
+	);
 }
 
 /**
@@ -323,7 +359,7 @@ export function proposerLAnnee(
  * l'accorde aujourd'hui. Avec au plus une ligne sous le bouton.
  */
 export const jalonAMontrer = authedQuery({
-	args: {},
+	args: { avant: v.optional(v.number()) },
 	returns: v.union(
 		v.null(),
 		v.object({
@@ -338,7 +374,7 @@ export const jalonAMontrer = authedQuery({
 			atteintLe: v.number()
 		})
 	),
-	handler: async (ctx) => {
+	handler: async (ctx, { avant }) => {
 		const userId = ctx.user._id;
 		const organizationId = await organisationCouranteOuNull(ctx, userId);
 		if (organizationId === null) return null;
@@ -354,7 +390,7 @@ export const jalonAMontrer = authedQuery({
 		if (org === null || membre === null) return null;
 		const maintenant = Date.now();
 		const tous = await lireLesJalons(ctx, organizationId);
-		const jalon = jalonEnAttente(tous, userId, membre._creationTime, maintenant);
+		const jalon = jalonEnAttente(tous, userId, membre._creationTime, maintenant, avant);
 		if (jalon === null) return null;
 		const cle = jalon.cle;
 		const accordee = await paroleAccordee(
@@ -411,22 +447,19 @@ export const jalonVu = authedMutation({
 	args: {
 		id: v.id('jalonsAtteints'),
 		ligne: v.union(v.literal('TOUCHEE'), v.literal('PASSEE'), v.literal('AUCUNE')),
-		secondaire: v.optional(vLigne)
+		secondaire: v.optional(vLigne),
+		/** L'arrivée sur l'écran : ce qui a été franchi depuis reste pour la visite suivante. */
+		avant: v.optional(v.number())
 	},
 	returns: v.null(),
-	handler: async (ctx, { id, ligne, secondaire }): Promise<null> => {
+	handler: async (ctx, { id, ligne, secondaire, avant }): Promise<null> => {
 		const userId = ctx.user._id;
 		const organizationId = await organisationCouranteOuNull(ctx, userId);
 		const jalon = await ctx.db.get(id);
 		if (organizationId === null || jalon === null || jalon.organizationId !== organizationId) {
 			return null;
 		}
-		const enAttente = (
-			await ctx.db
-				.query('jalonsAtteints')
-				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
-				.take(CLES_JALONS.length * 2)
-		).filter((j) => !j.vusPar.includes(userId));
+		const enAttente = aMarquerVus(await lireLesJalons(ctx, organizationId), userId, avant);
 		for (const j of enAttente) {
 			const proposee =
 				j._id === id &&

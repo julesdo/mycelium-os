@@ -5,7 +5,12 @@ import type { Doc, Id } from '../_generated/dataModel';
 import { components, internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { organisationCouranteOuNull } from '../lib/auth';
-import { demanderLaParole, noterOuverte, paroleAccordee } from '../croissance/attention';
+import {
+	GENRE_VISITE,
+	demanderLaParole,
+	noterOuverte,
+	paroleAccordee
+} from '../croissance/attention';
 import { notifier } from '../notifier';
 import { estRentre, jalonEnAttente, lireLesJalons } from './jalons';
 import { requireEnv } from '../env';
@@ -21,6 +26,7 @@ import {
 	bornesDeLaSemaineEcoulee,
 	composerLaSemaine,
 	lundiDe,
+	phraseDeLaSemaine,
 	rangeesDeLaSemaine,
 	repartirLeLundi,
 	type VotreSemaine
@@ -51,8 +57,12 @@ const vSemaine = v.object({
 	meilleureDepuis: v.union(v.string(), v.null())
 });
 
-export function cleDeLaSemaine(debut: string): string {
-	return `semaine:${debut}`;
+/**
+ * La clé d'une semaine, PAR ÉTABLISSEMENT : un gérant de deux établissements a deux
+ * cartes du lundi, et ouvrir l'une ne cache pas l'autre.
+ */
+export function cleDeLaSemaine(organizationId: Id<'organizations'>, debut: string): string {
+	return `semaine:${organizationId}:${debut}`;
 }
 
 /** La plus proche des dates limites pour agir des dossiers ouverts, en jours d'ici. */
@@ -254,7 +264,7 @@ export async function carteDuLundiPour(
 	const jalons = await lireLesJalons(ctx, organizationId);
 	if (jalonEnAttente(jalons, userId, membre._creationTime, maintenant) !== null) return null;
 	const { debut } = bornesDeLaSemaineEcoulee(maintenant);
-	const cle = cleDeLaSemaine(debut);
+	const cle = cleDeLaSemaine(organizationId, debut);
 	const prise = await ctx.db
 		.query('prisesDeParole')
 		.withIndex('by_user_and_cle', (q) => q.eq('userId', userId).eq('cle', cle))
@@ -291,7 +301,7 @@ export const carteMontree = authedMutation({
 			userId,
 			canal: 'APP',
 			genre: 'semaine',
-			cle: cleDeLaSemaine(debut),
+			cle: cleDeLaSemaine(organizationId, debut),
 			expireLe: Date.parse(`${jeudi}T00:00:00Z`)
 		});
 		return null;
@@ -306,47 +316,47 @@ export const semaineVue = authedMutation({
 		const userId = ctx.user._id;
 		const organizationId = await organisationCouranteOuNull(ctx, userId);
 		if (organizationId === null) return null;
-		const maintenant = Date.now();
-		const cle = cleDeLaSemaine(bornesDeLaSemaineEcoulee(maintenant).debut);
-		const prise = await ctx.db
-			.query('prisesDeParole')
-			.withIndex('by_user_and_cle', (q) => q.eq('userId', userId).eq('cle', cle))
-			.first();
-		if (prise === null) {
-			// Ouvert sans la carte (l'e-mail, un lien) : la carte ne reviendra pas cette semaine.
-			await ctx.db.insert('prisesDeParole', {
-				organizationId,
-				userId,
-				canal: 'APP',
-				genre: 'semaine',
-				cle,
-				le: maintenant,
-				ouverteLe: maintenant
-			});
-		} else await noterOuverte(ctx, userId, cle, maintenant);
+		await semaineVuePour(ctx, organizationId, userId, Date.now());
 		return null;
 	}
 });
 
+/**
+ * Le cœur de `semaineVue`, sans session. Ouvert sans la carte (l'e-mail, un lien), la
+ * visite se note pour que la carte ne revienne pas cette semaine — comme une VISITE, que
+ * le budget d'attention ne compte pas : c'est la personne qui est venue.
+ */
+export async function semaineVuePour(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	userId: string,
+	maintenant: number
+): Promise<void> {
+	const cle = cleDeLaSemaine(organizationId, bornesDeLaSemaineEcoulee(maintenant).debut);
+	const prise = await ctx.db
+		.query('prisesDeParole')
+		.withIndex('by_user_and_cle', (q) => q.eq('userId', userId).eq('cle', cle))
+		.first();
+	if (prise === null) {
+		await ctx.db.insert('prisesDeParole', {
+			organizationId,
+			userId,
+			canal: 'APP',
+			genre: GENRE_VISITE,
+			cle,
+			le: maintenant,
+			ouverteLe: maintenant
+		});
+	} else await noterOuverte(ctx, userId, cle, maintenant);
+}
+
 /* ── LE LUNDI : L'E-MAIL ET LA NOTIFICATION ─────────────────────────────────── */
 
-function cleDeLEmail(debut: string): string {
-	return `semaine-email:${debut}`;
+function cleDeLEmail(organizationId: Id<'organizations'>, debut: string): string {
+	return `semaine-email:${organizationId}:${debut}`;
 }
 
 /** Ce que disent la notification et l'objet : en une phrase, sans cadran à zéro. */
-function enUnePhrase(s: VotreSemaine): string {
-	if (s.rentre > 0n) {
-		const ont = s.clientsQuiOntPaye > 1 ? 'clients ont' : 'client a';
-		return `${enEuros(s.rentre)} rentrés, ${s.clientsQuiOntPaye} ${ont} payé.`;
-	}
-	if (s.relancesParties > 0) {
-		const pl = s.relancesParties > 1 ? 's' : '';
-		return `${s.relancesParties} relance${pl} partie${pl}.`;
-	}
-	return `Une date limite pour agir dans ${s.dateLimiteDansJours ?? 0} jours.`;
-}
-
 /**
  * LE LUNDI, AU PASSAGE DU POINT DU MATIN (`battement.ts`) : « Votre semaine » part à 9 h
  * à qui la reçoit, la notification et son push à qui ne l'a pas coupée. Rend ceux qui
@@ -365,7 +375,7 @@ export async function preparerLeLundi(
 		.query('organizationMembers')
 		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
 		.take(100);
-	const cle = cleDeLEmail(semaine.debut);
+	const cle = cleDeLEmail(organizationId, semaine.debut);
 	const repartition = repartirLeLundi(
 		await Promise.all(
 			membres.map(async (m) => ({
@@ -388,7 +398,7 @@ export async function preparerLeLundi(
 			userId,
 			type: 'SEMAINE',
 			title: 'Votre semaine',
-			message: enUnePhrase(semaine),
+			message: phraseDeLaSemaine(semaine),
 			link: '/app/semaine'
 		});
 	}
@@ -418,7 +428,13 @@ export const envoyerLaSemaine = internalMutation({
 		if (semaine === null || semaine.debut !== debut) return null;
 		const accordee = await demanderLaParole(
 			ctx,
-			{ organizationId, userId, canal: 'EMAIL', genre: 'semaine', cle: cleDeLEmail(debut) },
+			{
+				organizationId,
+				userId,
+				canal: 'EMAIL',
+				genre: 'semaine',
+				cle: cleDeLEmail(organizationId, debut)
+			},
 			maintenant
 		);
 		if (!accordee) return null;
@@ -457,7 +473,7 @@ export const envoyerLaSemaine = internalMutation({
 		await resend.sendEmail(ctx, {
 			from: expediteur,
 			to: email,
-			subject: `Votre semaine : ${enUnePhrase(semaine)}`,
+			subject: `Votre semaine : ${phraseDeLaSemaine(semaine)}`,
 			html: semaineHtml(donnees),
 			text: semaineTexte(donnees)
 		});

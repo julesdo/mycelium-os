@@ -130,8 +130,10 @@ let paiementVuJusquA: number | null = null;
  * franchir un se fête par la célébration, pas par la bulle.
  */
 const ATTENTE_DU_RELEVE_MS = 2500;
-let feteEnAttente: { readonly id: string; readonly minuteur: ReturnType<typeof setTimeout> } | null =
-	null;
+let feteEnAttente: {
+	readonly id: string;
+	readonly minuteur: ReturnType<typeof setTimeout>;
+} | null = null;
 let journeeVue: { readonly jour: string; readonly tenue: boolean } | null = null;
 
 const abonnes = new Set<() => void>();
@@ -418,6 +420,8 @@ export const paroleDePlume = {
 			id: dernier.id,
 			minuteur: setTimeout(() => {
 				feteEnAttente = null;
+				// Passé sur la fiche du client entre-temps : « Virement noté » y a déjà sa coche.
+				if (inscriptions.at(-1)?.ecran === 'CLIENT') return;
 				annoncer(fete);
 			}, ATTENTE_DU_RELEVE_MS)
 		};

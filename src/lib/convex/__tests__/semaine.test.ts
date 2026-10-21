@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
-import { carteDuLundiPour, lireLaSemaine } from '../recouvrement/semaine';
+import { carteDuLundiPour, lireLaSemaine, semaineVuePour } from '../recouvrement/semaine';
+import { paroleAccordee } from '../croissance/attention';
 import { bornesDeLaSemaineEcoulee } from '../../verticales/recouvrement/votre-semaine';
 
 /**
@@ -237,5 +238,50 @@ describe('ce que la semaine compte (relecture du 21/10/2026)', () => {
 			expect(semaine?.relancesParties).toBe(1);
 		},
 		DELAI_CONVEX * 2
+	);
+});
+
+describe('ouvrir « Votre semaine » soi-même (relecture du 21/10/2026)', () => {
+	it(
+		'ne compte pas comme la parole du jour',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await unEtablissement(t, true);
+			const accordee = await t.run(async (ctx) => {
+				await semaineVuePour(ctx, organizationId, 'gerant', LUNDI_PROCHAIN);
+				return paroleAccordee(
+					ctx,
+					{ organizationId, userId: 'gerant', canal: 'APP', genre: 'jalon', cle: 'jalon:x' },
+					LUNDI_PROCHAIN
+				);
+			});
+			expect(accordee).toBe(true);
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne cache pas la carte dans un autre établissement de la même personne',
+		async () => {
+			const t = convexTest(schema, modules);
+			const premier = await unEtablissement(t, true);
+			const second = await unEtablissement(t, true);
+			await t.run(async (ctx) => {
+				for (const organizationId of [premier, second]) {
+					await ctx.db.insert('organizationMembers', {
+						organizationId,
+						userId: 'gerant',
+						role: 'ORG_ADMIN',
+						joinedAt: Date.now()
+					});
+				}
+				await semaineVuePour(ctx, premier, 'gerant', LUNDI_PROCHAIN);
+			});
+			const carte = await t.run(async (ctx) =>
+				carteDuLundiPour(ctx, second, 'gerant', LUNDI_PROCHAIN)
+			);
+			expect(carte?.rentre).toBe(300_000n);
+		},
+		DELAI_CONVEX
 	);
 });

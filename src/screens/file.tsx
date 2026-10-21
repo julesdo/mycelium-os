@@ -9,6 +9,7 @@ import {
 	CarteBouton,
 	CarteGlissable,
 	CarteLien,
+	SignalDeVue,
 	CeQuiManque,
 	ChiffreHero,
 	EnTeteDeGroupe,
@@ -342,9 +343,13 @@ export interface TeteDeFile {
 }
 
 export interface CarteDuMoment {
+	/** Ce qui distingue une carte d'une autre (la semaine qu'elle raconte). */
+	readonly cle: string;
 	readonly titre: string;
 	readonly ligne: string;
 	readonly montant: bigint | null;
+	/** La carte est posée à l'écran : elle s'inscrit montrée, une fois. */
+	readonly onVue?: () => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1015,6 +1020,9 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 			{/* DEPUIS COMBIEN DE TEMPS : la forme sous le nombre (Afterpay). */}
 			<BandeDAnciennete lignes={tete.anciennete} aujourdHui={aujourdHui} />
 
+			{tete.carteDuMoment?.onVue === undefined ? null : (
+				<SignalDeVue cle={tete.carteDuMoment.cle} onVue={tete.carteDuMoment.onVue} />
+			)}
 			{tete.carteDuMoment === undefined ? null : (
 				<CarteLien
 					vers="/app/semaine"

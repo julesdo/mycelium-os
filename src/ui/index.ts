@@ -393,6 +393,7 @@ export {
 	type LigneDeCelebration
 } from './celebration-jalon';
 export { useUneFeuilleOuverte } from './feuilles-ouvertes';
+export { SignalDeVue } from './signal-de-vue';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
 export {

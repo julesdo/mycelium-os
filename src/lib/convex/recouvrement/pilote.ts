@@ -232,6 +232,13 @@ export const reveillerTous = internalMutation({
 			await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, {
 				organizationId: organisation._id
 			});
+			// Né avant la mise en service des jalons (21/10/2026) : son premier relevé
+			// inscrit vu ce qui est déjà franchi, pour que la suite se fête.
+			if (organisation.jalonsRelevesLe === undefined) {
+				await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, {
+					organizationId: organisation._id
+				});
+			}
 		}
 		return null;
 	}

@@ -1,3 +1,4 @@
+import { enEuros } from '../../notifications/paiements';
 import { ajouterJours } from './calendrier';
 import { jourDeParis } from './compagnon/journee';
 
@@ -66,6 +67,27 @@ function meilleureDepuis(
 	return plusAncienne <= lundiDe(arriveeLe) ? 'arrivee' : plusAncienne;
 }
 
+/** Le délai d'une date limite, court : « dans 12 j », « aujourd'hui ». */
+export function delaiLisible(jours: number): string {
+	return jours === 0 ? 'aujourd’hui' : `dans ${jours} j`;
+}
+
+/** La semaine en une phrase, pour l'objet de l'e-mail et la notification. */
+export function phraseDeLaSemaine(s: VotreSemaine): string {
+	if (s.rentre > 0n) {
+		const ont = s.clientsQuiOntPaye > 1 ? 'clients ont' : 'client a';
+		return `${enEuros(s.rentre)} rentrés, ${s.clientsQuiOntPaye} ${ont} payé.`;
+	}
+	if (s.relancesParties > 0) {
+		const pl = s.relancesParties > 1 ? 's' : '';
+		return `${s.relancesParties} relance${pl} partie${pl}.`;
+	}
+	const jours = s.dateLimiteDansJours ?? 0;
+	return jours === 0
+		? 'Une date limite pour agir tombe aujourd’hui.'
+		: `Une date limite pour agir dans ${jours} jour${jours > 1 ? 's' : ''}.`;
+}
+
 /** Les rangées de l'e-mail du lundi : ce qui n'est pas nul, jamais un compteur à zéro. */
 export function rangeesDeLaSemaine(
 	s: VotreSemaine
@@ -79,7 +101,7 @@ export function rangeesDeLaSemaine(
 			: []),
 		...(s.dateLimiteDansJours === null
 			? []
-			: [{ libelle: 'Date limite la plus proche', valeur: `dans ${s.dateLimiteDansJours} j` }])
+			: [{ libelle: 'Date limite la plus proche', valeur: delaiLisible(s.dateLimiteDansJours) }])
 	];
 }
 

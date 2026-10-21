@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
 	ArrowLeftRightIcon,
 	CalendarRangeIcon,
@@ -87,19 +87,32 @@ export function GestionDeLaFormule({
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [reussite, setReussite] = useState<{ titre: string; detail: string } | null>(null);
 
+	/*
+	  ⚠️ SEULE LA DERNIÈRE DEMANDE ÉCRIT SON PRIX. Une réponse de Paddle arrivée après une
+	  demande plus récente (la confirmation rouverte entre-temps) écrasait celle-ci.
+	*/
+	const derniereDemande = useRef(0);
+	function chiffrer(f: Formule, r: Rythme) {
+		const demande = ++derniereDemande.current;
+		gestion
+			.apercu(f, r)
+			.then((a) => {
+				if (demande === derniereDemande.current) setApercu({ etat: 'pret', ...a });
+			})
+			.catch((e: unknown) => {
+				if (demande !== derniereDemande.current) return;
+				setApercu({
+					etat: 'erreur',
+					message: messageDe(e, 'Paddle n’a pas pu chiffrer ce changement.')
+				});
+			});
+	}
+
 	// Le prix de l'année, demandé une fois à Paddle quand la confirmation s'ouvre d'emblée.
 	useEffect(() => {
 		if (annee === null) return;
 		onAnneeOuverte?.();
-		gestion
-			.apercu(annee.formule, annee.rythme)
-			.then((a) => setApercu({ etat: 'pret', ...a }))
-			.catch((e: unknown) =>
-				setApercu({
-					etat: 'erreur',
-					message: messageDe(e, 'Paddle n’a pas pu chiffrer ce changement.')
-				})
-			);
+		chiffrer(annee.formule, annee.rythme);
 		// Une fois, à l'arrivée : `gestion` change d'identité à chaque rendu de l'écran.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [annee]);
@@ -118,15 +131,7 @@ export function GestionDeLaFormule({
 		setCible({ formule: f, rythme: r });
 		setApercu({ etat: 'attente' });
 		setErreur(null);
-		gestion
-			.apercu(f, r)
-			.then((a) => setApercu({ etat: 'pret', ...a }))
-			.catch((e: unknown) =>
-				setApercu({
-					etat: 'erreur',
-					message: messageDe(e, 'Paddle n’a pas pu chiffrer ce changement.')
-				})
-			);
+		chiffrer(f, r);
 	}
 
 	function agir(geste: () => Promise<unknown>, apres: () => void) {

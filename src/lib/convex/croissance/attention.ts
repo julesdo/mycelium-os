@@ -10,6 +10,11 @@ import { peutParler, type Canal, type PriseDeParole } from '../../croissance/att
  */
 
 const JOUR = 24 * 60 * 60 * 1000;
+/**
+ * UNE VISITE, PAS UNE PAROLE : la personne a ouvert l'écran elle-même (`semaineVuePour`).
+ * Elle se note pour qu'on ne lui repropose pas ce qu'elle a vu, et le budget ne la compte pas.
+ */
+export const GENRE_VISITE = 'visite';
 /** Assez d'historique pour toutes les règles : la semaine, la cadence, deux ignorées. */
 const FENETRE_MS = 30 * JOUR;
 
@@ -34,7 +39,7 @@ export async function historiqueDeParole(
 		.take(200);
 	return [
 		...prises
-			.filter((p) => userId === null || p.userId === userId)
+			.filter((p) => p.genre !== GENRE_VISITE && (userId === null || p.userId === userId))
 			.map((p) => ({
 				canal: p.canal,
 				genre: p.genre,

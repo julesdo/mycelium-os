@@ -569,7 +569,12 @@ const FORMES_FILE: Readonly<Record<string, FileAffichee>> = {
 		...GARNIE,
 		tete: {
 			...GARNIE.tete,
-			carteDuMoment: { titre: 'Votre semaine', ligne: '3 clients ont payé', montant: 412_000n }
+			carteDuMoment: {
+				cle: '2026-10-12',
+				titre: 'Votre semaine',
+				ligne: '3 clients ont payé',
+				montant: 412_000n
+			}
 		}
 	},
 	// Le branchement d'un logiciel par Nango, étape par étape, sur l'écran du premier jour.

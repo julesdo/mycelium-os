@@ -82,4 +82,31 @@ describe('passer à l’année depuis une célébration', () => {
 		);
 		expect(onAnneeOuverte).toHaveBeenCalledTimes(1);
 	});
+
+	it('garde le prix de la dernière demande quand une réponse plus ancienne arrive après', async () => {
+		const reponses: ((ensuite: number) => void)[] = [];
+		const gestion: GestionAffichee = {
+			...GESTION,
+			apercu: () =>
+				new Promise((resoudre) =>
+					reponses.push((ensuite) => resoudre({ aujourdhui: 0, ensuite, prochainLe: null }))
+				)
+		};
+		await act(async () =>
+			racine.render(
+				<GestionDeLaFormule abonnement={ABONNEMENT} gestion={gestion} maintenant={0} passerALAnnee />
+			)
+		);
+		// Une seconde demande pour la même année, depuis la rangée, avant la première réponse.
+		const carte = [...document.body.querySelectorAll('button')].find((b) =>
+			b.textContent?.includes('Passer à l’année')
+		);
+		await act(async () => {
+			carte?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		});
+		expect(reponses).toHaveLength(2);
+		await act(async () => reponses[1]!(98_765));
+		await act(async () => reponses[0]!(13_579));
+		expect(document.body.textContent).not.toMatch(/135,79/);
+	});
 });

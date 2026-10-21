@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
 import { internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
+import type { Doc, Id } from '../_generated/dataModel';
 import { jourDeParis } from '../../admin/dates';
 import { champsDUnNouvelEtablissement } from '../organizations';
-import { proposerLAnnee } from '../recouvrement/jalons';
+import { aMarquerVus, jalonEnAttente, proposerLAnnee } from '../recouvrement/jalons';
+import type { CleJalon } from '../../verticales/recouvrement/jalons';
 
 /**
  * LES RÉUSSITES, RELEVÉES UNE FOIS CHACUNE (21/10/2026, le parcours de l'habitude). Un
@@ -265,4 +266,72 @@ describe('l’année proposée sous une réussite', () => {
 	it('ne se propose pas à un abonnement résilié', () => {
 		expect(proposerLAnnee({ ...MENSUEL, paddleResiliationLe: Date.now() }, 'ORG_ADMIN')).toBe(false);
 	});
+});
+
+describe('les réussites, au-delà des cas courants (relecture du 21/10/2026)', () => {
+	it(
+		'compte ce qui est rentré au-delà de quatre mille règlements',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, factureId } = await unDossierPaye(t, 1n);
+			await t.run(async (ctx) => {
+				for (let i = 0; i < 4000; i++) {
+					await ctx.db.insert('reglements', {
+						organizationId,
+						factureId,
+						date: AUJOURDHUI,
+						montant: 1n,
+						nature: 'PAIEMENT',
+						creeLe: Date.now()
+					});
+				}
+				await ctx.db.insert('reglements', {
+					organizationId,
+					factureId,
+					date: AUJOURDHUI,
+					montant: 1_000_000n,
+					nature: 'PAIEMENT',
+					creeLe: Date.now()
+				});
+			});
+			await t.mutation(internal.recouvrement.jalons.relever, { organizationId });
+			const cles = await t.run(async (ctx) =>
+				(await ctx.db.query('jalonsAtteints').collect()).map((j) => j.cle)
+			);
+			expect(cles).toContain('RENTRE_10000');
+		},
+		DELAI_CONVEX * 3
+	);
+
+	const jalon = (cle: CleJalon, atteintLe: number, vusPar: string[] = []) =>
+		({ cle, atteintLe, vusPar }) as unknown as Doc<'jalonsAtteints'>;
+
+	it('fête la réussite d’avant la visite, et garde pour la suivante celle franchie pendant', () => {
+		const tous = [jalon('RENTRE_1000', 1_000), jalon('RENTRE_10000', 5_000)];
+		expect(jalonEnAttente(tous, 'gerant', 0, 6_000, 2_000)?.cle).toBe('RENTRE_1000');
+		expect(aMarquerVus(tous, 'gerant', 2_000).map((j) => j.cle)).toEqual(['RENTRE_1000']);
+	});
+
+	it(
+		'relève les établissements d’avant la mise en service au réveil du pilote',
+		async () => {
+			const t = convexTest(schema, modules);
+			await t.run(async (ctx) => {
+				await ctx.db.insert('organizations', { name: 'Ancien', createdAt: Date.now() });
+				await ctx.db.insert('organizations', {
+					name: 'Nouveau',
+					createdAt: Date.now(),
+					jalonsRelevesLe: Date.now()
+				});
+			});
+			await t.mutation(internal.recouvrement.pilote.reveillerTous, {});
+			const releves = await t.run(async (ctx) =>
+				(await ctx.db.system.query('_scheduled_functions').collect()).filter(
+					(f) => f.name === 'recouvrement/jalons:relever'
+				)
+			);
+			expect(releves).toHaveLength(1);
+		},
+		DELAI_CONVEX
+	);
 });
