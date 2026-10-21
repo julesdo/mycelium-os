@@ -45,7 +45,9 @@ export function ConfirmationDeChangement({
 	enCours,
 	erreur,
 	onConfirmer,
-	quittePrixFondateurs = false
+	quittePrixFondateurs = false,
+	contexte,
+	libelleConfirmer = 'Confirmer'
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -59,6 +61,10 @@ export function ConfirmationDeChangement({
 	readonly enCours: boolean;
 	readonly erreur: string | null;
 	readonly onConfirmer: () => void;
+	/** Pourquoi on change, en tête : « Pour inviter marie@… ». */
+	readonly contexte?: string;
+	/** Ce que le bouton fait, quand « Confirmer » ne le dit pas assez. */
+	readonly libelleConfirmer?: string;
 }) {
 	const nom = GRILLE[formule].nom;
 	const cadence = rythme === 'annuel' ? 'par an' : 'par mois';
@@ -81,11 +87,14 @@ export function ConfirmationDeChangement({
 						disabled={enCours || apercu.etat !== 'pret'}
 						onClick={onConfirmer}
 					>
-						Confirmer
+						{libelleConfirmer}
 					</BoutonPrincipal>
 				</>
 			}
 		>
+			{contexte === undefined ? null : (
+				<p className="px-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">{contexte}</p>
+			)}
 			<p className="px-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				{nom}, {rythme === 'annuel' ? 'à l’année' : 'au mois'} :{' '}
 				{prixAffiche(montantDuRythme(formule, rythme) * 100)} HT {cadence}.

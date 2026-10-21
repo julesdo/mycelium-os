@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
 	Button,
 	Chip,
@@ -14,9 +14,11 @@ import {
 	SectionTitle,
 	Segmented,
 	SegmentedButton,
+	Spinner,
 	Surface
 } from '@cladd-ui/react';
 import {
+	ArrowUpCircleIcon,
 	CheckIcon,
 	CopyIcon,
 	EllipsisIcon,
@@ -26,7 +28,20 @@ import {
 	UserPlusIcon
 } from 'lucide-react';
 import { VALIDITE_INVITATION_EN_TOUTES_LETTRES } from '../../lib/config/invitations';
-import { BoutonPrincipal, BoutonSecondaire, Champ, ConfirmationParSaisie, pluriel } from '../../ui';
+import { FORMULES, GRILLE, LIMITES, type Formule, type Rythme } from '../../lib/config/tarifs';
+import {
+	BoutonPrincipal,
+	BoutonSecondaire,
+	BoutonTexte,
+	Champ,
+	ChoixDeFormule,
+	ConfirmationDeChangement,
+	ConfirmationParSaisie,
+	pluriel,
+	type ApercuDeChangement
+} from '../../ui';
+import type { AbonnementAffiche, CaisseAffichee } from './facturation';
+import type { GestionAffichee } from './gestion-formule';
 
 /**
  * L'ÉQUIPE — la section, et l'invitation EN LIGNE.
@@ -155,6 +170,82 @@ export interface EquipeAffichee {
 	readonly onVerifierAdresse: (membreId: string) => Promise<void>;
 	/** Rend le LIEN d'invitation : c'est lui qui sauve une invitation tombée dans les indésirables. */
 	readonly onInviter: (email: string, role: RoleEquipe) => Promise<string>;
+	/**
+	 * L'abonnement et ses gestes, pour passer à la formule du dessus depuis
+	 * l'invitation quand les places sont prises (21/10/2026). Absent : on ne peut
+	 * que libérer une place.
+	 */
+	readonly formule?: FormuleDeLEquipe;
+}
+
+/** Ce que l'écran Compte sait de l'abonnement, prêté à l'invitation. */
+export interface FormuleDeLEquipe {
+	readonly abonnement: AbonnementAffiche;
+	readonly caisse?: CaisseAffichee;
+	readonly gestion?: GestionAffichee;
+	readonly maintenant: number;
+}
+
+/**
+ * PASSER À LA FORMULE DU DESSUS POUR INVITER (21/10/2026).
+ *
+ * Le fondateur, devant le refus en quatre paragraphes : « pas très CX friendly […]
+ * laisser le choix de rentrer l'email […] avec un bouton passer à l'offre
+ * supérieure ». Relevé chez Slack, Notion, Linear et Figma : on écrit l'adresse
+ * comme d'habitude, le bouton dit ce qui va se passer, une page pleine montre ce que
+ * change la formule et ce qu'elle coûte, et l'invitation part seule dès que la
+ * formule est en place. Deux voies : un abonné CHANGE de formule (le prorata d'abord,
+ * Paddle répond tout de suite) ; un compte sans abonnement SOUSCRIT par la page de
+ * choix, la bonne formule cochée (l'invitation part au retour de Paddle).
+ */
+type Montee =
+	| {
+			readonly genre: 'CHANGER';
+			readonly cible: Formule;
+			readonly rythme: Rythme;
+			readonly aLEssai: boolean;
+			readonly quittePrixFondateurs: boolean;
+			readonly gestion: GestionAffichee;
+	  }
+	| {
+			readonly genre: 'SOUSCRIRE';
+			readonly cible: Formule;
+			readonly caisse: CaisseAffichee;
+			readonly abonnement: AbonnementAffiche;
+			readonly maintenant: number;
+	  };
+
+/** La plus petite formule qui ouvre `besoin` accès, ou `null` : aucune n'en ouvre autant. */
+function formuleQuiOuvre(besoin: number): Formule | null {
+	return FORMULES.find((f) => LIMITES[f].utilisateurs >= besoin) ?? null;
+}
+
+function monteePourInviter(formule: FormuleDeLEquipe | undefined, besoin: number): Montee | null {
+	if (formule === undefined) return null;
+	const cible = formuleQuiOuvre(besoin);
+	if (cible === null) return null;
+	const { abonnement, caisse, gestion } = formule;
+	const vivant = abonnement.statut === 'active' || abonnement.statut === 'trialing';
+	if (
+		vivant &&
+		gestion !== undefined &&
+		abonnement.formule !== null &&
+		abonnement.rythme !== null
+	) {
+		if (cible === abonnement.formule) return null;
+		return {
+			genre: 'CHANGER',
+			cible,
+			rythme: abonnement.rythme,
+			aLEssai: abonnement.statut === 'trialing',
+			quittePrixFondateurs: abonnement.prixFondateurs === true,
+			gestion
+		};
+	}
+	if (!vivant && caisse?.disponible === true) {
+		return { genre: 'SOUSCRIRE', cible, caisse, abonnement, maintenant: formule.maintenant };
+	}
+	return null;
 }
 
 export function SectionEquipe({
@@ -167,9 +258,11 @@ export function SectionEquipe({
 	onRetirer,
 	onAnnulerInvitation,
 	onVerifierAdresse,
-	onInviter
+	onInviter,
+	formule
 }: EquipeAffichee) {
 	const placesLibres = Math.max(0, siegesAutorises - siegesUtilises - invitations.length);
+	const montee = monteePourInviter(formule, siegesUtilises + invitations.length + 1);
 
 	return (
 		<>
@@ -223,6 +316,10 @@ export function SectionEquipe({
 					complet={placesLibres === 0}
 					places={siegesAutorises}
 					placesLibres={placesLibres}
+					montee={montee}
+					nomDeLaFormule={
+						formule?.abonnement.formule ? GRILLE[formule.abonnement.formule].nom : null
+					}
 				/>
 			) : (
 				/*
@@ -459,13 +556,19 @@ export function FormulaireInvitation({
 	onInviter,
 	complet,
 	places,
-	placesLibres
+	placesLibres,
+	montee = null,
+	nomDeLaFormule = null
 }: {
 	/** Rend le LIEN d'invitation : c'est lui qui sauve une invitation tombée dans les indésirables. */
 	onInviter: (email: string, role: RoleEquipe) => Promise<string>;
 	complet: boolean;
 	places: number;
 	placesLibres: number;
+	/** La formule du dessus et sa voie, quand les places sont prises. */
+	montee?: Montee | null;
+	/** « Solo » : le nom de la formule souscrite, s'il y en a une. */
+	nomDeLaFormule?: string | null;
 }) {
 	const [email, setEmail] = useState('');
 	const [role, setRole] = useState<RoleEquipe>('ORG_MEMBER');
@@ -474,9 +577,82 @@ export function FormulaireInvitation({
 	/** L'invitation qui vient de partir, ou `null` : c'est elle qui décide de l'écran montré. */
 	const [envoyee, setEnvoyee] = useState<{ email: string; lien: string } | null>(null);
 
+	/** L'invitation qui attend la formule du dessus : l'adresse et le rôle, gardés. */
+	const [demande, setDemande] = useState<{ email: string; role: RoleEquipe } | null>(null);
+	/** La page pleine de la montée est ouverte. */
+	const [monteeOuverte, setMonteeOuverte] = useState(false);
+	const [apercu, setApercu] = useState<ApercuDeChangement>({ etat: 'attente' });
+	const [changementEnCours, setChangementEnCours] = useState(false);
+	const [erreurDeMontee, setErreurDeMontee] = useState<string | null>(null);
+	/** Le changement de formule a répondu : l'invitation n'attend plus que les places. */
+	const [changee, setChangee] = useState(false);
+	const envoiLance = useRef(false);
+
 	const valide = email.includes('@') && email.trim().length > 3;
+	const nomCible = montee === null ? null : GRILLE[montee.cible].nom;
+	/*
+	  L'invitation attend la formule : après le changement (un abonné), ou après le
+	  paiement confirmé par Paddle (une souscription). Un paiement abandonné ne laisse
+	  rien en attente : l'adresse reste dans le champ, et on recommence d'un toucher.
+	*/
+	const enAttente =
+		demande !== null &&
+		(changee || (montee?.genre === 'SOUSCRIRE' && montee.caisse.souscrite !== null));
+
+	// Les places arrivent avec la formule (la lecture de l'abonnement est en temps
+	// réel) : l'invitation gardée part alors d'elle-même, une seule fois.
+	useEffect(() => {
+		if (!enAttente || complet || demande === null || envoiLance.current) return;
+		envoiLance.current = true;
+		const { email: adresse, role: sonRole } = demande;
+		onInviter(adresse, sonRole)
+			.then((lien) => {
+				setEmail('');
+				setEnvoyee({ email: adresse, lien });
+			})
+			.catch((e: unknown) => setErreur(messageDErreur(e)))
+			.finally(() => {
+				envoiLance.current = false;
+				setDemande(null);
+				setChangee(false);
+				if (montee?.genre === 'SOUSCRIRE') montee.caisse.onFermerLaReussite();
+			});
+	}, [enAttente, complet, demande, onInviter, montee]);
+
+	/** Les places sont prises : on garde l'invitation et on ouvre la formule du dessus. */
+	function monter() {
+		if (!valide || montee === null) return;
+		setDemande({ email: email.trim().toLowerCase(), role });
+		setErreurDeMontee(null);
+		setMonteeOuverte(true);
+		if (montee.genre === 'CHANGER') {
+			setApercu({ etat: 'attente' });
+			montee.gestion
+				.apercu(montee.cible, montee.rythme)
+				.then((a) => setApercu({ etat: 'pret', ...a }))
+				.catch((e: unknown) => setApercu({ etat: 'erreur', message: messageDErreur(e) }));
+		}
+	}
+
+	function confirmerLeChangement() {
+		if (montee?.genre !== 'CHANGER') return;
+		setChangementEnCours(true);
+		setErreurDeMontee(null);
+		montee.gestion
+			.changer(montee.cible, montee.rythme, montee.quittePrixFondateurs)
+			.then(() => {
+				setChangee(true);
+				setMonteeOuverte(false);
+			})
+			.catch((e: unknown) => setErreurDeMontee(messageDErreur(e)))
+			.finally(() => setChangementEnCours(false));
+	}
 
 	async function envoyer() {
+		if (complet) {
+			monter();
+			return;
+		}
 		if (!valide || enCours) return;
 		const adresse = email.trim().toLowerCase();
 		setEnCours(true);
@@ -492,38 +668,51 @@ export function FormulaireInvitation({
 		}
 	}
 
-	/*
-	  ⚠️ PLUS DE PLACE LIBRE : LE REFUS S'ÉCRIT EN QUATRE PARTIES (D0). Ce qu'on
-	  peut faire tout de suite vient d'abord, et il n'est jamais vide — trois
-	  gestes rendent une place sans attendre personne.
-	*/
-	if (complet) {
-		return (
-			<div className="flex flex-col gap-cladd-3xs">
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Une place se libère tout de suite : annulez une invitation en attente, ou retirez une
-					personne de la liste ci-dessus.
-				</p>
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Ce qui manque : les {places} places de votre offre sont prises, invitations en attente
-					comprises.
-				</p>
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Ce verrou se lève aussi par le passage à l’offre du palier supérieur, qui porte davantage
-					de places.
-				</p>
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
-					Ce que l’attente coûte : la personne non invitée ne dépose aucune facture et ne confirme
-					aucun classement, et ce qu’elle aurait traité ne se chiffre pas tant qu’elle n’a pas
-					accès.
-				</p>
-			</div>
-		);
-	}
-
 	if (envoyee !== null) {
 		return <InvitationPartie invitation={envoyee} onRecommencer={() => setEnvoyee(null)} />;
 	}
+
+	if (enAttente && demande !== null) {
+		return (
+			<Surface
+				variant="transparent"
+				outline={false}
+				className="verre-carte rounded-cladd-xl"
+				contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+			>
+				<span className="flex items-center gap-cladd-3xs text-cladd-xs font-semibold">
+					<Spinner size="sm" />
+					{nomCible === null ? 'La formule s’active' : `${nomCible} s’active`}
+				</span>
+				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+					L’invitation à <span className="break-all">{demande.email}</span> part dès que la nouvelle
+					place est là, en général en quelques secondes.
+				</p>
+				<BoutonTexte
+					className="self-start"
+					onClick={() => {
+						setDemande(null);
+						setChangee(false);
+					}}
+				>
+					Ne pas l’envoyer
+				</BoutonTexte>
+			</Surface>
+		);
+	}
+
+	/*
+	  ⚠️ PLUS DE PLACE LIBRE : LE FORMULAIRE RESTE (21/10/2026). Il remplaçait le
+	  champ par un refus en quatre paragraphes. On écrit l'adresse comme d'habitude ;
+	  une ligne dit que les places sont prises, et le bouton dit ce qui va se passer.
+	*/
+	const lignePlaces = complet
+		? `${nomDeLaFormule ?? 'Votre formule'} compte ${places} accès${places > 1 ? ' : tous sont pris, invitations comprises.' : ', déjà pris.'}`
+		: null;
+	const contexte =
+		demande === null || nomCible === null
+			? undefined
+			: `Pour inviter ${demande.email} : ${nomCible} compte ${montee === null ? '' : LIMITES[montee.cible].utilisateurs} accès.`;
 
 	return (
 		/*
@@ -536,88 +725,142 @@ export function FormulaireInvitation({
 		  annonçait un champ sans nom. `Champ` est un `<label>`, il porte donc le
 		  nom du champ qu'il enveloppe.
 		*/
-		<form
-			className="flex flex-col gap-cladd-2xs"
-			onSubmit={(e) => {
-				e.preventDefault();
-				void envoyer();
-			}}
-		>
-			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-				{placesLibres} place{pluriel(placesLibres)} libre{pluriel(placesLibres)} sur {places}. Le
-				collègue recevra un lien valable {VALIDITE_INVITATION_EN_TOUTES_LETTRES}, et créera son mot
-				de passe lui-même, sur le parcours de notre prestataire d’authentification.
-			</p>
+		<>
+			<form
+				className="flex flex-col gap-cladd-2xs"
+				onSubmit={(e) => {
+					e.preventDefault();
+					void envoyer();
+				}}
+			>
+				{lignePlaces === null ? (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+						{placesLibres} place{pluriel(placesLibres)} libre{pluriel(placesLibres)} sur {places}.
+						Le collègue recevra un lien valable {VALIDITE_INVITATION_EN_TOUTES_LETTRES}, et créera
+						son mot de passe lui-même, sur le parcours de notre prestataire d’authentification.
+					</p>
+				) : (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">{lignePlaces}</p>
+				)}
 
-			<Champ etiquette="Adresse e-mail">
-				<Input
-					value={email}
-					onChange={setEmail}
-					name="invitation"
-					type="email"
-					inputMode="email"
-					placeholder="prenom.nom@etablissement.fr"
-					size="lg"
-					// ⚠️ PAS D'`autoFocus` : le clavier masquerait l'explication du rôle
-					// à l'ouverture, et c'est elle qu'on vient lire avant de choisir.
-					inputComponentProps={{
-						autoComplete: 'email',
-						autoCapitalize: 'none',
-						autoCorrect: 'off',
-						spellCheck: false,
-						enterKeyHint: 'send'
-					}}
-				/>
-			</Champ>
+				<Champ etiquette="Adresse e-mail">
+					<Input
+						value={email}
+						onChange={setEmail}
+						name="invitation"
+						type="email"
+						inputMode="email"
+						placeholder="prenom.nom@etablissement.fr"
+						size="lg"
+						// ⚠️ PAS D'`autoFocus` : le clavier masquerait l'explication du rôle
+						// à l'ouverture, et c'est elle qu'on vient lire avant de choisir.
+						inputComponentProps={{
+							autoComplete: 'email',
+							autoCapitalize: 'none',
+							autoCorrect: 'off',
+							spellCheck: false,
+							enterKeyHint: 'send'
+						}}
+					/>
+				</Champ>
 
-			<div className="flex flex-col gap-cladd-3xs">
-				<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Son rôle</span>
-				{/*
+				<div className="flex flex-col gap-cladd-3xs">
+					<span className="text-cladd-2xs font-semibold text-cladd-fg-soft">Son rôle</span>
+					{/*
 				  ⚠️ `type="button"` : un bouton du kit n'a pas de type, et posé dans un
 				  `<form>` il l'ENVOIE. Toucher « Administrateur » après avoir tapé
 				  l'adresse envoyait l'invitation sur-le-champ, avec le rôle d'avant
 				  (relevé le 13/10/2026).
 				*/}
-				<Segmented className="self-start" activeColor="brand" activeVariant="solid">
-					<SegmentedButton
-						type="button"
-						active={role === 'ORG_MEMBER'}
-						onClick={() => setRole('ORG_MEMBER')}
-					>
-						Membre
-					</SegmentedButton>
-					<SegmentedButton
-						type="button"
-						active={role === 'ORG_ADMIN'}
-						onClick={() => setRole('ORG_ADMIN')}
-					>
-						Administrateur
-					</SegmentedButton>
-				</Segmented>
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-					{CE_QUE_FAIT_LE_ROLE[role]}
-				</p>
-			</div>
+					<Segmented className="self-start" activeColor="brand" activeVariant="solid">
+						<SegmentedButton
+							type="button"
+							active={role === 'ORG_MEMBER'}
+							onClick={() => setRole('ORG_MEMBER')}
+						>
+							Membre
+						</SegmentedButton>
+						<SegmentedButton
+							type="button"
+							active={role === 'ORG_ADMIN'}
+							onClick={() => setRole('ORG_ADMIN')}
+						>
+							Administrateur
+						</SegmentedButton>
+					</Segmented>
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+						{CE_QUE_FAIT_LE_ROLE[role]}
+					</p>
+				</div>
 
-			{erreur ? (
-				<p className="text-cladd-xs leading-relaxed text-cladd-fg" role="alert">
-					{erreur}
-				</p>
-			) : null}
+				{erreur ? (
+					<p className="text-cladd-xs leading-relaxed text-cladd-fg" role="alert">
+						{erreur}
+					</p>
+				) : null}
 
-			{/* `readOnly` et non `disabled` : un bouton désactivé ne reçoit pas le
+				{/* `readOnly` et non `disabled` : un bouton désactivé ne reçoit pas le
 			    survol, et la validation reste faite ici — une touche Entrée sur une
 			    adresse incomplète ne part pas. */}
-			<BoutonPrincipal
-				type="submit"
-				className="self-start"
-				loading={enCours}
-				readOnly={!valide || enCours}
-			>
-				<UserPlusIcon />
-				Envoyer l’invitation
-			</BoutonPrincipal>
-		</form>
+				{complet && montee === null ? (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+						Pour inviter, libérez une place : annulez une invitation en attente, ou retirez
+						quelqu’un de la liste.
+					</p>
+				) : (
+					<BoutonPrincipal
+						type="submit"
+						className="self-start"
+						loading={enCours}
+						readOnly={!valide || enCours}
+					>
+						{complet ? <ArrowUpCircleIcon /> : <UserPlusIcon />}
+						{complet && nomCible !== null
+							? `Passer à ${nomCible} pour inviter`
+							: 'Envoyer l’invitation'}
+					</BoutonPrincipal>
+				)}
+				{complet && montee !== null ? (
+					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
+						Ou libérez une place : annulez une invitation en attente, ou retirez quelqu’un de la
+						liste.
+					</p>
+				) : null}
+			</form>
+
+			{montee?.genre === 'CHANGER' ? (
+				<ConfirmationDeChangement
+					ouverte={monteeOuverte}
+					onFermer={() => setMonteeOuverte(false)}
+					formule={montee.cible}
+					rythme={montee.rythme}
+					aLEssai={montee.aLEssai}
+					quittePrixFondateurs={montee.quittePrixFondateurs}
+					apercu={apercu}
+					enCours={changementEnCours}
+					erreur={erreurDeMontee}
+					onConfirmer={confirmerLeChangement}
+					libelleConfirmer={`Passer à ${GRILLE[montee.cible].nom} et inviter`}
+					{...(contexte === undefined ? {} : { contexte })}
+				/>
+			) : null}
+			{montee?.genre === 'SOUSCRIRE' ? (
+				<ChoixDeFormule
+					ouverte={monteeOuverte && montee.caisse.souscrite === null}
+					onFermer={() => setMonteeOuverte(false)}
+					recommandee={montee.cible}
+					essaiDisponible={montee.caisse.essai}
+					enCours={montee.caisse.enCours === 'formule'}
+					maintenant={montee.maintenant}
+					utilisateurs={montee.abonnement.utilisateurs + 1}
+					onChoisir={montee.caisse.onChoisir}
+					ttc={montee.caisse.ttc ?? null}
+					{...(montee.caisse.onVoirLesPrix ? { onVoirLesPrix: montee.caisse.onVoirLesPrix } : {})}
+					{...(montee.caisse.bienvenue ? { bienvenue: montee.caisse.bienvenue } : {})}
+					{...(contexte === undefined ? {} : { contexte })}
+				/>
+			) : null}
+		</>
 	);
 }
 

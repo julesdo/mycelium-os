@@ -374,7 +374,22 @@ export function EcranCompte({
 						{...rangee('equipe', resumeEquipe(pret.equipe))}
 					>
 						<AvecLaLecture lecture={pret.equipe}>
-							{(equipe) => <SectionEquipe {...equipe} />}
+							{(equipe) => (
+								<SectionEquipe
+									{...equipe}
+									// Les places prises, l'invitation ouvre la formule du dessus.
+									{...(pret.abonnement.etat === 'pret' && pret.abonnement.valeur !== null
+										? {
+												formule: {
+													abonnement: pret.abonnement.valeur,
+													maintenant,
+													...(pret.caisse ? { caisse: pret.caisse } : {}),
+													...(pret.gestion ? { gestion: pret.gestion } : {})
+												}
+											}
+										: {})}
+								/>
+							)}
 						</AvecLaLecture>
 					</RangeeDepliable>
 				</ListeDeRangees>

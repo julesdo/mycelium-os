@@ -66,7 +66,8 @@ export function ChoixDeFormule({
 	actuelle,
 	bienvenue,
 	ttc,
-	onVoirLesPrix
+	onVoirLesPrix,
+	contexte
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -100,6 +101,8 @@ export function ChoixDeFormule({
 	readonly ttc?: MontantsTTC | null;
 	/** Demande ces montants à Paddle : la page vient de s'ouvrir. */
 	readonly onVoirLesPrix?: () => void;
+	/** Pourquoi la page s'ouvre, en tête : « Pour inviter marie@… ». */
+	readonly contexte?: string;
 }) {
 	// Paddle.js est un système extérieur : la page ouverte, on lui demande ses montants.
 	useEffect(() => {
@@ -155,6 +158,9 @@ export function ChoixDeFormule({
 				</>
 			}
 		>
+			{contexte === undefined ? null : (
+				<p className="px-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">{contexte}</p>
+			)}
 			{essaiDisponible && actuelle === undefined ? (
 				<FriseDeLEssai maintenant={maintenant} montant={montant} montantTTC={montantTTC} />
 			) : null}
