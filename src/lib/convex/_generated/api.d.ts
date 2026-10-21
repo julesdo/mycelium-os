@@ -57,6 +57,7 @@ import type * as connexions_qonto from "../connexions/qonto.js";
 import type * as connexions_qontoConfig from "../connexions/qontoConfig.js";
 import type * as connexions_qontoDonnees from "../connexions/qontoDonnees.js";
 import type * as connexions_validateurs from "../connexions/validateurs.js";
+import type * as croissance_attention from "../croissance/attention.js";
 import type * as croissance_conseils from "../croissance/conseils.js";
 import type * as croissance_interet from "../croissance/interet.js";
 import type * as croissance_point from "../croissance/point.js";
@@ -236,6 +237,7 @@ declare const fullApi: ApiFromModules<{
   "connexions/qontoConfig": typeof connexions_qontoConfig;
   "connexions/qontoDonnees": typeof connexions_qontoDonnees;
   "connexions/validateurs": typeof connexions_validateurs;
+  "croissance/attention": typeof croissance_attention;
   "croissance/conseils": typeof croissance_conseils;
   "croissance/interet": typeof croissance_interet;
   "croissance/point": typeof croissance_point;

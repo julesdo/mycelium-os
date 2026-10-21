@@ -81,5 +81,25 @@ export const croissanceTables = {
 		userId: v.string(),
 		cle: vCleConseil,
 		le: v.number()
-	}).index('by_org', ['organizationId'])
+	}).index('by_org', ['organizationId']),
+
+	/**
+	 * LE BUDGET D'ATTENTION (21/10/2026, le parcours de l'habitude) : chaque prise de
+	 * parole marketing accordée, dans l'application ou par e-mail
+	 * (`croissance/attention.ts`). `ouverteLe` : vue et suivie d'effet ; `expireeLe` :
+	 * passée sans l'être, elle compte comme ignorée.
+	 */
+	prisesDeParole: defineTable({
+		organizationId: v.id('organizations'),
+		userId: v.string(),
+		canal: v.union(v.literal('APP'), v.literal('EMAIL')),
+		genre: v.string(),
+		cle: v.string(),
+		le: v.number(),
+		ouverteLe: v.optional(v.number()),
+		expireeLe: v.optional(v.number())
+	})
+		.index('by_org', ['organizationId'])
+		.index('by_org_and_le', ['organizationId', 'le'])
+		.index('by_user_and_cle', ['userId', 'cle'])
 };

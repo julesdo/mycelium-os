@@ -26,6 +26,8 @@ import { PARAMETRES, exiger } from '../../verticales/recouvrement/parametres';
 import { estEchue } from '../../verticales/recouvrement/exigibilite';
 import { additionner, depuisCentimes, versEuros, ZERO } from '../../socle/montants';
 import { resteDu } from '../recouvrement/creances';
+import { historiqueDeParole } from './attention';
+import { peutParler } from '../../croissance/attention';
 
 /**
  * L'ENVOI DES CONSEILS DE PLUME (16/10/2026).
@@ -259,6 +261,13 @@ export const envoyerLesConseils = internalMutation({
 			}
 			if (!envoiConfigure()) {
 				await ctx.db.patch(parcours._id, { prochainConseilLe: maintenant + UNE_HEURE });
+				continue;
+			}
+			// LE BUDGET D'ATTENTION (21/10/2026) : un conseil ne part pas sur un e-mail
+			// « Votre semaine » ou un réveil de la veille, ni au-delà de deux par semaine.
+			const historique = await historiqueDeParole(ctx, parcours.organizationId, null, maintenant);
+			if (!peutParler(historique, { canal: 'EMAIL', genre: 'conseil' }, maintenant, new Set()).ok) {
+				await ctx.db.patch(parcours._id, { prochainConseilLe: maintenant + 6 * UNE_HEURE });
 				continue;
 			}
 
