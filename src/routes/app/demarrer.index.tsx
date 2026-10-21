@@ -6,6 +6,7 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDemarrageEnLot } from '../../screens/demarrage-lot';
 import { PageEcran, type EtapeDeTravail } from '../../ui';
 import { suivre } from '../../app/analytique';
+import { nomDeLaFormuleEnCours, useFormuleDuCompte } from '../../app/formule-du-compte';
 
 /**
  * `/app/demarrer` — LES DOSSIERS QUE PLUME A PRÉPARÉS, À DÉMARRER EN LOT.
@@ -22,6 +23,7 @@ function DemarrerEnLot() {
 	const lot = useQuery(api.recouvrement.demarrage.lot, {});
 	const pilote = useQuery(api.recouvrement.pilote.etat, {});
 	const demarrer = useMutation(api.recouvrement.demarrage.demarrerEnLot);
+	const compte = useFormuleDuCompte();
 
 	if (lot === undefined) {
 		return (
@@ -43,6 +45,7 @@ function DemarrerEnLot() {
 
 	return (
 		<EcranDemarrageEnLot
+			{...(compte === undefined ? {} : { compte, formuleActuelle: nomDeLaFormuleEnCours(compte) })}
 			lot={{
 				dossiers: lot.dossiers,
 				emailReponsesConnu: lot.emailReponsesConnu,

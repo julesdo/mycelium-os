@@ -18,7 +18,7 @@ import {
 	type HumeurPlume
 } from '../../ui';
 import { EcranConversationPilote, type MessageAffiche } from '../../screens/conversation-pilote';
-import { EcranDemarrage } from '../../screens/demarrage';
+import { EcranDemarrage, type SuiviDuDemarrage } from '../../screens/demarrage';
 import { EcranDemarrageEnLot, type DossierADemarrer } from '../../screens/demarrage-lot';
 import type { EcranDuProduit, EtatDemo } from './demo';
 import { engagementsDePlume } from '../../lib/verticales/recouvrement/compagnon/veille';
@@ -525,9 +525,33 @@ function DemoConversationEtablissement({ variante }: { etat: EtatDemo; variante?
  * DÉMARRER UN DOSSIER, GUIDÉ — on peut le parcourir en entier dans la salle.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function DemoDemarrage() {
+/** Au-delà de ce que Solo suit : la formule du dessus sous le geste (21/10/2026, moment 6). */
+const SUIVI_AU_DELA: SuiviDuDemarrage = {
+	auDela: true,
+	suivis: 10,
+	formuleActuelle: 'Solo',
+	montee: {
+		genre: 'CHANGER',
+		cible: 'equipe',
+		rythme: 'mensuel',
+		aLEssai: false,
+		quittePrixFondateurs: false,
+		gestion: {
+			apercu: () =>
+				Promise.resolve({ aujourdhui: 3_740, ensuite: 5_900, prochainLe: null, ensuiteTTC: 7_080 }),
+			changer: () => new Promise((resoudre) => window.setTimeout(resoudre, 800)),
+			resilier: () => Promise.resolve(),
+			reprendre: () => Promise.resolve(),
+			onGererLaCarte: () => undefined,
+			portailEnCours: false
+		}
+	}
+};
+
+function DemoDemarrage({ variante }: { variante?: string }) {
 	return (
 		<EcranDemarrage
+			{...(variante === 'au-delà de la formule' ? { suivi: SUIVI_AU_DELA } : {})}
 			demarrage={{
 				client: 'Fournitures Durand',
 				emailClient: 'compta@durand.fr',
@@ -651,6 +675,7 @@ export const ECRANS_PLUME: readonly EcranDuProduit[] = [
 		route: '/app/demarrer/$id',
 		libelle: 'Démarrer avec Plume',
 		vide: false,
+		variantes: ['au-delà de la formule'],
 		Demo: DemoDemarrage
 	},
 	{

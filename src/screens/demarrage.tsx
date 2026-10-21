@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
 import { suiteDuPlan } from '../lib/verticales/recouvrement/plan-relance';
+import { FeuilleDeMontee, nomDeLaFormule, type Montee } from './compte/montee';
+import { LIMITES } from '../lib/config/tarifs';
 import {
 	AccueilDePlume,
 	BarreDEtapes,
@@ -169,7 +171,29 @@ function centimesDe(texte: string): bigint | null {
 	return BigInt(entiers) * 100n + BigInt(decimales.padEnd(2, '0'));
 }
 
-export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAffiche }) {
+/**
+ * AU-DELÀ DE CE QUE LA FORMULE SUIT (21/10/2026, le parcours de l'habitude, moment 6).
+ * Lu EN DIRECT, hors de `demarrage` qui se fige à l'arrivée : la formule change pendant
+ * le parcours, et le dossier démarre une fois la nouvelle en place.
+ */
+export interface SuiviDuDemarrage {
+	/** Ce client entrerait au-delà de ce que la formule suit. */
+	readonly auDela: boolean;
+	/** Comment monter à la formule du dessus ; `null` : un membre, ou rien au-dessus. */
+	readonly montee: Montee | null;
+	readonly suivis: number;
+	readonly formuleActuelle: string;
+	/** La formule souscrite est en place : la coche du paiement se referme. */
+	readonly onFormuleEnPlace?: () => void;
+}
+
+export function EcranDemarrage({
+	demarrage,
+	suivi
+}: {
+	readonly demarrage: DemarrageAffiche;
+	readonly suivi?: SuiviDuDemarrage;
+}) {
 	/*
 	  ⚠️ CE QUE PLUME A RÉUNI EST FIGÉ À L'ARRIVÉE. La lecture est réactive : au
 	  démarrage, le dossier change sous nos yeux (les factures y entrent, votre adresse
@@ -193,6 +217,9 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 	const [resultat, setResultat] = useState<DossierDemarre | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [tic, setTic] = useState(0);
+	const [monteeOuverte, setMonteeOuverte] = useState(false);
+	const [attenteDeLaFormule, setAttenteDeLaFormule] = useState(false);
+	const lanceApresLaFormule = useRef(false);
 
 	const choisies = d.factures.filter((f) => cochees.has(f.id));
 	const total = choisies.reduce((somme, f) => somme + f.resteDu, 0n);
@@ -279,6 +306,24 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 			});
 	}
 
+	/*
+	  LA FORMULE SOUSCRITE ARRIVE AVEC LE RAPPEL DE PADDLE, quelques secondes après le
+	  paiement : le dossier démarre quand elle est là, une seule fois, pour que le pilote
+	  le suive tout de suite au lieu de le mesurer.
+	*/
+	const formuleArrivee = attenteDeLaFormule && suivi !== undefined && !suivi.auDela;
+	useEffect(() => {
+		if (!formuleArrivee || lanceApresLaFormule.current) return;
+		lanceApresLaFormule.current = true;
+		void Promise.resolve().then(() => {
+			setAttenteDeLaFormule(false);
+			suivi?.onFormuleEnPlace?.();
+			demarrer();
+		});
+		// Une fois, quand la formule arrive.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [formuleArrivee]);
+
 	/* ── Ce que Plume dit à chaque étape, et ce que le gérant a répondu ──── */
 	function question(cle: Etape, interactive: boolean): ReactNode {
 		switch (cle) {
@@ -364,6 +409,14 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 										? 'J’envoie chaque relance à votre nom, une heure après vous l’avoir montrée : vous pouvez toujours la retenir.'
 										: 'Je prépare chaque relance ; vous la relisez et l’envoyez.'}
 						</p>
+						{relance && suivi?.auDela === true ? (
+							<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+								{`Vous suivez ${suivi.suivis} client${pluriel(suivi.suivis)} en retard, le maximum de ${suivi.formuleActuelle}. `}
+								{suivi.montee === null
+									? `Sans changer de formule, ${d.client} sera mesuré et ses relances attendront : un administrateur peut la changer (Compte, puis Abonnement).`
+									: `Avec ${nomDeLaFormule(suivi.montee.cible)}, je le suis tout de suite ; sans changer, il est mesuré et ses relances attendent.`}
+							</p>
+						) : null}
 					</ReponseDePlume>
 				);
 			default:
@@ -561,7 +614,19 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 					</>
 				);
 			case 'PLAN':
-				return <BoutonDeReponse principal libelle="Démarrer le dossier" onClick={demarrer} />;
+				return relance && suivi?.auDela === true && suivi.montee !== null ? (
+					<RangeeDeReponses>
+						<BoutonDeReponse libelle="Démarrer quand même" onClick={demarrer} />
+						<BoutonDeReponse
+							principal
+							enCours={attenteDeLaFormule}
+							libelle={`Passer à ${nomDeLaFormule(suivi.montee.cible)} et suivre`}
+							onClick={() => setMonteeOuverte(true)}
+						/>
+					</RangeeDeReponses>
+				) : (
+					<BoutonDeReponse principal libelle="Démarrer le dossier" onClick={demarrer} />
+				);
 			case 'TRAVAIL':
 				return fini && resultat !== null ? (
 					<>
@@ -653,6 +718,30 @@ export function EcranDemarrage({ demarrage }: { readonly demarrage: DemarrageAff
 				/>
 			) : null}
 			<div ref={fin} aria-hidden />
+			{suivi?.montee == null ? null : (
+				<FeuilleDeMontee
+					montee={suivi.montee}
+					ouverte={monteeOuverte}
+					onFermer={() => setMonteeOuverte(false)}
+					titre={`Suivre ${d.client}`}
+					contexte={contexteDeLaMontee(suivi, suivi.montee)}
+					libelleConfirmer={`Passer à ${nomDeLaFormule(suivi.montee.cible)} et suivre`}
+					onEnPlace={() => {
+						setMonteeOuverte(false);
+						demarrer();
+					}}
+					onSouscription={() => {
+						setMonteeOuverte(false);
+						setAttenteDeLaFormule(true);
+					}}
+				/>
+			)}
 		</PageConversation>
 	);
+}
+
+/** « Équipe suit 50 clients en retard. Vous en suivez 10, le maximum de Solo. » */
+function contexteDeLaMontee(suivi: SuiviDuDemarrage, montee: Montee): string {
+	const limite = LIMITES[montee.cible].clientsSuivis;
+	return `${nomDeLaFormule(montee.cible)} suit ${limite === null ? 'tous vos' : limite} clients en retard. Vous en suivez ${suivi.suivis}, le maximum de ${suivi.formuleActuelle}.`;
 }

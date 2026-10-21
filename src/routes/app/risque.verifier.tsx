@@ -3,6 +3,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAction } from 'convex/react';
 import { useQuery } from '../../app/donnees';
 import { messageDeRefus } from '../../app/televerser';
+import { useMonteeDesAnalyses } from '../../app/montee-des-analyses';
+import { retourDuQuota } from '../../screens/compte/montee';
 import { api } from '../../lib/convex/_generated/api';
 import {
 	EcranSanteClient,
@@ -67,6 +69,20 @@ function Analyse({ siren }: { readonly siren: string }) {
 	const verifier = useAction(api.risque.analyse.verifierEntreprise);
 	const [enCours, setEnCours] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
+	const quota = useMonteeDesAnalyses('Analyser cette entreprise', () => lancerLaVerification());
+
+	function lancerLaVerification() {
+		if (enCours) return;
+		setEnCours(true);
+		setMessage(null);
+		verifier({ siren })
+			.then(({ etat }) => {
+				setMessage(messageDeLIssue(etat, retourDuQuota(Date.now())));
+				if (etat === 'BUDGET') quota.proposer();
+			})
+			.catch((e: unknown) => setMessage(messageDeRefus(e)))
+			.finally(() => setEnCours(false));
+	}
 	const entete = {
 		genre: 'poussee',
 		retour: { vers: '/app/risque/verifier', libelle: 'Vérifier une entreprise' },
@@ -75,33 +91,28 @@ function Analyse({ siren }: { readonly siren: string }) {
 	if (donnees === undefined)
 		return <EcranSanteClient entete={entete} donnees={{ etat: 'attente' }} />;
 	return (
-		<EcranSanteClient
-			entete={entete}
-			donnees={{
-				etat: 'pret',
-				valeur: {
-					mode: 'ENTREPRISE',
-					denomination:
-						donnees.analyse?.denomination ??
-						donnees.client?.denomination ??
-						`l’entreprise ${siren}`,
-					siren,
-					disponible: donnees.disponible,
-					analyse: donnees.analyse,
-					enCours,
-					message,
-					onAnalyser: () => {
-						if (enCours) return;
-						setEnCours(true);
-						setMessage(null);
-						verifier({ siren })
-							.then(({ etat }) => setMessage(messageDeLIssue(etat)))
-							.catch((e: unknown) => setMessage(messageDeRefus(e)))
-							.finally(() => setEnCours(false));
-					},
-					...(donnees.client === null ? {} : { client: donnees.client })
-				}
-			}}
-		/>
+		<>
+			<EcranSanteClient
+				entete={entete}
+				donnees={{
+					etat: 'pret',
+					valeur: {
+						mode: 'ENTREPRISE',
+						denomination:
+							donnees.analyse?.denomination ??
+							donnees.client?.denomination ??
+							`l’entreprise ${siren}`,
+						siren,
+						disponible: donnees.disponible,
+						analyse: donnees.analyse,
+						enCours,
+						message,
+						onAnalyser: lancerLaVerification,
+						...(donnees.client === null ? {} : { client: donnees.client })
+					}
+				}}
+			/>
+			{quota.feuille}
+		</>
 	);
 }

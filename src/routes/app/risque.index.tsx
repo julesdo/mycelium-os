@@ -6,7 +6,9 @@ import { precharger } from '../../app/prechargement';
 import { messageDeRefus } from '../../app/televerser';
 import { api } from '../../lib/convex/_generated/api';
 import { NOM_DU_PILOTE, type MissionAffichee } from '../../ui';
-import { EcranSanteClients } from '../../screens/sante';
+import { EcranSanteClients, messageDeLIssue } from '../../screens/sante';
+import { retourDuQuota } from '../../screens/compte/montee';
+import { useMonteeDesAnalyses } from '../../app/montee-des-analyses';
 import { useRemarquesDePlume } from '../../app/parole-de-plume';
 import { remarquesDeLEcran } from '../../lib/verticales/recouvrement/compagnon/presence';
 
@@ -34,6 +36,21 @@ function PageSanteDesClients() {
 	const role = useQuery(api.organizations.getMyOrgMembership, {});
 	const analyserLesClients = useAction(api.risque.analyse.analyserLesClients);
 	const [message, setMessage] = useState<string | null>(null);
+	const [maintenant] = useState(() => Date.now());
+	const quota = useMonteeDesAnalyses('Analyser vos clients', () => lancerLesAnalyses());
+
+	function lancerLesAnalyses() {
+		setMessage('Les analyses partent une à une ; les résultats arrivent ici.');
+		analyserLesClients({})
+			.then(({ lancees }) =>
+				setMessage(
+					lancees === 0
+						? 'Aucun client à analyser pour l’instant.'
+						: `${lancees} analyse${lancees > 1 ? 's' : ''} lancée${lancees > 1 ? 's' : ''} : les résultats arrivent ici, un à un.`
+				)
+			)
+			.catch((e: unknown) => setMessage(messageDeRefus(e)));
+	}
 
 	if (donnees === undefined) return <EcranSanteClients donnees={{ etat: 'attente' }} />;
 	const { sante } = donnees;
@@ -61,16 +78,9 @@ function PageSanteDesClients() {
 											? `Analyser les ${m.total - m.faits} restants`
 											: `Analyser ${prochain.nom}`,
 									onClick: () => {
-										setMessage('Les analyses partent une à une ; les résultats arrivent ici.');
-										analyserLesClients({})
-											.then(({ lancees }) =>
-												setMessage(
-													lancees === 0
-														? 'Aucun client à analyser pour l’instant.'
-														: `${lancees} analyse${lancees > 1 ? 's' : ''} lancée${lancees > 1 ? 's' : ''} : les résultats arrivent ici, un à un.`
-												)
-											)
-											.catch((e: unknown) => setMessage(messageDeRefus(e)));
+										// Le quota du mois est épuisé : la formule du dessus, au lieu de rien lancer.
+										if (donnees.budgetRestant === 0) quota.proposer();
+										else lancerLesAnalyses();
 									}
 								}
 							: {
@@ -106,7 +116,7 @@ function PageSanteDesClients() {
 					message:
 						message ??
 						(donnees.budgetRestant === 0
-							? 'Le nombre d’analyses du mois est atteint : elles reprennent le mois prochain.'
+							? messageDeLIssue('BUDGET', retourDuQuota(maintenant))
 							: null)
 				}
 			}}

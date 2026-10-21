@@ -68,7 +68,8 @@ export function ChoixDeFormule({
 	bienvenue,
 	ttc,
 	onVoirLesPrix,
-	contexte
+	contexte,
+	titre
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -104,6 +105,8 @@ export function ChoixDeFormule({
 	readonly onVoirLesPrix?: () => void;
 	/** Pourquoi la page s'ouvre, en tête : « Pour inviter marie@… ». */
 	readonly contexte?: string;
+	/** Le titre de la page, quand elle sert un geste : « Suivre Garage Martin ». */
+	readonly titre?: string;
 }) {
 	// Paddle.js est un système extérieur : la page ouverte, on lui demande ses montants.
 	useEffect(() => {
@@ -125,7 +128,7 @@ export function ChoixDeFormule({
 			ouverte={ouverte}
 			onFermer={onFermer}
 			retour={retour}
-			titre={actuelle === undefined ? 'Choisir votre formule' : 'Changer de formule'}
+			titre={titre ?? (actuelle === undefined ? 'Choisir votre formule' : 'Changer de formule')}
 			pied={
 				<>
 					<BoutonPrincipal

@@ -28,7 +28,8 @@ import {
 	UserPlusIcon
 } from 'lucide-react';
 import { VALIDITE_INVITATION_EN_TOUTES_LETTRES } from '../../lib/config/invitations';
-import { FORMULES, GRILLE, LIMITES, type Formule, type Rythme } from '../../lib/config/tarifs';
+import { GRILLE, LIMITES } from '../../lib/config/tarifs';
+import { formuleQuiOuvre, monteeVers, type FormuleDuCompte, type Montee } from './montee';
 import {
 	BoutonPrincipal,
 	BoutonSecondaire,
@@ -40,8 +41,6 @@ import {
 	pluriel,
 	type ApercuDeChangement
 } from '../../ui';
-import type { AbonnementAffiche, CaisseAffichee } from './facturation';
-import type { GestionAffichee } from './gestion-formule';
 
 /**
  * L'ÉQUIPE — la section, et l'invitation EN LIGNE.
@@ -179,12 +178,7 @@ export interface EquipeAffichee {
 }
 
 /** Ce que l'écran Compte sait de l'abonnement, prêté à l'invitation. */
-export interface FormuleDeLEquipe {
-	readonly abonnement: AbonnementAffiche;
-	readonly caisse?: CaisseAffichee;
-	readonly gestion?: GestionAffichee;
-	readonly maintenant: number;
-}
+export type FormuleDeLEquipe = FormuleDuCompte;
 
 /**
  * PASSER À LA FORMULE DU DESSUS POUR INVITER (21/10/2026).
@@ -197,57 +191,9 @@ export interface FormuleDeLEquipe {
  * formule est en place. Deux voies : un abonné CHANGE de formule (le prorata d'abord,
  * Paddle répond tout de suite) ; un compte sans abonnement SOUSCRIT par la page de
  * choix, la bonne formule cochée (l'invitation part au retour de Paddle).
+ *
+ * Le patron de la montée vit dans `montee.tsx`, partagé avec les clients suivis et les analyses.
  */
-type Montee =
-	| {
-			readonly genre: 'CHANGER';
-			readonly cible: Formule;
-			readonly rythme: Rythme;
-			readonly aLEssai: boolean;
-			readonly quittePrixFondateurs: boolean;
-			readonly gestion: GestionAffichee;
-	  }
-	| {
-			readonly genre: 'SOUSCRIRE';
-			readonly cible: Formule;
-			readonly caisse: CaisseAffichee;
-			readonly abonnement: AbonnementAffiche;
-			readonly maintenant: number;
-	  };
-
-/** La plus petite formule qui ouvre `besoin` accès, ou `null` : aucune n'en ouvre autant. */
-function formuleQuiOuvre(besoin: number): Formule | null {
-	return FORMULES.find((f) => LIMITES[f].utilisateurs >= besoin) ?? null;
-}
-
-function monteePourInviter(formule: FormuleDeLEquipe | undefined, besoin: number): Montee | null {
-	if (formule === undefined) return null;
-	const cible = formuleQuiOuvre(besoin);
-	if (cible === null) return null;
-	const { abonnement, caisse, gestion } = formule;
-	const vivant = abonnement.statut === 'active' || abonnement.statut === 'trialing';
-	if (
-		vivant &&
-		gestion !== undefined &&
-		abonnement.formule !== null &&
-		abonnement.rythme !== null
-	) {
-		if (cible === abonnement.formule) return null;
-		return {
-			genre: 'CHANGER',
-			cible,
-			rythme: abonnement.rythme,
-			aLEssai: abonnement.statut === 'trialing',
-			quittePrixFondateurs: abonnement.prixFondateurs === true,
-			gestion
-		};
-	}
-	if (!vivant && caisse?.disponible === true) {
-		return { genre: 'SOUSCRIRE', cible, caisse, abonnement, maintenant: formule.maintenant };
-	}
-	return null;
-}
-
 export function SectionEquipe({
 	membres,
 	invitations,
@@ -262,7 +208,7 @@ export function SectionEquipe({
 	formule
 }: EquipeAffichee) {
 	const placesLibres = Math.max(0, siegesAutorises - siegesUtilises - invitations.length);
-	const montee = monteePourInviter(formule, siegesUtilises + invitations.length + 1);
+	const montee = monteeVers(formule, formuleQuiOuvre(siegesUtilises + invitations.length + 1));
 
 	return (
 		<>

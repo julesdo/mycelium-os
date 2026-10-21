@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { dateLisible } from '../lib/verticales/recouvrement/calendrier';
 import { Input, Spinner } from '@cladd-ui/react';
 import {
 	BuildingIcon,
@@ -100,10 +101,16 @@ const FAITS_D_ABORD = 4;
 const MOT_DE_LISIBILITE = { BONNE: 'bonne', PARTIELLE: 'partielle', FAIBLE: 'faible' } as const;
 
 /** Ce que rend une analyse demandée, dit au gérant (`null` : elle est faite, l'écran le montre). */
-export function messageDeLIssue(etat: 'FAITE' | 'RECENTE' | 'BUDGET'): string | null {
+export function messageDeLIssue(
+	etat: 'FAITE' | 'RECENTE' | 'BUDGET',
+	/** Le jour où le quota revient (`retourDuQuota`), dit en toutes lettres. */
+	retour?: string
+): string | null {
 	if (etat === 'RECENTE') return 'L’analyse date de moins d’une heure : elle est à jour.';
 	if (etat === 'BUDGET')
-		return 'Le nombre d’analyses du mois est atteint : elles reprennent le mois prochain.';
+		return retour === undefined
+			? 'Le nombre d’analyses du mois est atteint : elles reprennent le mois prochain.'
+			: `Le nombre d’analyses du mois est atteint : elles reviennent le ${dateLisible(retour)}.`;
 	return null;
 }
 

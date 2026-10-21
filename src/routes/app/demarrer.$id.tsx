@@ -6,6 +6,8 @@ import type { Id } from '../../lib/convex/_generated/dataModel';
 import { EcranDemarrage } from '../../screens/demarrage';
 import { aujourdHuiISO, PageEcran } from '../../ui';
 import { suivre } from '../../app/analytique';
+import { nomDeLaFormuleEnCours, useFormuleDuCompte } from '../../app/formule-du-compte';
+import { auDelaDeLaLimite, formuleQuiSuit, monteeVers } from '../../screens/compte/montee';
 
 /**
  * `/app/demarrer/$id` — DÉMARRER LE DOSSIER D'UN CLIENT, AVEC PLUME.
@@ -24,6 +26,7 @@ function DemarrerUnDossier() {
 	const navigate = useNavigate();
 	const prepare = useQuery(api.recouvrement.demarrage.preparer, { debiteurId });
 	const demarrer = useMutation(api.recouvrement.demarrage.demarrer);
+	const compte = useFormuleDuCompte();
 
 	if (prepare === undefined || prepare === null) {
 		return (
@@ -38,8 +41,32 @@ function DemarrerUnDossier() {
 		);
 	}
 
+	/*
+	  AU-DELÀ DE CE QUE LA FORMULE SUIT (moment 6) : un client hors pilote, en procédure
+	  collective ou dont le dossier est déjà démarré ne compte pas de plus.
+	*/
+	const nouveaux =
+		prepare.client.horsPilote ||
+		prepare.client.suspendu ||
+		(prepare.dossier !== null && !prepare.dossier.aDemarrer)
+			? 0
+			: 1;
+	const suivi =
+		compte === undefined
+			? undefined
+			: {
+					auDela: auDelaDeLaLimite(compte.abonnement, nouveaux),
+					montee: monteeVers(compte, formuleQuiSuit(compte.abonnement.clientsSuivis + nouveaux)),
+					suivis: compte.abonnement.clientsSuivis,
+					formuleActuelle: nomDeLaFormuleEnCours(compte),
+					...(compte.caisse === undefined
+						? {}
+						: { onFormuleEnPlace: compte.caisse.onFermerLaReussite })
+				};
+
 	return (
 		<EcranDemarrage
+			{...(suivi === undefined ? {} : { suivi })}
 			demarrage={{
 				client: prepare.client.denomination,
 				emailClient: prepare.client.email,

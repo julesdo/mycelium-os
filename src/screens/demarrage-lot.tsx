@@ -1,4 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { LIMITES } from '../lib/config/tarifs';
+import {
+	FeuilleDeMontee,
+	auDelaDeLaLimite,
+	formuleQuiSuit,
+	monteeVers,
+	nomDeLaFormule,
+	type FormuleDuCompte
+} from './compte/montee';
 import {
 	AccueilDePlume,
 	BoutonDeReponse,
@@ -10,6 +19,7 @@ import {
 	ListeDeCartes,
 	NOM_DU_PILOTE,
 	PageConversation,
+	RangeeDeReponses,
 	ReponseDePlume,
 	TravailDePlume,
 	ZoneDeReponse,
@@ -52,7 +62,16 @@ export interface DemarrageEnLotAffiche {
 	readonly onCompleter: (debiteurId: string) => void;
 }
 
-export function EcranDemarrageEnLot({ lot }: { readonly lot: DemarrageEnLotAffiche }) {
+export function EcranDemarrageEnLot({
+	lot,
+	compte,
+	formuleActuelle = 'votre formule'
+}: {
+	readonly lot: DemarrageEnLotAffiche;
+	/** La formule du compte, lue en direct : au-delà de ce qu'elle suit, la formule du dessus. */
+	readonly compte?: FormuleDuCompte;
+	readonly formuleActuelle?: string;
+}) {
 	const prets = lot.dossiers.filter((d) => d.manque === null);
 	const aCompleter = lot.dossiers.filter((d) => d.manque !== null);
 	/*
@@ -65,6 +84,39 @@ export function EcranDemarrageEnLot({ lot }: { readonly lot: DemarrageEnLotAffic
 	const choisis = prets.filter((d) => !decoches.has(d.creanceId));
 	const cochees = new Set(choisis.map((d) => d.creanceId));
 	const total = choisis.reduce((somme, d) => somme + d.restantDu, 0n);
+
+	/*
+	  AU-DELÀ DE CE QUE LA FORMULE SUIT (21/10/2026, moment 6) : on ne refuse pas. Le bouton
+	  dit la formule du dessus, la page pleine montre son prix, et les dossiers démarrent
+	  une fois la formule en place ; « Démarrer quand même » garde le geste d'avant (les
+	  clients au-delà sont mesurés). Un client de plusieurs dossiers ne compte qu'une fois.
+	*/
+	const nouveaux = new Set(choisis.map((d) => d.debiteurId)).size;
+	const auDela = compte !== undefined && auDelaDeLaLimite(compte.abonnement, nouveaux);
+	const montee =
+		auDela && compte !== undefined
+			? monteeVers(compte, formuleQuiSuit(compte.abonnement.clientsSuivis + nouveaux))
+			: null;
+	const limiteActuelle = compte?.abonnement.limites.clientsSuivis ?? null;
+	const mesures =
+		compte === undefined || limiteActuelle === null
+			? 0
+			: Math.max(0, compte.abonnement.clientsSuivis + nouveaux - limiteActuelle);
+	const [monteeOuverte, setMonteeOuverte] = useState(false);
+	const [attenteDeLaFormule, setAttenteDeLaFormule] = useState(false);
+	const lanceApresLaFormule = useRef(false);
+	const formuleArrivee = attenteDeLaFormule && !auDela;
+	useEffect(() => {
+		if (!formuleArrivee || lanceApresLaFormule.current) return;
+		lanceApresLaFormule.current = true;
+		void Promise.resolve().then(() => {
+			setAttenteDeLaFormule(false);
+			compte?.caisse?.onFermerLaReussite();
+			void demarrer();
+		});
+		// Une fois, quand la formule arrive.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [formuleArrivee]);
 
 	async function demarrer() {
 		setEnCours(true);
@@ -91,17 +143,29 @@ export function EcranDemarrageEnLot({ lot }: { readonly lot: DemarrageEnLotAffic
 			composeur={
 				prets.length === 0 || lot.travail !== null || termine ? null : (
 					<ZoneDeReponse>
-						<BoutonDeReponse
-							principal
-							enCours={enCours}
-							desactive={choisis.length === 0}
-							libelle={
-								choisis.length === 0
-									? 'Cochez au moins un dossier'
-									: `Démarrer ${choisis.length} dossier${pluriel(choisis.length)} · ${eurosCentimes(total)}`
-							}
-							onClick={() => void demarrer()}
-						/>
+						{montee !== null && choisis.length > 0 ? (
+							<RangeeDeReponses>
+								<BoutonDeReponse libelle="Démarrer quand même" onClick={() => void demarrer()} />
+								<BoutonDeReponse
+									principal
+									enCours={enCours || attenteDeLaFormule}
+									libelle={`Passer à ${nomDeLaFormule(montee.cible)} et démarrer ${choisis.length}`}
+									onClick={() => setMonteeOuverte(true)}
+								/>
+							</RangeeDeReponses>
+						) : (
+							<BoutonDeReponse
+								principal
+								enCours={enCours}
+								desactive={choisis.length === 0}
+								libelle={
+									choisis.length === 0
+										? 'Cochez au moins un dossier'
+										: `Démarrer ${choisis.length} dossier${pluriel(choisis.length)} · ${eurosCentimes(total)}`
+								}
+								onClick={() => void demarrer()}
+							/>
+						)}
 					</ZoneDeReponse>
 				)
 			}
@@ -167,6 +231,14 @@ export function EcranDemarrageEnLot({ lot }: { readonly lot: DemarrageEnLotAffic
 							{decoches.size === 0 ? 'Tout décocher' : 'Tout cocher'}
 						</BoutonTexte>
 					</div>
+					{auDela && compte !== undefined ? (
+						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
+							{`Vous suivez ${compte.abonnement.clientsSuivis} client${pluriel(compte.abonnement.clientsSuivis)} en retard, le maximum de ${formuleActuelle} : ${mesures} de ces clients seraient mesurés, leurs relances attendraient.`}
+							{montee === null
+								? ' Un administrateur peut changer la formule (Compte, puis Abonnement).'
+								: ` Avec ${nomDeLaFormule(montee.cible)}, je les suis tous.`}
+						</p>
+					) : null}
 					{lot.emailReponsesConnu ? null : (
 						<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 							Il me manque aussi votre adresse pour recevoir leurs réponses : je vous la demanderai
@@ -195,6 +267,24 @@ export function EcranDemarrageEnLot({ lot }: { readonly lot: DemarrageEnLotAffic
 						))}
 					</ListeDeCartes>
 				</section>
+			)}
+			{montee === null ? null : (
+				<FeuilleDeMontee
+					montee={montee}
+					ouverte={monteeOuverte}
+					onFermer={() => setMonteeOuverte(false)}
+					titre={`Suivre ${nouveaux} client${pluriel(nouveaux)}`}
+					contexte={`${nomDeLaFormule(montee.cible)} suit ${LIMITES[montee.cible].clientsSuivis ?? 'tous vos'} clients en retard. Vous en suivez ${compte?.abonnement.clientsSuivis ?? 0}, le maximum de ${formuleActuelle}.`}
+					libelleConfirmer={`Passer à ${nomDeLaFormule(montee.cible)} et démarrer`}
+					onEnPlace={() => {
+						setMonteeOuverte(false);
+						void demarrer();
+					}}
+					onSouscription={() => {
+						setMonteeOuverte(false);
+						setAttenteDeLaFormule(true);
+					}}
+				/>
 			)}
 		</PageConversation>
 	);

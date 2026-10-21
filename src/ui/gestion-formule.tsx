@@ -50,7 +50,8 @@ export function ConfirmationDeChangement({
 	onConfirmer,
 	quittePrixFondateurs = false,
 	contexte,
-	libelleConfirmer = 'Confirmer'
+	libelleConfirmer = 'Confirmer',
+	titre
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -66,6 +67,8 @@ export function ConfirmationDeChangement({
 	readonly onConfirmer: () => void;
 	/** Pourquoi on change, en tête : « Pour inviter marie@… ». */
 	readonly contexte?: string;
+	/** Le titre de la page, quand elle sert un geste : « Suivre Garage Martin ». */
+	readonly titre?: string;
 	/** Ce que le bouton fait, quand « Confirmer » ne le dit pas assez. */
 	readonly libelleConfirmer?: string;
 }) {
@@ -82,7 +85,7 @@ export function ConfirmationDeChangement({
 			ouverte={ouverte}
 			onFermer={onFermer}
 			retour
-			titre={`Passer à ${nom}`}
+			titre={titre ?? `Passer à ${nom}`}
 			pied={
 				<>
 					{erreur === null ? null : (
