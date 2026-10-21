@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Button, Popup } from '@cladd-ui/react';
 import { ChevronLeftIcon, XIcon } from 'lucide-react';
 import { cn } from './cn';
+import { useCompterLaFeuille } from './feuilles-ouvertes';
 
 /**
  * LA PAGE PLEINE QU'ON FERME D'UNE CROIX — la coquille de tous les parcours
@@ -33,6 +34,7 @@ export function PleinEcran({
 	onFermer,
 	libelle,
 	large = false,
+	compteeOuverte = true,
 	children
 }: {
 	readonly ouvert: boolean;
@@ -41,8 +43,14 @@ export function PleinEcran({
 	readonly libelle: string;
 	/** Au bureau, la grande fenêtre : un document, une liste à côté de sa fiche. */
 	readonly large?: boolean;
+	/**
+	 * Elle compte parmi les feuilles ouvertes (`feuilles-ouvertes.ts`). Une célébration,
+	 * non : c'est elle qui attend que les autres se ferment.
+	 */
+	readonly compteeOuverte?: boolean;
 	readonly children: ReactNode;
 }) {
+	useCompterLaFeuille(ouvert && compteeOuverte);
 	return (
 		<Popup
 			open={ouvert}

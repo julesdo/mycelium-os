@@ -75,6 +75,9 @@ const ROUTES_D_UN_CLIENT: readonly string[] = ['/app/clients/$id', '/app/risque/
 /** Au-delà de ces pixels défilés, on lit autre chose : Plume rentre dans la barre. */
 const SEUIL_DE_DEFILEMENT = 120;
 
+/** Ce que la bulle ne redit pas : la fête du paiement ou la célébration le disent déjà. */
+const SANS_PAROLE: ReadonlySet<string> = new Set(['PAIEMENT_RECU', 'JALON']);
+
 type Journee = FunctionReturnType<typeof api.recouvrement.journee.etat>;
 
 /**
@@ -203,8 +206,9 @@ function VoixDePlume({ journee }: { readonly journee: Journee | undefined }) {
 	}, [travaux]);
 	useEffect(() => {
 		if (notification === undefined) return;
+		// Un paiement reçu se fête déjà par la bulle, une réussite par sa célébration.
 		const titre =
-			notification === null
+			notification === null || SANS_PAROLE.has(notification.genre)
 				? null
 				: (TITRE_DE_NOTIFICATION[notification.genre as GenreNotification] ?? null);
 		paroleDePlume.annoncerNotification(notification, titre, surLaBoite);

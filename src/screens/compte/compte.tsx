@@ -201,7 +201,7 @@ export function EcranCompte({
 	 * rien n'est caché.
 	 */
 	const [ouvertes, setOuvertes] = useState<readonly string[]>(() =>
-		ouvrir === undefined ? [] : [ouvrir]
+		ouvrir === undefined ? [] : [ouvrir === 'annee' ? 'facturation' : ouvrir]
 	);
 
 	/*
@@ -366,6 +366,7 @@ export function EcranCompte({
 									maintenant={maintenant}
 									caisse={pret.caisse}
 									gestion={pret.gestion}
+									passerALAnnee={ouvrir === 'annee'}
 								/>
 							)}
 						</AvecLaLecture>

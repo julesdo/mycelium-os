@@ -124,6 +124,14 @@ let hotes = 0;
 let travailVuJusquA: number | null = null;
 let notificationVueJusquA: number | null = null;
 let paiementVuJusquA: number | null = null;
+/**
+ * LA FÊTE D'UN PAIEMENT ATTEND SON RELEVÉ (21/10/2026). Le relevé des jalons suit le
+ * paiement de quelques instants (`recouvrement/jalons.ts`) ; un paiement qui en fait
+ * franchir un se fête par la célébration, pas par la bulle.
+ */
+const ATTENTE_DU_RELEVE_MS = 2500;
+let feteEnAttente: { readonly id: string; readonly minuteur: ReturnType<typeof setTimeout> } | null =
+	null;
 let journeeVue: { readonly jour: string; readonly tenue: boolean } | null = null;
 
 const abonnes = new Set<() => void>();
@@ -381,20 +389,38 @@ export const paroleDePlume = {
 	},
 	/**
 	 * DE L'ARGENT EST RENTRÉ — fêté, sauf sur la fiche du client, où « Virement noté »
-	 * vient de poser sa coche.
+	 * vient de poser sa coche, et sauf quand il fait franchir un jalon : la célébration
+	 * le fêtera à la visite suivante.
 	 */
 	annoncerPaiement(
-		dernier: { readonly id: string; readonly client: string; readonly creeLe: number } | null,
+		dernier: {
+			readonly id: string;
+			readonly client: string;
+			readonly creeLe: number;
+			readonly porteUnJalon: boolean;
+		} | null,
 		montant: string | null
 	) {
+		if (dernier?.porteUnJalon === true && feteEnAttente?.id === dernier.id) {
+			clearTimeout(feteEnAttente.minuteur);
+			feteEnAttente = null;
+		}
 		if (paiementVuJusquA === null) {
 			paiementVuJusquA = dernier?.creeLe ?? 0;
 			return;
 		}
 		if (dernier === null || montant === null || dernier.creeLe <= paiementVuJusquA) return;
 		paiementVuJusquA = dernier.creeLe;
-		if (inscriptions.at(-1)?.ecran === 'CLIENT') return;
-		annoncer(paroleDUneRemarque(paroleDUnPaiement(dernier.id, dernier.client, montant), 'FETE'));
+		if (dernier.porteUnJalon || inscriptions.at(-1)?.ecran === 'CLIENT') return;
+		if (feteEnAttente !== null) clearTimeout(feteEnAttente.minuteur);
+		const fete = paroleDUneRemarque(paroleDUnPaiement(dernier.id, dernier.client, montant), 'FETE');
+		feteEnAttente = {
+			id: dernier.id,
+			minuteur: setTimeout(() => {
+				feteEnAttente = null;
+				annoncer(fete);
+			}, ATTENTE_DU_RELEVE_MS)
+		};
 	},
 	/**
 	 * LA JOURNÉE BOUCLÉE — fêtée quand le dernier défi tombe SOUS LES YEUX du gérant :

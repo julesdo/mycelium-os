@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import { useQuery } from '../../app/donnees';
 import { PiloteDuJour } from '../../app/pilote-du-jour';
+import { CelebrationALaVisite } from '../../app/celebration';
 import { useDepotAuCoffre } from '../../app/use-coffre';
 import { api } from '../../lib/convex/_generated/api';
 import type { Id } from '../../lib/convex/_generated/dataModel';
@@ -1049,6 +1050,7 @@ function File() {
 					void navigate({ to: '/app/coffre' });
 				}}
 			/>
+			<CelebrationALaVisite />
 		</>
 	);
 }

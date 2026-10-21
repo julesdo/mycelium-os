@@ -7,7 +7,11 @@ import { resumeDuPlafond } from '../../lib/verticales/recouvrement/compagnon/pro
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
 import { DemoLogiciels, VARIANTES_LOGICIELS } from './logiciels';
 import { formesDesMetiers } from './metiers';
+import { texteDuJalon, type CleJalon } from '../../lib/verticales/recouvrement/jalons';
 import {
+	CelebrationDeJalon,
+	type JalonAffiche,
+	type LigneDeCelebration,
 	CarteConnexion,
 	DeclencheurRecherche,
 	LogoConnexion,
@@ -576,6 +580,49 @@ function FileDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	);
 }
 
+/**
+ * LES RÉUSSITES (21/10/2026, le parcours de l'habitude) : la célébration de la visite
+ * suivante, par-dessus la file, avec les mots du produit (`texteDuJalon`).
+ */
+function reussite(
+	cle: CleJalon,
+	secondaire: LigneDeCelebration | null,
+	contexte: { client: string | null; montant?: bigint }
+): JalonAffiche {
+	const texte = texteDuJalon(cle, { semaines: 7, clients: 14, ...contexte });
+	return { id: cle, ...texte, secondaire };
+}
+
+const REUSSITES: Readonly<Record<string, JalonAffiche>> = {
+	'10 000 € et l’année': reussite('RENTRE_10000', 'ANNEE', { client: null }),
+	'la première relance': reussite('PREMIERE_RELANCE', 'PUSH', { client: null }),
+	'le premier paiement': reussite('PREMIER_PAIEMENT', null, {
+		client: 'Garage Martin',
+		montant: 124_000n
+	}),
+	'un dossier soldé': reussite('PREMIER_DOSSIER_SOLDE', null, {
+		client: 'Garage Martin',
+		montant: 362_000n
+	})
+};
+
+function ReussiteDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
+	const jalon = REUSSITES[variante ?? ''] ?? REUSSITES['10 000 € et l’année']!;
+	return (
+		<>
+			<EcranFile donnees={lectureDemo(etat, GARNIE, VIERGE)} />
+			<CelebrationDeJalon
+				key={jalon.id}
+				jalon={jalon}
+				bloquee={false}
+				push={{ etat: 'POSSIBLE', enCours: false, onActiver: () => undefined }}
+				onVu={() => undefined}
+				onAnnee={() => undefined}
+			/>
+		</>
+	);
+}
+
 export const ECRANS_FILE: readonly EcranDuProduit[] = [
 	{
 		route: '/app/',
@@ -583,5 +630,13 @@ export const ECRANS_FILE: readonly EcranDuProduit[] = [
 		vide: true,
 		variantes: Object.keys(FORMES_FILE),
 		Demo: FileDemo
+	},
+	{
+		route: '/app/',
+		cle: 'reussite',
+		libelle: 'Réussite',
+		vide: false,
+		variantes: Object.keys(REUSSITES),
+		Demo: ReussiteDemo
 	}
 ];

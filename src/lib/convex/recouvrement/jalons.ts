@@ -269,7 +269,8 @@ export const jalonAMontrer = authedQuery({
 			titre: v.string(),
 			montant: v.union(v.int64(), v.null()),
 			detail: v.string(),
-			secondaire: v.union(vLigne, v.null())
+			secondaire: v.union(vLigne, v.null()),
+			atteintLe: v.number()
 		})
 	),
 	handler: async (ctx) => {
@@ -338,7 +339,8 @@ export const jalonAMontrer = authedQuery({
 			titre: texte.titre,
 			montant: texte.montant,
 			detail: texte.detail,
-			secondaire
+			secondaire,
+			atteintLe: jalon.atteintLe
 		};
 	}
 });

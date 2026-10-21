@@ -34,7 +34,8 @@ export function FeuilleDeReussite({
 	pour,
 	detail,
 	principale,
-	secondaire
+	secondaire,
+	compteeOuverte
 }: {
 	readonly ouverte: boolean;
 	/** Ce qui vient d'être fait, au passé : « Virement noté ». */
@@ -46,11 +47,18 @@ export function FeuilleDeReussite({
 	readonly detail?: ReactNode;
 	readonly principale: { readonly libelle: string; readonly onClick: () => void };
 	readonly secondaire?: { readonly libelle: string; readonly onClick: () => void };
+	/** `false` pour une célébration, qui attend les autres feuilles (`PleinEcran`). */
+	readonly compteeOuverte?: boolean;
 }) {
 	return (
 		// EN PAGE PLEINE, comme après un paiement chez Cash App ou PayPal : la coche
 		// et le montant au milieu de l'écran, le geste suivant sous le pouce.
-		<PleinEcran ouvert={ouverte} onFermer={principale.onClick} libelle={titre}>
+		<PleinEcran
+			ouvert={ouverte}
+			onFermer={principale.onClick}
+			libelle={titre}
+			compteeOuverte={compteeOuverte}
+		>
 			<ColonneDePleinEcran>
 				<div className="flex flex-1 flex-col items-center justify-center gap-cladd-2xs pt-barre-app pb-cladd-sm text-center">
 					{/*

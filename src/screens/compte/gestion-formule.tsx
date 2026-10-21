@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
 	ArrowLeftRightIcon,
 	CalendarRangeIcon,
@@ -53,19 +53,49 @@ export interface GestionAffichee {
 export function GestionDeLaFormule({
 	abonnement,
 	gestion,
-	maintenant
+	maintenant,
+	passerALAnnee = false
 }: {
 	abonnement: AbonnementAffiche;
 	gestion: GestionAffichee;
 	maintenant: number;
+	/**
+	 * La confirmation du passage à l'année s'ouvre d'emblée (21/10/2026) : on arrive de la
+	 * ligne « Passer à l'année » d'une célébration, et elle montre déjà son prix.
+	 */
+	passerALAnnee?: boolean;
 }) {
 	const [choixOuvert, setChoixOuvert] = useState(false);
-	const [cible, setCible] = useState<{ formule: Formule; rythme: Rythme } | null>(null);
+	const [annee] = useState(() =>
+		passerALAnnee &&
+		abonnement.formule !== null &&
+		abonnement.rythme === 'mensuel' &&
+		abonnement.resiliationLe === null
+			? { formule: abonnement.formule, rythme: 'annuel' as const }
+			: null
+	);
+	const [cible, setCible] = useState<{ formule: Formule; rythme: Rythme } | null>(annee);
 	const [apercu, setApercu] = useState<ApercuDeChangement>({ etat: 'attente' });
 	const [resiliationOuverte, setResiliationOuverte] = useState(false);
 	const [enCours, setEnCours] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [reussite, setReussite] = useState<{ titre: string; detail: string } | null>(null);
+
+	// Le prix de l'année, demandé une fois à Paddle quand la confirmation s'ouvre d'emblée.
+	useEffect(() => {
+		if (annee === null) return;
+		gestion
+			.apercu(annee.formule, annee.rythme)
+			.then((a) => setApercu({ etat: 'pret', ...a }))
+			.catch((e: unknown) =>
+				setApercu({
+					etat: 'erreur',
+					message: messageDe(e, 'Paddle n’a pas pu chiffrer ce changement.')
+				})
+			);
+		// Une fois, à l'arrivée : `gestion` change d'identité à chaque rendu de l'écran.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [annee]);
 
 	const { formule, rythme, resiliationLe } = abonnement;
 	if (formule === null || rythme === null) return null;

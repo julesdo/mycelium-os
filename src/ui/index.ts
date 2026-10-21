@@ -385,6 +385,13 @@ export {
 export { CeQuiEstDu } from './ce-qui-est-du';
 export { ActionsRapides, type ActionRapide } from './actions-rapides';
 export { FeuilleDeReussite } from './reussite';
+export {
+	CelebrationDeJalon,
+	type IssueDeLaLigne,
+	type JalonAffiche,
+	type LigneDeCelebration
+} from './celebration-jalon';
+export { useUneFeuilleOuverte } from './feuilles-ouvertes';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
 export {

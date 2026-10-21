@@ -151,7 +151,9 @@ export const dernierPaiement = authedQuery({
 			id: v.id('reglements'),
 			montant: v.int64(),
 			client: v.string(),
-			creeLe: v.number()
+			creeLe: v.number(),
+			/** Il a fait franchir un jalon pas encore fêté : la célébration le fêtera. */
+			porteUnJalon: v.boolean()
 		})
 	),
 	handler: async (ctx) => {
@@ -165,11 +167,21 @@ export const dernierPaiement = authedQuery({
 		if (paiement === undefined) return null;
 		const facture = await ctx.db.get(paiement.factureId);
 		const debiteur = facture === null ? null : await ctx.db.get(facture.debiteurId);
+		const jalons = await ctx.db
+			.query('jalonsAtteints')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.take(14);
 		return {
 			id: paiement._id,
 			montant: paiement.montant,
 			client: debiteur?.denomination ?? 'Un client',
-			creeLe: paiement.creeLe
+			creeLe: paiement.creeLe,
+			porteUnJalon: jalons.some(
+				(j) =>
+					j.cle !== 'PREMIERE_RELANCE' &&
+					j.atteintLe >= paiement.creeLe &&
+					!j.vusPar.includes(ctx.user._id)
+			)
 		};
 	}
 });
