@@ -83,6 +83,12 @@ export default defineSchema({
 		raisonResiliation: v.optional(v.string()),
 		/** Le prochain prélèvement ; pendant l'essai, le premier. */
 		paddleProchainPrelevementLe: v.optional(v.number()),
+		/**
+		 * Le prochain prélèvement tel que Paddle l'a calculé pour ce client, en centimes :
+		 * hors taxes (remises déduites) et TVA comprise (`releverLeProchainPrelevement`).
+		 */
+		paddleProchainHT: v.optional(v.number()),
+		paddleProchainTTC: v.optional(v.number()),
 		/** La fin de l'essai Paddle, tant qu'il court. */
 		paddleEssaiFinLe: v.optional(v.number()),
 		/** Une résiliation programmée : le jour où elle prend effet. */

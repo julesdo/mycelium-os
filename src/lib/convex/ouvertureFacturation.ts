@@ -37,7 +37,7 @@ export function texteDuPreavis(date: string): { titre: string; message: string }
 		titre: 'Le paiement en ligne ouvre sur Letikette',
 		message:
 			`Jusqu’ici, tout vous était ouvert sans rien payer. Le paiement en ligne ouvre : votre accès reste entier jusqu’au ${date}. ` +
-			`D’ici là, choisissez votre formule dans Compte, puis Abonnement (${formules} HT par mois, l’année à dix mois) : rien ne sera prélevé sans que vous l’ayez choisie. ` +
+			`D’ici là, choisissez votre formule dans Compte, puis Abonnement (${formules} HT par mois, TVA en plus, l’année à dix mois) : rien ne sera prélevé sans que vous l’ayez choisie. ` +
 			`Les conditions générales évoluent avec elle (version 2.3) ; si vous les refusez, vous pouvez résilier sans frais jusqu’au ${date}.`
 	};
 }

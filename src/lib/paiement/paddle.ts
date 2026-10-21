@@ -366,6 +366,26 @@ export function montantPreleve(
 	return Number.isInteger(lu) && lu > 0 ? lu : montantDuRythme(formule, rythme) * 100;
 }
 
+/**
+ * CE QU'UNE TRANSACTION DE PADDLE PRÉLÈVE, en centimes (21/10/2026) : hors taxes,
+ * remises déduites, et TVA comprise, tels que Paddle les a calculés pour CE client
+ * (son pays, son numéro de TVA). Aucun taux n'est écrit ici : le hors taxes est le
+ * total moins la taxe que Paddle annonce. `null` sans total ni taxe lisibles.
+ */
+export function montantsDeLaTransaction(
+	transaction: unknown
+): { readonly ht: number; readonly ttc: number } | null {
+	if (typeof transaction !== 'object' || transaction === null) return null;
+	const totaux = (transaction as { details?: { totals?: Record<string, unknown> } }).details
+		?.totals;
+	const lire = (valeur: unknown): number | null =>
+		typeof valeur === 'string' && /^-?\d+$/.test(valeur) ? Number(valeur) : null;
+	const total = lire(totaux?.total);
+	const taxe = lire(totaux?.tax);
+	if (total === null || taxe === null) return null;
+	return { ht: total - taxe, ttc: total };
+}
+
 export interface PrixAttendu {
 	readonly etiquette: string;
 	readonly formule: Formule;

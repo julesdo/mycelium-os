@@ -99,7 +99,11 @@ export const rappeler = internalMutation({
 			etat.formule,
 			etat.rythme,
 			await bilanDe(ctx, org, rappel),
-			prixSouscrit?.montant ?? null
+			prixSouscrit?.montant ?? null,
+			// HT et TTC du prochain prélèvement, tels que Paddle les a calculés.
+			org.paddleProchainHT !== undefined && org.paddleProchainTTC !== undefined
+				? { ht: org.paddleProchainHT, ttc: org.paddleProchainTTC }
+				: null
 		);
 		const admins = (
 			await ctx.db

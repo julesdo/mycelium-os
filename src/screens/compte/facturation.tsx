@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Surface } from '@cladd-ui/react';
 import {
 	DUREE_ESSAI_JOURS,
@@ -19,11 +19,11 @@ import {
 	FeuilleDeReussite,
 	ListeDeReleve,
 	LigneDeReleve,
-	RefusEnQuatreParties,
-	prixAffiche
+	RefusEnQuatreParties
 } from '../../ui';
 import { montantPreleve } from '../../lib/paiement/paddle';
 import type { MontantsTTC } from '../../ui/choix-formule';
+import { ceQuiEstPreleve, montantCourt, montantHT } from '../../ui/montants-abonnement';
 import { OuvertureEnCours } from './offre';
 import { GestionDeLaFormule, type GestionAffichee } from './gestion-formule';
 import { etatDeLaFacturation, type CauseDeFermeture, type EtatFacturation } from './presse';
@@ -46,6 +46,12 @@ export interface AbonnementAffiche {
 	readonly prixFondateurs?: boolean;
 	readonly essaiFinLe: number | null;
 	readonly prochainPrelevementLe: number | null;
+	/**
+	 * Ce prochain prélèvement tel que Paddle l'a calculé pour ce client, en centimes :
+	 * hors taxes (remises déduites) et TVA comprise. `null` tant qu'il n'est pas relu.
+	 */
+	readonly prochainHT?: number | null;
+	readonly prochainTTC?: number | null;
 	/** Une résiliation programmée : le jour où elle prend effet. */
 	readonly resiliationLe: number | null;
 	/** Un accès offert qui court encore. */
@@ -138,6 +144,11 @@ export function SectionFacturation({
 	gestion?: GestionAffichee;
 }) {
 	const [choixOuvert, setChoixOuvert] = useState(false);
+	// Les montants TVA comprise viennent de Paddle.js : on les demande dès que la caisse
+	// est là, pour l'offre fondateurs et la réussite d'un abonnement.
+	useEffect(() => {
+		if (caisse?.disponible === true) caisse.onVoirLesPrix?.();
+	}, [caisse]);
 
 	if (abonnement === null) {
 		return (
@@ -167,6 +178,7 @@ export function SectionFacturation({
 				<OffreFondateurs
 					restantes={caisse.fondateurs.restantes}
 					jusquAu={caisse.fondateurs.jusquAu}
+					ttc={caisse.ttc?.fondateurs}
 					enCours={caisse.enCours === 'formule'}
 					onChoisir={caisse.onChoisirFondateurs}
 				/>
@@ -193,9 +205,10 @@ export function SectionFacturation({
 			) : null}
 
 			<p className="text-cladd-xs leading-relaxed text-cladd-fg-softer">
-				Prix hors taxes. Paddle, notre revendeur, encaisse le paiement, émet la facture et ajoute la
-				TVA de votre pays : votre carte ne passe jamais par nos serveurs. Un paiement se rembourse
-				sur demande dans les {JOURS_DE_REMBOURSEMENT} jours.
+				Le TTC est ce que Paddle prélève, TVA de votre pays comprise ; le HT, ce que dit la grille.
+				Paddle, notre revendeur, encaisse le paiement et émet la facture : votre carte ne passe
+				jamais par nos serveurs. Un paiement se rembourse sur demande dans les{' '}
+				{JOURS_DE_REMBOURSEMENT} jours.
 			</p>
 
 			{caisse !== undefined ? (
@@ -222,7 +235,7 @@ export function SectionFacturation({
 					detail={
 						souscrite.essai
 							? `Rien n’est prélevé avant le ${dateEnClair(maintenant + DUREE_ESSAI_JOURS * JOUR)}. On vous prévient deux jours avant.`
-							: `${prixAffiche(montantDuRythme(souscrite.formule, souscrite.rythme) * 100)} HT, ${souscrite.rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. La facture de Paddle arrive par e-mail.`
+							: `${ceQuiEstPreleve(montantDuRythme(souscrite.formule, souscrite.rythme) * 100, caisse?.ttc?.[`${souscrite.formule}-${souscrite.rythme}`])}, ${souscrite.rythme === 'annuel' ? 'chaque année' : 'chaque mois'}. La facture de Paddle arrive par e-mail.`
 					}
 					principale={{
 						libelle: 'Terminé',
@@ -285,11 +298,17 @@ function EtatCourant({
 			</BoutonPrincipal>
 		);
 	const nom = abonnement.formule === null ? null : GRILLE[abonnement.formule].nom;
+	// Ce qui sera prélevé : le prochain prélèvement relu chez Paddle (HT et TTC exacts,
+	// remise comprise), sinon le prix souscrit et « TVA en plus ».
 	const montant =
 		abonnement.formule === null || abonnement.rythme === null
 			? null
-			: prixAffiche(
-					montantPreleve(abonnement.montantDuPrixSouscrit, abonnement.formule, abonnement.rythme)
+			: ceQuiEstPreleve(
+					abonnement.prochainHT ??
+						montantPreleve(abonnement.montantDuPrixSouscrit, abonnement.formule, abonnement.rythme),
+					abonnement.prochainHT === undefined || abonnement.prochainHT === null
+						? null
+						: (abonnement.prochainTTC ?? null)
 				);
 	const rythme = abonnement.rythme === 'annuel' ? 'à l’année' : 'au mois';
 
@@ -317,7 +336,7 @@ function EtatCourant({
 					{abonnement.resiliationLe !== null
 						? `Résilié : rien ne sera prélevé. Tout reste ouvert jusqu’au ${dateEnClair(abonnement.resiliationLe)}.`
 						: etat.finLe !== null && montant !== null
-							? `Premier prélèvement le ${dateEnClair(etat.finLe)} : ${montant} HT, ${rythme}. Annulable jusqu’à la veille.`
+							? `Premier prélèvement le ${dateEnClair(etat.finLe)} : ${montant}, ${rythme}. Annulable jusqu’à la veille.`
 							: 'Votre carte est enregistrée chez Paddle ; rien n’est prélevé pendant l’essai.'}
 				</span>
 			</CarteEtat>
@@ -334,7 +353,7 @@ function EtatCourant({
 					{abonnement.resiliationLe !== null
 						? `Résilié : l’accès se termine le ${dateEnClair(abonnement.resiliationLe)}, rien ne sera plus prélevé.`
 						: abonnement.prochainPrelevementLe !== null && montant !== null
-							? `Prochain prélèvement le ${dateEnClair(abonnement.prochainPrelevementLe)} : ${montant} HT.`
+							? `Prochain prélèvement le ${dateEnClair(abonnement.prochainPrelevementLe)} : ${montant}.`
 							: 'Votre abonnement est actif.'}
 				</span>
 			</CarteEtat>
@@ -499,10 +518,13 @@ function dateEnClair(ms: number): string {
 function OffreFondateurs({
 	restantes,
 	jusquAu,
+	ttc,
 	enCours,
 	onChoisir
 }: {
 	readonly restantes: number;
+	/** Le prix TVA comprise, tel que Paddle le calcule (`PricePreview`). */
+	readonly ttc?: number | undefined;
 	readonly jusquAu: string;
 	readonly enCours: boolean;
 	readonly onChoisir: () => void;
@@ -517,8 +539,8 @@ function OffreFondateurs({
 			<ListeDeReleve>
 				<LigneDeReleve
 					titre={`${GRILLE[f.formule].nom}, à l’année`}
-					ligne={`Prix bloqué à vie · ${restantes} place${restantes > 1 ? 's' : ''} sur ${f.places}, jusqu’au ${date}`}
-					montant={`${prixAffiche(f.prixCentimes)} HT`}
+					ligne={`${ttc === undefined ? '' : `${montantHT(f.prixCentimes)} · `}Prix bloqué à vie · ${restantes} place${restantes > 1 ? 's' : ''} sur ${f.places}, jusqu’au ${date}`}
+					montant={montantCourt(f.prixCentimes, ttc)}
 					retour
 				/>
 			</ListeDeReleve>

@@ -139,9 +139,10 @@ export function useCaissePaddle({
 
 	/** Demande à Paddle ce que chaque prix coûte TVA comprise, pour le pays du client. */
 	function voirLesPrix(p: Extract<CaisseServeur, { pret: true }>): void {
-		const entrees = Object.entries(p.prix).filter(
-			(e): e is [string, string] => typeof e[1] === 'string'
-		);
+		const entrees = [
+			...Object.entries(p.prix),
+			...(p.fondateurs === null ? [] : [['fondateurs', p.fondateurs.prixId]])
+		].filter((e): e is [string, string] => typeof e[1] === 'string');
 		const cle = `${p.jeton}|${entrees.map(([, id]) => id).join(',')}`;
 		if (entrees.length === 0 || demandes.current === cle) return;
 		demandes.current = cle;

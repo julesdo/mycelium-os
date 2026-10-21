@@ -80,7 +80,7 @@ export interface ArticleDAide {
 }
 
 const formule = (cle: keyof typeof GRILLE) =>
-	`${GRILLE[cle].nom} (${GRILLE[cle].mensuel} € HT par mois, ou ${GRILLE[cle].annuel} € HT par an)`;
+	`${GRILLE[cle].nom} (${GRILLE[cle].mensuel} € HT par mois, ou ${GRILLE[cle].annuel} € HT par an, TVA en plus)`;
 const logicielsDeGenre = (genre: string) =>
 	LOGICIELS_BRANCHES.filter((l) => l.genre === genre)
 		.map((l) => l.nom)

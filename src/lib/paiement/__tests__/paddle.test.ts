@@ -11,6 +11,7 @@ import {
 	catalogueAttendu,
 	ecartsDuPrix,
 	montantPreleve,
+	montantsDeLaTransaction,
 	etiquetteDuPrix,
 	environnementDuJeton,
 	environnementPaddle,
@@ -269,6 +270,21 @@ describe('le catalogue attendu', () => {
 				modeDeTaxe: 'internal'
 			})
 		).toHaveLength(4);
+	});
+});
+
+describe('ce qu’une transaction de Paddle prélève', () => {
+	it('lit le hors taxes, remises déduites, et le TVA comprise que Paddle a calculés', () => {
+		const transaction = {
+			details: { totals: { subtotal: '5900', discount: '1180', tax: '944', total: '5664' } }
+		};
+		expect(montantsDeLaTransaction(transaction)).toEqual({ ht: 4720, ttc: 5664 });
+	});
+
+	it('ne rend rien sans total ni taxe lisibles', () => {
+		expect(montantsDeLaTransaction(null)).toBeNull();
+		expect(montantsDeLaTransaction({ details: { totals: { total: '5664' } } })).toBeNull();
+		expect(montantsDeLaTransaction({ details: { totals: { total: 'x', tax: '0' } } })).toBeNull();
 	});
 });
 

@@ -195,6 +195,9 @@ export const etatAbonnement = authedQuery({
 			prixFondateurs: prixSouscrit?.fondateurs === true,
 			essaiFinLe: org.paddleStatus === 'trialing' ? (org.paddleEssaiFinLe ?? null) : null,
 			prochainPrelevementLe: org.paddleProchainPrelevementLe ?? null,
+			// Ce prochain prélèvement, HT et TTC tels que Paddle les calcule (21/10/2026).
+			prochainHT: org.paddleProchainHT ?? null,
+			prochainTTC: org.paddleProchainTTC ?? null,
 			resiliationLe: org.paddleResiliationLe ?? null,
 			// L'accès offert n'est renvoyé que s'il court ENCORE : un accès terminé
 			// ferait afficher « il reste -12 jours ».

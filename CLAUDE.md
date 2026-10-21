@@ -580,7 +580,13 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   rebours (`GestionDeLaFormule`). Les limites s'appliquent au point d'usage (`limites.ts`) :
   Découverte ne fait rien partir, une formule relance ses N premiers clients suivis. À
   l'ouverture, les comptes existants reçoivent trente jours d'accès offert et un préavis
-  (`ouvertureFacturation:prevenir`).
+  (`ouvertureFacturation:prevenir`). **Chaque montant d'abonnement s'écrit HT et TTC**
+  (21/10/2026, `ui/montants-abonnement.ts`) : ce qui est prélevé TTC d'abord, un prix de la
+  grille HT d'abord. Le TTC vient TOUJOURS de Paddle, jamais d'un taux écrit : `PricePreview`
+  pour qui choisit, le prochain prélèvement relu chez Paddle pour qui est abonné
+  (`releverLeProchainPrelevement`, champs `paddleProchainHT`/`TTC`), son rapport TTC/HT pour
+  ses autres prix ; à défaut, « HT, TVA en plus », jamais un HT seul. Quand les places sont
+  prises, l'invitation ouvre la formule du dessus et part seule une fois la place arrivée.
 - **Le moteur de croissance** (16/10/2026, stratégie `docs/superpowers/specs/2026-10-16-strategie-de-croissance.md`,
   moteur `2026-10-16-moteur-de-croissance-design.md`). Le fondateur : « commencer à la main au lieu
   d'exploser un budget ». La prospection se fait d'abord à la main (`docs/croissance/phase-manuelle.md`,

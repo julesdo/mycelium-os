@@ -109,10 +109,18 @@ export function texteDuRappel(
 	rythme: Rythme,
 	bilan: Bilan,
 	/** Le montant du prix souscrit (`prixPaddle.montant`) : ce que Paddle prélève vraiment. */
-	montantDuPrixSouscrit?: string | null
+	montantDuPrixSouscrit?: string | null,
+	/**
+	 * Le prochain prélèvement tel que Paddle l'a calculé pour ce client, TVA comprise
+	 * (`paddleProchainHT`, `paddleProchainTTC`). Sans lui, le hors taxes et « TVA en plus ».
+	 */
+	prochain?: { readonly ht: number; readonly ttc: number } | null
 ): TexteDuRappel {
 	const date = dateEnLettres(rappel.date);
-	const montant = `${euros(montantPreleve(montantDuPrixSouscrit, formule, rythme))} HT`;
+	const montant =
+		prochain === undefined || prochain === null
+			? `${euros(montantPreleve(montantDuPrixSouscrit, formule, rythme))} HT, TVA en plus`
+			: `${euros(prochain.ttc)} TTC (${euros(prochain.ht)} HT)`;
 	const nom = GRILLE[formule].nom;
 
 	if (rappel.genre === 'point') {
@@ -129,7 +137,7 @@ export function texteDuRappel(
 	if (rappel.genre === 'essai') {
 		return {
 			titre: `Premier prélèvement le ${date}`,
-			message: `${montant} pour ${nom}, ${rythme === 'annuel' ? 'à l’année' : 'au mois'}. Pour continuer, rien à faire. Pour annuler ou changer de formule : Compte, puis Abonnement, jusqu’à la veille.`
+			message: `${montant}, pour ${nom}, ${rythme === 'annuel' ? 'à l’année' : 'au mois'}. Pour continuer, rien à faire. Pour annuler ou changer de formule : Compte, puis Abonnement, jusqu’à la veille.`
 		};
 	}
 

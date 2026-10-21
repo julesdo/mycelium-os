@@ -23,6 +23,7 @@ import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { cn } from './cn';
 import { prixAffiche } from './format';
 import { FeuillePleinEcran } from './plein-ecran';
+import { INSECABLE, ceQuiEstPreleve, montantCourt } from './montants-abonnement';
 
 /**
  * CHOISIR SA FORMULE — la page où l'on souscrit, la même partout : Compte ›
@@ -141,7 +142,7 @@ export function ChoixDeFormule({
 								? 'Commencer l’essai, 0 € aujourd’hui'
 								: montantTTC === undefined
 									? `M’abonner, ${prixAffiche(montant * 100)} HT`
-									: `M’abonner, ${prixAffiche(montantTTC)}${INSECABLE}TTC`}
+									: `M’abonner, ${montantCourt(montant * 100, montantTTC)}`}
 					</BoutonPrincipal>
 					<p className="text-center text-cladd-2xs leading-relaxed text-cladd-fg-soft">
 						{actuelle !== undefined
@@ -212,22 +213,8 @@ export function ChoixDeFormule({
 	);
 }
 
-/** Les montants TVA comprise, par formule et par rythme, en centimes. */
-export type MontantsTTC = Readonly<Partial<Record<`${Formule}-${Rythme}`, number>>>;
-
-/**
- * Ce qui sera prélevé : « 14,40 € TTC (12 € HT) » quand Paddle a donné le montant,
- * « 12 € HT, TVA en plus » sinon. Jamais un HT seul, que la case de Paddle contredirait.
- * HT et TTC tiennent à leur montant (espace insécable) : « (12 € » et « HT) » se
- * séparaient en fin de ligne.
- */
-function ceQuiEstPreleve(htCentimes: number, ttcCentimes: number | undefined): string {
-	return ttcCentimes === undefined
-		? `${prixAffiche(htCentimes)}${INSECABLE}HT, TVA en plus`
-		: `${prixAffiche(ttcCentimes)}${INSECABLE}TTC (${prixAffiche(htCentimes)}${INSECABLE}HT)`;
-}
-
-const INSECABLE = '\u00a0';
+/** Les montants TVA comprise, par formule et par rythme (et l'offre fondateurs), en centimes. */
+export type MontantsTTC = Readonly<Partial<Record<`${Formule}-${Rythme}` | 'fondateurs', number>>>;
 
 const JOUR = 24 * 60 * 60 * 1000;
 const MOIS_EN_LETTRES = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six'];

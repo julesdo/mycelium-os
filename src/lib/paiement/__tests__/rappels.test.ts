@@ -66,7 +66,7 @@ describe('le texte d’un rappel', () => {
 		expect(texte.titre).toBe('Votre essai se termine le 11 novembre');
 		expect(lisible(texte.message)).toContain('12 relances parties');
 		expect(lisible(texte.message)).toContain('rentrés sur les dossiers suivis');
-		expect(lisible(texte.message)).toContain('590 € HT');
+		expect(lisible(texte.message)).toContain('590 € HT, TVA en plus');
 		expect(texte.message).not.toMatch(/grâce à|garanti/i);
 	});
 
@@ -84,11 +84,24 @@ describe('le texte d’un rappel', () => {
 		expect(lisible(texte.message)).not.toContain('590 € HT');
 	});
 
+	it('annonce le prochain prélèvement TVA comprise, tel que Paddle l’a calculé', () => {
+		const [point] = rappelsDus(essai(7), maintenant);
+		const texte = texteDuRappel(
+			point!,
+			'equipe',
+			'annuel',
+			{ relancesParties: 0, rentre: 0n },
+			'59000',
+			{ ht: 59000, ttc: 70800 }
+		);
+		expect(lisible(texte.message)).toContain('708 € TTC (590 € HT)');
+	});
+
 	it('dit comment annuler avant le premier prélèvement', () => {
 		const [rappel] = rappelsDus(essai(2), maintenant);
 		const texte = texteDuRappel(rappel!, 'solo', 'mensuel', { relancesParties: 0, rentre: 0n });
 		expect(texte.titre).toBe('Premier prélèvement le 6 novembre');
-		expect(lisible(texte.message)).toContain('12 € HT pour Solo, au mois');
+		expect(lisible(texte.message)).toContain('12 € HT, TVA en plus, pour Solo, au mois');
 		expect(lisible(texte.message)).toContain('Pour annuler');
 	});
 });

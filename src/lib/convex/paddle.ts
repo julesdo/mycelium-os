@@ -1,6 +1,7 @@
 import { v, ConvexError } from 'convex/values';
 import {
 	httpAction,
+	internalAction,
 	internalMutation,
 	internalQuery,
 	query,
@@ -29,6 +30,7 @@ import {
 	environnementPaddle,
 	etiquetteDuPrix,
 	lireEvenement,
+	montantsDeLaTransaction,
 	nomDeLEnvironnement,
 	sceauValide,
 	sceller,
@@ -408,7 +410,83 @@ export const upsertSubscription = internalMutation({
 		await ctx.scheduler.runAfter(0, internal.croissance.releve.releverLesEtapes, {
 			organizationId: org._id
 		});
+		// Le prochain prélèvement, HT et TTC tels que Paddle les calcule (21/10/2026).
+		await ctx.scheduler.runAfter(0, internal.paddle.releverLeProchainPrelevement, {
+			organizationId: org._id,
+			abonnementId: args.paddleSubscriptionId
+		});
 		return { action: 'inscrit', organizationId: org._id };
+	}
+});
+
+/**
+ * LE PROCHAIN PRÉLÈVEMENT, HT ET TTC (21/10/2026). Le fondateur : « partout dans
+ * l'app tu affiches les montants HT et TTC ». Les rappels de Paddle ne portent pas les
+ * taxes : on relit l'abonnement chez Paddle avec sa prochaine transaction, calculée pour
+ * CE client (son pays, son numéro de TVA, sa remise), et on la range sur l'établissement.
+ * L'écran Abonnement, l'e-mail J-2 et le point de Plume l'écrivent. Paddle muet : rien ne
+ * change, l'écran dit le hors taxes et « TVA en plus ».
+ */
+export const releverLeProchainPrelevement = internalAction({
+	args: { organizationId: v.id('organizations'), abonnementId: v.string() },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, abonnementId }): Promise<null> => {
+		if (!process.env.PADDLE_API_KEY) return null;
+		let montants: { ht: number; ttc: number } | null;
+		try {
+			const data = await appelerPaddle(
+				'GET',
+				`/subscriptions/${abonnementId}?include=next_transaction`
+			);
+			montants = montantsDeLaTransaction(data.next_transaction);
+		} catch {
+			return null;
+		}
+		await ctx.runMutation(internal.paddle._noterLeProchainPrelevement, {
+			organizationId,
+			abonnementId,
+			...(montants === null ? {} : { ht: montants.ht, ttc: montants.ttc })
+		});
+		return null;
+	}
+});
+
+export const _noterLeProchainPrelevement = internalMutation({
+	args: {
+		organizationId: v.id('organizations'),
+		abonnementId: v.string(),
+		ht: v.optional(v.number()),
+		ttc: v.optional(v.number())
+	},
+	returns: v.null(),
+	handler: async (ctx, { organizationId, abonnementId, ht, ttc }): Promise<null> => {
+		const org = await ctx.db.get(organizationId);
+		// Un autre abonnement a pris la place entre-temps : on n'écrit rien sur lui.
+		if (org === null || org.paddleSubscriptionId !== abonnementId) return null;
+		await ctx.db.patch(org._id, { paddleProchainHT: ht, paddleProchainTTC: ttc });
+		return null;
+	}
+});
+
+/**
+ * Les abonnements qui vivent déjà, relus une fois : ceux d'avant le 21/10/2026 n'ont
+ * pas encore leur prochain prélèvement TTC. `npx convex run --prod paddle:releverLesProchainsPrelevements`.
+ */
+export const releverLesProchainsPrelevements = internalMutation({
+	args: {},
+	returns: v.object({ relus: v.number() }),
+	handler: async (ctx): Promise<{ relus: number }> => {
+		let relus = 0;
+		for (const org of await ctx.db.query('organizations').take(2000)) {
+			if (org.paddleSubscriptionId === undefined) continue;
+			if (org.paddleStatus === undefined || !STATUTS_QUI_OCCUPENT.has(org.paddleStatus)) continue;
+			await ctx.scheduler.runAfter(0, internal.paddle.releverLeProchainPrelevement, {
+				organizationId: org._id,
+				abonnementId: org.paddleSubscriptionId
+			});
+			relus++;
+		}
+		return { relus };
 	}
 });
 
@@ -749,7 +827,13 @@ export const apercuDuChangement = authedAction({
 	handler: async (
 		ctx,
 		{ formule, rythme }
-	): Promise<{ aujourdhui: number; ensuite: number | null; prochainLe: number | null }> => {
+	): Promise<{
+		aujourdhui: number;
+		aujourdhuiTTC: number | null;
+		ensuite: number | null;
+		ensuiteTTC: number | null;
+		prochainLe: number | null;
+	}> => {
 		const courant = await abonnementAGerer(ctx);
 		const prixId = await prixCible(ctx, formule, rythme, courant);
 		const data = await appelerPaddle(
@@ -759,9 +843,14 @@ export const apercuDuChangement = authedAction({
 		);
 		const prochain =
 			typeof data.next_billed_at === 'string' ? Date.parse(data.next_billed_at) : NaN;
+		// HT et TTC tels que Paddle les calcule pour ce client (21/10/2026).
+		const maintenant = montantsDeLaTransaction(data.immediate_transaction);
+		const suite = montantsDeLaTransaction(data.next_transaction);
 		return {
-			aujourdhui: sousTotal(data.immediate_transaction) ?? 0,
-			ensuite: sousTotal(data.next_transaction),
+			aujourdhui: maintenant?.ht ?? sousTotal(data.immediate_transaction) ?? 0,
+			aujourdhuiTTC: maintenant?.ttc ?? null,
+			ensuite: suite?.ht ?? sousTotal(data.next_transaction),
+			ensuiteTTC: suite?.ttc ?? null,
 			prochainLe: Number.isNaN(prochain) ? null : prochain
 		};
 	}

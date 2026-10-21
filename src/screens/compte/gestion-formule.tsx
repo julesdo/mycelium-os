@@ -15,9 +15,9 @@ import {
 	FeuilleDeReussite,
 	FeuilleDeResiliation,
 	VignetteRangee,
-	prixAffiche,
 	type ApercuDeChangement
 } from '../../ui';
+import { prixHTetTTC, ttcAuMemeTaux } from '../../ui/montants-abonnement';
 import type { AbonnementAffiche } from './facturation';
 
 /** Ce que l'écran peut faire sur un abonnement souscrit, branché par la route. */
@@ -25,7 +25,13 @@ export interface GestionAffichee {
 	readonly apercu: (
 		formule: Formule,
 		rythme: Rythme
-	) => Promise<{ aujourdhui: number; ensuite: number | null; prochainLe: number | null }>;
+	) => Promise<{
+		aujourdhui: number;
+		ensuite: number | null;
+		prochainLe: number | null;
+		aujourdhuiTTC?: number | null;
+		ensuiteTTC?: number | null;
+	}>;
 	readonly changer: (
 		formule: Formule,
 		rythme: Rythme,
@@ -65,6 +71,8 @@ export function GestionDeLaFormule({
 	if (formule === null || rythme === null) return null;
 	const resilie = resiliationLe !== null;
 	const aLEssai = abonnement.statut === 'trialing';
+	// Le prochain prélèvement relu chez Paddle : son rapport TTC/HT donne le TTC des autres prix.
+	const reference = { ht: abonnement.prochainHT ?? null, ttc: abonnement.prochainTTC ?? null };
 	const finLe = aLEssai
 		? (abonnement.essaiFinLe ?? abonnement.prochainPrelevementLe)
 		: abonnement.prochainPrelevementLe;
@@ -103,7 +111,7 @@ export function GestionDeLaFormule({
 					<CarteBouton
 						icone={vignette(CalendarRangeIcon)}
 						titre="Passer à l’année"
-						ligne={`2 mois offerts : ${prixAffiche(GRILLE[formule].annuel * 100)} HT par an`}
+						ligne={`2 mois offerts : ${prixHTetTTC(GRILLE[formule].annuel * 100, ttcAuMemeTaux(GRILLE[formule].annuel * 100, reference), 'par an')}`}
 						onClick={() => ouvrirLaConfirmation(formule, 'annuel')}
 					/>
 				) : null}
@@ -213,6 +221,7 @@ export function GestionDeLaFormule({
 						}
 					)
 				}
+				reference={reference}
 				onFormuleDuDessous={(f) => {
 					setResiliationOuverte(false);
 					ouvrirLaConfirmation(f, rythme);

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import type { Theme } from '../../app/use-theme';
-import { limitesDe, type Formule, type PlanTier, type Rythme } from '../../lib/config/tarifs';
+import {
+	limitesDe,
+	montantDuRythme,
+	type Formule,
+	type PlanTier,
+	type Rythme
+} from '../../lib/config/tarifs';
 import type { FicheIntervenant, Lecture } from '../../ui';
 import { CarteConnexion, LogoConnexion, PileDeConnexions } from '../../ui';
 import { COUVERTURE_QONTO, LOGO_QONTO, PROMESSE_QONTO } from '../../app/connexion-qonto';
@@ -209,6 +215,13 @@ function abonnementDe(facturation: FacturationDemo): AbonnementAffiche {
 		rythme: facturation.rythme ?? null,
 		essaiFinLe: facturation.statut === 'trialing' ? dans(facturation.essaiDans) : null,
 		prochainPrelevementLe: dans(facturation.prelevementDans ?? facturation.essaiDans),
+		// Le prochain prélèvement comme Paddle le rend pour un client en France (TVA à 20 %).
+		...(facturation.formule === undefined || facturation.rythme === undefined
+			? {}
+			: {
+					prochainHT: montantDuRythme(facturation.formule, facturation.rythme) * 100,
+					prochainTTC: montantDuRythme(facturation.formule, facturation.rythme) * 120
+				}),
 		resiliationLe: dans(facturation.resilieDans),
 		offertJusquAu: dans(facturation.offertDans),
 		clientPaddle: facturation.statut !== undefined,
@@ -684,7 +697,8 @@ const CAISSE_DEMO: CaisseAffichee = {
 		'equipe-mensuel': 7080,
 		'equipe-annuel': 70800,
 		'pro-mensuel': 17880,
-		'pro-annuel': 178800
+		'pro-annuel': 178800,
+		fondateurs: 178800
 	}
 };
 
@@ -697,7 +711,13 @@ const GESTION_DEMO: GestionAffichee = {
 		new Promise((resoudre) =>
 			setTimeout(
 				() =>
-					resoudre({ aujourdhui: 5423, ensuite: 14900, prochainLe: Date.now() + 23 * JOUR_DEMO }),
+					resoudre({
+						aujourdhui: 5423,
+						aujourdhuiTTC: 6508,
+						ensuite: 14900,
+						ensuiteTTC: 17880,
+						prochainLe: Date.now() + 23 * JOUR_DEMO
+					}),
 				600
 			)
 		),

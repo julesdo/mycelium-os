@@ -6,8 +6,8 @@ import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { CarteBouton, LigneDeReleve, ListeDeReleve } from './carte-rangee';
 import { cn } from './cn';
 import { VignetteRangee } from './familles';
-import { prixAffiche } from './format';
 import { FeuillePleinEcran } from './plein-ecran';
+import { montantCourt, montantHT, prixHTetTTC, ttcAuMemeTaux } from './montants-abonnement';
 
 /**
  * GÉRER SA FORMULE — les deux feuilles qui changent un abonnement (14/10/2026),
@@ -24,7 +24,7 @@ import { FeuillePleinEcran } from './plein-ecran';
  * prix : la formule du dessous.
  */
 
-/** Ce que Paddle annonce pour un changement, en centimes hors taxes. */
+/** Ce que Paddle annonce pour un changement, en centimes : hors taxes, et TVA comprise. */
 export type ApercuDeChangement =
 	| { readonly etat: 'attente' }
 	| {
@@ -32,6 +32,9 @@ export type ApercuDeChangement =
 			readonly aujourdhui: number;
 			readonly ensuite: number | null;
 			readonly prochainLe: number | null;
+			/** Les mêmes montants TVA comprise, tels que Paddle les calcule pour ce client. */
+			readonly aujourdhuiTTC?: number | null;
+			readonly ensuiteTTC?: number | null;
 	  }
 	| { readonly etat: 'erreur'; readonly message: string };
 
@@ -68,6 +71,12 @@ export function ConfirmationDeChangement({
 }) {
 	const nom = GRILLE[formule].nom;
 	const cadence = rythme === 'annuel' ? 'par an' : 'par mois';
+	const prixHT = montantDuRythme(formule, rythme) * 100;
+	// Le TTC du prix, au rapport que Paddle a calculé sur le prochain prélèvement.
+	const prixTTC =
+		apercu.etat === 'pret' && apercu.ensuite !== null
+			? ttcAuMemeTaux(prixHT, { ht: apercu.ensuite, ttc: apercu.ensuiteTTC ?? null })
+			: undefined;
 	return (
 		<FeuillePleinEcran
 			ouverte={ouverte}
@@ -97,7 +106,7 @@ export function ConfirmationDeChangement({
 			)}
 			<p className="px-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">
 				{nom}, {rythme === 'annuel' ? 'à l’année' : 'au mois'} :{' '}
-				{prixAffiche(montantDuRythme(formule, rythme) * 100)} HT {cadence}.
+				{prixHTetTTC(prixHT, prixTTC, cadence)}.
 			</p>
 			{apercu.etat === 'attente' ? (
 				<div className="flex justify-center py-cladd-sm">
@@ -111,26 +120,31 @@ export function ConfirmationDeChangement({
 						titre="Aujourd’hui"
 						ligne={
 							apercu.aujourdhui !== 0
-								? 'Au prorata de la période en cours'
+								? apercu.aujourdhuiTTC === undefined || apercu.aujourdhuiTTC === null
+									? 'Au prorata de la période en cours'
+									: `${montantHT(Math.abs(apercu.aujourdhui))}, au prorata de la période en cours`
 								: aLEssai
 									? 'Votre essai continue'
 									: 'Rien à payer aujourd’hui'
 						}
 						montant={
 							apercu.aujourdhui > 0
-								? `${prixAffiche(apercu.aujourdhui)} HT`
+								? montantCourt(apercu.aujourdhui, apercu.aujourdhuiTTC)
 								: apercu.aujourdhui < 0
-									? `${prixAffiche(-apercu.aujourdhui)} HT en votre faveur`
+									? `${montantCourt(
+											-apercu.aujourdhui,
+											apercu.aujourdhuiTTC === undefined || apercu.aujourdhuiTTC === null
+												? null
+												: -apercu.aujourdhuiTTC
+										)} en votre faveur`
 									: 'Rien'
 						}
 					/>
 					{apercu.ensuite === null ? null : (
 						<LigneDeReleve
 							titre="Ensuite"
-							{...(apercu.prochainLe === null
-								? {}
-								: { ligne: `À partir du ${dateEnLettres(apercu.prochainLe)}` })}
-							montant={`${prixAffiche(apercu.ensuite)} HT`}
+							{...ligneEnsuite(apercu.ensuite, apercu.ensuiteTTC, apercu.prochainLe)}
+							montant={montantCourt(apercu.ensuite, apercu.ensuiteTTC)}
 						/>
 					)}
 				</ListeDeReleve>
@@ -142,7 +156,8 @@ export function ConfirmationDeChangement({
 				</p>
 			) : null}
 			<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-				Montants hors taxes ; Paddle ajoute la TVA de votre pays et envoie la facture.
+				Montants calculés par Paddle pour votre compte : le TTC comprend la TVA de votre pays.
+				Paddle envoie la facture.
 			</p>
 		</FeuillePleinEcran>
 	);
@@ -163,7 +178,8 @@ export function FeuilleDeResiliation({
 	enCours,
 	erreur,
 	onResilier,
-	onFormuleDuDessous
+	onFormuleDuDessous,
+	reference
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -175,6 +191,8 @@ export function FeuilleDeResiliation({
 	readonly onResilier: (raison: string | undefined) => void;
 	/** Passer à la formule du dessous, quand la raison est le prix. */
 	readonly onFormuleDuDessous?: (formule: Formule) => void;
+	/** Le prochain prélèvement, HT et TTC : son rapport donne le TTC des autres prix. */
+	readonly reference?: { readonly ht: number | null; readonly ttc: number | null } | null;
 }) {
 	const [raison, setRaison] = useState<string | undefined>(undefined);
 	const dessous: Formule | null =
@@ -257,12 +275,27 @@ export function FeuilleDeResiliation({
 				<CarteBouton
 					icone={<VignetteRangee famille="ARGENT" className="size-10" />}
 					titre={`Passer à ${GRILLE[dessous].nom}`}
-					ligne={`${prixAffiche(GRILLE[dessous].mensuel * 100)} HT par mois, ${GRILLE[dessous].pour.toLowerCase()}`}
+					ligne={`${prixHTetTTC(GRILLE[dessous].mensuel * 100, ttcAuMemeTaux(GRILLE[dessous].mensuel * 100, reference), 'par mois')}, ${GRILLE[dessous].pour.toLowerCase()}`}
 					onClick={() => onFormuleDuDessous(dessous)}
 				/>
 			) : null}
 		</FeuillePleinEcran>
 	);
+}
+
+/** La ligne sous « Ensuite » : le hors taxes quand le TTC est en montant, puis la date. */
+function ligneEnsuite(
+	ht: number,
+	ttc: number | null | undefined,
+	prochainLe: number | null
+): { ligne?: string } {
+	const morceaux = [
+		ttc === undefined || ttc === null ? null : montantHT(ht),
+		prochainLe === null ? null : `à partir du ${dateEnLettres(prochainLe)}`
+	].filter((m): m is string => m !== null);
+	if (morceaux.length === 0) return {};
+	const ligne = morceaux.join(', ');
+	return { ligne: ligne.charAt(0).toUpperCase() + ligne.slice(1) };
 }
 
 function dateEnLettres(ms: number): string {
