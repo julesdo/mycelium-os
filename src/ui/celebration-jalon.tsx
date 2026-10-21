@@ -44,7 +44,8 @@ export function CelebrationDeJalon({
 	bloquee,
 	push,
 	onVu,
-	onAnnee
+	onAnnee,
+	onNePlusProposer
 }: {
 	readonly jalon: JalonAffiche;
 	/** Une autre feuille est ouverte : la célébration attend qu'elle se ferme. */
@@ -54,6 +55,8 @@ export function CelebrationDeJalon({
 		| undefined;
 	readonly onVu: (issue: IssueDeLaLigne) => void;
 	readonly onAnnee: () => void;
+	/** « Ne plus me le proposer » : la ligne se tait pour de bon (`marketing:<genre>`). */
+	readonly onNePlusProposer: (ligne: 'PUSH' | 'ANNEE') => void;
 }) {
 	const [etape, setEtape] = useState<'fete' | 'push' | 'finie'>('fete');
 	const ligne =
@@ -92,6 +95,13 @@ export function CelebrationDeJalon({
 									}
 									finir('TOUCHEE');
 									onAnnee();
+								}
+							},
+							refus: {
+								libelle: 'Ne plus me le proposer',
+								onClick: () => {
+									finir('TOUCHEE');
+									onNePlusProposer(ligne);
 								}
 							}
 						})}

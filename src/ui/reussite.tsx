@@ -35,6 +35,7 @@ export function FeuilleDeReussite({
 	detail,
 	principale,
 	secondaire,
+	refus,
 	compteeOuverte
 }: {
 	readonly ouverte: boolean;
@@ -47,6 +48,8 @@ export function FeuilleDeReussite({
 	readonly detail?: ReactNode;
 	readonly principale: { readonly libelle: string; readonly onClick: () => void };
 	readonly secondaire?: { readonly libelle: string; readonly onClick: () => void };
+	/** « Ne plus me le proposer », en plus petit sous la ligne qu'il fait taire. */
+	readonly refus?: { readonly libelle: string; readonly onClick: () => void };
 	/** `false` pour une célébration, qui attend les autres feuilles (`PleinEcran`). */
 	readonly compteeOuverte?: boolean;
 }) {
@@ -101,6 +104,14 @@ export function FeuilleDeReussite({
 					{secondaire === undefined ? null : (
 						<BoutonTexte className="self-center" onClick={secondaire.onClick}>
 							{secondaire.libelle}
+						</BoutonTexte>
+					)}
+					{refus === undefined ? null : (
+						<BoutonTexte
+							className="self-center text-cladd-2xs text-cladd-fg-soft"
+							onClick={refus.onClick}
+						>
+							{refus.libelle}
 						</BoutonTexte>
 					)}
 				</PiedDePleinEcran>

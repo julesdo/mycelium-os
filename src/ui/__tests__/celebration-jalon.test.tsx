@@ -71,6 +71,7 @@ function monter(jalon: JalonAffiche, onVu = vi.fn(), onAnnee = vi.fn()) {
 				push={{ etat: 'POSSIBLE', enCours: false, onActiver: vi.fn() }}
 				onVu={onVu}
 				onAnnee={onAnnee}
+				onNePlusProposer={vi.fn()}
 			/>
 		)
 	);
@@ -113,6 +114,26 @@ describe('la célébration d’un jalon', () => {
 		await toucher('Passer à l’année : 2 mois offerts');
 		expect(onVu).toHaveBeenCalledWith('TOUCHEE');
 		expect(onAnnee).toHaveBeenCalled();
+	});
+
+	it('se tait pour de bon sur « Ne plus me le proposer »', async () => {
+		const onNePlusProposer = vi.fn();
+		const onVu = vi.fn();
+		act(() =>
+			racine.render(
+				<CelebrationDeJalon
+					jalon={{ ...DIX_MILLE, secondaire: 'ANNEE' }}
+					bloquee={false}
+					push={undefined}
+					onVu={onVu}
+					onAnnee={vi.fn()}
+					onNePlusProposer={onNePlusProposer}
+				/>
+			)
+		);
+		await toucher('Ne plus me le proposer');
+		expect(onNePlusProposer).toHaveBeenCalledWith('ANNEE');
+		expect(onVu).toHaveBeenCalledWith('TOUCHEE');
 	});
 
 	it('tait la recommandation tant que le parrainage n’est pas ouvert', () => {

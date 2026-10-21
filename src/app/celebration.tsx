@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { api } from '../lib/convex/_generated/api';
+import { cleDeSilence } from '../lib/croissance/attention';
 import { CelebrationDeJalon, useUneFeuilleOuverte, type IssueDeLaLigne } from '../ui';
 import { useQuery } from './donnees';
 import { usePush } from './push';
@@ -53,6 +54,7 @@ function Celebration({
 	const jalonVu = useMutation(api.recouvrement.jalons.jalonVu).withOptimisticUpdate((local) => {
 		local.setQuery(api.recouvrement.jalons.jalonAMontrer, {}, null);
 	});
+	const taire = useMutation(api.recouvrement.presence.taire);
 	const secondaire = jalon.secondaire;
 	return (
 		<CelebrationDeJalon
@@ -67,6 +69,11 @@ function Celebration({
 				}).catch(() => undefined);
 			}}
 			onAnnee={() => void navigate({ to: '/app/compte', search: { ouvrir: 'annee' } })}
+			onNePlusProposer={(ligne) => {
+				void taire({ cle: cleDeSilence(ligne === 'PUSH' ? 'push' : 'annee') }).catch(
+					() => undefined
+				);
+			}}
 		/>
 	);
 }
