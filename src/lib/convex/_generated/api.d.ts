@@ -153,6 +153,7 @@ import type * as recouvrement_profil from "../recouvrement/profil.js";
 import type * as recouvrement_propositions from "../recouvrement/propositions.js";
 import type * as recouvrement_radar from "../recouvrement/radar.js";
 import type * as recouvrement_recherche from "../recouvrement/recherche.js";
+import type * as recouvrement_reveil from "../recouvrement/reveil.js";
 import type * as recouvrement_revelation from "../recouvrement/revelation.js";
 import type * as recouvrement_semaine from "../recouvrement/semaine.js";
 import type * as recouvrement_suivi from "../recouvrement/suivi.js";
@@ -335,6 +336,7 @@ declare const fullApi: ApiFromModules<{
   "recouvrement/propositions": typeof recouvrement_propositions;
   "recouvrement/radar": typeof recouvrement_radar;
   "recouvrement/recherche": typeof recouvrement_recherche;
+  "recouvrement/reveil": typeof recouvrement_reveil;
   "recouvrement/revelation": typeof recouvrement_revelation;
   "recouvrement/semaine": typeof recouvrement_semaine;
   "recouvrement/suivi": typeof recouvrement_suivi;

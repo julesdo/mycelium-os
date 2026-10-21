@@ -19,6 +19,7 @@ const { briefingHtml, invitationHtml, motDePasseHtml, rappelAbonnementHtml, veri
 	await import('../src/lib/convex/emails/modeles');
 const { relanceHtml } = await import('../src/lib/convex/emails/modeles/relance');
 const { semaineHtml } = await import('../src/lib/convex/emails/modeles/semaine');
+const { reveilHtml } = await import('../src/lib/convex/emails/modeles/reveil');
 const { conseilHtml, objetDuConseil } = await import('../src/lib/convex/emails/modeles/conseils');
 const { CLES_CONSEILS_ENVOYES } = await import('../src/lib/croissance/conseils');
 const { rapportHtml, OBJET_DU_RAPPORT } =
@@ -110,6 +111,22 @@ const EMAILS: readonly { nom: string; objet: string; de: string; html: string }[
 			action: null,
 			montantLisible: null,
 			url: 'https://www.letikette.com/app'
+		})
+	},
+	{
+		nom: 'Le réveil utile',
+		objet: 'Pendant votre absence : 2 clients ont payé, une date limite approche.',
+		de: 'Plume de Letikette',
+		html: reveilHtml({
+			nomEntreprise: 'Menuiserie Dupont',
+			phrase: 'Pendant votre absence : 2 clients ont payé, une date limite approche.',
+			rangees: [
+				{ libelle: 'Rentré', valeur: '4 120 €' },
+				{ libelle: 'Clients qui ont payé', valeur: '2' },
+				{ libelle: 'Date limite la plus proche', valeur: 'dans 12 j' }
+			],
+			url: 'https://www.letikette.com/app',
+			desinscription: 'https://apercu.invalid/conseils/desinscription?j=demo'
 		})
 	},
 	{

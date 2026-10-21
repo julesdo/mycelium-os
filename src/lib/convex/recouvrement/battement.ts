@@ -223,6 +223,12 @@ export const executerPourOrganisation = internalMutation({
 				const briefing = composerBriefing(evenements, depuisCentimes(flux.montantIdentifie));
 				await envoyer(ctx, organizationId, briefing, recoiventLaSemaine);
 			}
+			// LE RÉVEIL UTILE (21/10/2026, `reveil.ts`) : à part, pour qu'une panne ne coûte
+			// pas le point du matin ; ceux qui reçoivent « Votre semaine » passent ce lundi.
+			await ctx.scheduler.runAfter(0, internal.recouvrement.reveil.preparerLesReveils, {
+				organizationId,
+				exclus: [...recoiventLaSemaine]
+			});
 
 			/**
 			 * LES NOTIFICATIONS DANS L'APPLICATION — module 2.1 du blueprint,

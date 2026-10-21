@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { estRentre } from './jalons';
 import type { Id } from '../_generated/dataModel';
 import type { QueryCtx } from '../_generated/server';
 import { authedMutation, authedQuery } from '../functions';
@@ -230,14 +231,15 @@ export const ouvrirLaVisite = authedMutation({
 		).filter((e) => e.validePar === 'pilote' && (e.valideLe ?? 0) > depuis);
 		const premiereRelance = parties[0];
 
-		// L'argent qui est rentré : un paiement ou un acompte, jamais un avoir.
+		// L'argent qui est rentré, comme la semaine et les réussites (`estRentre`) : les
+		// paiements synchronisés comptent, un avoir jamais. L'e-mail du réveil dit la même chose.
 		const paiements = (
 			await ctx.db
 				.query('reglements')
 				.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 				.order('desc')
 				.take(100)
-		).filter((r) => r.creeLe > depuis && (r.nature === 'PAIEMENT' || r.nature === 'ACOMPTE'));
+		).filter((r) => r.creeLe > depuis && estRentre(r));
 		const premierPaiement = paiements[0];
 		const factureDuPaiement =
 			premierPaiement === undefined ? null : await ctx.db.get(premierPaiement.factureId);

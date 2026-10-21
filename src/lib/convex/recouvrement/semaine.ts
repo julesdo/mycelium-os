@@ -66,7 +66,7 @@ export function cleDeLaSemaine(organizationId: Id<'organizations'>, debut: strin
 }
 
 /** La plus proche des dates limites pour agir des dossiers ouverts, en jours d'ici. */
-async function dateLimiteLaPlusProche(
+export async function dateLimiteLaPlusProche(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>,
 	aujourdHui: string
