@@ -11,7 +11,7 @@ import {
 	regimePrescription,
 	type SecteurCreance
 } from '../../verticales/recouvrement/pays/france/prescription';
-import { projeterDecompte } from './decompte';
+import { daterLeDecompte, projeterDecompte } from './decompte';
 import { vConventionJours, vImputation, vTaux } from './tables';
 
 /**
@@ -423,6 +423,45 @@ export const declarerRemise = authedMutation({
 			remisLe,
 			intervenantId,
 			attendu
+		});
+	}
+});
+
+/**
+ * LA REMISE DÉCLARÉE DEPUIS LE DOSSIER (22/10/2026) — « Le confier à un
+ * professionnel », dans la conversation du dossier.
+ *
+ * Le gérant ne passe plus par le décompte : le montant du jour part avec le dossier,
+ * daté au jour de la déclaration, exactement comme quand Plume note la remise
+ * (`gestesPlume`, REMISE_CONSEIL). Un montant qui ne se calcule pas refuse la
+ * remise en le disant : un dossier remis sans chiffre n'a rien à suivre.
+ */
+export const remettreLeDossier = authedMutation({
+	args: {
+		creanceId: v.id('creances'),
+		/** La date du FAIT. */
+		remisLe: v.string(),
+		intervenantId: v.optional(v.id('intervenants'))
+	},
+	returns: v.id('remisesAuConseil'),
+	handler: async (ctx, { creanceId, remisLe, intervenantId }): Promise<Id<'remisesAuConseil'>> => {
+		const { organizationId, user } = await getUserOrg(ctx);
+		const creance = await ctx.db.get(creanceId);
+		if (creance === null || creance.organizationId !== organizationId) {
+			throw new ConvexError('Dossier introuvable');
+		}
+		const date = await daterLeDecompte(ctx, {
+			creance,
+			aujourdHui: new Date().toISOString().slice(0, 10),
+			pour: 'la remise à votre conseil',
+			auteur: 'GERANT',
+			userId: user._id
+		});
+		if ('refus' in date) throw new ConvexError(date.refus);
+		return await declarerLaRemise(ctx, organizationId, {
+			decompteId: date.decompte._id,
+			remisLe,
+			...(intervenantId === undefined ? {} : { intervenantId })
 		});
 	}
 });

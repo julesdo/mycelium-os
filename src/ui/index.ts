@@ -181,7 +181,6 @@ export {
 export { BarresDesSemaines } from './semaines';
 export { ConstatRegistre, type ConstatRegistreAffiche } from './identite-debiteur';
 export {
-	QuestionnaireLitige,
 	type PropositionReponse,
 	type QuestionLitige,
 	type ReponseFait

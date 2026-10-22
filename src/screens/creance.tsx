@@ -30,7 +30,6 @@ import {
 	PanneauDuGeste,
 	ParcoursProfessionnels,
 	Pieces,
-	QuestionnaireLitige,
 	RangeeDepliable,
 	RangeeLien,
 	RefusEnQuatreParties,
@@ -413,7 +412,11 @@ export function EcranCreance({
 		readonly depart: IntentionDuDossier | null;
 		readonly envoi: string | null;
 		readonly jeton: number;
-	}>({ ouverte: false, depart: null, envoi: null, jeton: 0 });
+	}>(() =>
+		ouvrirAuDepart === 'litige'
+			? { ouverte: true, depart: 'QUESTIONS', envoi: null, jeton: 0 }
+			: { ouverte: false, depart: null, envoi: null, jeton: 0 }
+	);
 
 	/**
 	 * LES PANNEAUX OUVERTS — aucun à l'arrivée.
@@ -424,7 +427,7 @@ export function EcranCreance({
 	 * voit comme un clignotement à l'arrivée des données.
 	 */
 	const [ouvertes, setChoisies] = useState<readonly SectionCreance[]>(
-		ouvrirAuDepart === undefined ? [] : [ouvrirAuDepart]
+		ouvrirAuDepart === undefined || ouvrirAuDepart === 'litige' ? [] : [ouvrirAuDepart]
 	);
 
 	/** Remplace la liste des panneaux ouverts, en ne gardant que ceux de la page. */
@@ -445,6 +448,18 @@ export function EcranCreance({
 	 * refermant.
 	 */
 	function ouvrir(cle: SectionCreance) {
+		// « Vos réponses » n'est plus une rangée : ses questions se posent dans la conversation.
+		if (cle === 'litige') {
+			if (pret?.gestesGuides !== undefined) {
+				setConversation((avant) => ({
+					ouverte: true,
+					depart: 'QUESTIONS',
+					envoi: null,
+					jeton: avant.jeton + 1
+				}));
+			}
+			return;
+		}
 		setChoisies([...ouvertes.filter((c) => c !== cle), cle]);
 		if (!deuxVolets) return;
 		requestAnimationFrame(() =>
@@ -603,7 +618,7 @@ export function EcranCreance({
 
 							<CarteDuSuivi creance={pret} />
 
-							<ListeDeRangees>
+							<ListeDeRangees titre="Le détail du dossier">
 								<RangeeCourriers
 									creance={pret}
 									onEcrire={() => demander('ECRIRE')}
@@ -611,7 +626,6 @@ export function EcranCreance({
 								/>
 								<RangeeDecompte creance={pret} />
 								<RangeePieces creance={pret} />
-								<RangeeLitige creance={pret} />
 								<RangeeVoies creance={pret} />
 								<RangeeLien
 									vers="/app/clients/$id"
@@ -634,6 +648,12 @@ export function EcranCreance({
 					onFermer={() => setConversation((avant) => ({ ...avant, ouverte: false }))}
 					dossier={dossierDuGuide(pret)}
 					gestes={pret.gestesGuides}
+					questions={{ litige: pret.litige, conditions: pret.lignesConditions }}
+					defense={{
+						annuaire: pret.professionnels,
+						carnet: pret.carnet,
+						choisis: pret.intervenantsChoisis
+					}}
 					lettres={{
 						courriers: pret.courriers,
 						relances: pret.relances,
@@ -1490,56 +1510,6 @@ function RangeePieces({ creance }: { creance: CreanceOuverte }) {
 }
 
 /**
- * VOS RÉPONSES — ce que vous seul pouvez dire.
- *
- * Elle POSE UNE QUESTION, et ces réponses-là décident si une procédure s'ouvre.
- * C'est la seule rangée qui BLOQUE : sans elles, aucune créance ne franchit le
- * seuil de qualification. Elle ne s'ouvre pas d'elle-même : sa valeur,
- * « 7 attendues », se lit rangée fermée.
- *
- * Les conditions légales que le logiciel n'a pas pu déduire y sont jointes :
- * même sujet — ce que le gérant est seul à savoir — donc même section.
- *
- * ⚠️ DES FAITS, PAS UNE APPRÉCIATION JURIDIQUE. « Pouvez-vous confirmer le
- * caractère certain de cette créance » n'était répondable que par un juriste ;
- * « avez-vous reçu une contestation écrite » se répond par oui ou par non.
- */
-function RangeeLitige({ creance }: { creance: CreanceOuverte }) {
-	const aDemander = aConfirmer(creance);
-
-	return (
-		<RangeeDepliable
-			cle="litige"
-			famille="QUESTION"
-			titre="Vos réponses"
-			glose="Des faits, pas une appréciation juridique : vous seul pouvez les dire."
-			valeur={
-				aDemander > 0
-					? `${aDemander} attendue${pluriel(aDemander)}`
-					: creance.litige.litigieux
-						? 'litigieux'
-						: 'données'
-			}
-		>
-			<QuestionnaireLitige
-				questions={creance.litige.questions}
-				constats={creance.litige.constats}
-				litigieux={creance.litige.litigieux}
-				enCours={creance.enCours}
-				onRepondre={creance.onDeclarerFait}
-			/>
-
-			<p className="text-cladd-2xs font-semibold">Ce que dit la loi, en face de votre dossier</p>
-			<TableauConditions
-				lignes={creance.lignesConditions}
-				enCours={creance.enCours}
-				onRepondre={creance.onRepondreCondition}
-			/>
-		</RangeeDepliable>
-	);
-}
-
-/**
  * SECTION 7 — LES FAITS CONSIGNÉS ET LA VOIE.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -1606,21 +1576,38 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 			}
 		>
 			{creance.suivi === null ? (
-				<ListeAnalyses>
-					{creance.voies.map((v) => (
-						<LigneBouton
-							key={v.cle}
-							titre={v.nom}
-							precision={
-								v.etapes.length === 0
-									? 'aucun délai n’en découle'
-									: `${v.etapes.length} étapes · ${v.conditionsEchec.length} façons d’échouer`
-							}
-							valeur={v.disponible ? 'Envisageable' : 'Indisponible'}
-							onClick={() => setVoieOuverte(v.cle)}
-						/>
-					))}
-				</ListeAnalyses>
+				<>
+					<ListeAnalyses>
+						{creance.voies.map((v) => (
+							<LigneBouton
+								key={v.cle}
+								titre={v.nom}
+								precision={
+									v.etapes.length === 0
+										? 'aucun délai n’en découle'
+										: `${v.etapes.length} étapes · ${v.conditionsEchec.length} façons d’échouer`
+								}
+								valeur={v.disponible ? 'Envisageable' : 'Indisponible'}
+								onClick={() => setVoieOuverte(v.cle)}
+							/>
+						))}
+					</ListeAnalyses>
+					{/*
+				  CE QUE DIT LA LOI, EN FACE DE VOTRE DOSSIER — le tableau était dans « Vos
+				  réponses » ; ses conditions sont celles des voies, il vit avec elles depuis
+				  que les questions se posent dans la conversation du dossier (22/10/2026).
+				*/}
+					{creance.lignesConditions.length === 0 ? null : (
+						<section className="flex flex-col gap-cladd-3xs">
+							<SectionTitle>Ce que dit la loi, en face de votre dossier</SectionTitle>
+							<TableauConditions
+								lignes={creance.lignesConditions}
+								enCours={creance.enCours}
+								onRepondre={creance.onRepondreCondition}
+							/>
+						</section>
+					)}
+				</>
 			) : (
 				<>
 					<SuiviProcedure

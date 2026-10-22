@@ -6,7 +6,8 @@ import {
 	messageDuRefus,
 	type CanalDEchange,
 	type ChoixCourrierAffiche,
-	type MotifClassement
+	type MotifClassement,
+	type ReponseFait
 } from '../../ui';
 import type { DossierPourLesIntentions } from './intentions';
 
@@ -65,6 +66,21 @@ export interface GestesDuGuide {
 		readonly motif: MotifClassement;
 		readonly note?: string;
 	}) => Promise<Annulation>;
+
+	/* ── Ce que le gérant seul peut dire (ligne rouge n° 3) ───────────────── */
+	/** Un fait du dossier : Oui, Non, Je ne sais pas. */
+	readonly declarerFait: (cle: string, reponse: ReponseFait) => Promise<void>;
+	/** Une condition que le gérant confirme, ou non. */
+	readonly repondreCondition: (condition: string, reponse: 'ok' | 'ko') => Promise<void>;
+
+	/* ── Un professionnel : le gérant choisit, rien n'est présélectionné ─── */
+	/** Le dossier remis, à une date (celle du FAIT), à quelqu'un ou à personne de nommé. */
+	readonly remettre: (r: {
+		readonly remisLe: string;
+		readonly intervenantId?: string;
+	}) => Promise<void>;
+	/** Les professionnels du dossier, tels que le parcours du choix les confirme. */
+	readonly nommer: (ids: readonly string[], avant: readonly string[]) => Promise<void>;
 
 	/* ── Les courriers : rien ne part sans le gérant (ligne rouge n° 1) ──── */
 	/** Composer un courrier et le poser à valider. Rend l'identifiant de l'envoi. */

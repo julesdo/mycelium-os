@@ -374,7 +374,7 @@ export function useGestesDePlume({
 			case 'CLASSER':
 				return versDossier('suivi', 'Voir le dossier');
 			case 'CONTESTATION':
-				return versDossier('litige', 'Voir vos réponses');
+				return versDossier('litige', 'Les questions du dossier');
 			case 'EMAIL':
 			case 'RETIRER_DU_PILOTE':
 			case 'REMETTRE_AU_PILOTE':

@@ -35,6 +35,10 @@ export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string):
 	const partir = useMutation(api.recouvrement.envois.declarerParti);
 	const abandonner = useMutation(api.recouvrement.envois.abandonner);
 	const retenir = useMutation(api.recouvrement.pilote.retenir);
+	const repondre = useMutation(api.recouvrement.creances.repondre);
+	const remettreLeDossier = useMutation(api.recouvrement.conseil.remettreLeDossier);
+	const designer = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
+	const personne = useMutation(api.recouvrement.apresProcedure.aucunIntervenant);
 
 	/** Défaire une note qu'on vient de poser : elle s'efface vraiment. */
 	const effacerLaNote = (entreeId: Id<'suiviDossier'>) => async () => {
@@ -80,6 +84,34 @@ export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string):
 			return async () => {
 				await rouvrirLeDossier({ creanceId });
 			};
+		},
+		declarerFait: async (cle, reponse) => {
+			await declarerFait({ creanceId, cle: cle as 'CONTESTATION_ECRITE', reponse });
+		},
+		repondreCondition: async (condition, reponse) => {
+			await repondre({ creanceId, reponses: { [condition]: reponse } });
+		},
+		remettre: async ({ remisLe, intervenantId }) => {
+			await remettreLeDossier({
+				creanceId,
+				remisLe,
+				...(intervenantId === undefined
+					? {}
+					: { intervenantId: intervenantId as Id<'intervenants'> })
+			});
+		},
+		/* Ceux qui manquent s'ajoutent, ceux qui n'y sont plus se retirent ; vide : moi-même. */
+		nommer: async (ids, avant) => {
+			if (ids.length === 0) {
+				await personne({ creanceId });
+				return;
+			}
+			for (const id of avant.filter((a) => !ids.includes(a))) {
+				await designer({ creanceId, intervenantId: id as Id<'intervenants'>, designe: false });
+			}
+			for (const id of ids.filter((i) => !avant.includes(i))) {
+				await designer({ creanceId, intervenantId: id as Id<'intervenants'>, designe: true });
+			}
 		},
 		preparerCourrier: async (choix) => await preparer({ creanceId, choix: versConvex(choix) }),
 		validerCourrier: async (envoiId) => await valider({ envoiId: envoiId as Id<'envois'> }),

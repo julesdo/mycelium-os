@@ -3,7 +3,9 @@ import { CadreGuide, Echange, ListeDeReponses, PleinEcran, ReponseDePlume } from
 import type { SectionCreance } from '../sections-creance';
 import type { DossierDuGuide, GestesDuGuide, PropsDuFil } from './commun';
 import { FilClassement } from './fil-classement';
+import { FilConseil, type DefenseDuGuide } from './fil-conseil';
 import { FilEcrire, type LettresDuGuide } from './fil-ecrire';
+import { FilQuestions, type QuestionsDuGuide } from './fil-questions';
 import { FilRelire } from './fil-relire';
 import { FilRappel } from './fil-rappel';
 import { FilReponse } from './fil-reponse';
@@ -23,7 +25,15 @@ import { intentionsDuDossier, libelleDIntention, type IntentionDuDossier } from 
  */
 
 /** Les gestes qui se font dans la conversation ; les autres mènent à leur parcours. */
-const GUIDEES: readonly IntentionDuDossier[] = ['ECRIRE', 'RELIRE', 'REPONSE', 'RAPPEL', 'CLASSER'];
+const GUIDEES: readonly IntentionDuDossier[] = [
+	'ECRIRE',
+	'RELIRE',
+	'REPONSE',
+	'QUESTIONS',
+	'RAPPEL',
+	'CONSEIL',
+	'CLASSER'
+];
 
 export function estGuidee(intention: IntentionDuDossier): boolean {
 	return GUIDEES.includes(intention);
@@ -78,6 +88,8 @@ export function ConversationDuDossier({
 	dossier,
 	gestes,
 	lettres,
+	questions,
+	defense,
 	sorties
 }: {
 	readonly ouverte: boolean;
@@ -90,6 +102,10 @@ export function ConversationDuDossier({
 	readonly gestes: GestesDuGuide;
 	/** Les courriers et les e-mails du dossier, en direct : un courrier change sous nos yeux. */
 	readonly lettres: LettresDuGuide;
+	/** Les faits et les conditions que le gérant seul peut dire, en direct. */
+	readonly questions: QuestionsDuGuide;
+	/** Les professionnels du dossier et l'annuaire du parcours du choix. */
+	readonly defense: DefenseDuGuide;
 	readonly sorties: SortiesDeLaConversation;
 }) {
 	const [intention, setIntention] = useState<IntentionDuDossier | null>(depart);
@@ -177,6 +193,10 @@ export function ConversationDuDossier({
 					envoiId={envoiId}
 					onRelire={relire}
 				/>
+			) : intention === 'QUESTIONS' ? (
+				<FilQuestions key={tour} {...commun} titre={titre} questions={questions} />
+			) : intention === 'CONSEIL' ? (
+				<FilConseil key={tour} {...commun} titre={titre} defense={defense} />
 			) : intention === 'RAPPEL' ? (
 				<FilRappel key={tour} {...commun} titre={titre} />
 			) : intention === 'CLASSER' ? (

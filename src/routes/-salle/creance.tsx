@@ -988,7 +988,11 @@ const GESTES_GUIDES_DEMO: NonNullable<CreanceOuverte['gestesGuides']> = {
 	validerCourrier: async () => (await attendre(), 'VALIDE' as const),
 	declarerParti: attendre,
 	abandonnerCourrier: attendre,
-	retenirRelance: attendre
+	retenirRelance: attendre,
+	declarerFait: attendre,
+	repondreCondition: attendre,
+	remettre: attendre,
+	nommer: attendre
 };
 
 /**
