@@ -105,6 +105,8 @@ export function FilEcrire({
 
 	const emails = lettres.relances.filter((n) => n.disponible && n.corps !== undefined);
 	const lettresPossibles = courriers.modeles.filter((m) => m.indisponible === null);
+	/* Rien ne s'applique : Plume le dit, au lieu d'une liste vide. */
+	const rienAPreparer = emails.length + lettresPossibles.length === 0;
 	/*
 	  ⚠️ CE QUI NE S'APPLIQUE PAS EST DIT, JAMAIS CACHÉ : les lettres avec leur raison, et
 	  les e-mails indisponibles — groupés quand ils partagent le même constat (une
@@ -211,9 +213,11 @@ export function FilEcrire({
 				return (
 					<ReponseDePlume
 						texte={
-							d.pourLesIntentions.relancesSuspendues
-								? `${d.client} est en procédure collective ou radié : on ne lui écrit plus comme avant. Voici ce que sa situation permet.`
-								: `Je prépare quoi pour ${d.client} ?`
+							rienAPreparer
+								? `Je ne peux rien préparer pour ${d.client} pour l’instant.`
+								: d.pourLesIntentions.relancesSuspendues
+									? `${d.client} est en procédure collective ou radié : on ne lui écrit plus comme avant. Voici ce que sa situation permet.`
+									: `Je prépare quoi pour ${d.client} ?`
 						}
 					>
 						{impossibles.length === 0 ? null : (
@@ -336,7 +340,12 @@ export function FilEcrire({
 	function zone(): ReactNode {
 		switch (affichee) {
 			case 'QUOI':
-				return (
+				return rienAPreparer ? (
+					<RangeeDeReponses>
+						<BoutonDeReponse libelle="Revenir au dossier" onClick={onFermer} />
+						<BoutonDeReponse libelle="Autre chose" onClick={onAutreChose} />
+					</RangeeDeReponses>
+				) : (
 					<ListeDeReponses
 						choix={[
 							...emails.map((niveau) => ({

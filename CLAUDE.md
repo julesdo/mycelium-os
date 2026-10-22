@@ -101,6 +101,25 @@ s'aligne sur elle (`GOUTTIERE_ENTETE`, dans `page.tsx`). Un panneau qu'un bouton
 rangée qui le double (`PanneauDuGeste`) : ajouter un geste, c'est d'abord chercher lequel il
 remplace.
 
+**Et depuis le 22/10/2026, le dossier se gère comme il se démarre**
+(`docs/superpowers/specs/2026-10-22-dossier-guide.md`, sur Lemonade, Whatnot, DoorDash). Le
+fondateur, après une démonstration : « on se sentait vite perdu avec tous les onglets du dossier,
+alors que côté flow du dossier avec Plume dans le chat c'est hyper fluide ». Sur la page, c'était le
+gérant qui conduisait ; dans le démarrage, c'est Plume. **Tout geste sur un dossier est désormais
+une conversation faite des pièces du démarrage** (`ui/parcours-guide.tsx`, `screens/dossier-guide/`) :
+une question à la fois, les réponses sous le pouce, la bulle et son crayon, le travail qui se voit,
+une fin qui dit la suite, « Annuler » quand le geste se défait. La carte de Plume porte les
+**réponses du moment** — la proposition en bouton plein (`gesteDuDossier`), « Il m'a répondu »,
+« Autre chose » — et « Que voulez-vous faire ? » énumère, dans les mots du gérant, le relancer,
+il m'a répondu, ses questions, un document, un rappel, un professionnel, classer, le dire à
+Plume. Aucune réponse ne nomme une voie de droit (`dossier-guide.test.ts`). Les gestes branchés
+LÈVENT leur refus et rendent de quoi s'annuler (`app/gestes-guides.ts`, distincts des gestes des
+cartes balayées qui parlent par la bulle de Plume). Disparus : les feuilles « Il vous a
+répondu ? », échéancier et classement, la rangée « Vos réponses » (`?ouvrir=litige` ouvre ses
+questions), les brouillons d'e-mail par niveau et les modèles de lettre de la rangée « Courriers
+et e-mails », qui ne garde que l'historique. La remise au conseil se déclare depuis le dossier
+(`conseil.remettreLeDossier`, le montant du jour daté). 17 → 12 cibles à 375 px.
+
 **L'écran « Aujourd'hui » a suivi le même soir, sur les files d'approbation de Remote et Wise.**
 Pas de grand titre ni de date en sous-titre (« on s'en fout ») : une barre collante compacte —
 établissement, recherche, dépôt —, la date en petit au-dessus du montant qu'elle date, et une
