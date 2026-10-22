@@ -16,6 +16,8 @@
 
 export type IntentionDuDossier =
 	| 'ECRIRE'
+	/** Relire un courrier préparé : la proposition de la carte de Plume, jamais une réponse de la liste. */
+	| 'RELIRE'
 	| 'REPONSE'
 	| 'QUESTIONS'
 	| 'DOCUMENT'
@@ -73,6 +75,8 @@ export function libelleDIntention(
 				: d.regle
 					? { titre: 'Lui écrire', ligne: 'Un e-mail ou une lettre, prêts à relire' }
 					: { titre: 'Le relancer', ligne: 'Un e-mail ou une lettre, prêts à relire' };
+		case 'RELIRE':
+			return { titre: 'Relire le courrier', ligne: 'Le lire, le valider, l’envoyer' };
 		case 'REPONSE':
 			return {
 				titre: 'Il m’a répondu',

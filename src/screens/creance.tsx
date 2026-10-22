@@ -34,7 +34,6 @@ import {
 	RangeeDepliable,
 	RangeeLien,
 	RefusEnQuatreParties,
-	Relances,
 	SectionsDepliables,
 	TableauDeBord,
 	ZoneDuTableau,
@@ -412,8 +411,9 @@ export function EcranCreance({
 	const [conversation, setConversation] = useState<{
 		readonly ouverte: boolean;
 		readonly depart: IntentionDuDossier | null;
+		readonly envoi: string | null;
 		readonly jeton: number;
-	}>({ ouverte: false, depart: null, jeton: 0 });
+	}>({ ouverte: false, depart: null, envoi: null, jeton: 0 });
 
 	/**
 	 * LES PANNEAUX OUVERTS — aucun à l'arrivée.
@@ -484,13 +484,18 @@ export function EcranCreance({
 	 * Ouvre la conversation sur un geste (ou sur « Que voulez-vous faire ? »), ou mène
 	 * le geste qui a déjà son parcours ailleurs.
 	 */
-	function demander(intention: IntentionDuDossier | null) {
+	function demander(intention: IntentionDuDossier | null, envoi: string | null = null) {
 		if (sorties === null) return;
 		if (intention !== null && (!estGuidee(intention) || pret?.gestesGuides === undefined)) {
 			menerHorsConversation(intention, sorties);
 			return;
 		}
-		setConversation((avant) => ({ ouverte: true, depart: intention, jeton: avant.jeton + 1 }));
+		setConversation((avant) => ({
+			ouverte: true,
+			depart: intention,
+			envoi,
+			jeton: avant.jeton + 1
+		}));
 	}
 
 	return (
@@ -599,7 +604,11 @@ export function EcranCreance({
 							<CarteDuSuivi creance={pret} />
 
 							<ListeDeRangees>
-								<RangeeCourriers creance={pret} />
+								<RangeeCourriers
+									creance={pret}
+									onEcrire={() => demander('ECRIRE')}
+									onOuvrirCourrier={(id) => demander('RELIRE', id)}
+								/>
 								<RangeeDecompte creance={pret} />
 								<RangeePieces creance={pret} />
 								<RangeeLitige creance={pret} />
@@ -621,9 +630,16 @@ export function EcranCreance({
 					key={conversation.jeton}
 					ouverte={conversation.ouverte}
 					depart={conversation.depart}
+					envoiDepart={conversation.envoi}
 					onFermer={() => setConversation((avant) => ({ ...avant, ouverte: false }))}
 					dossier={dossierDuGuide(pret)}
 					gestes={pret.gestesGuides}
+					lettres={{
+						courriers: pret.courriers,
+						relances: pret.relances,
+						debiteurId: pret.debiteurId,
+						...(pret.debiteurEmail === undefined ? {} : { debiteurEmail: pret.debiteurEmail })
+					}}
 					sorties={sorties}
 				/>
 			)}
@@ -759,11 +775,11 @@ function gesteDuDossier(
 	if (aValider > 0) {
 		return {
 			libelle: aValider > 1 ? 'Relire les courriers' : 'Relire le courrier',
-			mene: { rubrique: 'courriers' }
+			mene: { intention: 'RELIRE' }
 		};
 	}
 	if (creance.courriers.envois.some((e) => e.etat === 'PROGRAMME')) {
-		return { libelle: 'Voir la relance', mene: { rubrique: 'courriers' } };
+		return { libelle: 'Voir la relance', mene: { intention: 'RELIRE' } };
 	}
 	if (creance.etapes.etape === 'TRIBUNAL') {
 		return { libelle: 'Suivre le dossier', mene: { rubrique: 'voies' } };
@@ -1206,11 +1222,10 @@ function alertesDuDossier(creance: CreanceOuverte): readonly AlerteDossier[] {
  * deux rangées sœurs. Pour le gérant, c'est la même chose : lui écrire. Deux
  * rangées l'obligeaient à connaître la différence AVANT d'ouvrir.
  *
- * ⚠️ CE QUI PEUT SE FAIRE S'OUVRE EN PREMIER. Quand les e-mails sont
- * disponibles, ils passent devant — c'est le geste le plus courant. Quand ils
- * sont suspendus (procédure collective, entreprise radiée), leurs refus passent
- * derrière les courriers que la situation permet : ouvrir la feuille sur trois
- * refus, c'est dire qu'il n'y a rien à faire alors qu'il y a quelque chose.
+ * ⚠️ PRÉPARER N'EST PLUS ICI (22/10/2026). Les e-mails par niveau et les six
+ * modèles de lettre vivaient dans cette rangée ; « Le relancer » est désormais une
+ * conversation avec Plume (`dossier-guide/fil-ecrire.tsx`), et la rangée garde ce
+ * qui a été préparé, validé, envoyé — avec un bouton qui ouvre la conversation.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * ⚠️ RIEN NE PART D'ICI, ET C'EST UNE LIGNE ROUGE
@@ -1221,29 +1236,20 @@ function alertesDuDossier(creance: CreanceOuverte): readonly AlerteDossier[] {
  * débiteur n'existe dans `src/ui/`. Une commande absente ne s'active jamais par
  * accident ; une commande grisée, si.
  */
-function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
+function RangeeCourriers({
+	creance,
+	onEcrire,
+	onOuvrirCourrier
+}: {
+	creance: CreanceOuverte;
+	/** Ouvre « Le relancer » dans la conversation du dossier. */
+	onEcrire?: () => void;
+	/** Ouvre un courrier dans « Relire le courrier ». */
+	onOuvrirCourrier?: (envoiId: string) => void;
+}) {
 	const envois = creance.courriers.envois;
 	const aValider = envois.filter((e) => e.etat === 'A_VALIDER').length;
 	const faits = envois.filter((e) => e.etat === 'VALIDE' || e.etat === 'PARTI').length;
-	const emailsDisponibles = creance.relances.some((niveau) => niveau.disponible);
-
-	const emails = (
-		<section className="flex flex-col gap-cladd-3xs">
-			<SectionTitle>E-mails</SectionTitle>
-			<Relances
-				niveaux={creance.relances}
-				identifiant={creance.identifiant}
-				destinataire={creance.debiteurEmail}
-				identifiantDebiteur={creance.debiteurId}
-			/>
-		</section>
-	);
-	const lettres = (
-		<section className="flex flex-col gap-cladd-3xs">
-			<SectionTitle>Lettres</SectionTitle>
-			<Courriers courriers={creance.courriers} />
-		</section>
-	);
 
 	return (
 		<RangeeDepliable
@@ -1258,17 +1264,13 @@ function RangeeCourriers({ creance }: { creance: CreanceOuverte }) {
 						: 'aucun'
 			}
 		>
-			{emailsDisponibles ? (
-				<>
-					{emails}
-					{lettres}
-				</>
-			) : (
-				<>
-					{lettres}
-					{emails}
-				</>
-			)}
+			<Courriers
+				courriers={creance.courriers}
+				{...(onEcrire === undefined ? {} : { onNouveau: onEcrire })}
+				{...(onOuvrirCourrier === undefined || creance.gestesGuides === undefined
+					? {}
+					: { onOuvrir: onOuvrirCourrier })}
+			/>
 		</RangeeDepliable>
 	);
 }

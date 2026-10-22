@@ -983,7 +983,12 @@ const GESTES_GUIDES_DEMO: NonNullable<CreanceOuverte['gestesGuides']> = {
 	noterContestation: attendre,
 	noter: async () => (await attendre(), attendre),
 	rappeler: async () => (await attendre(), attendre),
-	classer: async () => (await attendre(), attendre)
+	classer: async () => (await attendre(), attendre),
+	preparerCourrier: async () => (await attendre(), 'demo-envoi'),
+	validerCourrier: async () => (await attendre(), 'VALIDE' as const),
+	declarerParti: attendre,
+	abandonnerCourrier: attendre,
+	retenirRelance: attendre
 };
 
 /**
@@ -1134,7 +1139,26 @@ function CreanceDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) 
 		<EcranCreance
 			donnees={lectureDemo(etat, {
 				...forme,
-				courriers: { ...forme.courriers, choix, onChoisir: setChoix }
+				courriers: {
+					...forme.courriers,
+					choix,
+					onChoisir: setChoix,
+					// L'aperçu d'un courrier choisi : la lettre de démonstration, telle qu'elle partirait.
+					apercu:
+						choix === null
+							? null
+							: COURRIER_DEMO.ok
+								? {
+										ok: true,
+										titre: COURRIER_DEMO.titre,
+										destinataire: COURRIER_DEMO.destinataire,
+										canal: COURRIER_DEMO.canal,
+										objet: COURRIER_DEMO.objet,
+										corps: COURRIER_DEMO.corps,
+										resume: COURRIER_DEMO.resume
+									}
+								: { ok: false, manques: ['l’adresse de votre client (sa fiche)'] }
+				}
 			})}
 		/>
 	);

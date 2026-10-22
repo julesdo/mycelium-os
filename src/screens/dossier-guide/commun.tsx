@@ -5,6 +5,7 @@ import {
 	ReponseDePlume,
 	messageDuRefus,
 	type CanalDEchange,
+	type ChoixCourrierAffiche,
 	type MotifClassement
 } from '../../ui';
 import type { DossierPourLesIntentions } from './intentions';
@@ -64,6 +65,17 @@ export interface GestesDuGuide {
 		readonly motif: MotifClassement;
 		readonly note?: string;
 	}) => Promise<Annulation>;
+
+	/* ── Les courriers : rien ne part sans le gérant (ligne rouge n° 1) ──── */
+	/** Composer un courrier et le poser à valider. Rend l'identifiant de l'envoi. */
+	readonly preparerCourrier: (choix: ChoixCourrierAffiche) => Promise<string>;
+	/** Valider, c'est figer le texte. `A_RELIRE` : le dossier a changé, le texte aussi. */
+	readonly validerCourrier: (envoiId: string) => Promise<'VALIDE' | 'A_RELIRE'>;
+	/** Le jour du départ, celui qui compte ; et un rappel au jour où le délai expire. */
+	readonly declarerParti: (envoiId: string, partiLe: string, avecRappel: boolean) => Promise<void>;
+	readonly abandonnerCourrier: (envoiId: string) => Promise<void>;
+	/** Retenir une relance que Plume a programmée : elle ne part pas, le client sort du pilote. */
+	readonly retenirRelance: (envoiId: string) => Promise<void>;
 }
 
 /** Ce que reçoit chaque conversation d'un geste. */

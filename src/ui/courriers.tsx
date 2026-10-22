@@ -302,7 +302,7 @@ export function modelesProposables(
 	];
 }
 
-const CANAL: Record<EnvoiAffiche['canal'], string> = {
+export const CANAL_DU_COURRIER: Record<EnvoiAffiche['canal'], string> = {
 	IMPRIMER_RECOMMANDE: 'À imprimer, signer et envoyer en recommandé avec avis de réception',
 	IMPRIMER_SIMPLE: 'À imprimer en deux exemplaires, à signer par vous et par votre client',
 	MESSAGERIE: 'À envoyer depuis votre propre messagerie'
@@ -334,7 +334,7 @@ const ETAT: Record<EnvoiAffiche['etat'], string> = {
  * plutôt que rechoisi sur chaque lettre. Huit jours reste le défaut du défaut :
  * il n'a aucune valeur de droit, et l'écran ne prétend pas le contraire.
  */
-function choixInitial(
+export function choixInitial(
 	modele: ModeleCourrierAffiche,
 	aujourdHui: string,
 	delaiParDefaut: number | undefined,
@@ -492,7 +492,7 @@ function DestinataireDuCourrier({
 	);
 }
 
-function FormulaireChoix({
+export function FormulaireChoix({
 	choix,
 	onChange,
 	intervenants,
@@ -886,7 +886,7 @@ function Apercu({
 	return (
 		<div className="flex flex-col gap-cladd-3xs">
 			<p className="text-cladd-xs font-semibold">
-				Pour {apercu.destinataire} · {CANAL[apercu.canal]}
+				Pour {apercu.destinataire} · {CANAL_DU_COURRIER[apercu.canal]}
 			</p>
 			{apercu.resume.map((phrase) => (
 				<p key={phrase} className="text-cladd-xs leading-snug">
@@ -956,7 +956,7 @@ function Envoi({
 				</Chip>
 			</div>
 			<p className="text-cladd-xs text-cladd-fg-soft">
-				Pour {envoi.destinataire} · {CANAL[envoi.canal]} ·{' '}
+				Pour {envoi.destinataire} · {CANAL_DU_COURRIER[envoi.canal]} ·{' '}
 				{envoi.parLePilote === true ? `préparé par ${NOM_DU_PILOTE} le` : 'préparé le'}{' '}
 				{dateCourte(envoi.prepareLe)}
 				{envoi.valideLe === undefined || envoi.parLePilote === true
@@ -1107,7 +1107,24 @@ function Envoi({
 	);
 }
 
-export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
+export function Courriers({
+	courriers,
+	onNouveau,
+	onOuvrir
+}: {
+	courriers: CourriersDuDossier;
+	/**
+	 * PRÉPARER SE FAIT DANS LA CONVERSATION DU DOSSIER (22/10/2026). Fourni, la liste
+	 * des modèles cède la place à UN bouton qui l'ouvre : la rangée garde ce qui a été
+	 * préparé, validé, envoyé.
+	 */
+	onNouveau?: () => void;
+	/**
+	 * Fourni, chaque courrier est une rangée qui s'ouvre dans la conversation « Relire
+	 * le courrier » : la valider, l'envoyer, dire qu'il est parti se font là-bas.
+	 */
+	onOuvrir?: (envoiId: string) => void;
+}) {
 	// Tenu par la route quand elle le fournit (un autre endroit de la page peut
 	// ouvrir un courrier déjà rempli) ; sinon, ici.
 	const [local, setLocal] = useState<ChoixCourrierAffiche | null>(null);
@@ -1124,103 +1141,136 @@ export function Courriers({ courriers }: { courriers: CourriersDuDossier }) {
 				<p className="text-cladd-xs text-cladd-fg">{courriers.erreur}</p>
 			)}
 
-			{courriers.envois
-				.filter((e) => e.etat !== 'ABANDONNE')
-				.map((envoi) => (
-					<Envoi
-						key={envoi.id}
-						envoi={envoi}
-						peutValider={courriers.peutValider}
-						aujourdHui={courriers.aujourdHui}
-						enCours={courriers.enCours}
-						onValider={() => courriers.onValider(envoi.id)}
-						onDeclarerParti={(partiLe, avecRappel) =>
-							courriers.onDeclarerParti(envoi.id, partiLe, avecRappel)
-						}
-						onAbandonner={() => courriers.onAbandonner(envoi.id)}
-						{...(courriers.onRetenir === undefined
-							? {}
-							: { onRetenir: () => courriers.onRetenir?.(envoi.id) })}
-						{...(courriers.debiteurId === undefined ? {} : { debiteurId: courriers.debiteurId })}
-						onTelechargerPdf={() => courriers.onTelechargerPdf(envoi)}
-						onTelechargerAnnexe={() => courriers.onTelechargerAnnexe(envoi)}
-					/>
-				))}
+			{onOuvrir === undefined ? null : (
+				<ListeAnalyses>
+					{courriers.envois
+						.filter((e) => e.etat !== 'ABANDONNE')
+						.map((envoi) => (
+							<LigneBouton
+								key={envoi.id}
+								titre={envoi.titre}
+								precision={`Pour ${envoi.destinataire}`}
+								valeur={
+									envoi.etat === 'PARTI' && envoi.partiLe !== undefined
+										? `Parti le ${dateCourte(envoi.partiLe)}`
+										: ETAT[envoi.etat]
+								}
+								attention={envoi.etat === 'A_VALIDER'}
+								onClick={() => onOuvrir(envoi.id)}
+							/>
+						))}
+				</ListeAnalyses>
+			)}
+			{onOuvrir !== undefined
+				? null
+				: courriers.envois
+						.filter((e) => e.etat !== 'ABANDONNE')
+						.map((envoi) => (
+							<Envoi
+								key={envoi.id}
+								envoi={envoi}
+								peutValider={courriers.peutValider}
+								aujourdHui={courriers.aujourdHui}
+								enCours={courriers.enCours}
+								onValider={() => courriers.onValider(envoi.id)}
+								onDeclarerParti={(partiLe, avecRappel) =>
+									courriers.onDeclarerParti(envoi.id, partiLe, avecRappel)
+								}
+								onAbandonner={() => courriers.onAbandonner(envoi.id)}
+								{...(courriers.onRetenir === undefined
+									? {}
+									: { onRetenir: () => courriers.onRetenir?.(envoi.id) })}
+								{...(courriers.debiteurId === undefined
+									? {}
+									: { debiteurId: courriers.debiteurId })}
+								onTelechargerPdf={() => courriers.onTelechargerPdf(envoi)}
+								onTelechargerAnnexe={() => courriers.onTelechargerAnnexe(envoi)}
+							/>
+						))}
 
-			<p className="text-cladd-2xs font-semibold">Préparer un courrier</p>
-			<div className="flex flex-col gap-cladd-3xs">
-				{courriers.modeles.map((m) => {
-					const actif = choix?.modele === m.cle;
-					return (
-						<Surface
-							key={m.cle}
-							variant="transparent"
-							outline={false}
-							className="verre-carte rounded-cladd-xl"
-							contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
-						>
-							<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
-								<div className="flex min-w-0 flex-col">
-									<p className="text-cladd-sm font-semibold">{m.titre}</p>
-									<p className="text-cladd-xs text-cladd-fg-soft">
-										{m.indisponible ?? m.description}
-									</p>
+			{onNouveau === undefined ? null : (
+				<BoutonSecondaire className="self-start" onClick={onNouveau}>
+					Préparer un courrier ou un e-mail
+				</BoutonSecondaire>
+			)}
+			{onNouveau !== undefined ? null : (
+				<p className="text-cladd-2xs font-semibold">Préparer un courrier</p>
+			)}
+			{onNouveau !== undefined ? null : (
+				<div className="flex flex-col gap-cladd-3xs">
+					{courriers.modeles.map((m) => {
+						const actif = choix?.modele === m.cle;
+						return (
+							<Surface
+								key={m.cle}
+								variant="transparent"
+								outline={false}
+								className="verre-carte rounded-cladd-xl"
+								contentClassName="flex flex-col gap-cladd-3xs p-cladd-2xs"
+							>
+								<div className="flex flex-wrap items-center justify-between gap-cladd-3xs">
+									<div className="flex min-w-0 flex-col">
+										<p className="text-cladd-sm font-semibold">{m.titre}</p>
+										<p className="text-cladd-xs text-cladd-fg-soft">
+											{m.indisponible ?? m.description}
+										</p>
+									</div>
+									{m.indisponible === null ? (
+										<BoutonSecondaire
+											onClick={() =>
+												choisir(
+													actif
+														? null
+														: choixInitial(
+																m.cle,
+																courriers.aujourdHui,
+																courriers.delaiRelanceParDefaut,
+																{
+																	personneNommee: courriers.personneNommee,
+																	ordonnance: courriers.ordonnanceLue,
+																	...(courriers.echeancierConvenu === undefined
+																		? {}
+																		: { calendrier: courriers.echeancierConvenu })
+																}
+															)
+												)
+											}
+										>
+											{actif ? 'Fermer' : 'Préparer'}
+										</BoutonSecondaire>
+									) : null}
 								</div>
-								{m.indisponible === null ? (
-									<BoutonSecondaire
-										onClick={() =>
-											choisir(
-												actif
-													? null
-													: choixInitial(
-															m.cle,
-															courriers.aujourdHui,
-															courriers.delaiRelanceParDefaut,
-															{
-																personneNommee: courriers.personneNommee,
-																ordonnance: courriers.ordonnanceLue,
-																...(courriers.echeancierConvenu === undefined
-																	? {}
-																	: { calendrier: courriers.echeancierConvenu })
-															}
-														)
-											)
-										}
-									>
-										{actif ? 'Fermer' : 'Préparer'}
-									</BoutonSecondaire>
+								{actif && choix !== null ? (
+									<>
+										<FormulaireChoix
+											choix={choix}
+											onChange={choisir}
+											intervenants={courriers.intervenants}
+											professionnels={courriers.professionnels}
+											dirigeantsDuClient={courriers.dirigeantsDuClient}
+											citationAnnonce={courriers.citationAnnonce}
+											personneNommee={courriers.personneNommee}
+											ordonnanceLue={courriers.ordonnanceLue}
+											echeancierConvenu={courriers.echeancierConvenu}
+										/>
+										<Apercu
+											apercu={courriers.apercu}
+											{...(courriers.debiteurId === undefined
+												? {}
+												: { debiteurId: courriers.debiteurId })}
+											enCours={courriers.enCours}
+											onPreparer={() => {
+												courriers.onPreparer(choix);
+												choisir(null);
+											}}
+										/>
+									</>
 								) : null}
-							</div>
-							{actif && choix !== null ? (
-								<>
-									<FormulaireChoix
-										choix={choix}
-										onChange={choisir}
-										intervenants={courriers.intervenants}
-										professionnels={courriers.professionnels}
-										dirigeantsDuClient={courriers.dirigeantsDuClient}
-										citationAnnonce={courriers.citationAnnonce}
-										personneNommee={courriers.personneNommee}
-										ordonnanceLue={courriers.ordonnanceLue}
-										echeancierConvenu={courriers.echeancierConvenu}
-									/>
-									<Apercu
-										apercu={courriers.apercu}
-										{...(courriers.debiteurId === undefined
-											? {}
-											: { debiteurId: courriers.debiteurId })}
-										enCours={courriers.enCours}
-										onPreparer={() => {
-											courriers.onPreparer(choix);
-											choisir(null);
-										}}
-									/>
-								</>
-							) : null}
-						</Surface>
-					);
-				})}
-			</div>
+							</Surface>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

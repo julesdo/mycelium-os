@@ -2,6 +2,15 @@ import { useMutation } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 import type { GestesDuGuide } from '../screens/dossier-guide/commun';
+import type { ChoixCourrierAffiche } from '../ui';
+
+/** Les choix d'un courrier, tels que Convex les attend : un professionnel est un identifiant. */
+export function versConvex(choix: ChoixCourrierAffiche) {
+	if (choix.modele === 'TRANSMISSION_AVOCAT' || choix.modele === 'DEMANDE_SIGNIFICATION') {
+		return { ...choix, intervenantId: choix.intervenantId as Id<'intervenants'> | null };
+	}
+	return choix;
+}
 
 /**
  * LES GESTES DE LA CONVERSATION D'UN DOSSIER, BRANCHÉS (22/10/2026).
@@ -21,6 +30,11 @@ export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string):
 	const declarerFait = useMutation(api.recouvrement.creances.declarerFait);
 	const classerLeDossier = useMutation(api.recouvrement.classement.classer);
 	const rouvrirLeDossier = useMutation(api.recouvrement.classement.rouvrir);
+	const preparer = useMutation(api.recouvrement.envois.preparer);
+	const valider = useMutation(api.recouvrement.envois.valider);
+	const partir = useMutation(api.recouvrement.envois.declarerParti);
+	const abandonner = useMutation(api.recouvrement.envois.abandonner);
+	const retenir = useMutation(api.recouvrement.pilote.retenir);
 
 	/** Défaire une note qu'on vient de poser : elle s'efface vraiment. */
 	const effacerLaNote = (entreeId: Id<'suiviDossier'>) => async () => {
@@ -66,6 +80,17 @@ export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string):
 			return async () => {
 				await rouvrirLeDossier({ creanceId });
 			};
+		},
+		preparerCourrier: async (choix) => await preparer({ creanceId, choix: versConvex(choix) }),
+		validerCourrier: async (envoiId) => await valider({ envoiId: envoiId as Id<'envois'> }),
+		declarerParti: async (envoiId, partiLe, avecRappel) => {
+			await partir({ envoiId: envoiId as Id<'envois'>, partiLe, avecRappel });
+		},
+		abandonnerCourrier: async (envoiId) => {
+			await abandonner({ envoiId: envoiId as Id<'envois'> });
+		},
+		retenirRelance: async (envoiId) => {
+			await retenir({ envoiId: envoiId as Id<'envois'> });
 		}
 	};
 }

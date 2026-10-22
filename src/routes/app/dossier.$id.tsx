@@ -18,7 +18,7 @@ import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
 import { SECTIONS_CREANCE, type SectionCreance } from '../../screens/sections-creance';
 import { useDirigeantsDuClient } from '../../app/use-professionnels';
 import { useAnnuaire } from '../../app/use-annuaire';
-import { useGestesDuGuide } from '../../app/gestes-guides';
+import { useGestesDuGuide, versConvex } from '../../app/gestes-guides';
 import { useGestesDeDossier } from '../../app/gestes-dossier';
 import {
 	modelesProposables,
@@ -91,12 +91,6 @@ function CreanceEnErreur() {
  * lecture.
  */
 /** Les choix de l'écran, avec les identifiants typés que Convex attend. */
-function versConvex(choix: ChoixCourrierAffiche) {
-	if (choix.modele === 'TRANSMISSION_AVOCAT' || choix.modele === 'DEMANDE_SIGNIFICATION') {
-		return { ...choix, intervenantId: choix.intervenantId as Id<'intervenants'> | null };
-	}
-	return choix;
-}
 
 /** Un courrier validé, en PDF, au caractère près. */
 async function telechargerLeCourrier(envoi: EnvoiAffiche) {

@@ -13,9 +13,13 @@
 export { cn } from './cn';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
 export {
+	CANAL_DU_COURRIER,
 	Courriers,
+	FormulaireChoix,
 	choixDeLAccord,
+	choixInitial,
 	modelesProposables,
+	type ModeleCourrierAffiche,
 	type ApercuAffiche,
 	type CalendrierConvenu,
 	type ChoixCourrierAffiche,
@@ -310,6 +314,7 @@ export {
 	useTravail,
 	type ChoixDeReponse
 } from './parcours-guide';
+export { CarteDeCourrier, CarteDeReglages, ManquesDuCourrier } from './carte-courrier';
 export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */
@@ -344,7 +349,7 @@ export {
 	type DepotEnCours
 } from './veilleur';
 export { Solidite, type SoliditeAffichee, type EtageAffiche } from './solidite';
-export { Relances, type NiveauAffiche } from './relances';
+export type { NiveauAffiche } from './relances';
 export {
 	Lettrage,
 	type PropositionLettrage,

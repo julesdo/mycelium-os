@@ -3,6 +3,8 @@ import { CadreGuide, Echange, ListeDeReponses, PleinEcran, ReponseDePlume } from
 import type { SectionCreance } from '../sections-creance';
 import type { DossierDuGuide, GestesDuGuide, PropsDuFil } from './commun';
 import { FilClassement } from './fil-classement';
+import { FilEcrire, type LettresDuGuide } from './fil-ecrire';
+import { FilRelire } from './fil-relire';
 import { FilRappel } from './fil-rappel';
 import { FilReponse } from './fil-reponse';
 import { intentionsDuDossier, libelleDIntention, type IntentionDuDossier } from './intentions';
@@ -21,7 +23,7 @@ import { intentionsDuDossier, libelleDIntention, type IntentionDuDossier } from 
  */
 
 /** Les gestes qui se font dans la conversation ; les autres mènent à leur parcours. */
-const GUIDEES: readonly IntentionDuDossier[] = ['REPONSE', 'RAPPEL', 'CLASSER'];
+const GUIDEES: readonly IntentionDuDossier[] = ['ECRIRE', 'RELIRE', 'REPONSE', 'RAPPEL', 'CLASSER'];
 
 export function estGuidee(intention: IntentionDuDossier): boolean {
 	return GUIDEES.includes(intention);
@@ -48,6 +50,7 @@ export function menerHorsConversation(
 ): boolean {
 	switch (intention) {
 		case 'ECRIRE':
+		case 'RELIRE':
 			sorties.onOuvrirRubrique('courriers');
 			return true;
 		case 'QUESTIONS':
@@ -70,20 +73,28 @@ export function menerHorsConversation(
 export function ConversationDuDossier({
 	ouverte,
 	depart,
+	envoiDepart = null,
 	onFermer,
 	dossier,
 	gestes,
+	lettres,
 	sorties
 }: {
 	readonly ouverte: boolean;
 	/** Le geste déjà choisi à l'ouverture (une réponse de la carte de Plume), ou rien. */
 	readonly depart: IntentionDuDossier | null;
+	/** Le courrier à relire, quand on l'a touché dans la liste des courriers. */
+	readonly envoiDepart?: string | null;
 	readonly onFermer: () => void;
 	readonly dossier: DossierDuGuide;
 	readonly gestes: GestesDuGuide;
+	/** Les courriers et les e-mails du dossier, en direct : un courrier change sous nos yeux. */
+	readonly lettres: LettresDuGuide;
 	readonly sorties: SortiesDeLaConversation;
 }) {
 	const [intention, setIntention] = useState<IntentionDuDossier | null>(depart);
+	/* Le courrier à relire, quand la conversation enchaîne depuis sa préparation. */
+	const [envoiId, setEnvoiId] = useState<string | null>(envoiDepart);
 	/* « Autre chose » à la fin d'un geste : la conversation repart de zéro. */
 	const [tour, setTour] = useState(0);
 
@@ -103,6 +114,13 @@ export function ConversationDuDossier({
 
 	function recommencer() {
 		setIntention(null);
+		setEnvoiId(null);
+		setTour((t) => t + 1);
+	}
+
+	function relire(id: string) {
+		setIntention('RELIRE');
+		setEnvoiId(id);
 		setTour((t) => t + 1);
 	}
 
@@ -147,6 +165,17 @@ export function ConversationDuDossier({
 									sorties.onAccordEcrit?.(calendrier);
 								}
 							})}
+				/>
+			) : intention === 'ECRIRE' ? (
+				<FilEcrire key={tour} {...commun} titre={titre} lettres={lettres} onRelire={relire} />
+			) : intention === 'RELIRE' ? (
+				<FilRelire
+					key={tour}
+					{...commun}
+					titre={titre}
+					lettres={lettres}
+					envoiId={envoiId}
+					onRelire={relire}
 				/>
 			) : intention === 'RAPPEL' ? (
 				<FilRappel key={tour} {...commun} titre={titre} />
