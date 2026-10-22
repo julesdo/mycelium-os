@@ -610,12 +610,20 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   **Le réveil** (lot 6, `recouvrement/reveil.ts`) : après quatorze jours sans visite ET quelque
   chose de vrai depuis (un paiement, une réponse, une date limite), UN e-mail « Pendant votre
   absence », au créneau des relances, coupé par les conseils du profil ; rien de vrai, rien
-  d'envoyé. **La recommandation** (lot 7, `croissance/parrainage.ts`) : un lien personnel dans
-  Votre compte (« Recommander Letikette ») ; le code suivi est gardé dans l'onglet
-  (`letikette.parrain`) puis rattache l'établissement créé ; à sa première vraie échéance payée,
-  un mois aux deux, une remise Paddle égale au prix mensuel HT de la formule sur la prochaine
-  période, qui attend la fin d'une autre remise ; douze par an au plus pour qui recommande, qui ne
-  voit que des nombres. Fermée tant que `paiementOuvert()` ne l'est pas (CGV 2.5, politique 2.10).
+  d'envoyé. **La recommandation** (lot 7, `croissance/parrainage.ts`, refaite le 22/10 sur
+  Revolut, Wise, Gusto, Deel, N26, Cash App, Cleo, Wispr Flow et Numo — le fondateur : « pas du
+  tout marketing, juste un lien comme ça avec un seul bouton ») : une PAGE, `/app/recommander`
+  (`ui/recommandation.tsx`) — la carte cadeau « Offert par » au nom du gérant, l'offre des deux
+  côtés, « Partager mon lien » puis les canaux en ronds (WhatsApp, SMS, e-mail, LinkedIn, QR code),
+  l'objectif « votre année offerte » en douze segments, chaque invitation par sa date et son étape
+  (jamais un nom), trois étapes et la FAQ. On y arrive par une carte sous l'identité du Compte,
+  « Recommander » en pied de la barre latérale et la célébration. Le lien est
+  `/invitation/<code>` : l'invité y voit qui lui offre le mois, sur la même carte, puis
+  l'inscription (`?cadeau=`) et le choix de la formule le rappellent. À sa première vraie échéance
+  payée, un mois aux deux, une remise Paddle égale au prix mensuel HT de la formule sur la
+  prochaine période, qui attend la fin d'une autre remise ; douze par an au plus pour qui
+  recommande, prévenu à l'inscription et au mois gagné (notification `RECOMMANDATION`). Fermée
+  tant que `paiementOuvert()` ne l'est pas (CGV 2.5, politique 2.10).
 - **Le moteur de croissance** (16/10/2026, stratégie `docs/superpowers/specs/2026-10-16-strategie-de-croissance.md`,
   moteur `2026-10-16-moteur-de-croissance-design.md`). Le fondateur : « commencer à la main au lieu
   d'exploser un budget ». La prospection se fait d'abord à la main (`docs/croissance/phase-manuelle.md`,
