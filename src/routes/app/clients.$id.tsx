@@ -50,9 +50,15 @@ import { EcranDebiteur } from '../../screens/debiteur';
  * on ne pose pas d'état dans un effet.
  */
 export const Route = createFileRoute('/app/clients/$id')({
-	/** `?ouvrir=identite` ouvre l'identité à l'arrivée : la bulle de Plume y mène, pour l'e-mail qui manque. */
-	validateSearch: (recherche: Record<string, unknown>): { ouvrir?: 'identite' } =>
-		recherche.ouvrir === 'identite' ? { ouvrir: 'identite' } : {},
+	/**
+	 * `?ouvrir=identite` ouvre l'identité à l'arrivée : la bulle de Plume y mène, pour
+	 * l'e-mail qui manque. `?ouvrir=virement` ouvre « Un virement reçu » : la
+	 * conversation d'un dossier y mène quand le client dit avoir payé (22/10/2026).
+	 */
+	validateSearch: (recherche: Record<string, unknown>): { ouvrir?: 'identite' | 'virement' } =>
+		recherche.ouvrir === 'identite' || recherche.ouvrir === 'virement'
+			? { ouvrir: recherche.ouvrir }
+			: {},
 	// Les données de la fiche partent au toucher de la carte (`app/prechargement.ts`).
 	loader: ({ params }) => {
 		const debiteurId = params.id as Id<'debiteurs'>;

@@ -1,16 +1,10 @@
-import { useState } from 'react';
-import { Input } from '@cladd-ui/react';
-import { CheckIcon } from 'lucide-react';
-import { BoutonPrincipal, BoutonSecondaire } from './bouton';
-import { Champ, MessageErreur } from './cadre-auth';
-import { cn } from './cn';
+import { BoutonSecondaire } from './bouton';
 import { dateCourte } from './format';
-import { Lien } from './lien';
-import { FeuillePleinEcran } from './plein-ecran';
 import { NOM_DU_PILOTE } from './plume';
 
 /**
- * CLASSER UN DOSSIER — en feuille, une raison à choisir (08/10/2026).
+ * CLASSER UN DOSSIER — une raison à choisir (08/10/2026), dans la conversation du
+ * dossier depuis le 22/10/2026 (`screens/dossier-guide/`).
  *
  * Sur le modèle de Cash App (« What type of issue are you having? ») : une carte
  * par raison, son titre et une ligne qui dit ce qu'elle veut dire, puis UN bouton.
@@ -23,7 +17,7 @@ import { NOM_DU_PILOTE } from './plume';
 
 export type MotifClassement = 'GESTE_COMMERCIAL' | 'IRRECOUVRABLE' | 'ERREUR' | 'AUTRE';
 
-const MOTIFS: readonly {
+export const MOTIFS_DE_CLASSEMENT: readonly {
 	readonly cle: MotifClassement;
 	readonly titre: string;
 	readonly ligne: string;
@@ -45,109 +39,6 @@ const MOTIFS: readonly {
 	},
 	{ cle: 'AUTRE', titre: 'Autre raison', ligne: 'Dites-la en quelques mots.' }
 ];
-
-export function FeuilleClassement({
-	ouverte,
-	onFermer,
-	debiteurId,
-	enCours = false,
-	erreur = null,
-	onClasser
-}: {
-	readonly ouverte: boolean;
-	readonly onFermer: () => void;
-	readonly debiteurId: string;
-	readonly enCours?: boolean;
-	readonly erreur?: string | null;
-	readonly onClasser: (motif: MotifClassement, note?: string) => void;
-}) {
-	const [motif, setMotif] = useState<MotifClassement | null>(null);
-	const [note, setNote] = useState('');
-	const pret = motif !== null && (motif !== 'AUTRE' || note.trim() !== '');
-
-	return (
-		<FeuillePleinEcran
-			ouverte={ouverte}
-			onFermer={onFermer}
-			titre="Classer le dossier"
-			pied={
-				<>
-					<BoutonPrincipal
-						pleineLargeur
-						disabled={!pret || enCours}
-						onClick={() => {
-							if (motif === null) return;
-							onClasser(motif, note.trim() === '' ? undefined : note.trim());
-						}}
-					>
-						{enCours ? 'Enregistrement…' : 'Classer le dossier'}
-					</BoutonPrincipal>
-					<p className="px-1 text-center text-cladd-3xs leading-relaxed text-cladd-fg-softer">
-						Rien n’est effacé. Les relances s’arrêtent, le dossier quitte vos alertes et ce qui vous
-						est dû, et se rouvre d’un toucher.
-					</p>
-				</>
-			}
-		>
-			<div className="flex flex-col gap-cladd-3xs">
-				<p className="px-1 text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-					Il a payé ?{' '}
-					<Lien
-						to="/app/clients/$id"
-						params={{ id: debiteurId }}
-						className="font-medium text-cladd-primary underline underline-offset-2"
-					>
-						Notez le règlement sur sa fiche
-					</Lien>{' '}
-					: c’est lui qui solde les factures.
-				</p>
-
-				<div role="radiogroup" aria-label="Pourquoi le classer" className="flex flex-col gap-2">
-					{MOTIFS.map((m) => {
-						const choisi = motif === m.cle;
-						return (
-							<button
-								key={m.cle}
-								type="button"
-								role="radio"
-								aria-checked={choisi}
-								onClick={() => setMotif(m.cle)}
-								className={cn(
-									'verre-carte verre-bouton flex min-h-14 w-full items-center gap-3 rounded-cladd-xl px-3.5 py-2.5 text-left',
-									choisi && 'outline-2 outline-cladd-primary'
-								)}
-							>
-								<span className="flex min-w-0 flex-1 flex-col">
-									<span className="text-cladd-xs font-semibold">{m.titre}</span>
-									<span className="text-cladd-2xs text-cladd-fg-soft">{m.ligne}</span>
-								</span>
-								<span
-									aria-hidden
-									className={cn(
-										'flex size-5 shrink-0 items-center justify-center rounded-full border-2',
-										choisi
-											? 'border-cladd-primary bg-cladd-primary text-white'
-											: 'border-cladd-fg/25'
-									)}
-								>
-									{choisi ? <CheckIcon className="size-3" strokeWidth={3} /> : null}
-								</span>
-							</button>
-						);
-					})}
-				</div>
-
-				{motif === null ? null : (
-					<Champ etiquette={motif === 'AUTRE' ? 'Pourquoi' : 'Un mot pour plus tard (facultatif)'}>
-						<Input value={note} onChange={setNote} placeholder="Ce que vous voulez retenir" />
-					</Champ>
-				)}
-
-				{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
-			</div>
-		</FeuillePleinEcran>
-	);
-}
 
 /** Le dossier classé, en tête de sa page : pourquoi, quand, et le geste qui le rouvre. */
 export function BandeauDossierClasse({

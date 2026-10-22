@@ -455,7 +455,16 @@ function CorpsDebiteur({
 	const provenance = useProvenance();
 	/** Les rangées ouvertes. Aucune à l'arrivée : leur valeur se lit fermée. */
 	const [ouvertes, setOuvertes] = useState<readonly string[]>(() =>
-		rubriqueDemandee === undefined ? [] : [rubriqueDemandee.rubrique]
+		rubriqueDemandee === undefined || rubriqueDemandee.rubrique === 'virement'
+			? []
+			: [rubriqueDemandee.rubrique]
+	);
+	/**
+	 * La feuille « Un virement reçu », ouverte par son action rapide — ou à l'arrivée
+	 * (`?ouvrir=virement`), quand la conversation d'un dossier y mène.
+	 */
+	const [virementOuvert, setVirementOuvert] = useState(
+		() => rubriqueDemandee?.rubrique === 'virement'
 	);
 	/*
 	  UNE DEMANDE NOUVELLE OUVRE SA RANGÉE — ajusté pendant le rendu, comme le veut
@@ -465,12 +474,11 @@ function CorpsDebiteur({
 	if (rubriqueDemandee !== undefined && rubriqueDemandee.jeton !== demandeVue) {
 		setDemandeVue(rubriqueDemandee.jeton);
 		const rubrique = rubriqueDemandee.rubrique;
-		setOuvertes((avant) => (avant.includes(rubrique) ? avant : [...avant, rubrique]));
+		if (rubrique === 'virement') setVirementOuvert(true);
+		else setOuvertes((avant) => (avant.includes(rubrique) ? avant : [...avant, rubrique]));
 	}
 	/** La feuille « Lancer un dossier ». */
 	const [feuilleOuverte, setFeuilleOuverte] = useState(false);
-	/** La feuille « Un virement reçu », ouverte par son action rapide. */
-	const [virementOuvert, setVirementOuvert] = useState(false);
 
 	/**
 	 * ⚠️ DEUX LISTES, PARCE QU'UNE FACTURE RÉGLÉE N'APPELLE PLUS RIEN. Mêlée aux

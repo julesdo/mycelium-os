@@ -7,13 +7,10 @@ import {
 	ApercuDuSuivi,
 	Avatar,
 	BandeauDossierClasse,
-	FeuilleClassement,
-	type MotifClassement,
-	FeuilleEcheancier,
-	FeuilleReponseClient,
 	SuiviEcheancier,
 	choixDeLAccord,
 	type EcheancierAffiche,
+	BoutonDeReponse,
 	BoutonPrincipal,
 	BoutonSecondaire,
 	BoutonTexte,
@@ -24,7 +21,6 @@ import {
 	EtatDuDossier,
 	FeuilleDeclaration,
 	FeuilleVoie,
-	Lien,
 	LiensDePaiement,
 	LigneAnalyse,
 	LigneBouton,
@@ -82,12 +78,21 @@ import {
 	NOM_DU_PILOTE,
 	Plume,
 	PlumeSurLeDossier,
+	RangeeDeReponses,
 	SuiteDuPlan,
 	TexteQuiMene,
 	dateRelative,
 	type HumeurPlume
 } from '../ui';
 import { TITRE_ECRAN } from './titres';
+import type { DossierDuGuide, GestesDuGuide } from './dossier-guide/commun';
+import {
+	ConversationDuDossier,
+	estGuidee,
+	menerHorsConversation,
+	type SortiesDeLaConversation
+} from './dossier-guide/conversation';
+import type { DossierPourLesIntentions, IntentionDuDossier } from './dossier-guide/intentions';
 
 /**
  * UN DOSSIER — COMBIEN, OÙ ON EN EST, ET LE SEUL GESTE QUI COMPTE.
@@ -214,6 +219,14 @@ export interface CreanceOuverte {
 	/** Ouvre la conversation de Plume sur ce dossier, une question prête dans le champ. */
 	readonly onDemanderAPlume?: (question?: string) => void;
 	/**
+	 * LES GESTES DE LA CONVERSATION DU DOSSIER (22/10/2026) : sa promesse, un paiement
+	 * en plusieurs fois, une contestation, une note, un rappel, le classement. Absents,
+	 * la conversation ne propose que ce qui mène ailleurs.
+	 */
+	readonly gestesGuides?: GestesDuGuide;
+	/** La fiche du client, sa feuille « Un virement reçu » ouverte. */
+	readonly onNoterUnReglement?: () => void;
+	/**
 	 * L'adresse électronique du client, quand elle est connue.
 	 *
 	 * ⚠️ SANS ELLE, UN BROUILLON N'A PAS DE DESTINATAIRE. Elle voyage jusqu'ici
@@ -266,25 +279,19 @@ export interface CreanceOuverte {
 		readonly montant?: bigint;
 	};
 	/**
-	 * LE CLIENT A RÉPONDU (08/10/2026) — ce qu'il faut pour noter sa réponse d'un
-	 * geste : ce qui reste dû (le montant proposé d'office, la somme d'un
-	 * échéancier), l'échéancier qui court, et les gestes. Absent : la page ne
-	 * propose pas la question (la salle d'exposition, un dossier réglé).
-	 */
-	/**
-	 * LE DOSSIER CLASSÉ PAR LE GÉRANT (08/10/2026), et les deux gestes : classer,
-	 * rouvrir. Absents : la page ne propose ni l'un ni l'autre.
+	 * LE DOSSIER CLASSÉ PAR LE GÉRANT (08/10/2026), et le geste qui le rouvre. Le
+	 * classer se fait dans la conversation du dossier (`gestesGuides`).
 	 */
 	readonly classement?: { readonly libelle: string; readonly le: string; readonly note?: string };
-	readonly onClasserLeDossier?: (motif: MotifClassement, note?: string) => Promise<boolean>;
 	readonly onRouvrirLeDossier?: () => void;
+	/**
+	 * LA PAROLE DU CLIENT (08/10/2026) — ce qui reste dû (le montant proposé d'office,
+	 * la somme d'un échéancier) et l'échéancier qui court. Ce qu'il a répondu se note
+	 * dans la conversation du dossier (`gestesGuides`).
+	 */
 	readonly reponse?: {
 		readonly resteDu: bigint;
 		readonly echeancier: EcheancierAffiche | null;
-		readonly enCours: boolean;
-		readonly erreur: string | null;
-		readonly onPromesse: (promesse: { montantEuros: string; le: string }) => void;
-		readonly onConvenirEcheancier: (choix: { nombre: number; premiereLe: string }) => void;
 		readonly onArreterEcheancier: (id: string) => void;
 	};
 	/** Le gérant a laissé le pilote relancer seul : le plan dit alors « le pilote l’envoie ». */
@@ -398,9 +405,15 @@ export function EcranCreance({
 }) {
 	const pret = donnees.etat === 'pret' ? donnees.valeur : null;
 	const deuxVolets = useDeuxVolets();
-	const [reponseOuverte, setReponseOuverte] = useState(false);
-	const [echeancierOuvert, setEcheancierOuvert] = useState(false);
-	const [classementOuvert, setClassementOuvert] = useState(false);
+	/**
+	 * LA CONVERSATION DU DOSSIER (22/10/2026) : ouverte, et le geste déjà choisi. Le
+	 * jeton la remonte à chaque ouverture : elle repart de sa première question.
+	 */
+	const [conversation, setConversation] = useState<{
+		readonly ouverte: boolean;
+		readonly depart: IntentionDuDossier | null;
+		readonly jeton: number;
+	}>({ ouverte: false, depart: null, jeton: 0 });
 
 	/**
 	 * LES PANNEAUX OUVERTS — aucun à l'arrivée.
@@ -439,6 +452,45 @@ export function EcranCreance({
 				.getElementById(`rangee-${cle}`)
 				?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 		);
+	}
+
+	const sorties: SortiesDeLaConversation | null =
+		pret === null
+			? null
+			: {
+					onOuvrirRubrique: ouvrir,
+					onAjouterDocument: pret.onAjouterPieces,
+					...(pret.onDemanderAPlume === undefined
+						? {}
+						: { onDemanderAPlume: () => pret.onDemanderAPlume?.() }),
+					onNoterUnReglement: pret.onNoterUnReglement ?? (() => undefined),
+					...(accordPossible(pret)
+						? {
+								onAccordEcrit: (calendrier: { nombre: number; premiereLe: string }) => {
+									pret.courriers.onChoisir(
+										choixDeLAccord(pret.courriers, {
+											nombre: calendrier.nombre,
+											premiereEcheance: calendrier.premiereLe,
+											intervalleMois: 1
+										})
+									);
+									ouvrir('courriers');
+								}
+							}
+						: {})
+				};
+
+	/**
+	 * Ouvre la conversation sur un geste (ou sur « Que voulez-vous faire ? »), ou mène
+	 * le geste qui a déjà son parcours ailleurs.
+	 */
+	function demander(intention: IntentionDuDossier | null) {
+		if (sorties === null) return;
+		if (intention !== null && (!estGuidee(intention) || pret?.gestesGuides === undefined)) {
+			menerHorsConversation(intention, sorties);
+			return;
+		}
+		setConversation((avant) => ({ ouverte: true, depart: intention, jeton: avant.jeton + 1 }));
 	}
 
 	return (
@@ -500,33 +552,14 @@ export function EcranCreance({
 						<ZoneDuTableau place="cote-collant">
 							{pret.aDemarrer === true && pret.onDemarrer !== undefined ? (
 								<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
-							) : pret.onDemanderAPlume === undefined ? null : (
+							) : (
 								<PlumeSurLeDossier
-									{...(() => {
-										const { mene, ...reste } = ceQueFaitPlume(pret);
-										if (mene === undefined) return reste;
-										return {
-											...reste,
-											action:
-												mene.vers === 'FICHE' ? (
-													<BoutonSecondaire
-														as={Lien}
-														to="/app/clients/$id"
-														params={{ id: pret.debiteurId } as never}
-													>
-														{mene.libelle}
-													</BoutonSecondaire>
-												) : (
-													<BoutonSecondaire onClick={() => ouvrir(mene.vers as SectionCreance)}>
-														{mene.libelle}
-													</BoutonSecondaire>
-												)
-										};
-									})()}
+									{...ceQueFaitPlume(pret)}
 									recupere={pret.dejaRecupere ?? 0n}
 									total={pret.totalFactures ?? 0n}
-									suggestions={SUGGESTIONS_SUR_LE_DOSSIER}
-									onDemander={pret.onDemanderAPlume}
+									reponses={
+										<ReponsesDuMoment creance={pret} onRubrique={ouvrir} onDemander={demander} />
+									}
 								/>
 							)}
 						</ZoneDuTableau>
@@ -552,15 +585,7 @@ export function EcranCreance({
 								/>
 							)}
 
-							<CarteDeLEtat
-								creance={pret}
-								onOuvrir={ouvrir}
-								{...(pret.reponse === undefined ||
-								pret.etapes.etape === 'REGLE' ||
-								pret.classement !== undefined
-									? {}
-									: { onReponse: () => setReponseOuverte(true) })}
-							/>
+							<CarteDeLEtat creance={pret} />
 
 							{/* CE QUI VIENT, SOUS CE QUI EST : la frise continue après aujourd’hui. */}
 							{pret.planAVenir === undefined ? null : (
@@ -586,85 +611,21 @@ export function EcranCreance({
 									avatar={<Avatar nom={pret.debiteur} className="size-8" />}
 								/>
 							</ListeDeRangees>
-
-							{/* CLASSER, EN DERNIER ET EN TEXTE : une décision rare, jamais le geste du jour. */}
-							{pret.onClasserLeDossier === undefined || pret.classement !== undefined ? null : (
-								<BoutonTexte className="self-center" onClick={() => setClassementOuvert(true)}>
-									Classer ce dossier
-								</BoutonTexte>
-							)}
 						</ZoneDuTableau>
 					</TableauDeBord>
 				</SectionsDepliables>
 			)}
 
-			{pret === null || pret.onClasserLeDossier === undefined ? null : (
-				<FeuilleClassement
-					ouverte={classementOuvert}
-					onFermer={() => setClassementOuvert(false)}
-					debiteurId={pret.debiteurId}
-					onClasser={(motif, note) => {
-						void pret.onClasserLeDossier?.(motif, note).then((fait) => {
-							if (fait) setClassementOuvert(false);
-						});
-					}}
+			{pret === null || sorties === null || pret.gestesGuides === undefined ? null : (
+				<ConversationDuDossier
+					key={conversation.jeton}
+					ouverte={conversation.ouverte}
+					depart={conversation.depart}
+					onFermer={() => setConversation((avant) => ({ ...avant, ouverte: false }))}
+					dossier={dossierDuGuide(pret)}
+					gestes={pret.gestesGuides}
+					sorties={sorties}
 				/>
-			)}
-
-			{pret === null || pret.reponse === undefined ? null : (
-				<>
-					<FeuilleReponseClient
-						ouverte={reponseOuverte}
-						onFermer={() => setReponseOuverte(false)}
-						client={pret.debiteur}
-						debiteurId={pret.debiteurId}
-						resteDu={pret.reponse.resteDu}
-						aujourdHui={pret.aujourdHui}
-						enCours={pret.reponse.enCours}
-						erreur={pret.reponse.erreur}
-						onPromesse={pret.reponse.onPromesse}
-						{...(pret.reponse.resteDu <= 0n ||
-						pret.reponse.echeancier?.etat === 'EN_COURS' ||
-						pret.reponse.echeancier?.etat === 'EN_RETARD'
-							? {}
-							: { onEcheancier: () => setEcheancierOuvert(true) })}
-						onContestation={() => ouvrir('litige')}
-						onAutre={() => ouvrir('suivi')}
-					/>
-					<FeuilleEcheancier
-						ouverte={echeancierOuvert}
-						onFermer={() => setEcheancierOuvert(false)}
-						client={pret.debiteur}
-						resteDu={pret.reponse.resteDu}
-						aujourdHui={pret.aujourdHui}
-						enCours={pret.reponse.enCours}
-						erreur={pret.reponse.erreur}
-						onConvenir={(choix) => {
-							pret.reponse?.onConvenirEcheancier(choix);
-							setEcheancierOuvert(false);
-						}}
-						{...(accordPossible(pret)
-							? {
-									onAccordEcrit: (calendrier: { nombre: number; premiereLe: string } | null) => {
-										setEcheancierOuvert(false);
-										pret.courriers.onChoisir(
-											choixDeLAccord(
-												pret.courriers,
-												calendrier === null
-													? undefined
-													: {
-															nombre: calendrier.nombre,
-															premiereEcheance: calendrier.premiereLe,
-															intervalleMois: 1
-														}
-											)
-										);
-										ouvrir('courriers');
-									}
-								}
-							: {})}
-					/>
-				</>
 			)}
 		</PageEcran>
 	);
@@ -760,51 +721,142 @@ function etatEnClair(creance: CreanceOuverte): { titre: string; sousTitre: strin
 	}
 }
 
+/** Ce qu'ouvre la proposition du moment : un geste guidé (ou « Que voulez-vous faire ? »), ou une rubrique. */
+type MeneLaProposition =
+	| { readonly intention: IntentionDuDossier | null }
+	| { readonly rubrique: SectionCreance };
+
 /**
- * LE SEUL GESTE MIS EN AVANT, ET CE QU'IL OUVRE.
+ * LA PROPOSITION DU MOMENT — le seul bouton plein de la page, sous la phrase de Plume.
  *
  * ⚠️ CE QUI ATTEND LE GÉRANT PASSE AVANT CE QU'IL POURRAIT FAIRE. Un courrier
  * préparé qui attend sa validation ne part pas tant qu'il n'est pas relu : c'est
- * lui, le travail du jour.
+ * lui, le travail du jour. Une relance que Plume va envoyer se regarde avant.
  *
  * ⚠️ « RELANCER » NE SE PROPOSE PAS À UN CLIENT EN PROCÉDURE COLLECTIVE, ni à une
- * entreprise radiée : les relances y sont suspendues, et le bouton mènerait à
- * trois refus. « Préparer un courrier » y mène aux courriers que la situation
- * permet — sans en nommer aucun, parce que les nommer serait choisir.
+ * entreprise radiée : les relances y sont suspendues. « Préparer un courrier » y
+ * mène aux courriers que la situation permet — sans en nommer aucun, parce que les
+ * nommer serait choisir.
+ *
+ * ⚠️ AU BOUT DU PLAN, « DÉCIDER DE LA SUITE » ouvre « Que voulez-vous faire ? » :
+ * les suites s'y énumèrent au même rang (un professionnel, un rappel, classer),
+ * aucune n'est mise en avant.
  *
  * ⚠️ AUCUN DE CES LIBELLÉS NE NOMME UNE VOIE DE DROIT (ligne rouge n° 3), et
  * `page-dossier.test.ts` lit ceux-ci pour le vérifier.
  */
 function gesteDuDossier(
 	creance: CreanceOuverte
-): { readonly libelle: string; readonly ouvre: SectionCreance } | null {
-	if (creance.etapes.etape === 'REGLE' || creance.classement !== undefined) return null;
+): { readonly libelle: string; readonly mene: MeneLaProposition } | null {
+	if (creance.classement !== undefined) return null;
+	if (creance.etapes.etape === 'REGLE') {
+		// Payé, et les pénalités ? Plume dit le chiffre ; réclamer ou classer reste au gérant.
+		const restant = creance.montantDuJour?.total ?? 0n;
+		return restant > 0n ? { libelle: 'Voir le calcul', mene: { rubrique: 'decompte' } } : null;
+	}
 
 	const aValider = creance.courriers.envois.filter((e) => e.etat === 'A_VALIDER').length;
 	if (aValider > 0) {
 		return {
 			libelle: aValider > 1 ? 'Relire les courriers' : 'Relire le courrier',
-			ouvre: 'courriers'
+			mene: { rubrique: 'courriers' }
 		};
 	}
-	if (creance.etapes.etape === 'TRIBUNAL') return { libelle: 'Suivre le dossier', ouvre: 'voies' };
+	if (creance.courriers.envois.some((e) => e.etat === 'PROGRAMME')) {
+		return { libelle: 'Voir la relance', mene: { rubrique: 'courriers' } };
+	}
+	if (creance.etapes.etape === 'TRIBUNAL') {
+		return { libelle: 'Suivre le dossier', mene: { rubrique: 'voies' } };
+	}
 	// ⚠️ LE CLIENT A DONNÉ SA PAROLE (une promesse, un échéancier) : « Relancer » en
-	// bouton plein contredirait ce que la page dit juste au-dessus. La relance reste
-	// possible dans Courriers ; la page n'en fait plus le geste mis en avant.
+	// bouton plein contredirait ce que Plume dit juste au-dessus. La relance reste
+	// possible par « Autre chose » ; la page n'en fait plus le geste mis en avant.
 	if (creance.pause !== undefined) return null;
 	if (creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE') {
-		return { libelle: 'Préparer un courrier', ouvre: 'courriers' };
+		return { libelle: 'Préparer un courrier', mene: { intention: 'ECRIRE' } };
 	}
-	return { libelle: 'Relancer', ouvre: 'courriers' };
+	const prochaine = creance.planAVenir?.[0];
+	if (prochaine !== undefined && !prochaine.automatique) {
+		return { libelle: 'Décider de la suite', mene: { intention: null } };
+	}
+	return { libelle: 'Relancer', mene: { intention: 'ECRIRE' } };
 }
 
-/** Ce qu'on demande le plus souvent à Plume sur un dossier : un toucher remplit le champ. */
-const SUGGESTIONS_SUR_LE_DOSSIER = [
-	'Relance-le',
-	'Il a promis de payer à la fin du mois',
-	'Rappelle-moi mardi prochain',
-	'Combien me doit-il, pénalités comprises ?'
-] as const;
+/**
+ * LES RÉPONSES DU MOMENT, SOUS LA PHRASE DE PLUME (22/10/2026) — la proposition en
+ * bouton plein, puis « Il m'a répondu » et « Autre chose », comme les réponses du
+ * démarrage. Chacune ouvre la conversation du dossier, déjà répondue.
+ */
+function ReponsesDuMoment({
+	creance,
+	onRubrique,
+	onDemander
+}: {
+	readonly creance: CreanceOuverte;
+	readonly onRubrique: (cle: SectionCreance) => void;
+	readonly onDemander: (intention: IntentionDuDossier | null) => void;
+}) {
+	const proposition = gesteDuDossier(creance);
+	const peutRepondre =
+		creance.gestesGuides !== undefined &&
+		creance.etapes.etape !== 'REGLE' &&
+		creance.classement === undefined;
+	return (
+		<>
+			{proposition === null ? null : (
+				<BoutonDeReponse
+					principal
+					libelle={proposition.libelle}
+					onClick={() => {
+						const mene = proposition.mene;
+						if ('rubrique' in mene) onRubrique(mene.rubrique);
+						else onDemander(mene.intention);
+					}}
+				/>
+			)}
+			<RangeeDeReponses>
+				{peutRepondre ? (
+					<BoutonDeReponse libelle="Il m’a répondu" onClick={() => onDemander('REPONSE')} />
+				) : null}
+				<BoutonDeReponse libelle="Autre chose" onClick={() => onDemander(null)} />
+			</RangeeDeReponses>
+		</>
+	);
+}
+
+/** Ce que la conversation du dossier sait pour proposer ses réponses. */
+function pourLesIntentions(creance: CreanceOuverte): DossierPourLesIntentions {
+	const classe = creance.classement !== undefined;
+	return {
+		classe,
+		regle: creance.etapes.etape === 'REGLE',
+		auTribunal: creance.etapes.etape === 'TRIBUNAL',
+		relancesSuspendues:
+			creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE',
+		questionsEnAttente: aConfirmer(creance),
+		classable: !classe && creance.gestesGuides !== undefined,
+		plumeJoignable: creance.onDemanderAPlume !== undefined
+	};
+}
+
+/** Ce que la conversation du dossier sait du dossier. */
+function dossierDuGuide(creance: CreanceOuverte): DossierDuGuide {
+	const resteDu = creance.reponse?.resteDu ?? creance.principalRestantDu;
+	const echeancier = creance.reponse?.echeancier;
+	return {
+		client: creance.debiteur,
+		aujourdHui: creance.aujourdHui,
+		resteDu,
+		echeancierPossible:
+			resteDu > 0n && echeancier?.etat !== 'EN_COURS' && echeancier?.etat !== 'EN_RETARD',
+		accordPossible: accordPossible(creance),
+		relanceParPlume:
+			creance.horsPilote !== true &&
+			creance.santeDebiteur !== 'PROCEDURE_COLLECTIVE' &&
+			creance.santeDebiteur !== 'RADIEE',
+		pourLesIntentions: pourLesIntentions(creance)
+	};
+}
 
 /** « jeudi 10:00 » : le jour et l'heure d'un départ, chez le gérant. */
 const DEPART = new Intl.DateTimeFormat('fr-FR', {
@@ -830,8 +882,6 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 	humeur: HumeurPlume;
 	phrase: string;
 	siRienNeBouge: string | null;
-	/** Ce que la phrase nomme, pour y mener : une rubrique de la page, ou la fiche du client. */
-	mene?: { readonly libelle: string; readonly vers: SectionCreance | 'FICHE' };
 } {
 	const client = creance.debiteur;
 	const quand = (le: string) =>
@@ -856,8 +906,7 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 			return {
 				humeur: 'content',
 				phrase: `Les factures sont payées. Les pénalités de retard et les frais calculés au jour d’aujourd’hui font ${eurosCentimes(restant)}.`,
-				siRienNeBouge: 'Vous pouvez les réclamer, ou classer le dossier.',
-				mene: { libelle: 'Voir le calcul', vers: 'decompte' }
+				siRienNeBouge: 'Vous pouvez les réclamer, ou classer le dossier.'
 			};
 		}
 		return { humeur: 'content', phrase: 'C’est réglé : tout est payé.', siRienNeBouge: null };
@@ -866,8 +915,7 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 		return {
 			humeur: 'repos',
 			phrase: 'Le dossier est entre les mains de votre conseil. Je surveille ses délais.',
-			siRienNeBouge: null,
-			mene: { libelle: 'Suivre la procédure', vers: 'voies' }
+			siRienNeBouge: null
 		};
 	}
 	if (creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE') {
@@ -885,24 +933,21 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 				programme.partiraLe === undefined
 					? `Je relance ${client} très bientôt, à votre nom.`
 					: `Je relance ${client} ${DEPART.format(new Date(programme.partiraLe))}, à votre nom.`,
-			siRienNeBouge: 'Vous pouvez encore retenir l’envoi.',
-			mene: { libelle: 'Voir le courrier', vers: 'courriers' }
+			siRienNeBouge: 'Vous pouvez encore retenir l’envoi.'
 		};
 	}
 	if (creance.courriers.envois.some((e) => e.etat === 'A_VALIDER')) {
 		return {
 			humeur: 'attention',
 			phrase: 'J’ai préparé une relance : elle attend votre relecture.',
-			siRienNeBouge: null,
-			mene: { libelle: 'Relire le courrier', vers: 'courriers' }
+			siRienNeBouge: null
 		};
 	}
 	if (creance.horsPilote === true) {
 		return {
 			humeur: 'repos',
 			phrase: 'Vous gardez ce client en main : je suis ses dates, sans le relancer.',
-			siRienNeBouge: null,
-			mene: { libelle: 'Voir sa fiche', vers: 'FICHE' }
+			siRienNeBouge: null
 		};
 	}
 	const prochaine = creance.planAVenir?.[0];
@@ -947,8 +992,7 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 			humeur: 'attention',
 			phrase: 'J’ai fait tout ce que prévoit le plan de relance.',
 			siRienNeBouge:
-				'La suite, c’est vous qui la décidez : la confier à un professionnel, lui laisser du temps, ou classer le dossier.',
-			mene: { libelle: 'Voir les suites possibles', vers: 'voies' }
+				'La suite, c’est vous qui la décidez : la confier à un professionnel, lui laisser du temps, ou classer le dossier.'
 		};
 	}
 	return creance.envoiAutomatique === true
@@ -989,41 +1033,18 @@ function PlumeADemarrer({ client, onDemarrer }: { client: string; onDemarrer: ()
 	);
 }
 
-function CarteDeLEtat({
-	creance,
-	onOuvrir,
-	onReponse
-}: {
-	creance: CreanceOuverte;
-	onOuvrir: (cle: SectionCreance) => void;
-	/** « Il vous a répondu ? » : le geste le plus fréquent d'un impayé, en texte. */
-	onReponse?: () => void;
-}) {
+/**
+ * OÙ EN EST LE DOSSIER — l'état en toutes lettres et ses quatre étapes. Son bouton
+ * est passé chez Plume le 22/10/2026 : la proposition du moment est une réponse.
+ */
+function CarteDeLEtat({ creance }: { creance: CreanceOuverte }) {
 	const { titre, sousTitre } = etatEnClair(creance);
-	const geste = creance.aDemarrer === true ? null : gesteDuDossier(creance);
-
 	return (
 		<EtatDuDossier
 			etapes={creance.etapes.etapes}
 			titre={titre}
 			sousTitre={sousTitre}
 			classe={creance.etapes.classe}
-			geste={
-				geste === null && onReponse === undefined ? undefined : (
-					<>
-						{geste === null ? null : (
-							<BoutonPrincipal pleineLargeur onClick={() => onOuvrir(geste.ouvre)}>
-								{geste.libelle}
-							</BoutonPrincipal>
-						)}
-						{onReponse === undefined ? null : (
-							<BoutonTexte className="self-center" onClick={onReponse}>
-								Il vous a répondu ?
-							</BoutonTexte>
-						)}
-					</>
-				)
-			}
 		/>
 	);
 }

@@ -1,12 +1,7 @@
-import { useState } from 'react';
-import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { versements } from '../lib/verticales/recouvrement/gabarits/accord-echeancier';
-import { BoutonPrincipal, BoutonTexte } from './bouton';
-import { MessageErreur } from './cadre-auth';
-import { ChiffreHero } from './chiffre';
+import { BoutonTexte } from './bouton';
 import { cn } from './cn';
 import { dateCourte, eurosCentimes, jourDecale } from './format';
-import { FeuillePleinEcran, SectionDeFeuille } from './plein-ecran';
 
 /**
  * L'ÉCHÉANCIER — le client paie en plusieurs fois (analyse des parcours du 08/10/2026).
@@ -48,33 +43,23 @@ export interface EcheancierAffiche {
 }
 
 /** Les nombres de fois proposés d'un toucher. Le serveur en admet d'autres, jusqu'à 12. */
-const NOMBRES = [2, 3, 4, 6] as const;
+export const NOMBRES_DE_VERSEMENTS = [2, 3, 4, 6] as const;
 
-type Depart = 'SEMAINE' | 'PREMIER' | 'QUINZE' | 'AUTRE';
-
-/** Le premier jour du mois suivant, ou le 15 du mois (ce mois-ci s'il n'est pas passé). */
-function dateDuDepart(depart: Depart, aujourdHui: string, autre: string): string {
+/**
+ * LES JOURS DU PREMIER VERSEMENT, proposés d'un toucher : le 1er du mois suivant, le
+ * 15 (ce mois-ci s'il n'est pas passé), dans sept jours.
+ */
+export function departsProposes(aujourdHui: string): { libelle: string; date: string }[] {
 	const [annee, mois, jour] = aujourdHui.split('-').map(Number) as [number, number, number];
 	const iso = (a: number, m: number, j: number) =>
 		new Date(Date.UTC(a, m - 1, j)).toISOString().slice(0, 10);
-	switch (depart) {
-		case 'SEMAINE':
-			return jourDecale(aujourdHui, 7);
-		case 'PREMIER':
-			return iso(annee, mois + 1, 1);
-		case 'QUINZE':
-			return jour < 15 ? iso(annee, mois, 15) : iso(annee, mois + 1, 15);
-		case 'AUTRE':
-			return autre;
-	}
+	const propositions = [
+		{ libelle: 'Le 1er', date: iso(annee, mois + 1, 1) },
+		{ libelle: 'Le 15', date: jour < 15 ? iso(annee, mois, 15) : iso(annee, mois + 1, 15) },
+		{ libelle: 'Dans 7 jours', date: jourDecale(aujourdHui, 7) }
+	];
+	return propositions.filter((p, i) => propositions.findIndex((q) => q.date === p.date) === i);
 }
-
-const LIBELLE_DEPART: Readonly<Record<Depart, string>> = {
-	SEMAINE: 'Dans 7 jours',
-	PREMIER: 'Le 1er',
-	QUINZE: 'Le 15',
-	AUTRE: 'Autre jour'
-};
 
 /** « 1er versement », « 2e versement ». */
 function rang(i: number): string {
@@ -82,138 +67,37 @@ function rang(i: number): string {
 }
 
 /**
- * CONVENIR D'UN PAIEMENT EN PLUSIEURS FOIS — en feuille, deux choix et le
- * calendrier qui en découle, comme chez Affirm.
+ * LE CALENDRIER D'UN PAIEMENT EN PLUSIEURS FOIS — chaque versement, sa date, son
+ * montant, comme le « Choose a payment plan » d'Affirm.
  */
-export function FeuilleEcheancier({
-	ouverte,
-	onFermer,
-	client,
-	resteDu,
-	aujourdHui,
-	enCours = false,
-	erreur = null,
-	onConvenir,
-	onAccordEcrit
+export function CalendrierDesVersements({
+	total,
+	nombre,
+	premiereLe
 }: {
-	readonly ouverte: boolean;
-	readonly onFermer: () => void;
-	readonly client: string;
 	/** Ce qui reste dû sur les factures, hors pénalités : la somme de l'échéancier. */
-	readonly resteDu: bigint;
-	readonly aujourdHui: string;
-	readonly enCours?: boolean;
-	readonly erreur?: string | null;
-	readonly onConvenir: (choix: { nombre: number; premiereLe: string }) => void;
-	/**
-	 * Ouvre l'accord écrit à faire signer, rempli du calendrier choisi ici (le
-	 * nombre de fois et le premier versement) : ce qui dit où, y mène.
-	 */
-	readonly onAccordEcrit?: (calendrier: { nombre: number; premiereLe: string } | null) => void;
+	readonly total: bigint;
+	readonly nombre: number;
+	readonly premiereLe: string;
 }) {
-	const [nombre, setNombre] = useState<number>(3);
-	const [depart, setDepart] = useState<Depart>('PREMIER');
-	const [autre, setAutre] = useState(jourDecale(aujourdHui, 14));
-	const premiereLe = dateDuDepart(depart, aujourdHui, autre);
-	const valide = /^\d{4}-\d{2}-\d{2}$/.test(premiereLe) && premiereLe >= aujourdHui;
-	const calendrier = valide && resteDu > 0n ? versements(resteDu, nombre, premiereLe, 1) : [];
-
+	const calendrier = total > 0n ? versements(total, nombre, premiereLe, 1) : [];
 	return (
-		<FeuillePleinEcran
-			ouverte={ouverte}
-			onFermer={onFermer}
-			titre="Payer en plusieurs fois"
-			pied={
-				<BoutonPrincipal
-					pleineLargeur
-					disabled={enCours || calendrier.length === 0}
-					onClick={() => onConvenir({ nombre, premiereLe })}
+		<ol className="verre-carte flex flex-col rounded-cladd-xl px-3.5 py-1 [&>li+li]:border-t [&>li+li]:border-cladd-outline">
+			{calendrier.map((versement, i) => (
+				<li
+					key={versement.numero}
+					className="flex min-h-12 items-center justify-between gap-3 py-2"
 				>
-					{enCours ? 'Enregistrement…' : `Convenir du paiement en ${nombre} fois`}
-				</BoutonPrincipal>
-			}
-		>
-			<SectionDeFeuille>
-				<div className="flex flex-col gap-cladd-xs">
-					<ChiffreHero
-						centimes={resteDu}
-						surTitre={`Ce que ${client} doit encore`}
-						legende="Sur les factures du dossier, hors pénalités"
-					/>
-
-					<section className="flex flex-col gap-cladd-3xs">
-						<h3 className="px-1 text-cladd-xs font-semibold">En combien de fois</h3>
-						<Segmented activeColor="neutral" activeVariant="solid" aria-label="En combien de fois">
-							{NOMBRES.map((n) => (
-								<SegmentedButton key={n} active={n === nombre} onClick={() => setNombre(n)}>
-									{n} fois
-								</SegmentedButton>
-							))}
-						</Segmented>
-					</section>
-
-					<section className="flex flex-col gap-cladd-3xs">
-						<h3 className="px-1 text-cladd-xs font-semibold">Premier versement</h3>
-						<Segmented activeColor="neutral" activeVariant="solid" aria-label="Premier versement">
-							{(Object.keys(LIBELLE_DEPART) as Depart[]).map((d) => (
-								<SegmentedButton key={d} active={d === depart} onClick={() => setDepart(d)}>
-									{LIBELLE_DEPART[d]}
-								</SegmentedButton>
-							))}
-						</Segmented>
-						{depart === 'AUTRE' ? (
-							<Input
-								type="date"
-								value={autre}
-								onChange={setAutre}
-								aria-label="Jour du premier versement"
-							/>
-						) : null}
-					</section>
-
-					{/* LE CALENDRIER QUI EN DÉCOULE — chaque versement, sa date, son montant. */}
-					{calendrier.length === 0 ? (
-						<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
-							Choisissez un jour à venir pour le premier versement.
-						</p>
-					) : (
-						<ol className="verre-carte flex flex-col rounded-cladd-xl px-3.5 py-1 [&>li+li]:border-t [&>li+li]:border-cladd-outline">
-							{calendrier.map((versement, i) => (
-								<li
-									key={versement.numero}
-									className="flex min-h-12 items-center justify-between gap-3 py-2"
-								>
-									<span className="flex flex-col">
-										<span className="text-cladd-xs font-medium">{rang(i)}</span>
-										<span className="text-cladd-2xs text-cladd-fg-soft">
-											{dateCourte(versement.date)}
-										</span>
-									</span>
-									<span className="text-cladd-xs font-semibold tabular-nums">
-										{eurosCentimes(versement.montant)}
-									</span>
-								</li>
-							))}
-						</ol>
-					)}
-
-					{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
-
-					<p className="px-1 text-center text-cladd-3xs leading-relaxed text-cladd-fg-softer">
-						Tant que les versements arrivent, je ne relance pas {client}. Si l’un d’eux manque de
-						plus de trois jours, les relances reprennent.
-					</p>
-					{onAccordEcrit === undefined ? null : (
-						<BoutonTexte
-							className="self-center"
-							onClick={() => onAccordEcrit(valide ? { nombre, premiereLe } : null)}
-						>
-							Préparer l’accord écrit, à lui faire signer
-						</BoutonTexte>
-					)}
-				</div>
-			</SectionDeFeuille>
-		</FeuillePleinEcran>
+					<span className="flex flex-col">
+						<span className="text-cladd-xs font-medium">{rang(i)}</span>
+						<span className="text-cladd-2xs text-cladd-fg-soft">{dateCourte(versement.date)}</span>
+					</span>
+					<span className="text-cladd-xs font-semibold tabular-nums">
+						{eurosCentimes(versement.montant)}
+					</span>
+				</li>
+			))}
+		</ol>
 	);
 }
 

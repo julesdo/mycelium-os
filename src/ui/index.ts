@@ -292,13 +292,24 @@ export {
 	type RoleProfessionnel
 } from './professionnel';
 export {
-	FeuilleEcheancier,
+	CalendrierDesVersements,
+	NOMBRES_DE_VERSEMENTS,
 	SuiviEcheancier,
+	departsProposes,
 	type EcheancierAffiche,
 	type EtatEcheanceAffiche
 } from './echeancier';
-export { FeuilleReponseClient } from './reponse-client';
-export { BandeauDossierClasse, FeuilleClassement, type MotifClassement } from './classement';
+export { BandeauDossierClasse, MOTIFS_DE_CLASSEMENT, type MotifClassement } from './classement';
+export {
+	CadreGuide,
+	ChoixParPastilles,
+	ConsigneDeReponse,
+	Echange,
+	ListeDeReponses,
+	messageDuRefus,
+	useTravail,
+	type ChoixDeReponse
+} from './parcours-guide';
 export { rangeeDuDebiteur, secteursProposes } from './identite-debiteur';
 export { CeQuiManque, ceQuiManque, RangeeFranchie, type Verrou } from './ce-qui-manque';
 /** ⚠️ TEMPORAIRE, ET DATÉ : la porte de la bascule. Elle part avec T16. */

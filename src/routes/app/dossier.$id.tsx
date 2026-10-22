@@ -18,6 +18,7 @@ import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
 import { SECTIONS_CREANCE, type SectionCreance } from '../../screens/sections-creance';
 import { useDirigeantsDuClient } from '../../app/use-professionnels';
 import { useAnnuaire } from '../../app/use-annuaire';
+import { useGestesDuGuide } from '../../app/gestes-guides';
 import { useGestesDeDossier } from '../../app/gestes-dossier';
 import {
 	modelesProposables,
@@ -141,6 +142,8 @@ function PageCreance() {
 	/** Ce que le client a dit : une promesse en cours fait taire le plan jusqu'à son jour. */
 	const parole = useQuery(api.recouvrement.parole.duDossier, { creanceId });
 	const gestesParole = useGestesDeDossier();
+	/** Les gestes de la conversation du dossier : ce qu'il a répondu, un rappel, classer. */
+	const gestesGuides = useGestesDuGuide(creanceId, aujourdHui);
 	/** Le pilote : s'il relance seul, la suite du plan le dit (« le pilote l'envoie »). */
 	// Le seul booléen que la page lit : l'état entier change à chaque coche du pilote.
 	const relancesAutomatiques = useQuery(api.recouvrement.pilote.relancesAutomatiques, {});
@@ -777,17 +780,19 @@ function PageCreance() {
 		...(planAVenir === undefined || planAVenir === null ? {} : { planAVenir }),
 		...(parole?.pause === undefined || parole.pause === null ? {} : { pause: parole.pause }),
 		/*
-		  « IL VOUS A RÉPONDU ? » (08/10/2026) : sa promesse, un paiement en plusieurs
-		  fois, et l'échéancier qui court, notés d'un geste et confirmés d'un mot.
+		  LA CONVERSATION DU DOSSIER (22/10/2026) : ce qu'il a répondu, un rappel, le
+		  classement, guidés comme le démarrage. Le règlement se note sur sa fiche.
 		*/
-		/* CLASSER ET ROUVRIR (08/10/2026) : le motif, ou le geste qui rend le dossier. */
+		gestesGuides,
+		onNoterUnReglement: () =>
+			void navigate({
+				to: '/app/clients/$id',
+				params: { id: debiteurId },
+				search: { ouvrir: 'virement' }
+			}),
+		/* ROUVRIR (08/10/2026) : le motif d'un dossier classé, et le geste qui le rend. */
 		...(creance.classement === undefined
-			? {
-					onClasserLeDossier: (
-						motif: 'GESTE_COMMERCIAL' | 'IRRECOUVRABLE' | 'ERREUR' | 'AUTRE',
-						note?: string
-					) => gestesParole.classer(creanceId, motif, note)
-				}
+			? {}
 			: {
 					classement: {
 						libelle: creance.classement.libelle,
@@ -802,12 +807,6 @@ function PageCreance() {
 					reponse: {
 						resteDu: parole.resteDu,
 						echeancier: parole.echeancier,
-						enCours: false,
-						erreur: null,
-						onPromesse: ({ montantEuros, le }) =>
-							void gestesParole.promettre(creanceId, creance.debiteur, montantEuros, le),
-						onConvenirEcheancier: ({ nombre, premiereLe }) =>
-							void gestesParole.convenirEcheancier(creanceId, creance.debiteur, nombre, premiereLe),
 						onArreterEcheancier: (id) => void gestesParole.arreterEcheancier(id)
 					}
 				}),

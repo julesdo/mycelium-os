@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { ArrowUpIcon } from 'lucide-react';
 import { eurosCentimes } from './format';
 import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
 
@@ -22,8 +21,13 @@ import { NOM_DU_PILOTE, Plume, type HumeurPlume } from './plume';
  * ⚠️ LA BARRE « RÉCUPÉRÉ » EST D'ENCRE : ni vert ni ambre. Ce n'est pas un seuil,
  * c'est une avancée.
  *
- * ⚠️ ET L'ON PEUT LUI PARLER D'ICI. Le champ ouvre la conversation du dossier ;
- * une question prête la remplit, elle ne l'envoie pas.
+ * ⚠️ ET IL PROPOSE, COMME DANS LE DÉMARRAGE (22/10/2026). La carte portait un champ
+ * libre et quatre pastilles, pendant que les rangées de la page proposaient les
+ * mêmes gestes autrement : deux cerveaux pour un dossier. Elle porte désormais les
+ * RÉPONSES DU MOMENT — la proposition de Plume en bouton plein, « Il m'a répondu »
+ * et « Autre chose » —, et chacune ouvre la conversation guidée du dossier
+ * (`screens/dossier-guide/`). Parler à Plume avec ses mots est la dernière réponse
+ * d'« Autre chose ».
  */
 export function PlumeSurLeDossier({
 	humeur,
@@ -31,9 +35,7 @@ export function PlumeSurLeDossier({
 	siRienNeBouge,
 	recupere,
 	total,
-	suggestions,
-	onDemander,
-	action
+	reponses
 }: {
 	readonly humeur: HumeurPlume;
 	/** Ce que fait Plume, à la première personne : « Je relance Durand jeudi à 10 h. » */
@@ -42,13 +44,11 @@ export function PlumeSurLeDossier({
 	readonly siRienNeBouge: string | null;
 	readonly recupere: bigint;
 	readonly total: bigint;
-	readonly suggestions: readonly string[];
-	readonly onDemander: (question?: string) => void;
 	/**
-	 * CE QUI MÈNE À CE QUE LA PHRASE NOMME : « Relire le courrier » sous « elle attend
-	 * votre relecture ». Une phrase qui dit où aller sans y mener fait chercher.
+	 * LES RÉPONSES DU MOMENT : « Relire le courrier » sous « elle attend votre
+	 * relecture ». Une phrase qui dit où aller sans y mener fait chercher.
 	 */
-	readonly action?: ReactNode;
+	readonly reponses?: ReactNode;
 }) {
 	const part = total > 0n ? Number((recupere * 1000n) / total) / 10 : 0;
 	return (
@@ -63,7 +63,6 @@ export function PlumeSurLeDossier({
 					{siRienNeBouge === null ? null : (
 						<p className="text-cladd-2xs leading-snug text-cladd-fg-soft">{siRienNeBouge}</p>
 					)}
-					{action === undefined ? null : <div className="flex pt-1.5">{action}</div>}
 				</div>
 			</div>
 
@@ -90,32 +89,7 @@ export function PlumeSurLeDossier({
 				</div>
 			)}
 
-			<button
-				type="button"
-				onClick={() => onDemander()}
-				className="verre-dense flex min-h-11 items-center gap-2 rounded-full py-1 pr-1 pl-3.5 text-left text-cladd-2xs text-cladd-fg-soft transition active:scale-[0.99]"
-			>
-				<span className="min-w-0 flex-1 truncate">
-					Demander à {NOM_DU_PILOTE}, ou lui dire quoi faire…
-				</span>
-				<span className="verre flex size-9 shrink-0 items-center justify-center rounded-full text-cladd-fg">
-					<ArrowUpIcon className="size-4" strokeWidth={2.4} aria-hidden />
-				</span>
-			</button>
-			{suggestions.length === 0 ? null : (
-				<div className="-mx-cladd-2xs flex gap-2 overflow-x-auto px-cladd-2xs [scrollbar-width:none]">
-					{suggestions.map((suggestion) => (
-						<button
-							key={suggestion}
-							type="button"
-							onClick={() => onDemander(suggestion)}
-							className="verre min-h-9 shrink-0 rounded-full px-3 text-cladd-2xs whitespace-nowrap text-cladd-fg transition active:scale-[0.97]"
-						>
-							{suggestion}
-						</button>
-					))}
-				</div>
-			)}
+			{reponses === undefined ? null : <div className="flex flex-col gap-2">{reponses}</div>}
 		</section>
 	);
 }

@@ -132,14 +132,14 @@ const CADENCE_MS = 750;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Un jour plus tard, au calendrier (UTC). */
-function plusJours(iso: string, jours: number): string {
+export function plusJours(iso: string, jours: number): string {
 	const date = new Date(`${iso}T00:00:00.000Z`);
 	date.setUTCDate(date.getUTCDate() + jours);
 	return date.toISOString().slice(0, 10);
 }
 
 /** « vendredi », « dans 15 jours », « fin du mois » : les jours qu'on promet le plus. */
-function joursProposes(aujourdHui: string): { libelle: string; date: string }[] {
+export function joursProposes(aujourdHui: string): { libelle: string; date: string }[] {
 	const jour = new Date(`${aujourdHui}T00:00:00.000Z`).getUTCDay();
 	const avantVendredi = (5 - jour + 7) % 7 || 7;
 	const finDuMois = new Date(`${aujourdHui}T00:00:00.000Z`);
@@ -157,14 +157,14 @@ function joursProposes(aujourdHui: string): { libelle: string; date: string }[] 
 }
 
 /** Des euros écrits comme on les tape : « 6000,50 ». */
-function eurosATaper(centimes: bigint): string {
+export function eurosATaper(centimes: bigint): string {
 	const euros = centimes / 100n;
 	const reste = (centimes % 100n).toString().padStart(2, '0');
 	return reste === '00' ? euros.toString() : `${euros},${reste}`;
 }
 
 /** Ce que le gérant a tapé, en centimes ; `null` si ce n'est pas un montant. */
-function centimesDe(texte: string): bigint | null {
+export function centimesDe(texte: string): bigint | null {
 	const propre = texte.replace(/[\s €]/g, '').replace(',', '.');
 	if (!/^\d+(\.\d{1,2})?$/.test(propre)) return null;
 	const [entiers = '0', decimales = ''] = propre.split('.');

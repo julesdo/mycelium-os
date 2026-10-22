@@ -807,6 +807,8 @@ function creanceDemo({
 			FACTURES_DEMO.reduce((total, facture) => total + facture.montantTTC, 0n) -
 			enCentimes(PRINCIPAL_RESTANT_DU_DEMO),
 		onDemanderAPlume: () => undefined,
+		gestesGuides: GESTES_GUIDES_DEMO,
+		onNoterUnReglement: () => undefined,
 		// La suite que le domaine projette, depuis la plus ancienne échéance : jamais
 		// écrite à la main.
 		planAVenir: suiteDuPlan({
@@ -963,15 +965,25 @@ const JOURNAL_TERMINE_DEMO: readonly EvenementSurvenu[] = [
 	{ cle: 'absence-opposition-constatee', survenuLe: '2026-08-20' }
 ];
 
-/** « Il vous a répondu ? », branché sur des gestes inertes : la salle ne touche à aucune base. */
+/** Ce qui reste dû et l'échéancier qui court, branchés sur des gestes inertes. */
 const REPONSE_DEMO: NonNullable<CreanceOuverte['reponse']> = {
 	resteDu: 600_000n,
 	echeancier: null,
-	enCours: false,
-	erreur: null,
-	onPromesse: () => undefined,
-	onConvenirEcheancier: () => undefined,
 	onArreterEcheancier: () => undefined
+};
+
+/**
+ * LES GESTES DE LA CONVERSATION DU DOSSIER, EN DÉMONSTRATION : chacun attend un peu,
+ * comme le serveur, puis rend de quoi l'annuler. La salle ne touche à aucune base.
+ */
+const attendre = () => new Promise<void>((fait) => setTimeout(fait, 400));
+const GESTES_GUIDES_DEMO: NonNullable<CreanceOuverte['gestesGuides']> = {
+	promettre: async () => (await attendre(), attendre),
+	convenirEcheancier: async () => (await attendre(), attendre),
+	noterContestation: attendre,
+	noter: async () => (await attendre(), attendre),
+	rappeler: async () => (await attendre(), attendre),
+	classer: async () => (await attendre(), attendre)
 };
 
 /**
@@ -999,8 +1011,7 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 				{ cle: 'SECOND_RAPPEL', nom: 'Deuxième rappel', le: '2026-10-24', automatique: true }
 			],
 			envoiAutomatique: true,
-			reponse: REPONSE_DEMO,
-			onClasserLeDossier: () => Promise.resolve(true)
+			reponse: REPONSE_DEMO
 		} satisfies CreanceOuverte;
 	})(),
 	/* Classé par le gérant : le bandeau dit pourquoi, et le geste qui le rouvre. */
