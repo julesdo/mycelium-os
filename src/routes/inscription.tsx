@@ -4,8 +4,10 @@ import { Button, Input } from '@cladd-ui/react';
 import { CheckIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { authClient } from '../lib/client/auth';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
-import { BoutonPrincipal, CadreAuth, Champ, MessageErreur } from '../ui';
+import { api } from '../lib/convex/_generated/api';
+import { BoutonPrincipal, CadreAuth, Champ, MentionDuCadeau, MessageErreur } from '../ui';
 import { suivre } from '../app/analytique';
+import { useQuery } from '../app/donnees';
 
 /**
  * `invitation` porte le jeton d'une invitation en cours.
@@ -19,12 +21,17 @@ export const Route = createFileRoute('/inscription')({
 	/**
 	 * `pour` (19/10/2026, audit) : « Combien vous doit-on ? » et le calculateur y mènent
 	 * avec `pour=diagnostic`. Il ne change rien au parcours ; il se mesure.
+	 *
+	 * `cadeau` (22/10/2026) : le code de la recommandation, posé par la page de l'invité
+	 * (`/invitation/<code>`). L'inscription rappelle qui offre le mois ; le rattachement,
+	 * lui, se fait par le code gardé dans l'onglet (`source-visite.ts`).
 	 */
 	validateSearch: (
 		search: Record<string, unknown>
-	): { invitation?: string; pour?: 'diagnostic' } => ({
+	): { invitation?: string; pour?: 'diagnostic'; cadeau?: string } => ({
 		invitation: typeof search.invitation === 'string' ? search.invitation : undefined,
-		pour: search.pour === 'diagnostic' ? 'diagnostic' : undefined
+		pour: search.pour === 'diagnostic' ? 'diagnostic' : undefined,
+		cadeau: typeof search.cadeau === 'string' ? search.cadeau.slice(0, 32) : undefined
 	}),
 	component: Inscription
 });
@@ -55,7 +62,11 @@ const FORME_D_ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 function Inscription() {
 	const navigate = useNavigate();
-	const { invitation, pour } = Route.useSearch();
+	const { invitation, pour, cadeau } = Route.useSearch();
+	const offre = useQuery(
+		api.croissance.parrainage.invitation,
+		cadeau === undefined ? 'skip' : { code: cadeau }
+	);
 	const [etape, setEtape] = useState<'adresse' | 'acces'>('adresse');
 	const [nom, setNom] = useState('');
 	const [email, setEmail] = useState('');
@@ -126,6 +137,12 @@ function Inscription() {
 				levees={['Votre bilan offert', `${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans engagement']}
 				pied={pied}
 			>
+				{offre === undefined || offre === null ? null : (
+					<MentionDuCadeau
+						offertPar={offre.offertPar}
+						detail={`Déduit de votre deuxième prélèvement, après vos ${DUREE_ESSAI_JOURS} jours d’essai.`}
+					/>
+				)}
 				<form onSubmit={continuer} className="flex flex-col gap-cladd-2xs" noValidate>
 					<Champ etiquette="Adresse e-mail">
 						<Input

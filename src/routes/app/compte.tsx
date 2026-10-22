@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useAction } from 'convex/react';
 import { useQuery } from '../../app/donnees';
@@ -103,13 +103,8 @@ function PageCompte() {
 	const conseils = useQuery(api.croissance.reglage.mesConseils, {});
 	// Les notifications push de cet appareil (21/10/2026).
 	const push = usePush();
-	// La recommandation (21/10/2026) : le lien se crée à la première visite du compte.
+	// La recommandation (22/10/2026) : la carte qui mène à sa page, `/app/recommander`.
 	const recommandations = useQuery(api.croissance.parrainage.mesRecommandations, {});
-	const creerMonLien = useMutation(api.croissance.parrainage.monLienDeRecommandation);
-	const lienAPreparer = recommandations?.ouvert === true && recommandations.code === null;
-	useEffect(() => {
-		if (lienAPreparer) void creerMonLien({}).catch(() => undefined);
-	}, [lienAPreparer, creerMonLien]);
 	const reglerConseils = useMutation(api.croissance.reglage.reglerMesConseils).withOptimisticUpdate(
 		(local, { parCourriel }) => {
 			local.setQuery(api.croissance.reglage.mesConseils, {}, parCourriel);
@@ -612,13 +607,7 @@ function PageCompte() {
 		...(recommandations?.ouvert === true
 			? {
 					recommandation: {
-						lien:
-							recommandations.code === null
-								? null
-								: `${origineCourante()}/?parrain=${recommandations.code}`,
 						inscrits: recommandations.inscrits,
-						abonnes: recommandations.abonnes,
-						moisOfferts: recommandations.moisOfferts,
 						moisEnAttente: recommandations.moisEnAttente
 					}
 				}

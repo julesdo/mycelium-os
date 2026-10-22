@@ -89,6 +89,15 @@ describe('le code de la recommandation (21/10/2026)', () => {
 		).toBe('K7M2P9QRST');
 	});
 
+	it('garde le code du chemin de l’invitation, celui que la page partage', () => {
+		expect(
+			executerAvecParrain(
+				'/invitation/k7m2p9qrst',
+				'https://www.letikette.com/invitation/k7m2p9qrst'
+			)
+		).toBe('K7M2P9QRST');
+	});
+
 	it('ne garde rien sur la page où le client paie', () => {
 		expect(
 			executerAvecParrain('/p/abc', 'https://www.letikette.com/p/abc?parrain=K7M2P9QRST')

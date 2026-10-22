@@ -22,7 +22,8 @@ export const TYPES_DE_NOTIFICATION = [
 	'ABONNEMENT',
 	'PAIEMENT_RECU',
 	'JALON',
-	'SEMAINE'
+	'SEMAINE',
+	'RECOMMANDATION'
 ] as const;
 export type TypeDeNotification = (typeof TYPES_DE_NOTIFICATION)[number];
 
@@ -49,7 +50,8 @@ const CATEGORIE: Readonly<Record<TypeDeNotification, CategoriePush>> = {
 	RISQUE_EN_BAISSE: 'REPONSES',
 	SEMAINE: 'SEMAINE',
 	ABONNEMENT: 'COMPTE',
-	HUMAN_ASSIST_REPLY: 'COMPTE'
+	HUMAN_ASSIST_REPLY: 'COMPTE',
+	RECOMMANDATION: 'COMPTE'
 };
 
 export function categorieDuType(type: TypeDeNotification): CategoriePush {

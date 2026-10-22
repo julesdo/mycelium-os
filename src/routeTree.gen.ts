@@ -49,6 +49,7 @@ import { Route as AppDossiersRouteImport } from './routes/app/dossiers'
 import { Route as AppImportFacturesRouteImport } from './routes/app/import-factures'
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
 import { Route as AppProceduresRouteImport } from './routes/app/procedures'
+import { Route as AppRecommanderRouteImport } from './routes/app/recommander'
 import { Route as AppRevelationRouteImport } from './routes/app/revelation'
 import { Route as AppSemaineRouteImport } from './routes/app/semaine'
 import { Route as AttenteJetonRouteImport } from './routes/attente.$jeton'
@@ -57,6 +58,7 @@ import { Route as BlogAdresseRouteImport } from './routes/blog/$adresse'
 import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
 import { Route as DesinscriptionJetonRouteImport } from './routes/desinscription.$jeton'
+import { Route as InvitationCodeRouteImport } from './routes/invitation.$code'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as SecteursSecteurRouteImport } from './routes/secteurs.$secteur'
@@ -295,6 +297,11 @@ const AppProceduresRoute = AppProceduresRouteImport.update({
   path: '/procedures',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppRecommanderRoute = AppRecommanderRouteImport.update({
+  id: '/recommander',
+  path: '/recommander',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppRevelationRoute = AppRevelationRouteImport.update({
   id: '/revelation',
   path: '/revelation',
@@ -333,6 +340,11 @@ const ConnexionVerificationRoute = ConnexionVerificationRouteImport.update({
 const DesinscriptionJetonRoute = DesinscriptionJetonRouteImport.update({
   id: '/desinscription/$jeton',
   path: '/desinscription/$jeton',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitationCodeRoute = InvitationCodeRouteImport.update({
+  id: '/invitation/$code',
+  path: '/invitation/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PJetonRoute = PJetonRouteImport.update({
@@ -550,6 +562,7 @@ export interface FileRoutesByFullPath {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
+  '/app/recommander': typeof AppRecommanderRoute
   '/app/revelation': typeof AppRevelationRoute
   '/app/semaine': typeof AppSemaineRoute
   '/attente/$jeton': typeof AttenteJetonRoute
@@ -557,6 +570,7 @@ export interface FileRoutesByFullPath {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
+  '/invitation/$code': typeof InvitationCodeRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -633,6 +647,7 @@ export interface FileRoutesByTo {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
+  '/app/recommander': typeof AppRecommanderRoute
   '/app/revelation': typeof AppRevelationRoute
   '/app/semaine': typeof AppSemaineRoute
   '/attente/$jeton': typeof AttenteJetonRoute
@@ -640,6 +655,7 @@ export interface FileRoutesByTo {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
+  '/invitation/$code': typeof InvitationCodeRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -719,6 +735,7 @@ export interface FileRoutesById {
   '/app/import-factures': typeof AppImportFacturesRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/procedures': typeof AppProceduresRoute
+  '/app/recommander': typeof AppRecommanderRoute
   '/app/revelation': typeof AppRevelationRoute
   '/app/semaine': typeof AppSemaineRoute
   '/attente/$jeton': typeof AttenteJetonRoute
@@ -726,6 +743,7 @@ export interface FileRoutesById {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/connexion_/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
+  '/invitation/$code': typeof InvitationCodeRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -806,6 +824,7 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/notifications'
     | '/app/procedures'
+    | '/app/recommander'
     | '/app/revelation'
     | '/app/semaine'
     | '/attente/$jeton'
@@ -813,6 +832,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/connexion/verification'
     | '/desinscription/$jeton'
+    | '/invitation/$code'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -889,6 +909,7 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/notifications'
     | '/app/procedures'
+    | '/app/recommander'
     | '/app/revelation'
     | '/app/semaine'
     | '/attente/$jeton'
@@ -896,6 +917,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/connexion/verification'
     | '/desinscription/$jeton'
+    | '/invitation/$code'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -974,6 +996,7 @@ export interface FileRouteTypes {
     | '/app/import-factures'
     | '/app/notifications'
     | '/app/procedures'
+    | '/app/recommander'
     | '/app/revelation'
     | '/app/semaine'
     | '/attente/$jeton'
@@ -981,6 +1004,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/connexion_/verification'
     | '/desinscription/$jeton'
+    | '/invitation/$code'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -1050,6 +1074,7 @@ export interface RootRouteChildren {
   BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   ConnexionVerificationRoute: typeof ConnexionVerificationRoute
   DesinscriptionJetonRoute: typeof DesinscriptionJetonRoute
+  InvitationCodeRoute: typeof InvitationCodeRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   SecteursSecteurRoute: typeof SecteursSecteurRoute
@@ -1339,6 +1364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProceduresRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/recommander': {
+      id: '/app/recommander'
+      path: '/recommander'
+      fullPath: '/app/recommander'
+      preLoaderRoute: typeof AppRecommanderRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/revelation': {
       id: '/app/revelation'
       path: '/revelation'
@@ -1393,6 +1425,13 @@ declare module '@tanstack/react-router' {
       path: '/desinscription/$jeton'
       fullPath: '/desinscription/$jeton'
       preLoaderRoute: typeof DesinscriptionJetonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invitation/$code': {
+      id: '/invitation/$code'
+      path: '/invitation/$code'
+      fullPath: '/invitation/$code'
+      preLoaderRoute: typeof InvitationCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$jeton': {
@@ -1737,6 +1776,7 @@ interface AppRouteRouteChildren {
   AppImportFacturesRoute: typeof AppImportFacturesRouteWithChildren
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProceduresRoute: typeof AppProceduresRoute
+  AppRecommanderRoute: typeof AppRecommanderRoute
   AppRevelationRoute: typeof AppRevelationRoute
   AppSemaineRoute: typeof AppSemaineRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -1768,6 +1808,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppImportFacturesRoute: AppImportFacturesRouteWithChildren,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProceduresRoute: AppProceduresRoute,
+  AppRecommanderRoute: AppRecommanderRoute,
   AppRevelationRoute: AppRevelationRoute,
   AppSemaineRoute: AppSemaineRoute,
   AppIndexRoute: AppIndexRoute,
@@ -1821,6 +1862,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   ConnexionVerificationRoute: ConnexionVerificationRoute,
   DesinscriptionJetonRoute: DesinscriptionJetonRoute,
+  InvitationCodeRoute: InvitationCodeRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   SecteursSecteurRoute: SecteursSecteurRoute,

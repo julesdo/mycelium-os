@@ -3,6 +3,11 @@ import {
 	codeDeLAdresse,
 	codeDepuisOctets,
 	codeValide,
+	etapeDeLInvitation,
+	lienDInvitation,
+	liensDePartage,
+	messageDInvitation,
+	moisDeLAnnee,
 	peutRecevoirUneRecompense,
 	remiseQuiCourt
 } from '../parrainage';
@@ -30,6 +35,51 @@ describe('le code personnel', () => {
 		expect(codeDeLAdresse('https://www.letikette.com/tarifs')).toBeNull();
 		expect(codeDeLAdresse('pas une adresse')).toBeNull();
 	});
+
+	it('se lit aussi dans le chemin de l’invitation, celui que la page partage', () => {
+		expect(codeDeLAdresse('https://www.letikette.com/invitation/k7m2p9qrst')).toBe('K7M2P9QRST');
+		expect(codeDeLAdresse('https://www.letikette.com/invitation/K7M2P9QRST?utm=x')).toBe(
+			'K7M2P9QRST'
+		);
+		expect(codeDeLAdresse('https://www.letikette.com/invitation/court')).toBeNull();
+		expect(lienDInvitation('https://www.letikette.com', 'K7M2P9QRST')).toBe(
+			'https://www.letikette.com/invitation/K7M2P9QRST'
+		);
+	});
+});
+
+describe('le partage', () => {
+	const lien = 'https://www.letikette.com/invitation/K7M2P9QRST';
+
+	it('porte le lien dans le message, et chaque canal le reçoit encodé', () => {
+		const message = messageDInvitation(lien);
+		expect(message).toContain(lien);
+		expect(message).not.toMatch(/garanti/i);
+		const liens = liensDePartage({ lien, message, sujet: 'Un mois de Letikette, de ma part' });
+		expect(liens.whatsapp).toBe(`https://wa.me/?text=${encodeURIComponent(message)}`);
+		expect(liens.sms).toBe(`sms:?&body=${encodeURIComponent(message)}`);
+		expect(liens.email).toBe(
+			`mailto:?subject=${encodeURIComponent('Un mois de Letikette, de ma part')}&body=${encodeURIComponent(message)}`
+		);
+		// LinkedIn ne prend qu'une adresse : le message s'écrit dans sa fenêtre.
+		expect(liens.linkedin).toBe(
+			`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(lien)}`
+		);
+	});
+});
+
+describe('une invitation', () => {
+	it('dit où elle en est : inscrite, puis abonnée et le mois gagné', () => {
+		const inscrite = Date.UTC(2026, 9, 12);
+		expect(etapeDeLInvitation({ inscriteLe: inscrite, abonneeLe: null })).toEqual({
+			etape: 'INSCRITE',
+			titre: 'Inscrite',
+			ligne: 'Pas encore abonnée'
+		});
+		expect(
+			etapeDeLInvitation({ inscriteLe: inscrite, abonneeLe: Date.UTC(2026, 10, 12) })
+		).toEqual({ etape: 'ABONNEE', titre: 'Abonnée', ligne: 'Un mois offert à chacun' });
+	});
 });
 
 describe('la récompense', () => {
@@ -46,6 +96,16 @@ describe('la récompense', () => {
 		// Le mois reçu en étant recommandé ne compte pas.
 		const filleul = [...onze, { raison: 'FILLEUL' as const, gagneeLe: MAINTENANT }];
 		expect(peutRecevoirUneRecompense(filleul, MAINTENANT)).toBe(true);
+	});
+
+	it('compte les mois gagnés à recommander sur l’année glissante', () => {
+		const recompenses = [
+			{ raison: 'PARRAIN' as const, gagneeLe: MAINTENANT - 10 * JOUR },
+			{ raison: 'PARRAIN' as const, gagneeLe: MAINTENANT - 200 * JOUR },
+			{ raison: 'PARRAIN' as const, gagneeLe: MAINTENANT - 400 * JOUR },
+			{ raison: 'FILLEUL' as const, gagneeLe: MAINTENANT - 5 * JOUR }
+		];
+		expect(moisDeLAnnee(recompenses, MAINTENANT)).toBe(2);
 	});
 
 	it('attend la fin d’une remise qui court encore à la prochaine échéance', () => {

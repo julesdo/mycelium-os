@@ -1,17 +1,19 @@
 import { v } from 'convex/values';
-import { internalMutation } from '../_generated/server';
-import type { MutationCtx } from '../_generated/server';
+import { internalMutation, query } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Doc, Id } from '../_generated/dataModel';
 import { internal } from '../_generated/api';
 import { authedMutation, authedQuery } from '../functions';
 import { organisationCouranteOuNull } from '../lib/auth';
 import { formuleSouscrite, paiementOuvert } from '../billing';
-import { montantDuRythme } from '../../config/tarifs';
+import { montantDuRythme, PARRAINAGE } from '../../config/tarifs';
 import {
 	codeDepuisOctets,
 	codeValide,
+	moisDeLAnnee,
 	peutRecevoirUneRecompense
 } from '../../croissance/parrainage';
+import { notifier } from '../notifier';
 
 /**
  * LA RECOMMANDATION, CÔTÉ CONVEX (21/10/2026, le parcours de l'habitude, moment 7). Le
@@ -25,6 +27,35 @@ import {
 
 /** Une application chez Paddle tenue plus longtemps est tenue pour perdue. */
 const BAIL_MS = 10 * 60 * 1000;
+/** La page en montre cinquante ; au-delà, les comptes suffisent. */
+const INVITATIONS_MONTREES = 50;
+
+/**
+ * PRÉVIENT LES ADMINISTRATEURS D'UN ÉTABLISSEMENT : ce sont eux qui paient, et le mois
+ * offert se déduit de leur prélèvement. Jamais le nom d'un autre établissement.
+ */
+async function prevenirLesAdministrateurs(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	titre: string,
+	message: string
+): Promise<void> {
+	const membres = await ctx.db
+		.query('organizationMembers')
+		.withIndex('by_organization', (q) => q.eq('organizationId', organizationId))
+		.take(50);
+	for (const membre of membres) {
+		if (membre.role !== 'ORG_ADMIN') continue;
+		await notifier(ctx, {
+			organizationId,
+			userId: membre.userId,
+			type: 'RECOMMANDATION',
+			title: titre,
+			message,
+			link: '/app/recommander'
+		});
+	}
+}
 
 /**
  * L'ATTRIBUTION, à la création de l'établissement (`createOrganization`) : le code du
@@ -52,6 +83,12 @@ export async function attribuerLaRecommandation(
 		.unique();
 	if (dejaMembre !== null) return;
 	await ctx.db.patch(organizationId, { parrainePar: parrain._id });
+	await prevenirLesAdministrateurs(
+		ctx,
+		parrain._id,
+		'Une entreprise s’est inscrite par votre lien',
+		'Quand elle paiera sa première échéance, un mois vous sera offert à tous les deux.'
+	);
 }
 
 /** Le lien personnel de l'établissement : créé à la première demande, puis toujours le même. */
@@ -78,38 +115,115 @@ export const monLienDeRecommandation = authedMutation({
 	}
 });
 
-/** Ce que la page de la recommandation montre : le lien et des comptes, rien de plus. */
+const vInvitation = v.object({ inscriteLe: v.number(), abonneeLe: v.union(v.number(), v.null()) });
+
+const vRecommandation = v.object({
+	ouvert: v.boolean(),
+	code: v.union(v.string(), v.null()),
+	nomEtablissement: v.string(),
+	inscrits: v.number(),
+	abonnes: v.number(),
+	moisOfferts: v.number(),
+	moisEnAttente: v.number(),
+	moisCetteAnnee: v.number(),
+	moisParAn: v.number(),
+	valeurDuMois: v.union(v.number(), v.null()),
+	invitations: v.array(vInvitation),
+	offertPar: v.union(v.string(), v.null()),
+	aujourdHui: v.string()
+});
+
+export interface RecommandationLue {
+	readonly ouvert: boolean;
+	readonly code: string | null;
+	readonly nomEtablissement: string;
+	readonly inscrits: number;
+	readonly abonnes: number;
+	readonly moisOfferts: number;
+	readonly moisEnAttente: number;
+	/** Les mois gagnés à recommander sur l'année glissante, sur `moisParAn`. */
+	readonly moisCetteAnnee: number;
+	readonly moisParAn: number;
+	/** Un mois de la formule souscrite, HT, en centimes ; `null` sans abonnement payant. */
+	readonly valeurDuMois: number | null;
+	/** Les plus récentes d'abord, sans aucun nom. */
+	readonly invitations: { inscriteLe: number; abonneeLe: number | null }[];
+	/** L'établissement qui vous a recommandé, tant que votre mois n'est pas gagné. */
+	readonly offertPar: string | null;
+	/** Le jour de la lecture : les dates des invitations se disent en distance. */
+	readonly aujourdHui: string;
+}
+
+/**
+ * CE QUE LA PAGE « RECOMMANDER » MONTRE (22/10/2026, refaite sur Revolut, Gusto, Wise et
+ * Numo) : le lien, l'objectif de l'année, chaque invitation par sa date et son étape, et la
+ * valeur d'un mois. Des établissements recommandés, des DATES — jamais un nom.
+ */
+export async function lireLaRecommandation(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	maintenant: number
+): Promise<RecommandationLue> {
+	const org = await ctx.db.get(organizationId);
+	if (org === null) throw new Error('Établissement introuvable');
+	const recommandes = await ctx.db
+		.query('organizations')
+		.withIndex('by_parraine_par', (q) => q.eq('parrainePar', organizationId))
+		.take(500);
+	const recompenses = org.recompensesParrainage ?? [];
+	const formule = formuleSouscrite(org);
+	const parrain =
+		org.parrainePar === undefined || org.parrainageDeclencheLe !== undefined
+			? null
+			: await ctx.db.get(org.parrainePar);
+	return {
+		ouvert: paiementOuvert(),
+		code: org.codeParrainage ?? null,
+		nomEtablissement: org.name,
+		inscrits: recommandes.length,
+		abonnes: recommandes.filter((o) => o.parrainageDeclencheLe !== undefined).length,
+		moisOfferts: recompenses.filter((r) => r.appliqueeLe !== undefined).length,
+		moisEnAttente: recompenses.filter((r) => r.appliqueeLe === undefined).length,
+		moisCetteAnnee: moisDeLAnnee(recompenses, maintenant),
+		moisParAn: PARRAINAGE.recompensesParAn,
+		valeurDuMois: formule === null ? null : montantDuRythme(formule, 'mensuel') * 100,
+		invitations: recommandes
+			.map((o) => ({ inscriteLe: o.createdAt, abonneeLe: o.parrainageDeclencheLe ?? null }))
+			.sort((a, b) => b.inscriteLe - a.inscriteLe)
+			.slice(0, INVITATIONS_MONTREES),
+		offertPar: parrain?.name ?? null,
+		aujourdHui: new Date(maintenant).toISOString().slice(0, 10)
+	};
+}
+
 export const mesRecommandations = authedQuery({
 	args: {},
-	returns: v.union(
-		v.null(),
-		v.object({
-			ouvert: v.boolean(),
-			code: v.union(v.string(), v.null()),
-			inscrits: v.number(),
-			abonnes: v.number(),
-			moisOfferts: v.number(),
-			moisEnAttente: v.number()
-		})
-	),
-	handler: async (ctx) => {
+	returns: v.union(v.null(), vRecommandation),
+	handler: async (ctx): Promise<RecommandationLue | null> => {
 		const organizationId = await organisationCouranteOuNull(ctx, ctx.user._id);
 		if (organizationId === null) return null;
-		const org = await ctx.db.get(organizationId);
-		if (org === null) return null;
-		const recommandes = await ctx.db
+		return lireLaRecommandation(ctx, organizationId, Date.now());
+	}
+});
+
+/**
+ * LA PAGE PUBLIQUE DE L'INVITATION (`/invitation/<code>`) : le nom de qui offre, rien
+ * d'autre. Celui qui partage son lien le sait (la page « Recommander » le dit), et le code
+ * — cinquante bits — ne se devine pas. Rien tant que la facturation n'est pas ouverte : un
+ * mois offert qui ne pourrait pas s'appliquer ne s'annonce pas.
+ */
+export const invitation = query({
+	args: { code: v.string() },
+	returns: v.union(v.null(), v.object({ offertPar: v.string() })),
+	handler: async (ctx, { code }): Promise<{ offertPar: string } | null> => {
+		if (!paiementOuvert()) return null;
+		const propre = code.trim().toUpperCase();
+		if (!codeValide(propre)) return null;
+		const org = await ctx.db
 			.query('organizations')
-			.withIndex('by_parraine_par', (q) => q.eq('parrainePar', organizationId))
-			.take(500);
-		const recompenses = org.recompensesParrainage ?? [];
-		return {
-			ouvert: paiementOuvert(),
-			code: org.codeParrainage ?? null,
-			inscrits: recommandes.length,
-			abonnes: recommandes.filter((o) => o.parrainageDeclencheLe !== undefined).length,
-			moisOfferts: recompenses.filter((r) => r.appliqueeLe !== undefined).length,
-			moisEnAttente: recompenses.filter((r) => r.appliqueeLe === undefined).length
-		};
+			.withIndex('by_code_parrainage', (q) => q.eq('codeParrainage', propre))
+			.unique();
+		return org === null ? null : { offertPar: org.name };
 	}
 });
 
@@ -158,6 +272,14 @@ export const noterUneEcheancePayee = internalMutation({
 			organizationId: filleul._id
 		});
 		const parrain = await ctx.db.get(filleul.parrainePar);
+		await prevenirLesAdministrateurs(
+			ctx,
+			filleul._id,
+			'Votre mois offert est en route',
+			parrain === null
+				? 'Votre première échéance est payée : un mois sera déduit de votre prochain prélèvement.'
+				: `Votre première échéance est payée : le mois offert par ${parrain.name} sera déduit de votre prochain prélèvement.`
+		);
 		const memeClient =
 			parrain?.paddleCustomerId !== undefined && parrain.paddleCustomerId === paddleCustomerId;
 		if (
@@ -177,6 +299,12 @@ export const noterUneEcheancePayee = internalMutation({
 		await ctx.scheduler.runAfter(0, internal.paddle.appliquerLesRecompenses, {
 			organizationId: parrain._id
 		});
+		await prevenirLesAdministrateurs(
+			ctx,
+			parrain._id,
+			'Un mois de Letikette vous est offert',
+			'Un confrère que vous avez recommandé s’est abonné : un mois sera déduit de votre prochain prélèvement.'
+		);
 		return null;
 	}
 });

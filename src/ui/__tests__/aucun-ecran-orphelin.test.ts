@@ -58,6 +58,8 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 		'Le lien du pied des e-mails de prospection (crm/consentement.ts). Le prospect qui l’ouvre n’a pas de compte ici ; l’adresse est une chaîne écrite dans un e-mail, pas un lien de routeur.',
 	'/attente/$jeton':
 		'Le lien de l’e-mail qui confirme une inscription à la liste d’attente (convex/attente.ts). La personne n’a pas de compte ici ; l’adresse est une chaîne écrite dans un e-mail, pas un lien de routeur.',
+	'/invitation/$code':
+		'Le lien qu’un gérant partage depuis « Recommander » (croissance/parrainage.ts, lienDInvitation). Le confrère qui l’ouvre n’a pas de compte ici ; l’adresse part par WhatsApp, SMS, e-mail ou QR code, pas par un lien de routeur.',
 	/**
 	 * ⚠️ AUCUN ÉCRAN N'Y MÈNE, ET AUCUN N'Y MÈNERA JAMAIS.
 	 *

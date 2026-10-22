@@ -3,6 +3,7 @@ import { CatchBoundary, useNavigate, useRouterState } from '@tanstack/react-rout
 import {
 	FeatherIcon,
 	GavelIcon,
+	GiftIcon,
 	HeartPulseIcon,
 	LifeBuoyIcon,
 	LockKeyholeIcon,
@@ -11,6 +12,7 @@ import {
 	UsersIcon
 } from 'lucide-react';
 import { useQuery } from './donnees';
+import { PARRAINAGE } from '../lib/config/tarifs';
 import { api } from '../lib/convex/_generated/api';
 import { Avatar, BoutonSecondaire, Facultatif, IconeLetikette, Lien } from '../ui';
 import {
@@ -156,11 +158,44 @@ export function LateraleBranchee({
 			pied={
 				auRepos ? null : (
 					<Facultatif>
+						<RecommanderLateral actif={chemin.startsWith('/app/recommander')} reduite={reduite} />
 						<AideLaterale actif={chemin.startsWith('/app/aide')} reduite={reduite} />
 						<CompteLateral actif={surLeCompte} />
 					</Facultatif>
 				)
 			}
+		/>
+	);
+}
+
+/**
+ * RECOMMANDER, EN PIED DE LA BARRE (22/10/2026, comme « Refer & earn » chez Gusto et la
+ * pastille « Earn » de Wise) : l'offre se lit dans la valeur, et l'entrée n'existe que
+ * lorsque la facturation est ouverte — un mois offert se déduit d'un abonnement.
+ */
+function RecommanderLateral({
+	actif,
+	reduite
+}: {
+	readonly actif: boolean;
+	readonly reduite: boolean;
+}) {
+	const recommandation = useQuery(api.croissance.parrainage.mesRecommandations, {});
+	if (recommandation?.ouvert !== true) return null;
+	return (
+		<EntreeLaterale
+			reduite={reduite}
+			destination={{
+				cle: 'recommander',
+				libelle: 'Recommander',
+				Icone: GiftIcon,
+				vers: '/app/recommander',
+				actif,
+				valeur:
+					recommandation.moisEnAttente > 0
+						? `${recommandation.moisEnAttente} à venir`
+						: `${PARRAINAGE.moisOfferts} mois offert`
+			}}
 		/>
 	);
 }

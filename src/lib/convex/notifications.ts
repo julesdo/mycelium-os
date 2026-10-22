@@ -19,7 +19,8 @@ const notificationTypeValidator = v.union(
 	v.literal('ABONNEMENT'),
 	v.literal('PAIEMENT_RECU'),
 	v.literal('JALON'),
-	v.literal('SEMAINE')
+	v.literal('SEMAINE'),
+	v.literal('RECOMMANDATION')
 );
 
 export type NotificationType =

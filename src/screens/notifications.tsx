@@ -57,7 +57,9 @@ const FAMILLE: Readonly<Record<GenreNotification, FamilleRangee>> = {
 	// Ce qui est rentré, une réussite, la semaine : de l'argent.
 	PAIEMENT_RECU: 'ARGENT',
 	JALON: 'ARGENT',
-	SEMAINE: 'ARGENT'
+	SEMAINE: 'ARGENT',
+	// Un mois offert par la recommandation : de l'argent.
+	RECOMMANDATION: 'ARGENT'
 };
 
 export interface NotificationAffichee {

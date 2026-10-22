@@ -56,5 +56,6 @@ export const TITRE_DE_NOTIFICATION: Readonly<Record<GenreNotification, string>> 
 	ABONNEMENT: 'Votre abonnement',
 	PAIEMENT_RECU: 'Paiement reçu',
 	JALON: 'Une réussite',
-	SEMAINE: 'Votre semaine'
+	SEMAINE: 'Votre semaine',
+	RECOMMANDATION: 'Recommandation'
 };

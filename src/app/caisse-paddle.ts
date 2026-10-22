@@ -6,6 +6,7 @@ import type { MontantsTTC } from '../ui/choix-formule';
 import { useAction, useMutation } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
 import { suivre } from './analytique';
+import { useQuery } from './donnees';
 
 /**
  * LE PAIEMENT PADDLE, BRANCHÉ SUR L'ÉCRAN.
@@ -105,6 +106,9 @@ export function useCaissePaddle({
 		};
 	}, [choix]);
 
+	// La recommandation (22/10/2026) : qui offre le mois, rappelé sur le choix de la formule.
+	const recommandation = useQuery(api.croissance.parrainage.mesRecommandations, {});
+
 	if (caisse === undefined || caisse === null) return undefined;
 
 	const pret = caisse.pret ? caisse : null;
@@ -179,6 +183,7 @@ export function useCaissePaddle({
 		...(pret === null ? {} : { onVoirLesPrix: () => voirLesPrix(pret) }),
 		essai: pret?.essai ?? false,
 		bienvenue: pret?.bienvenue ?? null,
+		cadeau: recommandation?.offertPar ?? null,
 		fondateurs: pret?.fondateurs ?? null,
 		...(pret?.fondateurs
 			? {

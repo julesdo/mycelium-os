@@ -19,13 +19,27 @@ const CLE = 'letikette.source';
 const LONGUEUR_MAX = 2000;
 
 /**
- * LE CODE D'UNE RECOMMANDATION (`/?parrain=<code>`, 21/10/2026) : gardé à part, et
- * même dans une visite déjà notée — un lien recommandé ouvert dans un onglet qui a déjà
- * vu le site ne doit pas se perdre. Le serveur en vérifie la forme à l'inscription.
+ * LE CODE D'UNE RECOMMANDATION (`/invitation/<code>`, ou l'ancien `/?parrain=<code>`,
+ * 21/10/2026) : gardé à part, et même dans une visite déjà notée — un lien recommandé
+ * ouvert dans un onglet qui a déjà vu le site ne doit pas se perdre. Le serveur en
+ * vérifie la forme à l'inscription.
  */
 const CLE_PARRAIN = 'letikette.parrain';
 
-export const AMORCE_SOURCE = `try{if(!/^\\/(p|desinscription|attente)\\//.test(location.pathname)){if(!sessionStorage.getItem('${CLE}')){sessionStorage.setItem('${CLE}',JSON.stringify({url:String(location.href).slice(0,${LONGUEUR_MAX}),referent:String(document.referrer||'').slice(0,${LONGUEUR_MAX})}))}var m=/[?&]parrain=([^&#]*)/.exec(location.search||'');if(m){sessionStorage.setItem('${CLE_PARRAIN}',decodeURIComponent(m[1]).slice(0,32).toUpperCase())}}}catch(e){}`;
+export const AMORCE_SOURCE = `try{if(!/^\\/(p|desinscription|attente)\\//.test(location.pathname)){if(!sessionStorage.getItem('${CLE}')){sessionStorage.setItem('${CLE}',JSON.stringify({url:String(location.href).slice(0,${LONGUEUR_MAX}),referent:String(document.referrer||'').slice(0,${LONGUEUR_MAX})}))}var m=/^\\/invitation\\/([^/?#]+)/.exec(location.pathname)||/[?&]parrain=([^&#]*)/.exec(location.search||'');if(m){sessionStorage.setItem('${CLE_PARRAIN}',decodeURIComponent(m[1]).slice(0,32).toUpperCase())}}}catch(e){}`;
+
+/**
+ * La page d'invitation note son code elle-même : ouverte par la navigation de
+ * l'application, elle ne repasse pas par l'amorce du premier chargement.
+ */
+export function noterParrainDeLaVisite(code: string): void {
+	try {
+		sessionStorage.setItem(CLE_PARRAIN, code.slice(0, 32).toUpperCase());
+	} catch {
+		// Stockage refusé (navigation privée stricte) : l'invitation reste lisible, le
+		// rattachement seul se perd.
+	}
+}
 
 /** Le code de la recommandation qui a mené à l'inscription, s'il y en a un. */
 export function lireParrainDeLaVisite(): string | undefined {

@@ -56,7 +56,7 @@ function Celebration({ jalon, arriveeLe }: { jalon: JalonLu; arriveeLe: number }
 				}).catch(() => undefined);
 			}}
 			onAnnee={() => void navigate({ to: '/app/compte', search: { ouvrir: 'annee' } })}
-			onRecommander={() => void navigate({ to: '/app/compte', search: { ouvrir: 'recommander' } })}
+			onRecommander={() => void navigate({ to: '/app/recommander' })}
 			onNePlusProposer={(ligne) => {
 				void taire({
 					cle: cleDeSilence(

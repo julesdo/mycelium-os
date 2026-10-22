@@ -216,13 +216,15 @@ de la visite, sans cookie, puis jointe à l'inscription ; elle n'est pas notée 
 débiteur consulte ce qu'il doit. Les conseils de Plume se coupent dans Votre compte, puis Votre
 profil, ou par le lien présent en bas de chacun d'eux.
 
-**Recommandation.** Le lien personnel de Votre compte porte un code. Suivi, ce code est gardé dans
+**Recommandation.** Le lien personnel de Votre compte porte un code. La page qu'il ouvre affiche
+le nom de l'établissement qui recommande, et rien d'autre de lui. Suivi, ce code est gardé dans
 l'onglet du navigateur le temps de la visite, sans cookie, puis joint à l'inscription :
-l'établissement créé est rattaché à celui qui l'a recommandé. Qui recommande ne voit que des
-nombres (inscrits par son lien, abonnés, mois offerts), **jamais le nom** d'un établissement
-recommandé ni ce qu'il fait du Service. Paddle reçoit, pour chacun des deux, le montant à déduire
-de son prochain prélèvement, jamais le lien entre eux. La suppression de l'établissement qui a
-recommandé efface ce rattachement chez ceux qu'il a recommandés.
+l'établissement créé est rattaché à celui qui l'a recommandé. Qui recommande voit, pour chaque
+établissement recommandé, sa date d'inscription et s'il s'est abonné, et il en est prévenu ;
+**jamais son nom** ni ce qu'il fait du Service. L'établissement recommandé voit le nom de celui
+qui lui offre son mois, jusqu'à ce que ce mois soit gagné. Paddle reçoit, pour chacun des deux, le
+montant à déduire de son prochain prélèvement, jamais le lien entre eux. La suppression de
+l'établissement qui a recommandé efface ce rattachement chez ceux qu'il a recommandés.
 
 **Le service client.** Dans l'Aide, **Plume support**, un assistant automatique, répond d'abord. Il
 lit la base d'aide du produit et un résumé de votre compte fait **de nombres et de codes** : la

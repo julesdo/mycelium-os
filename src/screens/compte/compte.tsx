@@ -6,7 +6,6 @@ import {
 	CheckIcon,
 	KeyRoundIcon,
 	LayoutDashboardIcon,
-	GiftIcon,
 	LifeBuoyIcon,
 	ScaleIcon,
 	CreditCardIcon,
@@ -36,9 +35,9 @@ import {
 	type GestesDoubleAuth,
 	type Lecture,
 	ReglagesDuPush,
-	SectionRecommandation,
-	type PushAffiche,
-	type RecommandationAffichee
+	CarteLien,
+	VignetteCadeau,
+	type PushAffiche
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
 import { TITRE_ECRAN } from '../titres';
@@ -174,8 +173,12 @@ export interface CompteAffiche {
 	readonly admin?: boolean;
 	/** Les réponses de l'équipe pas encore lues, sur la rangée « Aide » (16/10/2026). */
 	readonly aideNonLues?: number;
-	/** La recommandation (21/10/2026) : absente tant que la facturation n'est pas ouverte. */
-	readonly recommandation?: RecommandationAffichee;
+	/**
+	 * La recommandation (22/10/2026) : la carte qui mène à sa page, sous l'identité, comme
+	 * la tuile « Referrals » du profil de Revolut. Absente tant que la facturation n'est
+	 * pas ouverte.
+	 */
+	readonly recommandation?: ApercuDeLaRecommandation;
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -192,12 +195,17 @@ function valeurUrgente(fait: string): string | null {
 	return court.length <= 26 ? court : null;
 }
 
+export interface ApercuDeLaRecommandation {
+	readonly inscrits: number;
+	readonly moisEnAttente: number;
+}
+
 /** « 2 mois offerts à venir », « 3 inscrits », ou la promesse quand rien n'a encore eu lieu. */
-function valeurDeLaRecommandation(r: RecommandationAffichee): string {
+function ligneDeLaRecommandation(r: ApercuDeLaRecommandation): string {
 	if (r.moisEnAttente > 0)
 		return `${r.moisEnAttente} mois offert${r.moisEnAttente > 1 ? 's' : ''} à venir`;
-	if (r.inscrits > 0) return `${r.inscrits} inscrit${r.inscrits > 1 ? 's' : ''}`;
-	return 'Un mois offert chacun';
+	if (r.inscrits > 0) return `${r.inscrits} inscrit${r.inscrits > 1 ? 's' : ''} par votre lien`;
+	return 'Un mois pour vous aussi';
 }
 
 export function EcranCompte({
@@ -286,6 +294,15 @@ export function EcranCompte({
 	return (
 		<PageEcran entete={entete}>
 			<EnTeteDuCompte identite={pret.identite} logoUrl={pret.etablissement?.logo.url ?? null} />
+
+			{pret.recommandation === undefined ? null : (
+				<CarteLien
+					vers="/app/recommander"
+					titre="Offrez un mois à un confrère"
+					ligne={ligneDeLaRecommandation(pret.recommandation)}
+					icone={<VignetteCadeau />}
+				/>
+			)}
 
 			<SectionsDepliables ouvertes={ouvertes} onOuvertesChange={setOuvertes}>
 				{/*
@@ -499,17 +516,6 @@ export function EcranCompte({
 						>
 							<SectionTitle>Double authentification</SectionTitle>
 							<DoubleAuthentification {...pret.doubleAuth} />
-						</RangeeDepliable>
-					)}
-
-					{pret.recommandation === undefined ? null : (
-						<RangeeDepliable
-							cle="recommander"
-							icone={<GiftIcon />}
-							titre="Recommander Letikette"
-							valeur={valeurDeLaRecommandation(pret.recommandation)}
-						>
-							<SectionRecommandation {...pret.recommandation} />
 						</RangeeDepliable>
 					)}
 

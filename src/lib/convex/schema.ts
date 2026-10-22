@@ -376,7 +376,9 @@ export default defineSchema({
 			/** Une réussite franchie : premier paiement, 10 000 € rentrés (`jalons.ts`). */
 			v.literal('JALON'),
 			/** « Votre semaine », le lundi. */
-			v.literal('SEMAINE')
+			v.literal('SEMAINE'),
+			/** La recommandation : un confrère inscrit par votre lien, un mois offert (22/10/2026). */
+			v.literal('RECOMMANDATION')
 		),
 		title: v.string(),
 		message: v.string(),

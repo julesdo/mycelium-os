@@ -10,6 +10,7 @@ import { ECRANS_CREANCE } from './creance';
 import { ECRANS_DEBITEURS } from './debiteurs';
 import { ECRANS_FILE } from './file';
 import { ECRANS_SEMAINE } from './semaine';
+import { ECRANS_INVITATION, ECRANS_RECOMMANDER } from './recommander';
 import { ECRANS_COFFRE } from './coffre';
 import { ECRANS_SANTE } from './sante';
 import { ECRANS_ONGLETS } from './onglets';
@@ -65,6 +66,8 @@ export const ECRANS_DU_PRODUIT: readonly EcranDuProduit[] = [
 	 */
 	...ECRANS_FILE,
 	...ECRANS_SEMAINE,
+	...ECRANS_RECOMMANDER,
+	...ECRANS_INVITATION,
 	...ECRANS_ONGLETS,
 	/*
 	  ⚠️ `ECRANS_VOLET` A DISPARU AVEC LE VOLET DE PREUVE (écran/aujourdhui).

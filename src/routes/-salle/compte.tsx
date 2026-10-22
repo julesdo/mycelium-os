@@ -907,6 +907,7 @@ function compteDe(
 			onVerifier: async () => ({}),
 			onDesactiver: async () => ({})
 		},
+		recommandation: { inscrits: 2, moisEnAttente: 1 },
 		onSeDeconnecter: () => undefined
 	} satisfies CompteAffiche;
 }

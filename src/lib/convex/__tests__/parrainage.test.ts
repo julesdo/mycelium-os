@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { convexTest } from 'convex-test';
 import schema from '../schema';
-import { internal } from '../_generated/api';
-import { attribuerLaRecommandation } from '../croissance/parrainage';
+import { api, internal } from '../_generated/api';
+import { attribuerLaRecommandation, lireLaRecommandation } from '../croissance/parrainage';
 
 /**
  * LA RECOMMANDATION, EN BASE (21/10/2026, moment 7) : le lien rattache le nouvel
@@ -47,6 +47,105 @@ async function deuxEtablissements(t: ReturnType<typeof convexTest>, recompensesD
 	});
 }
 
+/** La facturation ouverte : la recommandation offre un mois chez Paddle, rien avant. */
+function ouvrirLaFacturation() {
+	const avant = {
+		cle: process.env.PADDLE_API_KEY,
+		ouverte: process.env.PADDLE_FACTURATION_OUVERTE
+	};
+	beforeEach(() => {
+		process.env.PADDLE_API_KEY = 'pdl_sdbx_test';
+		process.env.PADDLE_FACTURATION_OUVERTE = 'oui';
+	});
+	afterEach(() => {
+		if (avant.cle === undefined) delete process.env.PADDLE_API_KEY;
+		else process.env.PADDLE_API_KEY = avant.cle;
+		if (avant.ouverte === undefined) delete process.env.PADDLE_FACTURATION_OUVERTE;
+		else process.env.PADDLE_FACTURATION_OUVERTE = avant.ouverte;
+	});
+}
+
+describe('la page publique de l’invitation', () => {
+	ouvrirLaFacturation();
+
+	it(
+		'dit le nom de qui offre, et rien d’autre',
+		async () => {
+			const t = convexTest(schema, modules);
+			await deuxEtablissements(t);
+			expect(await t.query(api.croissance.parrainage.invitation, { code: 'k7m2p9qrst' })).toEqual({
+				offertPar: 'Garnier Bâtiment'
+			});
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'ne dit rien d’un code inconnu ni d’un code mal formé',
+		async () => {
+			const t = convexTest(schema, modules);
+			await deuxEtablissements(t);
+			expect(
+				await t.query(api.croissance.parrainage.invitation, { code: 'ZZZZZZZZZZ' })
+			).toBeNull();
+			expect(await t.query(api.croissance.parrainage.invitation, { code: 'court' })).toBeNull();
+		},
+		DELAI_CONVEX
+	);
+});
+
+describe('la page « Recommander »', () => {
+	ouvrirLaFacturation();
+
+	it(
+		'lit chaque invitation, la valeur du mois de la formule et l’objectif de l’année',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { parrain, filleul } = await deuxEtablissements(t, 2);
+			const maintenant = Date.now();
+			await t.run(async (ctx) => {
+				await ctx.db.patch(parrain, { paddlePlanTier: 'equipe' });
+				await ctx.db.patch(filleul, {
+					parrainePar: parrain,
+					parrainageDeclencheLe: maintenant - 1000
+				});
+				await ctx.db.insert('organizations', {
+					name: 'Plomberie Martin',
+					createdAt: maintenant + 60_000,
+					parrainePar: parrain
+				});
+			});
+			const lu = await t.run((ctx) => lireLaRecommandation(ctx, parrain, maintenant));
+			expect(lu.nomEtablissement).toBe('Garnier Bâtiment');
+			expect(lu.inscrits).toBe(2);
+			expect(lu.abonnes).toBe(1);
+			expect(lu.moisCetteAnnee).toBe(2);
+			expect(lu.moisParAn).toBe(12);
+			// Équipe : le prix mensuel HT de la grille, en centimes.
+			expect(lu.valeurDuMois).toBeGreaterThan(0);
+			expect(lu.invitations.map((i) => i.abonneeLe === null)).toEqual([true, false]);
+			// Jamais un nom d'établissement recommandé.
+			expect(JSON.stringify(lu.invitations)).not.toContain('Martin');
+			expect(JSON.stringify(lu.invitations)).not.toContain('Dupont');
+			expect(lu.offertPar).toBeNull();
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'dit au recommandé qui lui offre son mois, tant qu’il ne l’a pas gagné',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { parrain, filleul } = await deuxEtablissements(t);
+			await t.run((ctx) => ctx.db.patch(filleul, { parrainePar: parrain }));
+			const lu = await t.run((ctx) => lireLaRecommandation(ctx, filleul, Date.now()));
+			expect(lu.offertPar).toBe('Garnier Bâtiment');
+			expect(lu.valeurDuMois).toBeNull();
+		},
+		DELAI_CONVEX
+	);
+});
+
 describe('l’attribution', () => {
 	it(
 		'rattache le nouvel établissement à celui dont il a suivi le lien',
@@ -69,6 +168,27 @@ describe('l’attribution', () => {
 				await attribuerLaRecommandation(ctx, filleul, 'nouveau', 'ZZZZZZZZZZ');
 			});
 			expect((await t.run((ctx) => ctx.db.get(filleul)))?.parrainePar).toBeUndefined();
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'prévient qui recommande qu’une entreprise s’est inscrite, sans la nommer',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { parrain, filleul } = await deuxEtablissements(t);
+			await t.run((ctx) => attribuerLaRecommandation(ctx, filleul, 'nouveau', CODE));
+			const notes = await t.run((ctx) =>
+				ctx.db
+					.query('notifications')
+					.filter((q) => q.eq(q.field('organizationId'), parrain))
+					.collect()
+			);
+			expect(notes).toHaveLength(1);
+			expect(notes[0]?.type).toBe('RECOMMANDATION');
+			expect(notes[0]?.userId).toBe('parrain');
+			expect(notes[0]?.link).toBe('/app/recommander');
+			expect(`${notes[0]?.title} ${notes[0]?.message}`).not.toContain('Dupont');
 		},
 		DELAI_CONVEX
 	);
@@ -100,6 +220,14 @@ describe('la première vraie échéance payée', () => {
 			expect(f?.recompenseEnAttente).toBe(true);
 			expect(p?.recompensesParrainage?.map((r) => r.raison)).toEqual(['PARRAIN']);
 			expect(p?.recompenseEnAttente).toBe(true);
+			// Qui recommande l'apprend : un mois lui est offert.
+			const notes = await t.run((ctx) =>
+				ctx.db
+					.query('notifications')
+					.filter((q) => q.eq(q.field('organizationId'), parrain))
+					.collect()
+			);
+			expect(notes.map((n) => n.type)).toEqual(['RECOMMANDATION']);
 		},
 		DELAI_CONVEX
 	);

@@ -94,6 +94,8 @@ export interface CaisseAffichee {
 		readonly mois: number;
 		readonly dernierJour: string;
 	} | null;
+	/** L'établissement qui offre un mois par sa recommandation, tant qu'il n'est pas gagné. */
+	readonly cadeau?: string | null;
 	/** L'offre fondateurs, tant qu'il reste des places. */
 	readonly fondateurs?: {
 		readonly prixId: string;
@@ -233,6 +235,7 @@ export function SectionFacturation({
 					utilisateurs={abonnement.utilisateurs}
 					onChoisir={caisse.onChoisir}
 					{...(caisse.bienvenue ? { bienvenue: caisse.bienvenue } : {})}
+					{...(caisse.cadeau ? { cadeau: caisse.cadeau } : {})}
 					ttc={caisse.ttc ?? null}
 					{...(caisse.onVoirLesPrix ? { onVoirLesPrix: caisse.onVoirLesPrix } : {})}
 				/>

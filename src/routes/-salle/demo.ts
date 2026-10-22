@@ -40,7 +40,13 @@ export interface EcranDuProduit {
 		  ⚠️ ET L'ADMIN DEPUIS LE 16 OCTOBRE 2026 : les écrans de l'équipe se regardent
 		  aux quatre largeurs comme les autres.
 		*/
-		`/app/${string}` | `/admin/${string}` | '/bienvenue' | '/' | '/p/$jeton'
+		/* ⚠️ ET L'INVITATION DEPUIS LE 22 OCTOBRE 2026 : la seconde page qu'un tiers ouvre. */
+		| `/app/${string}`
+		| `/admin/${string}`
+		| '/bienvenue'
+		| '/'
+		| '/p/$jeton'
+		| '/invitation/$code'
 	>;
 	/**
 	 * L'IDENTITÉ DE L'ENTRÉE DANS LA SALLE, quand la route ne suffit pas.

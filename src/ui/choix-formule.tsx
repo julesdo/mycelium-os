@@ -23,6 +23,7 @@ import { BoutonPrincipal, BoutonTexte } from './bouton';
 import { cn } from './cn';
 import { prixAffiche } from './format';
 import { FeuillePleinEcran } from './plein-ecran';
+import { MentionDuCadeau } from './recommandation';
 import { INSECABLE, ceQuiEstPreleve, montantCourt } from './montants-abonnement';
 
 /**
@@ -69,7 +70,8 @@ export function ChoixDeFormule({
 	ttc,
 	onVoirLesPrix,
 	contexte,
-	titre
+	titre,
+	cadeau
 }: {
 	readonly ouverte: boolean;
 	readonly onFermer: () => void;
@@ -107,6 +109,8 @@ export function ChoixDeFormule({
 	readonly contexte?: string;
 	/** Le titre de la page, quand elle sert un geste : « Suivre Garage Martin ». */
 	readonly titre?: string;
+	/** L'établissement qui offre un mois par sa recommandation (22/10/2026). */
+	readonly cadeau?: string;
 }) {
 	// Paddle.js est un système extérieur : la page ouverte, on lui demande ses montants.
 	useEffect(() => {
@@ -164,6 +168,12 @@ export function ChoixDeFormule({
 		>
 			{contexte === undefined ? null : (
 				<p className="px-1 text-cladd-xs leading-relaxed text-cladd-fg-soft">{contexte}</p>
+			)}
+			{cadeau === undefined || actuelle !== undefined ? null : (
+				<MentionDuCadeau
+					offertPar={cadeau}
+					detail="Déduit de votre deuxième prélèvement, après votre première échéance."
+				/>
 			)}
 			{essaiDisponible && actuelle === undefined ? (
 				<FriseDeLEssai maintenant={maintenant} montant={montant} montantTTC={montantTTC} />
