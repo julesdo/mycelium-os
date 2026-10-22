@@ -635,6 +635,7 @@ function ReussiteDemo({ etat, variante }: { etat: EtatDemo; variante?: string })
 				push={{ etat: 'POSSIBLE', enCours: false, onActiver: () => undefined }}
 				onVu={() => undefined}
 				onAnnee={() => undefined}
+				onRecommander={() => undefined}
 				onNePlusProposer={() => undefined}
 			/>
 		</>

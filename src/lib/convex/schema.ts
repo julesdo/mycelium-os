@@ -109,6 +109,31 @@ export default defineSchema({
 		 * s'inscrit vu de tous, sans célébration (`recouvrement/jalons.ts`).
 		 */
 		jalonsRelevesLe: v.optional(v.number()),
+		/**
+		 * LA RECOMMANDATION (21/10/2026, `croissance/parrainage.ts`). Le lien personnel
+		 * (`/?parrain=<code>`), l'établissement qui a recommandé celui-ci (posé à la
+		 * création seulement), le jour où sa première échéance payée a déclenché les mois
+		 * offerts, et les mois gagnés : appliqués chez Paddle à l'échéance suivante.
+		 */
+		codeParrainage: v.optional(v.string()),
+		parrainePar: v.optional(v.id('organizations')),
+		parrainageDeclencheLe: v.optional(v.number()),
+		recompensesParrainage: v.optional(
+			v.array(
+				v.object({
+					raison: v.union(v.literal('PARRAIN'), v.literal('FILLEUL')),
+					gagneeLe: v.number(),
+					/** Le prix mensuel HT de la formule, en centimes, fixé à l'application. */
+					montant: v.optional(v.number()),
+					remiseId: v.optional(v.string()),
+					appliqueeLe: v.optional(v.number())
+				})
+			)
+		),
+		/** Un mois gagné attend d'être appliqué (le passage quotidien le reprend). */
+		recompenseEnAttente: v.optional(v.boolean()),
+		/** Une application en cours chez Paddle : deux ne se chevauchent pas. */
+		recompenseEnCoursLe: v.optional(v.number()),
 		paddleStatus: v.optional(
 			v.union(
 				v.literal('active'),
@@ -133,7 +158,11 @@ export default defineSchema({
 		// Les rappels d'abonnement du matin lisent les essais et les abonnements actifs.
 		.index('by_paddle_status', ['paddleStatus'])
 		// Les places de l'offre fondateurs se comptent sur le prix souscrit.
-		.index('by_paddle_prix', ['paddlePrixId']),
+		.index('by_paddle_prix', ['paddlePrixId'])
+		// La recommandation : le lien, les recommandés, les mois qui attendent Paddle.
+		.index('by_code_parrainage', ['codeParrainage'])
+		.index('by_parraine_par', ['parrainePar'])
+		.index('by_recompense_en_attente', ['recompenseEnAttente']),
 
 	/**
 	 * LES PRIX PADDLE DE CE DÉPLOIEMENT, rangés par le catalogue

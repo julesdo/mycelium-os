@@ -13,7 +13,7 @@ import {
 	paroleAccordee
 } from '../croissance/attention';
 import { vCleJalon } from './tables';
-import { formuleSouscrite } from '../billing';
+import { formuleSouscrite, paiementOuvert } from '../billing';
 import { moisOfferts } from '../../config/tarifs';
 import { jourDeParis } from '../../admin/dates';
 import { cleDeSilence } from '../../croissance/attention';
@@ -46,8 +46,6 @@ const JOUR_MS = 24 * 60 * 60 * 1000;
 const SEMAINE_MS = 7 * JOUR_MS;
 /** Une réussite de plus d'un mois ne se fête plus : elle n'est plus une nouvelle. */
 const FRAICHEUR_MS = 30 * JOUR_MS;
-/** Le parrainage arrive au lot 7 : sa ligne se tait jusque-là. */
-const PARRAINAGE_OUVERT = false;
 
 const vLigne = v.union(v.literal('PUSH'), v.literal('ANNEE'), v.literal('RECOMMANDATION'));
 /** Ce qu'un relevé lit de règlements au plus, loin de la limite d'une transaction. */
@@ -413,7 +411,8 @@ export const jalonAMontrer = authedQuery({
 			mensuel: proposerLAnnee(org, membre.role),
 			anneeProposee:
 				tous.some((j) => j.secondaire === 'ANNEE') || coupes.has(cleDeSilence('annee')),
-			recommandationCoupee: !PARRAINAGE_OUVERT || coupes.has(cleDeSilence('recommandation'))
+			// La recommandation offre un mois chez Paddle : rien tant que la facturation est fermée.
+			recommandationCoupee: !paiementOuvert() || coupes.has(cleDeSilence('recommandation'))
 		});
 		const debiteur = jalon.debiteurId === undefined ? null : await ctx.db.get(jalon.debiteurId);
 		const texte = texteDuJalon(cle, {

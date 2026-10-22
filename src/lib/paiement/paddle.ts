@@ -201,6 +201,8 @@ export type EvenementPaddle =
 			readonly clientId: string | null;
 			readonly prixIds: readonly string[];
 			readonly finDePeriode: number | null;
+			/** Ce que la transaction a prélevé ; 0 € pour l'ouverture d'un essai. */
+			readonly montants: { readonly ht: number; readonly ttc: number } | null;
 			readonly lien: LienDOrganisation | null;
 			readonly survenuLe: number;
 	  }
@@ -259,6 +261,7 @@ export function lireEvenement(brut: unknown): EvenementPaddle {
 			clientId: texte(data.customer_id),
 			prixIds: prixDes(data.items),
 			finDePeriode: date(objet(data.billing_period)?.ends_at),
+			montants: montantsDeLaTransaction(data),
 			lien,
 			survenuLe
 		};

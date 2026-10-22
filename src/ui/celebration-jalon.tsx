@@ -36,8 +36,13 @@ export interface JalonAffiche {
 
 export type IssueDeLaLigne = 'TOUCHEE' | 'PASSEE' | 'AUCUNE';
 
-function libelleDeLaLigne(ligne: 'PUSH' | 'ANNEE', moisOfferts: number | null | undefined): string {
+function libelleDeLaLigne(
+	ligne: LigneDeCelebration,
+	moisOfferts: number | null | undefined
+): string {
 	if (ligne === 'PUSH') return 'Être prévenu quand un client paie';
+	if (ligne === 'RECOMMANDATION')
+		return 'Un confrère a des impayés ? Un mois offert pour vous deux.';
 	return moisOfferts === null || moisOfferts === undefined
 		? 'Passer à l’année'
 		: `Passer à l’année : ${moisOfferts} mois offerts`;
@@ -49,6 +54,7 @@ export function CelebrationDeJalon({
 	push,
 	onVu,
 	onAnnee,
+	onRecommander,
 	onNePlusProposer
 }: {
 	readonly jalon: JalonAffiche;
@@ -59,16 +65,13 @@ export function CelebrationDeJalon({
 		| undefined;
 	readonly onVu: (issue: IssueDeLaLigne) => void;
 	readonly onAnnee: () => void;
+	/** La recommandation : la page du lien personnel, dans le compte. */
+	readonly onRecommander: () => void;
 	/** « Ne plus me le proposer » : la ligne se tait pour de bon (`marketing:<genre>`). */
-	readonly onNePlusProposer: (ligne: 'PUSH' | 'ANNEE') => void;
+	readonly onNePlusProposer: (ligne: LigneDeCelebration) => void;
 }) {
 	const [etape, setEtape] = useState<'fete' | 'push' | 'finie'>('fete');
-	const ligne =
-		jalon.secondaire === 'PUSH' && push === undefined
-			? null
-			: jalon.secondaire === 'RECOMMANDATION'
-				? null
-				: jalon.secondaire;
+	const ligne = jalon.secondaire === 'PUSH' && push === undefined ? null : jalon.secondaire;
 
 	function finir(issue: IssueDeLaLigne) {
 		setEtape('finie');
@@ -98,7 +101,8 @@ export function CelebrationDeJalon({
 										return;
 									}
 									finir('TOUCHEE');
-									onAnnee();
+									if (ligne === 'RECOMMANDATION') onRecommander();
+									else onAnnee();
 								}
 							},
 							refus: {

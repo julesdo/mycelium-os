@@ -397,6 +397,16 @@ export const PARTENARIAT_CABINET = {
 	premiersCabinets: 5
 } as const;
 
+/**
+ * LA RECOMMANDATION (21/10/2026, le parcours de l'habitude, moment 7) : un mois offert
+ * pour les deux, à la première vraie échéance payée de l'établissement recommandé ;
+ * douze par année glissante au plus pour qui recommande (`croissance/parrainage.ts`).
+ */
+export const PARRAINAGE = {
+	moisOfferts: 1,
+	recompensesParAn: 12
+} as const;
+
 /** Les jours pendant lesquels l'offre de bienvenue reste valable après un diagnostic. */
 export const JOURS_OFFRE_DE_BIENVENUE = 14;
 

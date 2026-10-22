@@ -65,3 +65,33 @@ describe('l’amorce de la source', () => {
 		).toBeUndefined();
 	});
 });
+
+describe('le code de la recommandation (21/10/2026)', () => {
+	function executerAvecParrain(chemin: string, href: string, dejaSource?: string) {
+		const stock = new Map<string, string>();
+		if (dejaSource !== undefined) stock.set('letikette.source', dejaSource);
+		const sessionStorage = {
+			getItem: (k: string) => stock.get(k) ?? null,
+			setItem: (k: string, val: string) => void stock.set(k, val)
+		};
+		new Function('location', 'document', 'sessionStorage', AMORCE_SOURCE)(
+			{ pathname: chemin, href, search: new URL(href).search },
+			{ referrer: '' },
+			sessionStorage
+		);
+		return stock.get('letikette.parrain');
+	}
+
+	it('garde le code du lien, même dans une visite déjà notée', () => {
+		const deja = JSON.stringify({ url: 'https://www.letikette.com/tarifs', referent: '' });
+		expect(
+			executerAvecParrain('/', 'https://www.letikette.com/?parrain=K7M2P9QRST', deja)
+		).toBe('K7M2P9QRST');
+	});
+
+	it('ne garde rien sur la page où le client paie', () => {
+		expect(
+			executerAvecParrain('/p/abc', 'https://www.letikette.com/p/abc?parrain=K7M2P9QRST')
+		).toBeUndefined();
+	});
+});

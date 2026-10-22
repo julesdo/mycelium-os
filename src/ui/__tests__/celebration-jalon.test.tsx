@@ -71,6 +71,7 @@ function monter(jalon: JalonAffiche, onVu = vi.fn(), onAnnee = vi.fn()) {
 				push={{ etat: 'POSSIBLE', enCours: false, onActiver: vi.fn() }}
 				onVu={onVu}
 				onAnnee={onAnnee}
+				onRecommander={vi.fn()}
 				onNePlusProposer={vi.fn()}
 			/>
 		)
@@ -127,6 +128,7 @@ describe('la célébration d’un jalon', () => {
 					push={undefined}
 					onVu={onVu}
 					onAnnee={vi.fn()}
+					onRecommander={vi.fn()}
 					onNePlusProposer={onNePlusProposer}
 				/>
 			)
@@ -141,8 +143,24 @@ describe('la célébration d’un jalon', () => {
 		expect(document.body.textContent).toContain('Passer à l’année : 3 mois offerts');
 	});
 
-	it('tait la recommandation tant que le parrainage n’est pas ouvert', () => {
-		monter({ ...DIX_MILLE, secondaire: 'RECOMMANDATION' });
-		expect(document.body.textContent).not.toContain('confrère');
+	it('propose la recommandation sous une réussite d’argent, et y mène', async () => {
+		const onRecommander = vi.fn();
+		const onVu = vi.fn();
+		act(() =>
+			racine.render(
+				<CelebrationDeJalon
+					jalon={{ ...DIX_MILLE, secondaire: 'RECOMMANDATION' }}
+					bloquee={false}
+					push={undefined}
+					onVu={onVu}
+					onAnnee={vi.fn()}
+					onRecommander={onRecommander}
+					onNePlusProposer={vi.fn()}
+				/>
+			)
+		);
+		await toucher('Un confrère a des impayés ? Un mois offert pour vous deux.');
+		expect(onRecommander).toHaveBeenCalled();
+		expect(onVu).toHaveBeenCalledWith('TOUCHEE');
 	});
 });

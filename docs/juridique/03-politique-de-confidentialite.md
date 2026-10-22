@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-> **Version 2.9** du 19 octobre 2026 (le rapport du diagnostic, et deux rappels de l'offre de bienvenue qui le suit, section 5). **Version 2.8** du 16 octobre 2026 (le service client : l'Aide, Plume support, l'équipe et la réception des e-mails ; et les relances que Resend achemine depuis le 8 octobre, sections 3, 5, 6.1, 7, 9 et 10). **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
+> **Version 2.10** du 22 octobre 2026 (la recommandation, sections 5 et 9). **Version 2.9** du 19 octobre 2026 (le rapport du diagnostic, et deux rappels de l'offre de bienvenue qui le suit, section 5). **Version 2.8** du 16 octobre 2026 (le service client : l'Aide, Plume support, l'équipe et la réception des e-mails ; et les relances que Resend achemine depuis le 8 octobre, sections 3, 5, 6.1, 7, 9 et 10). **Version 2.7** du 16 octobre 2026 (la prospection de Letikette, l'équipe de Letikette et la double authentification, sections 5, 8 bis, 9, 10 et 11). **Version 2.6** du 16 octobre 2026 (l'accompagnement à l'utilisation et les conseils de Plume, sections 5 et 9). **Version 2.5** — 15 octobre 2026 (la mesure d'audience, sections 5 et 7). **Version 2.4** — 14 octobre 2026 (l'abonnement par formules, section 3). **Version 2.3** — 13 octobre 2026 (l'analyse de la santé des clients, sections 4.6, 5 et 7). **Version 2.2** — 13 octobre 2026 (la connexion des logiciels par Nango, section 7). **Version 2.1** — 12 octobre 2026 (le coffre-fort des documents, sections 9 et 10). Rédigée au regard des articles 12 à 14 du règlement
 > (UE) 2016/679 (RGPD) et de la loi n° 78-17 du 6 janvier 1978 modifiée.
 >
 > **Chaque fait de ce document a été relevé dans le logiciel lui-même**, et non déclaré.
@@ -183,6 +183,7 @@ analyse la santé de ce débiteur, ou d'une entreprise que le client s'apprête 
 | Suivre où en est votre compte (provenance de l'inscription, étapes franchies, indice d'activité) pour vous accompagner | **Intérêt légitime** à faire réussir l'utilisation du Service | art. 6.1.f |
 | Vous envoyer le rapport de votre diagnostic quand il est rendu | **Exécution du contrat** | art. 6.1.b |
 | Vous envoyer les conseils de Plume dans vos premières semaines (quatre au plus) et, aux administrateurs du compte, deux rappels de l'offre de bienvenue dans les quatorze jours qui suivent un diagnostic | **Intérêt légitime**, avec opposition en un clic | art. 6.1.f |
+| Rattacher un établissement à celui qui l'a recommandé, et offrir à chacun le mois promis (article 7.1 des conditions générales) | **Exécution du contrat** | art. 6.1.b |
 | Permettre à l'équipe de Letikette d'accompagner les comptes, et journaliser ses accès | **Intérêt légitime** à assister les clients et à sécuriser l'administration du Service | art. 6.1.f |
 | Prospecter des entreprises qui ne sont pas clientes, par leurs contacts professionnels (section 8 bis) | **Intérêt légitime** à présenter le Service, avec opposition à tout moment | art. 6.1.f |
 | Répondre à vos questions au support, par Plume support puis par l'équipe | **Exécution du contrat** | art. 6.1.b |
@@ -214,6 +215,14 @@ concerne juridiquement. La provenance de la visite est gardée dans l'onglet du 
 de la visite, sans cookie, puis jointe à l'inscription ; elle n'est pas notée sur la page où un
 débiteur consulte ce qu'il doit. Les conseils de Plume se coupent dans Votre compte, puis Votre
 profil, ou par le lien présent en bas de chacun d'eux.
+
+**Recommandation.** Le lien personnel de Votre compte porte un code. Suivi, ce code est gardé dans
+l'onglet du navigateur le temps de la visite, sans cookie, puis joint à l'inscription :
+l'établissement créé est rattaché à celui qui l'a recommandé. Qui recommande ne voit que des
+nombres (inscrits par son lien, abonnés, mois offerts), **jamais le nom** d'un établissement
+recommandé ni ce qu'il fait du Service. Paddle reçoit, pour chacun des deux, le montant à déduire
+de son prochain prélèvement, jamais le lien entre eux. La suppression de l'établissement qui a
+recommandé efface ce rattachement chez ceux qu'il a recommandés.
 
 **Le service client.** Dans l'Aide, **Plume support**, un assistant automatique, répond d'abord. Il
 lit la base d'aide du produit et un résumé de votre compte fait **de nombres et de codes** : la
@@ -425,6 +434,7 @@ s'exécute chaque nuit.
 | Journal des accès aux documents (dépôt, ouverture, téléchargement, retrait) | **jusqu'à la suppression de l'établissement** |
 | Jetons d'ouverture d'un document | **une minute**, à usage unique ; les jetons expirés sont effacés chaque nuit |
 | Parcours du compte (provenance, étapes, indice d'activité) et journal des conseils envoyés | **jusqu'à la suppression de l'établissement**, qui les efface |
+| Lien de recommandation, rattachement et mois offerts | **jusqu'à la suppression de l'établissement** ; la suppression de celui qui a recommandé efface le rattachement chez les autres |
 | Notes, tâches et journal de l'équipe de Letikette portant sur un établissement | **jusqu'à la suppression de l'établissement**, qui les efface |
 | Prospects (section 8 bis) | **trois ans après le dernier contact**, effacés automatiquement ; la liste d'opposition ne garde que des empreintes |
 | Conversations du support d'un établissement, et leurs messages | **jusqu'à la suppression de l'établissement**, qui les efface ; un compte supprimé y perd son nom |

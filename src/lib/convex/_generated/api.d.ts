@@ -60,6 +60,7 @@ import type * as connexions_validateurs from "../connexions/validateurs.js";
 import type * as croissance_attention from "../croissance/attention.js";
 import type * as croissance_conseils from "../croissance/conseils.js";
 import type * as croissance_interet from "../croissance/interet.js";
+import type * as croissance_parrainage from "../croissance/parrainage.js";
 import type * as croissance_point from "../croissance/point.js";
 import type * as croissance_reglage from "../croissance/reglage.js";
 import type * as croissance_releve from "../croissance/releve.js";
@@ -243,6 +244,7 @@ declare const fullApi: ApiFromModules<{
   "croissance/attention": typeof croissance_attention;
   "croissance/conseils": typeof croissance_conseils;
   "croissance/interet": typeof croissance_interet;
+  "croissance/parrainage": typeof croissance_parrainage;
   "croissance/point": typeof croissance_point;
   "croissance/reglage": typeof croissance_reglage;
   "croissance/releve": typeof croissance_releve;

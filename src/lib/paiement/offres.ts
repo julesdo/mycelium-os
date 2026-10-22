@@ -92,6 +92,30 @@ export function offreDeBienvenue(
  * (`usage_limit`), sur les seuls prix au mois, jusqu'à la fin de l'offre. L'établissement
  * est noté dans les données libres, pour le retrouver dans le tableau de bord.
  */
+/**
+ * LE MOIS OFFERT D'UNE RECOMMANDATION (21/10/2026, moment 7) : une remise unique, d'un
+ * montant fixe — le prix mensuel HT de la formule —, sur la prochaine échéance de
+ * l'abonnement, jamais proposée au paiement.
+ */
+export function corpsDeLaRecompense({
+	organisationId,
+	montantCentimes
+}: {
+	readonly organisationId: string;
+	readonly montantCentimes: number;
+}): Record<string, unknown> {
+	return {
+		amount: String(montantCentimes),
+		description: 'Recommandation · un mois offert',
+		type: 'flat',
+		currency_code: 'EUR',
+		enabled_for_checkout: false,
+		recur: false,
+		usage_limit: 1,
+		custom_data: { letikette_organisation: organisationId }
+	};
+}
+
 export function corpsDeLaRemise({
 	organisationId,
 	nomEtablissement,

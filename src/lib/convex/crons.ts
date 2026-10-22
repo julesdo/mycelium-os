@@ -168,6 +168,15 @@ crons.daily(
 	{}
 );
 
+// LES MOIS OFFERTS D'UNE RECOMMANDATION (21/10/2026) : ceux qui attendaient la fin d'une
+// remise ou un abonnement se reprennent chaque jour.
+crons.daily(
+	'recompensesParrainage',
+	{ hourUTC: 7, minuteUTC: 30 },
+	internal.croissance.parrainage.reprendreLesRecompenses,
+	{}
+);
+
 export default crons;
 
 /*

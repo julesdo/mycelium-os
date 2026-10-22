@@ -394,6 +394,7 @@ export {
 } from './celebration-jalon';
 export { useUneFeuilleOuverte } from './feuilles-ouvertes';
 export { SignalDeVue } from './signal-de-vue';
+export { SectionRecommandation, type RecommandationAffichee } from './recommandation';
 export { CarteGlissable, type ActionDeCarte } from './carte-glissable';
 export { FeuilleDeRappel } from './feuille-rappel';
 export {

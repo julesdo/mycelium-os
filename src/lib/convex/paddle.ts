@@ -15,6 +15,7 @@ import { organisationCouranteOuNull } from './lib/auth';
 import type { Doc, Id } from './_generated/dataModel';
 import { FORMULES, OFFRES, RYTHMES, type Formule, type Rythme } from '../config/tarifs';
 import {
+	corpsDeLaRecompense,
 	corpsDeLaRemise,
 	ETIQUETTE_FONDATEURS,
 	offreDeBienvenue,
@@ -22,6 +23,7 @@ import {
 } from '../paiement/offres';
 import { jourDeParis } from '../admin/dates';
 import { essaiDisponible, limitesDe, paiementOuvert } from './billing';
+import { remiseQuiCourt } from '../croissance/parrainage';
 import {
 	CLE_ORGANISATION,
 	CLE_SCEAU,
@@ -415,6 +417,12 @@ export const upsertSubscription = internalMutation({
 			organizationId: org._id,
 			abonnementId: args.paddleSubscriptionId
 		});
+		// Un mois offert qui attendait un abonnement, ou la fin d'une autre remise.
+		if (org.recompenseEnAttente === true) {
+			await ctx.scheduler.runAfter(0, internal.paddle.appliquerLesRecompenses, {
+				organizationId: org._id
+			});
+		}
 		return { action: 'inscrit', organizationId: org._id };
 	}
 });
@@ -668,6 +676,14 @@ export const webhookHandler = httpAction(async (ctx, req): Promise<Response> => 
 			currentPeriodEnd: evenement.finDePeriode ?? undefined,
 			organizationId: await organisationScellee(secret, evenement.lien)
 		});
+		// La première vraie échéance d'un établissement recommandé (21/10/2026, moment 7).
+		if (evenement.montants !== null && evenement.montants.ttc > 0) {
+			await ctx.runMutation(internal.croissance.parrainage.noterUneEcheancePayee, {
+				paddleSubscriptionId: evenement.abonnementId,
+				paddleCustomerId: evenement.clientId,
+				ttc: evenement.montants.ttc
+			});
+		}
 	}
 
 	return new Response(JSON.stringify({ received: true }), {
@@ -768,6 +784,69 @@ async function appelerPaddle(
 	}
 	return json?.data ?? {};
 }
+
+/**
+ * LES MOIS OFFERTS D'UNE RECOMMANDATION, POSÉS CHEZ PADDLE (21/10/2026, moment 7) : une
+ * remise unique du prix mensuel HT, appliquée à la prochaine échéance. Un abonnement
+ * n'en porte qu'une : tant qu'une autre court (la bienvenue), le mois attend. Dormant
+ * sans clé ni facturation ouverte ; un refus de Paddle le laisse en attente.
+ */
+export const appliquerLesRecompenses = internalAction({
+	args: { organizationId: v.id('organizations') },
+	returns: v.null(),
+	handler: async (ctx, { organizationId }): Promise<null> => {
+		if (!process.env.PADDLE_API_KEY || !paiementOuvert()) return null;
+		const reserve = await ctx.runMutation(internal.croissance.parrainage._reserverUneRecompense, {
+			organizationId
+		});
+		if (reserve === null) return null;
+		try {
+			const abonnement = await appelerPaddle('GET', `/subscriptions/${reserve.abonnementId}`);
+			const enCours = abonnement.discount as { ends_at?: unknown } | null | undefined;
+			const prochaine =
+				typeof abonnement.next_billed_at === 'string' ? abonnement.next_billed_at : null;
+			if (
+				remiseQuiCourt(
+					enCours === null || enCours === undefined
+						? null
+						: { ends_at: typeof enCours.ends_at === 'string' ? enCours.ends_at : null },
+					prochaine
+				)
+			) {
+				await ctx.runMutation(internal.croissance.parrainage._libererLaRecompense, {
+					organizationId
+				});
+				return null;
+			}
+			const remise = await appelerPaddle(
+				'POST',
+				'/discounts',
+				corpsDeLaRecompense({ organisationId: organizationId, montantCentimes: reserve.montant })
+			);
+			const remiseId = typeof remise.id === 'string' ? remise.id : null;
+			if (remiseId === null) throw new Error('Paddle n’a pas rendu la remise.');
+			await appelerPaddle('PATCH', `/subscriptions/${reserve.abonnementId}`, {
+				discount: { id: remiseId, effective_from: 'next_billing_period' }
+			});
+			await ctx.runMutation(internal.croissance.parrainage._noterLaRecompense, {
+				organizationId,
+				rang: reserve.rang,
+				montant: reserve.montant,
+				remiseId
+			});
+			// Le prochain prélèvement baisse : relu pour l'écran et l'e-mail J-2.
+			await ctx.scheduler.runAfter(0, internal.paddle.releverLeProchainPrelevement, {
+				organizationId,
+				abonnementId: reserve.abonnementId
+			});
+		} catch {
+			await ctx.runMutation(internal.croissance.parrainage._libererLaRecompense, {
+				organizationId
+			});
+		}
+		return null;
+	}
+});
 
 /** Inscrit l'abonnement que Paddle vient de rendre, comme le ferait son rappel. */
 async function inscrireLaReponse(

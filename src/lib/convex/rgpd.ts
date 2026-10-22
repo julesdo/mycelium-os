@@ -369,6 +369,13 @@ export const _entetesExport = internalQuery({
 
 type Contexte = { organizationId: Id<'organizations'>; nomEtablissement: string; userId: string };
 
+/** L'établissement exporté, sans l'identifiant de celui qui l'a recommandé (21/10/2026). */
+function sansLeLienDeRecommandation(org: unknown): unknown {
+	if (typeof org !== 'object' || org === null || !('parrainePar' in org)) return org;
+	const { parrainePar, ...reste } = org as Record<string, unknown>;
+	return { ...reste, recommandeParUnAutre: parrainePar !== undefined };
+}
+
 type Entetes = {
 	org: unknown;
 	depots: unknown[];
@@ -473,7 +480,8 @@ export const exporterMesDonnees = action({
 				format: 'JSON, une clé par table',
 				note: "Cet export contient l'INTÉGRALITÉ des données détenues pour cet établissement. Aucune table n'en est exclue : rien n'est mutualisé entre clients."
 			},
-			etablissement: entetes.org,
+			// L'identifiant d'un autre établissement (celui qui a recommandé) ne sort pas.
+			etablissement: sansLeLienDeRecommandation(entetes.org),
 			membres: entetes.membres,
 			invitations: entetes.invitations,
 			depots: entetes.depots,
@@ -757,6 +765,13 @@ export const purgerEtablissement = internalMutation({
 			.withIndex('by_compte', (q) => q.eq('compteId', organizationId))
 			.take(50)) {
 			await ctx.db.patch(prospect._id, { compteId: undefined });
+		}
+		// Les établissements qu'il a recommandés gardent leurs mois, perdent le lien vers lui.
+		for (const recommande of await ctx.db
+			.query('organizations')
+			.withIndex('by_parraine_par', (q) => q.eq('parrainePar', organizationId))
+			.take(50)) {
+			await ctx.db.patch(recommande._id, { parrainePar: undefined });
 		}
 		// Les courriers référencent la créance et le décompte : ils partent avant eux.
 		budget = await viderParIndexOrg(ctx, 'envois', organizationId, budget);

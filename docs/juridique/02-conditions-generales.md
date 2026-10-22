@@ -1,6 +1,7 @@
 # Conditions générales d'utilisation et de vente
 
-> **Version 2.4** du 14 octobre 2026 : trente jours pour demander un remboursement (article 8.2).
+> **Version 2.5** du 22 octobre 2026 : la recommandation (article 7.1).
+> Version 2.4 du 14 octobre 2026 : trente jours pour demander un remboursement (article 8.2).
 > Version 2.3 du même jour : les formules, l'essai et l'abonnement annuel (articles 7.1 et 8.1). Version 2.2 du même jour : Paddle, vendeur de registre (article 7.2), et la politique de
 > remboursement (article 8.2). Version 2.1 du 25 septembre 2026. Entrée en vigueur à la date de
 > sa mise en ligne.
@@ -206,6 +207,14 @@ en est prévenu deux jours avant, et peut l'annuler jusqu'à la veille depuis so
 est accordé **une seule fois par établissement et par compte**.
 
 Un abonnement annuel se renouvelle chaque année ; le Client en est prévenu trente jours avant.
+
+**La recommandation.** Chaque établissement dispose d'un lien personnel, dans son espace. Quand une
+entreprise crée son établissement par ce lien et paie sa première échéance (l'essai gratuit n'en
+est pas une), **un mois est offert à chacun des deux** : un montant égal au prix mensuel hors taxes
+de sa formule, déduit par Paddle de son prochain prélèvement. Le mois de qui recommande attend
+qu'il ait un abonnement payant. Une recommandation n'ouvre ce droit qu'une fois ; qui recommande
+reçoit au plus douze mois offerts sur douze mois glissants ; le lien ne vaut pas pour un
+établissement dont on est déjà membre. Un mois offert n'est jamais versé en argent.
 
 Aucun montant n'est reproduit aux présentes : les prix évoluent, et un chiffre recopié dans un
 contrat finit par contredire celui qui est affiché. La page publique des tarifs fait foi au jour

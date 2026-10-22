@@ -18,7 +18,24 @@
 const CLE = 'letikette.source';
 const LONGUEUR_MAX = 2000;
 
-export const AMORCE_SOURCE = `try{if(!/^\\/(p|desinscription|attente)\\//.test(location.pathname)&&!sessionStorage.getItem('${CLE}')){sessionStorage.setItem('${CLE}',JSON.stringify({url:String(location.href).slice(0,${LONGUEUR_MAX}),referent:String(document.referrer||'').slice(0,${LONGUEUR_MAX})}))}}catch(e){}`;
+/**
+ * LE CODE D'UNE RECOMMANDATION (`/?parrain=<code>`, 21/10/2026) : gardé à part, et
+ * même dans une visite déjà notée — un lien recommandé ouvert dans un onglet qui a déjà
+ * vu le site ne doit pas se perdre. Le serveur en vérifie la forme à l'inscription.
+ */
+const CLE_PARRAIN = 'letikette.parrain';
+
+export const AMORCE_SOURCE = `try{if(!/^\\/(p|desinscription|attente)\\//.test(location.pathname)){if(!sessionStorage.getItem('${CLE}')){sessionStorage.setItem('${CLE}',JSON.stringify({url:String(location.href).slice(0,${LONGUEUR_MAX}),referent:String(document.referrer||'').slice(0,${LONGUEUR_MAX})}))}var m=/[?&]parrain=([^&#]*)/.exec(location.search||'');if(m){sessionStorage.setItem('${CLE_PARRAIN}',decodeURIComponent(m[1]).slice(0,32).toUpperCase())}}}catch(e){}`;
+
+/** Le code de la recommandation qui a mené à l'inscription, s'il y en a un. */
+export function lireParrainDeLaVisite(): string | undefined {
+	try {
+		const code = sessionStorage.getItem(CLE_PARRAIN);
+		return code === null || code === '' ? undefined : code.slice(0, 32);
+	} catch {
+		return undefined;
+	}
+}
 
 /** La source notée par l'amorce, pour la joindre à la création de l'établissement. */
 export function lireSourceDeLaVisite(): { url: string; referent: string } | undefined {

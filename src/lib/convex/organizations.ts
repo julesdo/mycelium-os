@@ -1,4 +1,5 @@
 import { v, ConvexError } from 'convex/values';
+import { attribuerLaRecommandation } from './croissance/parrainage';
 import { internalAction, query } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
 import { verifierImageStockee } from './images';
@@ -117,7 +118,9 @@ export const createOrganization = authedMutation({
 		 * `<head>` l'a notée (`app/source-visite.ts`). Lue et bornée ici, côté
 		 * serveur : une adresse se fabrique.
 		 */
-		source: v.optional(v.object({ url: v.string(), referent: v.string() }))
+		source: v.optional(v.object({ url: v.string(), referent: v.string() })),
+		/** Le code du lien de recommandation suivi (`/?parrain=`), vérifié ici. */
+		parrain: v.optional(v.string())
 	},
 	returns: v.id('organizations'),
 	handler: async (ctx, args): Promise<Id<'organizations'>> => {
@@ -139,6 +142,8 @@ export const createOrganization = authedMutation({
 			role: 'ORG_ADMIN',
 			joinedAt: Date.now()
 		});
+		// Recommandé par un autre établissement : le lien se pose ici, et jamais après.
+		await attribuerLaRecommandation(ctx, orgId, ctx.user._id, args.parrain?.slice(0, 32));
 
 		// ⚠️ LE SIREN SE REVÉRIFIE ICI, PAS DANS LE NAVIGATEUR. `enregistrerInterne`
 		// contrôle la clé et refuse en NOMMANT le numéro reçu : un numéro faux mais

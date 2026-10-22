@@ -6,6 +6,7 @@ import {
 	CheckIcon,
 	KeyRoundIcon,
 	LayoutDashboardIcon,
+	GiftIcon,
 	LifeBuoyIcon,
 	ScaleIcon,
 	CreditCardIcon,
@@ -35,7 +36,9 @@ import {
 	type GestesDoubleAuth,
 	type Lecture,
 	ReglagesDuPush,
-	type PushAffiche
+	SectionRecommandation,
+	type PushAffiche,
+	type RecommandationAffichee
 } from '../../ui';
 import { sansEtablissement } from '../sans-etablissement';
 import { TITRE_ECRAN } from '../titres';
@@ -171,6 +174,8 @@ export interface CompteAffiche {
 	readonly admin?: boolean;
 	/** Les réponses de l'équipe pas encore lues, sur la rangée « Aide » (16/10/2026). */
 	readonly aideNonLues?: number;
+	/** La recommandation (21/10/2026) : absente tant que la facturation n'est pas ouverte. */
+	readonly recommandation?: RecommandationAffichee;
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -185,6 +190,14 @@ export interface CompteAffiche {
 function valeurUrgente(fait: string): string | null {
 	const court = fait.replace(/\.$/, '');
 	return court.length <= 26 ? court : null;
+}
+
+/** « 2 mois offerts à venir », « 3 inscrits », ou la promesse quand rien n'a encore eu lieu. */
+function valeurDeLaRecommandation(r: RecommandationAffichee): string {
+	if (r.moisEnAttente > 0)
+		return `${r.moisEnAttente} mois offert${r.moisEnAttente > 1 ? 's' : ''} à venir`;
+	if (r.inscrits > 0) return `${r.inscrits} inscrit${r.inscrits > 1 ? 's' : ''}`;
+	return 'Un mois offert chacun';
 }
 
 export function EcranCompte({
@@ -486,6 +499,17 @@ export function EcranCompte({
 						>
 							<SectionTitle>Double authentification</SectionTitle>
 							<DoubleAuthentification {...pret.doubleAuth} />
+						</RangeeDepliable>
+					)}
+
+					{pret.recommandation === undefined ? null : (
+						<RangeeDepliable
+							cle="recommander"
+							icone={<GiftIcon />}
+							titre="Recommander Letikette"
+							valeur={valeurDeLaRecommandation(pret.recommandation)}
+						>
+							<SectionRecommandation {...pret.recommandation} />
 						</RangeeDepliable>
 					)}
 

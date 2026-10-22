@@ -56,10 +56,13 @@ function Celebration({ jalon, arriveeLe }: { jalon: JalonLu; arriveeLe: number }
 				}).catch(() => undefined);
 			}}
 			onAnnee={() => void navigate({ to: '/app/compte', search: { ouvrir: 'annee' } })}
+			onRecommander={() => void navigate({ to: '/app/compte', search: { ouvrir: 'recommander' } })}
 			onNePlusProposer={(ligne) => {
-				void taire({ cle: cleDeSilence(ligne === 'PUSH' ? 'push' : 'annee') }).catch(
-					() => undefined
-				);
+				void taire({
+					cle: cleDeSilence(
+						ligne === 'PUSH' ? 'push' : ligne === 'ANNEE' ? 'annee' : 'recommandation'
+					)
+				}).catch(() => undefined);
 			}}
 		/>
 	);
