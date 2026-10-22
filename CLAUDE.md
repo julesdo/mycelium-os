@@ -587,7 +587,7 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   (`releverLeProchainPrelevement`, champs `paddleProchainHT`/`TTC`), son rapport TTC/HT pour
   ses autres prix ; à défaut, « HT, TVA en plus », jamais un HT seul. Quand les places sont
   prises, l'invitation ouvre la formule du dessus et part seule une fois la place arrivée.
-- **Le parcours de l'habitude, lots 1 à 4** (21/10/2026, `docs/superpowers/specs/2026-10-21-parcours-habitude-design.md`,
+- **Le parcours de l'habitude** (21-22/10/2026, `docs/superpowers/specs/2026-10-21-parcours-habitude-design.md`,
   plan `docs/superpowers/plans/2026-10-21-parcours-habitude-lots-1-4.md`). Le fondateur : « cohérent
   et pas envahissant […] rendre nos utilisateurs accro ». **Toute notification passe par
   `notifier()`**, qui programme son push (`push/envoi.ts`, `web-push`, clés VAPID posées en dev et en
@@ -603,8 +603,19 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   au plus une ligne dessous (les notifications, l'année), et remplace la bulle du paiement.
   **« Votre semaine »** (`/app/semaine`, `recouvrement/semaine.ts`) : la carte du lundi au mercredi
   sous la bande d'ancienneté, l'écran, et l'e-mail de 9 h qui remplace le point du matin de ce lundi.
-  Une semaine vide ne fait rien. Les lots 5 à 7 (moment du besoin, réveil utile, parrainage) auront
-  leur plan après la mise en production.
+  Une semaine vide ne fait rien. **Le moment du besoin** (lot 5, `screens/compte/montee.tsx`) : la
+  limite de la formule se rencontre là où elle bloque (démarrer un client de plus, une analyse de
+  plus, un membre de plus) et propose la formule qui l'ouvre, prorata vu avant (`FeuilleDeMontee`) ;
+  « Démarrer quand même » reste à côté, et le démarrage attend que le plan soit en place.
+  **Le réveil** (lot 6, `recouvrement/reveil.ts`) : après quatorze jours sans visite ET quelque
+  chose de vrai depuis (un paiement, une réponse, une date limite), UN e-mail « Pendant votre
+  absence », au créneau des relances, coupé par les conseils du profil ; rien de vrai, rien
+  d'envoyé. **La recommandation** (lot 7, `croissance/parrainage.ts`) : un lien personnel dans
+  Votre compte (« Recommander Letikette ») ; le code suivi est gardé dans l'onglet
+  (`letikette.parrain`) puis rattache l'établissement créé ; à sa première vraie échéance payée,
+  un mois aux deux, une remise Paddle égale au prix mensuel HT de la formule sur la prochaine
+  période, qui attend la fin d'une autre remise ; douze par an au plus pour qui recommande, qui ne
+  voit que des nombres. Fermée tant que `paiementOuvert()` ne l'est pas (CGV 2.5, politique 2.10).
 - **Le moteur de croissance** (16/10/2026, stratégie `docs/superpowers/specs/2026-10-16-strategie-de-croissance.md`,
   moteur `2026-10-16-moteur-de-croissance-design.md`). Le fondateur : « commencer à la main au lieu
   d'exploser un budget ». La prospection se fait d'abord à la main (`docs/croissance/phase-manuelle.md`,
