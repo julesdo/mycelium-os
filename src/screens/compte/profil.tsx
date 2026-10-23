@@ -1,11 +1,11 @@
 import { Avatar, ChoixImage, type ImageAvatar, type StyleAvatar } from '../../ui';
 
 /**
- * LE VISAGE DE LA PERSONNE CONNECTÉE, ET LE LOGO DE L'ÉTABLISSEMENT.
+ * LE VISAGE DE LA PERSONNE CONNECTÉE (voir `ChoixImage`) : il la suit d'un établissement
+ * à l'autre.
  *
- * Deux choix de la même forme (voir `ChoixImage`), qui ne se confondent pas :
- * le profil suit la personne d'un établissement à l'autre ; le logo appartient
- * à l'établissement, et seul un administrateur le change.
+ * Le logo de l'établissement ne se choisit plus ici depuis le 23/10/2026 : il se pose dans
+ * « Logo et couleurs », et vaut pour ses courriers comme pour l'application.
  */
 
 export interface ProfilAffiche {
@@ -31,35 +31,6 @@ export function SectionProfil(profil: ProfilAffiche) {
 			onTeleverser={profil.onTeleverser}
 			onRetirer={profil.onRetirer}
 			bibliotheque={{ actuel: profil.avatar, onChoisir: profil.onChoisirAvatar }}
-		/>
-	);
-}
-
-export interface LogoAffiche {
-	readonly nomEtablissement: string;
-	readonly url: string | null;
-	/** Faux pour un simple membre : seul un administrateur change le logo. */
-	readonly modifiable: boolean;
-	readonly enCours: boolean;
-	readonly erreur: string | null;
-	readonly onTeleverser: (fichier: File) => void;
-	readonly onRetirer: () => void;
-}
-
-export function ChoixDuLogo(logo: LogoAffiche) {
-	const apercu = (
-		<Avatar nom={logo.nomEtablissement} image={logo.url === null ? null : { url: logo.url }} />
-	);
-	if (!logo.modifiable) return apercu;
-	return (
-		<ChoixImage
-			apercu={apercu}
-			libelleTeleverser="Téléverser un logo"
-			aUneImage={logo.url !== null}
-			enCours={logo.enCours}
-			erreur={logo.erreur}
-			onTeleverser={logo.onTeleverser}
-			onRetirer={logo.onRetirer}
 		/>
 	);
 }

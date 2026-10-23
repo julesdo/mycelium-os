@@ -83,6 +83,7 @@ export function Avatar({
 	pastille = false,
 	grand = false,
 	surCarte = false,
+	logo = false,
 	className
 }: {
 	nom: string | undefined | null;
@@ -109,6 +110,12 @@ export function Avatar({
 	 * sur le crème, le crème sur l'encre).
 	 */
 	surCarte?: boolean;
+	/**
+	 * Un LOGO d'établissement (23/10/2026), celui de « Logo et couleurs » : posé entier sur
+	 * un disque blanc, jamais rogné. Un logo est souvent un mot de 480 × 160 ; `object-cover`
+	 * dans un rond n'en gardait que le milieu.
+	 */
+	logo?: boolean;
 	className?: string;
 }) {
 	const disque = grand
@@ -127,7 +134,11 @@ export function Avatar({
 			{initiales(nom)}
 		</span>
 	);
-	const classeImage = cn('rounded-full object-cover ring-1 ring-cladd-outline', disque);
+	const classeImage = cn(
+		'rounded-full ring-1 ring-cladd-outline',
+		logo ? 'bg-white object-contain p-[14%]' : 'object-cover',
+		disque
+	);
 	return (
 		<span className={cn('relative inline-flex shrink-0', className)}>
 			{/*

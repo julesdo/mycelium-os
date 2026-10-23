@@ -29,7 +29,7 @@ export function EnTeteDuCompte({
 }) {
 	return (
 		<div className="flex flex-col items-center gap-1 py-cladd-3xs text-center">
-			<Avatar nom={identite?.nom} image={logoUrl === null ? null : { url: logoUrl }} grand />
+			<Avatar nom={identite?.nom} image={logoUrl === null ? null : { url: logoUrl }} grand logo />
 			<p className="mt-1 max-w-full truncate text-cladd-sm leading-tight font-bold tracking-tight">
 				{identite?.nom ?? 'Aucun établissement'}
 			</p>

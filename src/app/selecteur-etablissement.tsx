@@ -67,13 +67,15 @@ export function SelecteurEtablissement({
 
 	// La pastille d'initiales, dans la même géométrie que la marque à l'autre
 	// bout de la barre : deux cercles pleins qui tiennent les extrémités.
-	// Le logo de l'établissement quand il en a un ; ses initiales sinon.
+	// Le logo de l'établissement quand il en a un ; ses initiales sinon. C'est celui de
+	// « Logo et couleurs » (`getMyOrg`, 23/10/2026), posé entier sur un disque blanc : un
+	// logo est souvent un mot, qu'un rond rogné coupait en son milieu.
 	const pastille = courante.logoUrl ? (
 		<img
 			src={courante.logoUrl}
 			alt=""
 			aria-hidden
-			className="size-8 shrink-0 rounded-full bg-cladd-surface-cut object-cover"
+			className="size-8 shrink-0 rounded-full bg-white object-contain p-1 ring-1 ring-cladd-outline"
 		/>
 	) : (
 		<span

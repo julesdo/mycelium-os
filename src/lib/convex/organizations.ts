@@ -1,8 +1,8 @@
 import { v, ConvexError } from 'convex/values';
 import { attribuerLaRecommandation } from './croissance/parrainage';
 import { internalAction, query } from './_generated/server';
+import type { QueryCtx } from './_generated/server';
 import { authedQuery, authedMutation } from './functions';
-import { verifierImageStockee } from './images';
 import { components, internal } from './_generated/api';
 import { resend, assertResendApiKey } from './emails/resend';
 import { invitationHtml, invitationTexte } from './emails/modeles';
@@ -12,7 +12,7 @@ import { expediteurNomme, shouldSkipTestEmail } from './emails/helpers';
 import { MS_VALIDITE_INVITATION } from '../config/invitations';
 import { vEtatCritere } from './recouvrement/tables';
 import { lireSource } from '../croissance/source';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import {
 	requireOrgMember,
 	requireAdminDeLOrgCourante,
@@ -31,12 +31,44 @@ import {
  * sous-traitance nommait.
  */
 
+/**
+ * LE LOGO DE L'ÉTABLISSEMENT, PARTOUT DANS L'APPLICATION : celui de « Logo et couleurs »
+ * (23/10/2026, `recouvrement/marque.ts`), celui que reçoivent ses clients.
+ *
+ * ⚠️ L'ANCIEN LOGO N'EST PLUS LU. `organizations.logoUrl` et `logoStorageId` restent au
+ * schéma pour les fichiers déjà posés (la purge RGPD les efface), mais plus rien ne les
+ * écrit ni ne les montre : deux logos, c'était deux réponses à la même question. Les
+ * requêtes qui rendent l'établissement remplacent `logoUrl` par celui-ci, et chaque
+ * pastille d'établissement (le sélecteur, la barre latérale, l'en-tête du compte) le suit.
+ */
+async function logoDe(ctx: QueryCtx, organizationId: Id<'organizations'>): Promise<string | null> {
+	const profil = await ctx.db
+		.query('profilsCreancier')
+		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+		.first();
+	if (profil?.logoCourriers === undefined) return null;
+	return ctx.storage.getUrl(profil.logoCourriers.storageId);
+}
+
+/** L'établissement tel que l'application le montre : son logo est celui de ses courriers. */
+async function avecSonLogo(
+	ctx: QueryCtx,
+	org: Doc<'organizations'>
+): Promise<Doc<'organizations'>> {
+	const reste = { ...org };
+	delete reste.logoUrl;
+	delete reste.logoStorageId;
+	const logo = await logoDe(ctx, org._id);
+	return logo === null ? reste : { ...reste, logoUrl: logo };
+}
+
 export const getMyOrg = authedQuery({
 	args: {},
 	handler: async (ctx) => {
 		const orgId = await organisationCouranteOuNull(ctx, ctx.user._id);
 		if (orgId === null) return null;
-		return ctx.db.get(orgId);
+		const org = await ctx.db.get(orgId);
+		return org === null ? null : avecSonLogo(ctx, org);
 	}
 });
 
@@ -200,7 +232,7 @@ export const listMyOrganizations = authedQuery({
 		const orgs = await Promise.all(
 			memberships.map(async (m) => {
 				const org = await ctx.db.get(m.organizationId);
-				return org ? { ...org, role: m.role } : null;
+				return org ? { ...(await avecSonLogo(ctx, org)), role: m.role } : null;
 			})
 		);
 		return orgs.filter((o): o is NonNullable<typeof o> => o !== null);
@@ -275,49 +307,12 @@ export const updateOrganization = authedMutation({
 	}
 });
 
-export const generateOrgLogoUploadUrl = authedMutation({
-	args: {},
-	handler: async (ctx) => {
-		await requireAdminDeLOrgCourante(ctx, ctx.user._id);
-		return ctx.storage.generateUploadUrl();
-	}
-});
-
-export const saveOrgLogo = authedMutation({
-	args: { storageId: v.id('_storage') },
-	handler: async (ctx, { storageId }) => {
-		const orgId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
-		await verifierImageStockee(ctx, storageId);
-
-		// L'ancien logo quitte le stockage avec le nouveau : sans ça, chaque
-		// changement laisse un fichier que plus rien ne référence et que rien ne
-		// vient ramasser.
-		const org = await ctx.db.get(orgId);
-		if (org?.logoStorageId && org.logoStorageId !== storageId) {
-			await ctx.storage.delete(org.logoStorageId);
-		}
-
-		const logoUrl = await ctx.storage.getUrl(storageId);
-		if (!logoUrl) throw new ConvexError('Fichier introuvable');
-
-		await ctx.db.patch(orgId, { logoStorageId: storageId, logoUrl });
-		return logoUrl;
-	}
-});
-
-export const deleteOrgLogo = authedMutation({
-	args: {},
-	handler: async (ctx) => {
-		const orgId = await requireAdminDeLOrgCourante(ctx, ctx.user._id);
-
-		const org = await ctx.db.get(orgId);
-		if (org?.logoStorageId) {
-			await ctx.storage.delete(org.logoStorageId);
-		}
-
-		await ctx.db.patch(orgId, { logoStorageId: undefined, logoUrl: undefined });
-	}
-});
+/*
+  IL N'Y A PLUS DE LOGO À POSER ICI (23/10/2026). `generateOrgLogoUploadUrl`,
+  `saveOrgLogo` et `deleteOrgLogo` posaient l'ancien logo, rogné dans un rond ; le
+  logo se pose désormais une fois, dans « Logo et couleurs » (`recouvrement/marque.ts`),
+  et vaut pour les courriers comme pour l'application (`logoDe`, plus haut).
+*/
 
 /**
  * IL N'Y A PLUS DE `lookupSiren`, ET SON RETRAIT EST UNE CORRECTION.

@@ -148,16 +148,8 @@ const ETABLISSEMENT_AFFICHE_DEMO: EtablissementAffiche = {
 		plafondAtteint: false
 	},
 	onEnregistrer: () => Promise.resolve(),
-	/* Sans logo : la salle montre l'état de départ, et le geste qui le change. */
-	logo: {
-		nomEtablissement: ORGANISATION_DEMO.name,
-		url: null,
-		modifiable: true,
-		enCours: false,
-		erreur: null,
-		onTeleverser: () => undefined,
-		onRetirer: () => undefined
-	}
+	/* Le logo de « Logo et couleurs » : `CompteDemo` y pose celui de la démonstration. */
+	logoUrl: null
 };
 
 // ── La facturation ─────────────────────────────────────────────────────────
@@ -961,6 +953,7 @@ function CompteDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 	// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 	const forme = formeDemo(variante, COMPTE_DEMO, FORMES_COMPTE_DEMO);
 	const marque = useMarqueDemo(variante);
+	const compte = compteDe(forme, theme, setTheme);
 
 	return (
 		<>
@@ -968,7 +961,12 @@ function CompteDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 				donnees={lectureDemo(
 					etat,
 					{
-						...compteDe(forme, theme, setTheme),
+						...compte,
+						// L'en-tête du compte suit le logo posé dans « Logo et couleurs ».
+						etablissement:
+							compte.etablissement === null
+								? null
+								: { ...compte.etablissement, logoUrl: marque.logoUrl },
 						marque: { resume: marque.resume, onOuvrir: marque.ouvrir }
 					},
 					compteSansEtablissement(theme, setTheme)

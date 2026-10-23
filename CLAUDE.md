@@ -146,7 +146,10 @@ Resend et non plus par le composant, qui envoie par lots sans pièce jointe
 (`recouvrement/expedition.ts`) — une clé d'idempotence par relance, des reprises sur 429 et 5xx,
 et un refus définitif qui rend la relance au gérant avec l'avis qui y mène. La page de paiement
 porte le logo et une bande de sa couleur ; sur Aujourd'hui, Plume demande le logo quand les
-relances partent sans. La couleur du gérant ne vit que dans SES courriers, jamais dans
+relances partent sans. **Ce logo est aussi celui de l'établissement dans l'application** : `getMyOrg`
+et `listMyOrganizations` le rendent à la place de l'ancien (`organizations.logoUrl`, que plus rien
+n'écrit ni ne lit), le choix de logo a quitté « Établissement », et toute pastille d'établissement
+le pose entier sur un disque blanc (`Avatar logo`), jamais rogné. La couleur du gérant ne vit que dans SES courriers, jamais dans
 l'interface ; les fichiers où les couleurs sont des données sont exemptés NOMMÉMENT de la muselière
 (`eslint.config.js`).
 

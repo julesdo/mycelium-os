@@ -54,6 +54,11 @@ export default defineSchema({
 		 * le pire des défauts.
 		 */
 		facturesParAn: v.optional(v.number()),
+		/**
+		 * L'ANCIEN LOGO (avant le 23/10/2026) : plus rien ne l'écrit ni ne le lit. Gardé au
+		 * schéma pour les fichiers déjà posés, que la purge RGPD efface. Le logo de
+		 * l'établissement est celui de « Logo et couleurs » (`profilsCreancier.logoCourriers`).
+		 */
 		logoUrl: v.optional(v.string()),
 		logoStorageId: v.optional(v.id('_storage')),
 		// Localisation — figée FR pour la phase POC
@@ -332,7 +337,7 @@ export default defineSchema({
 		 *
 		 * ⚠️ PAS DANS `user.image` DE BETTER AUTH, et pour une raison de ménage. Une
 		 * photo remplacée doit quitter le stockage avec son remplaçant, exactement
-		 * comme le logo d'un établissement (`saveOrgLogo`) — il faut donc garder
+		 * comme le logo des courriers (`recouvrement/marque.ts`) — il faut donc garder
 		 * l'identifiant de stockage, que `user.image`, simple chaîne écrite par un
 		 * composant qu'on ne maîtrise pas, ne sait pas porter. Et `supprimerMonCompte`
 		 * efface le fichier avec cette ligne : la photo entre dans la purge.

@@ -55,6 +55,8 @@ export const MARQUES_DEMO: Readonly<Record<string, MarqueLue>> = {
 /** La page, et la valeur de sa rangée, tenues par la démonstration. */
 export function useMarqueDemo(variante: string | undefined): {
 	readonly resume: string;
+	/** Le logo enregistré, que l'en-tête du compte montre. */
+	readonly logoUrl: string | null;
 	readonly ouverte: boolean;
 	readonly ouvrir: () => void;
 	readonly feuille: ReactNode;
@@ -66,6 +68,7 @@ export function useMarqueDemo(variante: string | undefined): {
 
 	return {
 		resume: resumeDeLaMarque({ logo: enregistree.logo !== null, couleur: enregistree.couleur }),
+		logoUrl: enregistree.logo?.url ?? null,
 		ouverte,
 		ouvrir: () => {
 			setOuvertures((n) => n + 1);

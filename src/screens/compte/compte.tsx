@@ -47,7 +47,7 @@ import { EnTeteDuCompte } from './en-tete';
 import { FormulaireCourriers, FormulaireCreancier, type CreancierAffiche } from './creancier';
 import { FormulaireEtablissement, type EtablissementAffiche } from './etablissement';
 import { SectionRegles, resumeRegles, type ReglesAffichees } from './regles';
-import { ChoixDuLogo, SectionProfil, type ProfilAffiche } from './profil';
+import { SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche, type CaisseAffichee } from './facturation';
 import type { GestionAffichee } from './gestion-formule';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
@@ -304,7 +304,7 @@ export function EcranCompte({
 
 	return (
 		<PageEcran entete={entete}>
-			<EnTeteDuCompte identite={pret.identite} logoUrl={pret.etablissement?.logo.url ?? null} />
+			<EnTeteDuCompte identite={pret.identite} logoUrl={pret.etablissement?.logoUrl ?? null} />
 
 			{pret.recommandation === undefined ? null : (
 				<CarteLien
@@ -643,8 +643,6 @@ function ContenuEtablissement({
 
 	return (
 		<>
-			<ChoixDuLogo {...etablissement.logo} />
-
 			<FormulaireEtablissement
 				key={etablissement.cle}
 				initial={etablissement.initial}

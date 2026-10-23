@@ -221,20 +221,15 @@ function PageCompte() {
 	// ── L'équipe de défense : son nombre, que la rangée porte (l'écran est /app/defense) ──
 	const carnet = useQuery(api.recouvrement.intervenants.monCarnet, {});
 
-	// ── Le visage de la personne, et le logo de l'établissement ─────────────
+	// ── Le visage de la personne ──────────────────────────────────────────────
 	const moi = useQuery(api.users.viewer, {});
 	const monImage = useQuery(api.imageDeProfil.monImage, {});
 	const genererUrlImage = useMutation(api.imageDeProfil.genererUrlImageProfil);
 	const enregistrerImage = useMutation(api.imageDeProfil.enregistrerImageProfil);
 	const choisirAvatar = useMutation(api.imageDeProfil.choisirAvatar);
 	const retirerImage = useMutation(api.imageDeProfil.retirerImageProfil);
-	const genererUrlLogo = useMutation(api.organizations.generateOrgLogoUploadUrl);
-	const enregistrerLogo = useMutation(api.organizations.saveOrgLogo);
-	const retirerLogo = useMutation(api.organizations.deleteOrgLogo);
 	const [imageEnCours, setImageEnCours] = useState(false);
 	const [erreurImage, setErreurImage] = useState<string | null>(null);
-	const [logoEnCours, setLogoEnCours] = useState(false);
-	const [erreurLogo, setErreurLogo] = useState<string | null>(null);
 
 	/** Un geste d'image : l'état d'envoi pendant, le refus lisible après. */
 	async function gesteImage(
@@ -456,23 +451,8 @@ function PageCompte() {
 						},
 						mesure: mesure ?? null,
 						onEnregistrer: mettreAJourOrg,
-						logo: {
-							nomEtablissement: org.name ?? '',
-							url: org.logoUrl ?? null,
-							modifiable: monRole?.role === 'ORG_ADMIN',
-							enCours: logoEnCours,
-							erreur: erreurLogo,
-							onTeleverser: (fichier) =>
-								void gesteImage(
-									async () => {
-										const storageId = await televerser(() => genererUrlLogo({}), fichier);
-										await enregistrerLogo({ storageId });
-									},
-									setLogoEnCours,
-									setErreurLogo
-								),
-							onRetirer: () => void gesteImage(() => retirerLogo({}), setLogoEnCours, setErreurLogo)
-						}
+						// Celui de « Logo et couleurs » : `getMyOrg` rend le logo des courriers (23/10/2026).
+						logoUrl: org.logoUrl ?? null
 					},
 		regles: {
 			ordre: ordreChoisi,

@@ -2,7 +2,6 @@ import { useState, type ComponentProps } from 'react';
 import { Button, Input } from '@cladd-ui/react';
 import { CheckIcon } from 'lucide-react';
 import { BoutonPrincipal, Champ, dateCourte, pluriel } from '../../ui';
-import type { LogoAffiche } from './profil';
 
 /**
  * LE FORMULAIRE DE L'ÉTABLISSEMENT.
@@ -189,6 +188,9 @@ export interface EtablissementAffiche {
 	/** L'identifiant de l'établissement : il remonte le formulaire quand on en change. */
 	readonly cle: string;
 	readonly onEnregistrer: ComponentProps<typeof FormulaireEtablissement>['onEnregistrer'];
-	/** Le logo de l'établissement : voir `ChoixDuLogo`. */
-	readonly logo: LogoAffiche;
+	/**
+	 * Le logo de l'établissement, celui de « Logo et couleurs » : l'en-tête du compte le
+	 * montre ; il ne se pose plus ici (23/10/2026).
+	 */
+	readonly logoUrl: string | null;
 }

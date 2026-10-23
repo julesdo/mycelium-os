@@ -222,7 +222,7 @@ export function CarteDuLogo({
 							? 'Préparation…'
 							: logo === null
 								? `Sans logo, « ${nom} » s’écrit en tête.`
-								: `${logo.largeur} × ${logo.hauteur} px, marges retirées`}
+								: 'Sur vos courriers, votre page de paiement et dans l’application.'}
 					</span>
 				</span>
 				{modifiable ? (
