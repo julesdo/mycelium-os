@@ -21,7 +21,7 @@ Le code :
   les relances partent d'un autre domaine que Letikette (un sous-domaine de letikette.com ne
   compte pas).
 
-**Dormant sans `RELANCES_DOMAINE`.** Une valeur qui n'est pas un domaine ne s'utilise pas.
+**En service depuis le 23/10/2026 sur `suivie-facture.com`** (vérifié chez Resend, DKIM, SPF et DMARC posés chez OVH). **Dormant sans `RELANCES_DOMAINE`.** Une valeur qui n'est pas un domaine ne s'utilise pas.
 
 ## Choisir le nom
 
@@ -62,7 +62,10 @@ Le code :
 
 ## Ce qu'il ne faut pas faire
 
-- Créer une boîte, ou un MX sur le domaine lui-même : rien ne doit y arriver. Un client qui tape
-  l'adresse à la main reçoit « adresse inconnue » ; il a, dans chaque relance, l'adresse du gérant.
+- Créer une boîte, une redirection ou une adresse « attrape-tout » sur le domaine : rien ne doit y
+  arriver. Le MX que le bureau d'enregistrement pose par défaut (OVH : `mx1/mx2/mx3.mail.ovh.net`)
+  peut rester — un domaine d'expéditeur qui accepte le courrier paraît normal aux filtres — tant
+  qu'aucune adresse n'existe derrière : un client qui tape l'adresse à la main reçoit « adresse
+  inconnue » ; il a, dans chaque relance, l'adresse du gérant.
 - Faire suivre ces messages au gérant : Letikette les recevrait au passage.
 - Poser un site qui nomme Letikette sur ce domaine.
