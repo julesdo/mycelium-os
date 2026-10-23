@@ -906,7 +906,6 @@ function creanceDemo({
 		intervenantsChoisis: journal === null ? [] : CARNET_DEMO.map((fiche) => fiche._id),
 		nomsIntervenants: journal === null ? [] : CARNET_DEMO.map((fiche) => fiche.nom),
 		onConsigner: () => undefined,
-		onDeclarerVoie: () => undefined,
 		onNommer: () => undefined,
 		professionnels: annuaireFige(),
 
@@ -984,7 +983,7 @@ const GESTES_GUIDES_DEMO: NonNullable<CreanceOuverte['gestesGuides']> = {
 	noter: async () => (await attendre(), attendre),
 	rappeler: async () => (await attendre(), attendre),
 	classer: async () => (await attendre(), attendre),
-	preparerCourrier: async () => (await attendre(), 'demo-envoi'),
+	preparerCourrier: async () => (await attendre(), 'demo-envoi-valide'),
 	validerCourrier: async () => (await attendre(), 'VALIDE' as const),
 	declarerParti: attendre,
 	abandonnerCourrier: attendre,
@@ -992,7 +991,24 @@ const GESTES_GUIDES_DEMO: NonNullable<CreanceOuverte['gestesGuides']> = {
 	declarerFait: attendre,
 	repondreCondition: attendre,
 	remettre: attendre,
-	nommer: attendre
+	nommer: attendre,
+	proposerReglement: async (montant) => {
+		await attendre();
+		return {
+			issue: 'AUCUNE' as const,
+			combinaisons: [],
+			tronque: false,
+			repartition: {
+				lignes: [{ reference: 'FA-2026-118', montant, solde: false }],
+				nonAffecte: 0n
+			}
+		};
+	},
+	noterReglement: attendre,
+	trancherPromesse: attendre,
+	rappelFait: attendre,
+	declarerProcedure: attendre,
+	consigner: attendre
 };
 
 /**
@@ -1021,6 +1037,70 @@ const FORMES_CREANCE_DEMO: Readonly<Record<string, CreanceOuverte>> = {
 			],
 			envoiAutomatique: true,
 			reponse: REPONSE_DEMO
+		} satisfies CreanceOuverte;
+	})(),
+	/*
+	  UN CLIENT SAIN, RIEN EN COURS : « Relancer » mène à la lettre de relance, qui ne
+	  demande que le délai, se valide d'un geste et s'envoie dans la même conversation.
+	*/
+	'lettre de relance': (() => {
+		const base = creanceDemo({});
+		return {
+			...base,
+			santeDebiteur: 'SAINE',
+			situations: [],
+			// Le courrier validé de la démonstration : celui que la conversation enverra.
+			courriers: {
+				...base.courriers,
+				envois: base.courriers.envois.filter((e) => e.etat === 'VALIDE'),
+				modeles: modelesProposables('SAINE', false)
+			}
+		} satisfies CreanceOuverte;
+	})(),
+	/* SA PROMESSE EST ARRIVÉE À SON JOUR : Plume demande « Il l'a fait ? », la carte répond. */
+	'promesse à vérifier': (() => {
+		const base = creanceDemo({});
+		return {
+			...base,
+			santeDebiteur: 'SAINE',
+			situations: [],
+			courriers: { ...base.courriers, envois: [], modeles: modelesProposables('SAINE', false) },
+			suiviDuDossier: {
+				...base.suiviDuDossier,
+				notes: [
+					{
+						_id: 'demo-note-promesse-echue',
+						genre: 'PROMESSE' as const,
+						texte: 'Promesse de paiement',
+						montantPromis: 300_000n,
+						promisPourLe: '2026-09-01',
+						recuDepuis: 0n,
+						ecritLe: Date.UTC(2026, 7, 25, 9, 14)
+					}
+				]
+			}
+		} satisfies CreanceOuverte;
+	})(),
+	/* UN RAPPEL DU JOUR : Plume le dit sur la carte, « C'est fait » le raye d'un toucher. */
+	'rappel du jour': (() => {
+		const base = creanceDemo({});
+		return {
+			...base,
+			santeDebiteur: 'SAINE',
+			situations: [],
+			courriers: { ...base.courriers, envois: [], modeles: modelesProposables('SAINE', false) },
+			suiviDuDossier: {
+				...base.suiviDuDossier,
+				notes: [
+					{
+						_id: 'demo-note-rappel-du-jour',
+						genre: 'RAPPEL' as const,
+						texte: 'Le rappeler si rien n’est arrivé.',
+						rappelLe: AUJOURD_HUI_DEMO,
+						ecritLe: Date.UTC(2026, 7, 27, 9, 15)
+					}
+				]
+			}
 		} satisfies CreanceOuverte;
 	})(),
 	/* Classé par le gérant : le bandeau dit pourquoi, et le geste qui le rouvre. */

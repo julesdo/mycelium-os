@@ -6,7 +6,9 @@ import {
 	messageDuRefus,
 	type CanalDEchange,
 	type ChoixCourrierAffiche,
+	type ChoixDeclare,
 	type MotifClassement,
+	type PropositionLettrage,
 	type ReponseFait
 } from '../../ui';
 import type { DossierPourLesIntentions } from './intentions';
@@ -22,6 +24,8 @@ import type { DossierPourLesIntentions } from './intentions';
 /** Ce que la conversation sait du dossier. */
 export interface DossierDuGuide {
 	readonly client: string;
+	/** Le client, pour rapprocher un paiement de SES factures. */
+	readonly debiteurId: string;
 	readonly aujourdHui: string;
 	/** Ce qui reste dû sur les factures, hors pénalités : le montant proposé d'office. */
 	readonly resteDu: bigint;
@@ -33,6 +37,8 @@ export interface DossierDuGuide {
 	 * une contestation ne promet pas une relance qui ne partira pas.
 	 */
 	readonly relanceParPlume: boolean;
+	/** La prochaine étape du plan : ce que Plume reprend si rien n'arrive. */
+	readonly prochaineEtape: { readonly nom: string; readonly le: string } | null;
 	/** L'accord écrit s'applique à ce client (pas en procédure collective ni radié). */
 	readonly accordPossible: boolean;
 	readonly pourLesIntentions: DossierPourLesIntentions;
@@ -66,6 +72,28 @@ export interface GestesDuGuide {
 		readonly motif: MotifClassement;
 		readonly note?: string;
 	}) => Promise<Annulation>;
+
+	/* ── Un paiement reçu : rapproché de ses factures, comme sur sa fiche ─── */
+	/** Ce que ce montant solde : une combinaison exacte, plusieurs, ou la répartition légale. */
+	readonly proposerReglement: (montant: bigint) => Promise<PropositionLettrage>;
+	/** Des factures nommées (une combinaison), ou la répartition légale sans références. */
+	readonly noterReglement: (r: {
+		readonly montant: bigint;
+		readonly date: string;
+		readonly references?: readonly string[];
+	}) => Promise<void>;
+	/** « Tenue » reste le mot du gérant : le logiciel ne tranche pas une promesse. */
+	readonly trancherPromesse: (noteId: string, issue: 'TENUE' | 'NON_TENUE') => Promise<void>;
+	readonly rappelFait: (noteId: string) => Promise<void>;
+
+	/* ── Une démarche engagée : le logiciel enregistre, il n'engage pas ───── */
+	readonly declarerProcedure: (
+		procedure: string,
+		engageeLe: string,
+		choix: ChoixDeclare
+	) => Promise<void>;
+	/** Ce qui s'est passé dans la démarche, à SA date : les délais en découlent. */
+	readonly consigner: (cle: string, survenuLe: string) => Promise<void>;
 
 	/* ── Ce que le gérant seul peut dire (ligne rouge n° 3) ───────────────── */
 	/** Un fait du dossier : Oui, Non, Je ne sais pas. */

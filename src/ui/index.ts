@@ -198,7 +198,7 @@ export {
 } from './navigation';
 export { Lien, useProvenance } from './lien';
 export { FeuilleVoie, type VoieAffichee } from './feuille-voie';
-export { FeuilleDeclaration, type ChoixDeclare } from './feuille-declaration';
+export type { ChoixDeclare } from './feuille-declaration';
 export {
 	avocatAuCarnet,
 	etudeAuCarnet,
@@ -309,6 +309,7 @@ export {
 	ConsigneDeReponse,
 	Echange,
 	ListeDeReponses,
+	ReleveDuFil,
 	messageDuRefus,
 	useTravail,
 	type ChoixDeReponse

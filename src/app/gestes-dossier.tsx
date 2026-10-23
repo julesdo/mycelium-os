@@ -124,7 +124,7 @@ export function useGestesDeDossier() {
 						void navigate({
 							to: '/app/dossier/$id',
 							params: { id: creanceId },
-							search: { ouvrir: 'courriers' } as never
+							search: { faire: 'RELIRE' } as never
 						})
 				}
 			});

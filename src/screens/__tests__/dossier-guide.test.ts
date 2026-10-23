@@ -17,7 +17,9 @@ const EN_COURS: DossierPourLesIntentions = {
 	relancesSuspendues: false,
 	questionsEnAttente: 0,
 	classable: true,
-	plumeJoignable: true
+	plumeJoignable: true,
+	procedureDeclarable: false,
+	etapeANoter: false
 };
 
 /** Les mots d'une voie de droit, les mêmes que `page-dossier.test.ts`. */
@@ -55,6 +57,13 @@ describe('« Que voulez-vous faire ? »', () => {
 		expect(libelleDIntention('ECRIRE', { ...EN_COURS, regle: true }).titre).toBe('Lui écrire');
 	});
 
+	it('propose de déclarer une démarche, puis d’en noter les étapes', () => {
+		expect(intentionsDuDossier({ ...EN_COURS, procedureDeclarable: true })).toContain('PROCEDURE');
+		const engagee = intentionsDuDossier({ ...EN_COURS, auTribunal: true, etapeANoter: true });
+		expect(engagee).toContain('ETAPE');
+		expect(engagee).not.toContain('CONSEIL');
+	});
+
 	it('ne parle pas de relancer un client que la loi protège', () => {
 		expect(libelleDIntention('ECRIRE', { ...EN_COURS, relancesSuspendues: true }).titre).toBe(
 			'Préparer un courrier'
@@ -70,7 +79,11 @@ describe('« Que voulez-vous faire ? »', () => {
 			'RAPPEL',
 			'CONSEIL',
 			'CLASSER',
-			'PLUME'
+			'PLUME',
+			'PROMESSE',
+			'RAPPEL_DU_JOUR',
+			'PROCEDURE',
+			'ETAPE'
 		] as const;
 		const fautifs = toutes.flatMap((intention) =>
 			[false, true].flatMap((suspendues) => {

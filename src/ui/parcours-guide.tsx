@@ -60,7 +60,15 @@ export function CadreGuide({
 	readonly children: ReactNode;
 }) {
 	const fin = useRef<HTMLDivElement>(null);
+	/*
+	  ⚠️ PAS À L'OUVERTURE : une liste de neuf réponses faisait défiler le fil sous la
+	  barre, et la question disparaissait. Le fil ne descend que quand il avance. On
+	  compare à la valeur d'arrivée plutôt qu'à un « premier rendu », que le mode strict
+	  rejoue.
+	*/
+	const auDepart = useRef(suivi);
 	useEffect(() => {
+		if (suivi === auDepart.current) return;
 		fin.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 	}, [suivi]);
 
@@ -253,4 +261,35 @@ export function useTravail<R>(libelles: readonly string[]) {
 		resultat: fini ? (resultat?.valeur ?? null) : null,
 		lancer
 	};
+}
+
+/**
+ * UN RELEVÉ DANS LE FIL — ce qu'un paiement solde, facture par facture : à lire, pas
+ * à toucher. La forme du calendrier des versements, pour n'importe quelles lignes.
+ */
+export function ReleveDuFil({
+	lignes
+}: {
+	readonly lignes: readonly {
+		readonly cle: string;
+		readonly titre: string;
+		readonly ligne?: string;
+		readonly valeur: string;
+	}[];
+}) {
+	return (
+		<ol className="verre-carte flex flex-col rounded-cladd-xl px-3.5 py-1 [&>li+li]:border-t [&>li+li]:border-cladd-outline">
+			{lignes.map((l) => (
+				<li key={l.cle} className="flex min-h-12 items-center justify-between gap-3 py-2">
+					<span className="flex min-w-0 flex-col">
+						<span className="truncate text-cladd-xs font-medium">{l.titre}</span>
+						{l.ligne === undefined ? null : (
+							<span className="text-cladd-2xs text-cladd-fg-soft">{l.ligne}</span>
+						)}
+					</span>
+					<span className="shrink-0 text-cladd-xs font-semibold tabular-nums">{l.valeur}</span>
+				</li>
+			))}
+		</ol>
+	);
 }

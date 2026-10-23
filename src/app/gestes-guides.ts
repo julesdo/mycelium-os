@@ -1,4 +1,4 @@
-import { useMutation } from 'convex/react';
+import { useConvex, useMutation } from 'convex/react';
 import { api } from '../lib/convex/_generated/api';
 import type { Id } from '../lib/convex/_generated/dataModel';
 import type { GestesDuGuide } from '../screens/dossier-guide/commun';
@@ -23,7 +23,12 @@ export function versConvex(choix: ChoixCourrierAffiche) {
  * ⚠️ LES MONTANTS ARRIVENT EN CENTIMES ENTIERS : la conversation les a lus avec
  * `centimesDe`, jamais avec `Number`.
  */
-export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string): GestesDuGuide {
+export function useGestesDuGuide(
+	creanceId: Id<'creances'>,
+	debiteurId: string | null,
+	aujourdHui: string
+): GestesDuGuide {
+	const convex = useConvex();
 	const noter = useMutation(api.recouvrement.suivi.noter);
 	const effacer = useMutation(api.recouvrement.suivi.effacer);
 	const convenir = useMutation(api.recouvrement.parole.convenirEcheancier);
@@ -39,6 +44,18 @@ export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string):
 	const remettreLeDossier = useMutation(api.recouvrement.conseil.remettreLeDossier);
 	const designer = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
 	const personne = useMutation(api.recouvrement.apresProcedure.aucunIntervenant);
+	const appliquer = useMutation(api.recouvrement.lettrage.appliquer);
+	const repartir = useMutation(api.recouvrement.lettrage.appliquerRepartition);
+	const trancher = useMutation(api.recouvrement.suivi.trancherPromesse);
+	const rappelFait = useMutation(api.recouvrement.suivi.rappelFait);
+	const engager = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
+	const consigner = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
+
+	/** Un paiement se rapproche des factures d'UN client : sans lui, rien ne se rapproche. */
+	const client = () => {
+		if (debiteurId === null) throw new Error('Le client du dossier n’est pas encore chargé.');
+		return debiteurId as Id<'debiteurs'>;
+	};
 
 	/** Défaire une note qu'on vient de poser : elle s'efface vraiment. */
 	const effacerLaNote = (entreeId: Id<'suiviDossier'>) => async () => {
@@ -112,6 +129,37 @@ export function useGestesDuGuide(creanceId: Id<'creances'>, aujourdHui: string):
 			for (const id of ids.filter((i) => !avant.includes(i))) {
 				await designer({ creanceId, intervenantId: id as Id<'intervenants'>, designe: true });
 			}
+		},
+		proposerReglement: async (montant) =>
+			await convex.query(api.recouvrement.lettrage.proposer, { debiteurId: client(), montant }),
+		/*
+		  ⚠️ LA RÉPARTITION EST RECALCULÉE PAR LE SERVEUR, jamais reçue de l'écran : entre
+		  la proposition et le geste, un autre règlement a pu arriver (`appliquerRepartition`).
+		*/
+		noterReglement: async ({ montant, date, references }) => {
+			if (references === undefined) await repartir({ debiteurId: client(), montant, date });
+			else await appliquer({ debiteurId: client(), references: [...references], montant, date });
+		},
+		trancherPromesse: async (noteId, issue) => {
+			await trancher({ entreeId: noteId as Id<'suiviDossier'>, issue });
+		},
+		rappelFait: async (noteId) => {
+			await rappelFait({ entreeId: noteId as Id<'suiviDossier'>, faitLe: aujourdHui });
+		},
+		/*
+		  ⚠️ LE LOGICIEL N'ENGAGE PAS, IL ENREGISTRE (ligne rouge n° 3). L'intervenant ne
+		  se rattache que s'il a été DIT : un silence n'est pas un « moi-même ».
+		*/
+		declarerProcedure: async (procedure, engageeLe, choix) => {
+			await engager({ creanceId, procedure, engageeLe });
+			if (choix === null) return;
+			if (choix.ids.length === 0) await personne({ creanceId });
+			for (const id of choix.ids) {
+				await designer({ creanceId, intervenantId: id as Id<'intervenants'>, designe: true });
+			}
+		},
+		consigner: async (cle, survenuLe) => {
+			await consigner({ creanceId, cle, survenuLe });
 		},
 		preparerCourrier: async (choix) => await preparer({ creanceId, choix: versConvex(choix) }),
 		validerCourrier: async (envoiId) => await valider({ envoiId: envoiId as Id<'envois'> }),

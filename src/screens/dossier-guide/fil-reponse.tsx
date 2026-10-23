@@ -23,6 +23,7 @@ import {
 	type CanalDEchange
 } from '../../ui';
 import { centimesDe, eurosATaper, joursProposes } from '../demarrage';
+import { useReglement } from './sous-parcours';
 import {
 	MotDAnnulation,
 	RefusDuGeste,
@@ -57,6 +58,7 @@ type Etape =
 	| 'CANAL'
 	| 'CONTESTATION'
 	| 'ARRIVE'
+	| 'REGLEMENT'
 	| 'AUTRE'
 	| 'RESUME'
 	| 'TRAVAIL';
@@ -118,16 +120,21 @@ export function FilReponse({
 	const [premiereLe, setPremiereLe] = useState('');
 	const [canal, setCanal] = useState<CanalDEchange | null>(null);
 	const [texte, setTexte] = useState('');
+	/* Il dit avoir payé : l'argent est-il arrivé ? Oui, et le paiement se note ici même. */
+	const [arrive, setArrive] = useState<boolean | null>(null);
 	const annulation = useAnnulation();
 
 	const montantPromis = centimesDe(montant);
 	const finDeGrace = le === '' ? '' : jourDecale(le, JOURS_DE_GRACE);
-	const ordre: readonly Etape[] = [
-		'QUOI',
-		...(issue === null ? [] : CHEMIN[issue]),
-		...(issue === null || issue === 'PAYE' || issue === 'AUTRE' ? [] : (['RESUME'] as const)),
-		'TRAVAIL'
-	];
+	const ordre: readonly Etape[] =
+		issue === 'PAYE' && arrive === true
+			? ['QUOI', 'ARRIVE', 'REGLEMENT']
+			: [
+					'QUOI',
+					...(issue === null ? [] : CHEMIN[issue]),
+					...(issue === null || issue === 'PAYE' || issue === 'AUTRE' ? [] : (['RESUME'] as const)),
+					'TRAVAIL'
+				];
 
 	const travail = useTravail<Annulation | null>(libellesDuTravail());
 	/* Un refus ramène à la dernière question : on peut corriger, et réessayer. */
@@ -136,7 +143,18 @@ export function FilReponse({
 			? (ordre[ordre.indexOf('TRAVAIL') - 1] ?? 'QUOI')
 			: etape;
 	const passees = ordre.slice(0, ordre.indexOf(affichee));
-	const verrouille = travail.lance;
+	/*
+	  LE PAIEMENT SE NOTE DANS LA CONVERSATION (23/10/2026), avec la même répartition que
+	  « Un virement reçu » sur sa fiche (useReglement). Il fallait quitter le dossier.
+	*/
+	const reglement = useReglement({
+		actif: affichee === 'REGLEMENT',
+		aujourdHui: d.aujourdHui,
+		montantPropose: d.resteDu,
+		gestes,
+		onFiche: onNoterUnReglement
+	});
+	const verrouille = travail.lance || reglement.lance;
 
 	function suivante(apres: Etape) {
 		const prochaine = ordre[ordre.indexOf(apres) + 1];
@@ -218,7 +236,7 @@ export function FilReponse({
 				return <ReponseDePlume texte="Qu’est-ce qu’il conteste, en quelques mots ?" />;
 			case 'ARRIVE':
 				return (
-					<ReponseDePlume texte="Si l’argent est arrivé, notez-le sur sa fiche : je solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé. Il est arrivé ?" />
+					<ReponseDePlume texte="L’argent est arrivé sur votre compte ? Si oui, je le note et je solde les bonnes factures : personne n’est relancé pour ce qu’il a déjà payé." />
 				);
 			case 'AUTRE':
 				return (
@@ -284,7 +302,7 @@ export function FilReponse({
 			case 'CONTESTATION':
 				return texte.trim() === '' ? 'Sans précision' : texte.trim();
 			case 'ARRIVE':
-				return 'Pas encore';
+				return arrive === true ? 'Oui, il est arrivé' : 'Pas encore';
 			case 'AUTRE':
 				return texte.trim();
 			case 'RESUME':
@@ -447,8 +465,21 @@ export function FilReponse({
 			case 'ARRIVE':
 				return (
 					<RangeeDeReponses>
-						<BoutonDeReponse libelle="Pas encore" onClick={() => suivante('ARRIVE')} />
-						<BoutonDeReponse principal libelle="Oui, je le note" onClick={onNoterUnReglement} />
+						<BoutonDeReponse
+							libelle="Pas encore"
+							onClick={() => {
+								setArrive(false);
+								setEtape('RESUME');
+							}}
+						/>
+						<BoutonDeReponse
+							principal
+							libelle="Oui, il est arrivé"
+							onClick={() => {
+								setArrive(true);
+								setEtape('REGLEMENT');
+							}}
+						/>
 					</RangeeDeReponses>
 				);
 			case 'AUTRE':
@@ -472,6 +503,15 @@ export function FilReponse({
 				);
 			case 'RESUME':
 				return <BoutonDeReponse principal libelle={libelleDuGeste()} onClick={faire} />;
+			case 'REGLEMENT':
+				return reglement.fini ? (
+					<RangeeDeReponses>
+						<BoutonDeReponse libelle="Revenir au dossier" onClick={onFermer} />
+						<BoutonDeReponse libelle="Autre chose" onClick={onAutreChose} />
+					</RangeeDeReponses>
+				) : (
+					reglement.zone
+				);
 			case 'TRAVAIL':
 				return travail.fini ? (
 					<ReponsesDeFin
@@ -524,13 +564,14 @@ export function FilReponse({
 		}
 	}
 
-	const etapeDeLaBarre = travail.fini
-		? 3
-		: affichee === 'TRAVAIL'
-			? 2
-			: affichee === 'QUOI'
-				? 0
-				: 1;
+	const etapeDeLaBarre =
+		travail.fini || reglement.fini
+			? 3
+			: affichee === 'TRAVAIL' || reglement.lance
+				? 2
+				: affichee === 'QUOI'
+					? 0
+					: 1;
 	const fin = conclusion();
 
 	return (
@@ -539,7 +580,7 @@ export function FilReponse({
 			sousTitre={d.client}
 			onFermer={onFermer}
 			etapes={{ noms: ['Ce qu’il a dit', 'Les détails', 'C’est noté'], courante: etapeDeLaBarre }}
-			suivi={`${affichee}-${travail.tic}-${travail.fini}-${String(annulation.etat)}`}
+			suivi={`${affichee}-${travail.tic}-${travail.fini}-${String(annulation.etat)}-${reglement.suivi}`}
 			reponses={zone()}
 		>
 			{prelude(verrouille)}
@@ -551,7 +592,8 @@ export function FilReponse({
 					{...(verrouille ? {} : { onModifier: () => setEtape(cle) })}
 				/>
 			))}
-			{affichee === 'TRAVAIL' ? null : question(affichee)}
+			{affichee === 'TRAVAIL' || affichee === 'REGLEMENT' ? null : question(affichee)}
+			{reglement.fil}
 			<RefusDuGeste erreur={travail.erreur} />
 			{affichee === 'TRAVAIL' && !travail.fini ? <TravailDePlume etapes={travail.etapes} /> : null}
 			{travail.fini ? (

@@ -25,6 +25,7 @@ import {
 	type ModeleCourrierAffiche,
 	type NiveauAffiche
 } from '../../ui';
+import { useEnvoi } from './sous-parcours';
 import {
 	MotDAnnulation,
 	RefusDuGeste,
@@ -64,7 +65,16 @@ type Choisi =
 	| { readonly genre: 'EMAIL'; readonly niveau: NiveauAffiche }
 	| { readonly genre: 'LETTRE'; readonly modele: ModeleCourrierAffiche; readonly titre: string };
 
-type Etape = 'QUOI' | 'EMAIL' | 'EMAIL_PARTI' | 'REGLAGES' | 'APERCU' | 'TRAVAIL';
+type Etape = 'QUOI' | 'EMAIL' | 'EMAIL_PARTI' | 'DELAI' | 'REGLAGES' | 'APERCU' | 'TRAVAIL';
+
+/** Ce que la préparation a donné : validée d'un même geste, à relire, ou à faire valider. */
+interface PreparationFaite {
+	readonly envoiId: string;
+	readonly issue: 'VALIDE' | 'A_RELIRE' | 'A_VALIDER';
+}
+
+/** Les délais proposés d'un toucher, ceux de la lettre : un choix de produit, sans valeur de droit. */
+const DELAIS = [8, 15, 30] as const;
 
 /** Les modèles qui réclament un montant : il se date au jour où ils se préparent. */
 const DATENT_LE_MONTANT: readonly ModeleCourrierAffiche[] = [
@@ -94,6 +104,8 @@ export function FilEcrire({
 	const [ouvertureEmail, setOuvertureEmail] = useState<'MESSAGERIE' | 'COPIE' | null>(null);
 	/* La lettre telle qu'elle a été préparée : le fil la garde, la route oublie le choix. */
 	const [apercuFige, setApercuFige] = useState<ApercuAffiche | null>(null);
+	/* Les autres réglages d'une lettre de relance, ouverts seulement si on les demande. */
+	const [reglagesDemandes, setReglagesDemandes] = useState(false);
 	const annulation = useAnnulation();
 
 	/* Le choix d'une lettre vit dans la route quand elle le tient : son aperçu en dépend. */
@@ -126,10 +138,25 @@ export function FilEcrire({
 			impossibles.push({ cle: m.cle, titre: m.titre, raison: m.indisponible });
 	}
 
+	/*
+	  ⚠️ UNE LETTRE DE RELANCE NE DEMANDE QU'UNE CHOSE : le délai. Les trois autres
+	  réglages (ce qu'elle annonce, le mode de paiement, la réserve de frais) partent sur
+	  les valeurs d'un dossier seul, et se changent depuis l'aperçu si on le demande. Les
+	  autres modèles ont des champs que rien ne remplit (le mandataire, qui signe) : leur
+	  formulaire reste, présenté par Plume.
+	*/
 	const ordre: readonly Etape[] =
 		choisi?.genre === 'EMAIL'
 			? ['QUOI', 'EMAIL', 'EMAIL_PARTI', 'TRAVAIL']
-			: ['QUOI', 'REGLAGES', 'APERCU', 'TRAVAIL'];
+			: choisi?.genre === 'LETTRE' && choisi.modele === 'RELANCE_OFFICIELLE'
+				? [
+						'QUOI',
+						'DELAI',
+						...(reglagesDemandes ? (['REGLAGES'] as const) : []),
+						'APERCU',
+						'TRAVAIL'
+					]
+				: ['QUOI', 'REGLAGES', 'APERCU', 'TRAVAIL'];
 
 	const libellesDuTravail =
 		choisi?.genre === 'EMAIL'
@@ -139,9 +166,29 @@ export function FilEcrire({
 						? ['Je date le montant au jour d’aujourd’hui']
 						: []),
 					'Je remplis le modèle avec les faits du dossier',
-					'Je la range dans le dossier, à valider'
+					courriers.peutValider
+						? 'Je fige son texte : vous l’avez validée'
+						: 'Je la range dans le dossier, à valider'
 				];
-	const travail = useTravail<Annulation | string>(libellesDuTravail);
+	const travail = useTravail<Annulation | PreparationFaite>(libellesDuTravail);
+	const preparation =
+		travail.resultat !== null && typeof travail.resultat === 'object' ? travail.resultat : null;
+	/*
+	  VALIDÉE D'UN MÊME GESTE : la conversation enchaîne sur l'envoi, sans relire une
+	  deuxième fois ce qui vient d'être lu (useEnvoi, le même morceau que la relecture).
+	*/
+	const courrierPrepare =
+		preparation === null
+			? null
+			: (courriers.envois.find((e) => e.id === preparation.envoiId) ?? null);
+	const envoiGuide = useEnvoi({
+		courrier: courrierPrepare,
+		actif: preparation?.issue === 'VALIDE',
+		aujourdHui: d.aujourdHui,
+		courriers,
+		gestes,
+		onPlusTard: onFermer
+	});
 	const affichee: Etape =
 		etape === 'TRAVAIL' && travail.erreur !== null
 			? choisi?.genre === 'EMAIL'
@@ -149,7 +196,7 @@ export function FilEcrire({
 				: 'APERCU'
 			: etape;
 	const passees = ordre.slice(0, ordre.indexOf(affichee));
-	const verrouille = travail.lance;
+	const verrouille = travail.lance || envoiGuide.lance;
 
 	function choisirEmail(niveau: NiveauAffiche) {
 		setChoisi({ genre: 'EMAIL', niveau });
@@ -167,18 +214,28 @@ export function FilEcrire({
 					: { calendrier: courriers.echeancierConvenu })
 			})
 		);
-		setEtape('REGLAGES');
+		setReglagesDemandes(false);
+		setEtape(modele === 'RELANCE_OFFICIELLE' ? 'DELAI' : 'REGLAGES');
 	}
 
+	/*
+	  ⚠️ VALIDER APRÈS AVOIR LU, D'UN MÊME GESTE. Le gérant vient de lire la lettre telle
+	  qu'elle partira : « Valider la lettre » la prépare et la valide. Le serveur fige le
+	  texte et le compare : si le dossier a changé entre-temps, il rend « à relire », et
+	  la relecture s'ouvre. Sans droit de valider, elle se prépare et attend un
+	  administrateur. Rien ne part pour autant : l'envoi reste au gérant.
+	*/
 	function preparer() {
 		if (choix === null) return;
 		const preparee = choix;
 		setApercuFige(courriers.apercu ?? null);
 		setEtape('TRAVAIL');
-		travail.lancer(async () => {
+		const valider = courriers.peutValider;
+		travail.lancer(async (): Promise<PreparationFaite> => {
 			const envoiId = await gestes.preparerCourrier(preparee);
 			changer(null);
-			return envoiId;
+			if (!valider) return { envoiId, issue: 'A_VALIDER' };
+			return { envoiId, issue: await gestes.validerCourrier(envoiId) };
 		});
 	}
 
@@ -266,6 +323,10 @@ export function FilEcrire({
 				return (
 					<ReponseDePlume texte="Une fois parti, dites-le-moi : je le note dans son historique." />
 				);
+			case 'DELAI':
+				return (
+					<ReponseDePlume texte="Combien de jours lui laissez-vous pour payer ? Trois jours d’acheminement s’y ajoutent." />
+				);
 			case 'REGLAGES':
 				return choisi?.genre !== 'LETTRE' || choix === null ? null : (
 					<ReponseDePlume texte="Je l’ai remplie avec ce que je sais. Changez ce qui ne va pas.">
@@ -326,16 +387,35 @@ export function FilEcrire({
 				return ouvertureEmail === 'COPIE' ? 'Texte copié' : 'Ouvert dans ma messagerie';
 			case 'EMAIL_PARTI':
 				return 'Je l’ai envoyé';
+			case 'DELAI':
+				return choix?.modele === 'RELANCE_OFFICIELLE' ? `${choix.delaiJours} jours` : '';
 			case 'REGLAGES':
-				return choix?.modele === 'RELANCE_OFFICIELLE'
-					? `C’est bon, ${choix.delaiJours} jours pour payer`
-					: 'C’est bon';
+				return 'C’est bon';
 			case 'APERCU':
-				return 'Préparer la lettre';
+				return courriers.peutValider ? 'Valider la lettre' : 'La préparer';
 			default:
 				return '';
 		}
 	}
+
+	const choixDuCourrier = (
+		<ListeDeReponses
+			choix={[
+				...emails.map((niveau) => ({
+					cle: `email-${niveau.niveau}`,
+					titre: niveau.nom,
+					ligne: 'Un e-mail, ouvert dans votre messagerie',
+					onClick: () => choisirEmail(niveau)
+				})),
+				...lettresPossibles.map((m) => ({
+					cle: m.cle,
+					titre: m.titre,
+					ligne: m.description,
+					onClick: () => choisirLettre(m.cle, m.titre)
+				}))
+			]}
+		/>
+	);
 
 	function zone(): ReactNode {
 		switch (affichee) {
@@ -345,24 +425,7 @@ export function FilEcrire({
 						<BoutonDeReponse libelle="Revenir au dossier" onClick={onFermer} />
 						<BoutonDeReponse libelle="Autre chose" onClick={onAutreChose} />
 					</RangeeDeReponses>
-				) : (
-					<ListeDeReponses
-						choix={[
-							...emails.map((niveau) => ({
-								cle: `email-${niveau.niveau}`,
-								titre: niveau.nom,
-								ligne: 'Un e-mail, ouvert dans votre messagerie',
-								onClick: () => choisirEmail(niveau)
-							})),
-							...lettresPossibles.map((m) => ({
-								cle: m.cle,
-								titre: m.titre,
-								ligne: m.description,
-								onClick: () => choisirLettre(m.cle, m.titre)
-							}))
-						]}
-					/>
-				);
+				) : undefined;
 			case 'EMAIL':
 				return choisi?.genre !== 'EMAIL' ? undefined : (
 					<>
@@ -400,30 +463,74 @@ export function FilEcrire({
 						<BoutonDeReponse principal libelle="Je l’ai envoyé" onClick={noterLEmail} />
 					</RangeeDeReponses>
 				);
+			case 'DELAI': {
+				const habitude = courriers.delaiRelanceParDefaut ?? DELAIS[0];
+				return (
+					<RangeeDeReponses>
+						{DELAIS.map((jours) => (
+							<BoutonDeReponse
+								key={jours}
+								principal={jours === habitude}
+								libelle={`${jours} jours`}
+								onClick={() => {
+									if (choix?.modele === 'RELANCE_OFFICIELLE') {
+										changer({ ...choix, delaiJours: jours });
+									}
+									setEtape(reglagesDemandes ? 'REGLAGES' : 'APERCU');
+								}}
+							/>
+						))}
+					</RangeeDeReponses>
+				);
+			}
 			case 'REGLAGES':
 				return (
 					<BoutonDeReponse principal libelle="Voir la lettre" onClick={() => setEtape('APERCU')} />
 				);
 			case 'APERCU':
 				return (
-					<BoutonDeReponse
-						principal
-						desactive={courriers.apercu?.ok !== true || courriers.enCours}
-						libelle="Préparer la lettre"
-						onClick={preparer}
-					/>
+					<>
+						<BoutonDeReponse
+							principal
+							desactive={courriers.apercu?.ok !== true || courriers.enCours}
+							libelle={courriers.peutValider ? 'Valider la lettre' : 'La préparer'}
+							onClick={preparer}
+						/>
+						{choix?.modele === 'RELANCE_OFFICIELLE' && !reglagesDemandes ? (
+							<BoutonDeReponse
+								libelle="Changer les autres réglages"
+								onClick={() => {
+									setReglagesDemandes(true);
+									setEtape('REGLAGES');
+								}}
+							/>
+						) : null}
+					</>
 				);
 			case 'TRAVAIL': {
 				if (!travail.fini) return undefined;
 				const resultat = travail.resultat;
-				if (choisi?.genre === 'LETTRE' && typeof resultat === 'string') {
+				if (preparation !== null) {
+					if (preparation.issue === 'VALIDE') {
+						// Le courrier n'est pas encore dans la liste : on revient au dossier, il y est.
+						return envoiGuide.fini || courrierPrepare === null ? (
+							<RangeeDeReponses>
+								<BoutonDeReponse libelle="Revenir au dossier" onClick={onFermer} />
+								<BoutonDeReponse libelle="Autre chose" onClick={onAutreChose} />
+							</RangeeDeReponses>
+						) : (
+							envoiGuide.zone
+						);
+					}
 					return (
 						<>
-							<BoutonDeReponse
-								principal
-								libelle="La relire et la valider"
-								onClick={() => onRelire(resultat)}
-							/>
+							{preparation.issue === 'A_RELIRE' ? (
+								<BoutonDeReponse
+									principal
+									libelle="La relire"
+									onClick={() => onRelire(preparation.envoiId)}
+								/>
+							) : null}
 							<RangeeDeReponses>
 								<BoutonDeReponse libelle="Revenir au dossier" onClick={onFermer} />
 								<BoutonDeReponse libelle="Autre chose" onClick={onAutreChose} />
@@ -449,7 +556,7 @@ export function FilEcrire({
 			titre={titre}
 			sousTitre={d.client}
 			onFermer={onFermer}
-			suivi={`${affichee}-${travail.tic}-${travail.fini}-${String(annulation.etat)}-${courriers.apercu === undefined ? 'calcul' : 'pret'}`}
+			suivi={`${affichee}-${travail.tic}-${travail.fini}-${String(annulation.etat)}-${courriers.apercu === undefined ? 'calcul' : 'pret'}-${envoiGuide.suivi}`}
 			reponses={zone()}
 		>
 			{prelude(verrouille)}
@@ -462,19 +569,27 @@ export function FilEcrire({
 				/>
 			))}
 			{affichee === 'TRAVAIL' ? null : question(affichee)}
+			{/* Jusqu'à neuf courriers : la liste défile avec le fil, pas collée sous le pouce. */}
+			{affichee === 'QUOI' && !rienAPreparer ? choixDuCourrier : null}
 			<RefusDuGeste erreur={travail.erreur} />
 			{affichee === 'TRAVAIL' && !travail.fini ? <TravailDePlume etapes={travail.etapes} /> : null}
-			{travail.fini ? (
-				choisi?.genre === 'LETTRE' ? (
-					<AccueilDePlume
-						humeur="ecrit"
-						titre={`${choisi.titre} : prête.`}
-						sousTitre="Elle attend votre validation. Rien n’est parti."
-					/>
-				) : (
-					<AccueilDePlume humeur="content" titre="C’est noté dans son historique." />
-				)
-			) : null}
+			{!travail.fini ? null : preparation?.issue === 'VALIDE' ? (
+				<ReponseDePlume texte="Validée : son texte est figé, tel que vous l’avez lu." />
+			) : preparation?.issue === 'A_RELIRE' ? (
+				<ReponseDePlume
+					humeur="attention"
+					texte="Le dossier a changé pendant que je la préparais : j’ai mis le texte à jour. Relisez-la avant de la valider."
+				/>
+			) : preparation !== null ? (
+				<AccueilDePlume
+					humeur="ecrit"
+					titre={`${choisi?.genre === 'LETTRE' ? choisi.titre : 'La lettre'} : prête.`}
+					sousTitre="Un administrateur de votre entreprise doit la valider. Rien n’est parti."
+				/>
+			) : (
+				<AccueilDePlume humeur="content" titre="C’est noté dans son historique." />
+			)}
+			{envoiGuide.fil}
 			<MotDAnnulation etat={annulation.etat} />
 		</CadreGuide>
 	);

@@ -19,7 +19,6 @@ import {
 	Courriers,
 	Decompte,
 	EtatDuDossier,
-	FeuilleDeclaration,
 	FeuilleVoie,
 	LiensDePaiement,
 	LigneAnalyse,
@@ -52,7 +51,6 @@ import {
 	useDeuxVolets,
 	useSectionOuverte,
 	type AlerteDossier,
-	type ChoixDeclare,
 	type CourriersDuDossier,
 	type DecompteAffiche,
 	type FicheIntervenant,
@@ -91,6 +89,9 @@ import {
 	type SortiesDeLaConversation
 } from './dossier-guide/conversation';
 import type { DossierPourLesIntentions, IntentionDuDossier } from './dossier-guide/intentions';
+import { voiesDeclarables } from './dossier-guide/fil-procedure';
+import type { PromesseAVerifier } from './dossier-guide/fil-promesse';
+import type { RappelDuJour } from './dossier-guide/fil-rappel-du-jour';
 
 /**
  * UN DOSSIER — COMBIEN, OÙ ON EN EST, ET LE SEUL GESTE QUI COMPTE.
@@ -360,7 +361,6 @@ export interface CreanceOuverte {
 	readonly nomsIntervenants: readonly string[];
 	/** La date du FAIT, jamais celle de la saisie. */
 	readonly onConsigner: (cle: string, survenuLe: string) => void;
-	readonly onDeclarerVoie: (procedure: string, engageeLe: string, choix: ChoixDeclare) => void;
 	/**
 	 * Les professionnels du dossier, tels que le parcours du choix les confirme :
 	 * ceux qui manquent s'ajoutent, ceux qui n'y sont plus se retirent. Vide :
@@ -395,9 +395,18 @@ function aConfirmer(creance: {
 
 export function EcranCreance({
 	donnees,
-	ouvrirAuDepart
+	ouvrirAuDepart,
+	faireAuDepart,
+	envoiAuDepart
 }: {
 	donnees: Lecture<CreanceOuverte>;
+	/**
+	 * Le geste à ouvrir à l'arrivée (`?faire=`, 23/10/2026) : « La relire » sous le mot
+	 * de Plume, une notification, mènent à la conversation déjà répondue.
+	 */
+	faireAuDepart?: IntentionDuDossier;
+	/** Le courrier que le lien désigne, pour « Relire le courrier ». */
+	envoiAuDepart?: string;
 	/** La rubrique à ouvrir à l'arrivée (`?ouvrir=`) : un lien qui MÈNE, pas qui décrit. */
 	ouvrirAuDepart?: SectionCreance;
 }) {
@@ -411,11 +420,23 @@ export function EcranCreance({
 		readonly ouverte: boolean;
 		readonly depart: IntentionDuDossier | null;
 		readonly envoi: string | null;
+		readonly voie: string | null;
+		/** La réponse déjà donnée sur la carte de Plume (« Non », « Plus tard »). */
+		readonly reponse: string | null;
 		readonly jeton: number;
 	}>(() =>
-		ouvrirAuDepart === 'litige'
-			? { ouverte: true, depart: 'QUESTIONS', envoi: null, jeton: 0 }
-			: { ouverte: false, depart: null, envoi: null, jeton: 0 }
+		faireAuDepart !== undefined
+			? {
+					ouverte: true,
+					depart: faireAuDepart,
+					envoi: envoiAuDepart ?? null,
+					voie: null,
+					reponse: null,
+					jeton: 0
+				}
+			: ouvrirAuDepart === 'litige'
+				? { ouverte: true, depart: 'QUESTIONS', envoi: null, voie: null, reponse: null, jeton: 0 }
+				: { ouverte: false, depart: null, envoi: null, voie: null, reponse: null, jeton: 0 }
 	);
 
 	/**
@@ -455,6 +476,8 @@ export function EcranCreance({
 					ouverte: true,
 					depart: 'QUESTIONS',
 					envoi: null,
+					voie: null,
+					reponse: null,
 					jeton: avant.jeton + 1
 				}));
 			}
@@ -499,7 +522,12 @@ export function EcranCreance({
 	 * Ouvre la conversation sur un geste (ou sur « Que voulez-vous faire ? »), ou mène
 	 * le geste qui a déjà son parcours ailleurs.
 	 */
-	function demander(intention: IntentionDuDossier | null, envoi: string | null = null) {
+	function demander(
+		intention: IntentionDuDossier | null,
+		envoi: string | null = null,
+		voie: string | null = null,
+		reponse: string | null = null
+	) {
 		if (sorties === null) return;
 		if (intention !== null && (!estGuidee(intention) || pret?.gestesGuides === undefined)) {
 			menerHorsConversation(intention, sorties);
@@ -509,6 +537,8 @@ export function EcranCreance({
 			ouverte: true,
 			depart: intention,
 			envoi,
+			voie,
+			reponse,
 			jeton: avant.jeton + 1
 		}));
 	}
@@ -578,7 +608,13 @@ export function EcranCreance({
 									recupere={pret.dejaRecupere ?? 0n}
 									total={pret.totalFactures ?? 0n}
 									reponses={
-										<ReponsesDuMoment creance={pret} onRubrique={ouvrir} onDemander={demander} />
+										<ReponsesDuMoment
+											creance={pret}
+											onRubrique={ouvrir}
+											onDemander={(intention, reponse) =>
+												demander(intention, null, null, reponse ?? null)
+											}
+										/>
 									}
 								/>
 							)}
@@ -626,7 +662,10 @@ export function EcranCreance({
 								/>
 								<RangeeDecompte creance={pret} />
 								<RangeePieces creance={pret} />
-								<RangeeVoies creance={pret} />
+								<RangeeVoies
+									creance={pret}
+									onDeclarer={(voie) => demander('PROCEDURE', null, voie)}
+								/>
 								<RangeeLien
 									vers="/app/clients/$id"
 									parametres={{ id: pret.debiteurId }}
@@ -645,6 +684,10 @@ export function EcranCreance({
 					ouverte={conversation.ouverte}
 					depart={conversation.depart}
 					envoiDepart={conversation.envoi}
+					voieDepart={conversation.voie}
+					reponseDepart={conversation.reponse}
+					attentes={{ promesse: promesseAVerifier(pret), rappel: rappelDuJour(pret) }}
+					procedure={{ voies: pret.voies, suivi: pret.suivi }}
 					onFermer={() => setConversation((avant) => ({ ...avant, ouverte: false }))}
 					dossier={dossierDuGuide(pret)}
 					gestes={pret.gestesGuides}
@@ -798,10 +841,18 @@ function gesteDuDossier(
 			mene: { intention: 'RELIRE' }
 		};
 	}
+	// Ce que le gérant s'était promis de vérifier, le jour venu : Plume pose la question.
+	if (promesseAVerifier(creance) !== null) {
+		return { libelle: 'Répondre', mene: { intention: 'PROMESSE' } };
+	}
+	if (rappelDuJour(creance) !== null) {
+		return { libelle: 'Voir mon rappel', mene: { intention: 'RAPPEL_DU_JOUR' } };
+	}
 	if (creance.courriers.envois.some((e) => e.etat === 'PROGRAMME')) {
 		return { libelle: 'Voir la relance', mene: { intention: 'RELIRE' } };
 	}
 	if (creance.etapes.etape === 'TRIBUNAL') {
+		if (etapeANoter(creance)) return { libelle: 'Noter une étape', mene: { intention: 'ETAPE' } };
 		return { libelle: 'Suivre le dossier', mene: { rubrique: 'voies' } };
 	}
 	// ⚠️ LE CLIENT A DONNÉ SA PAROLE (une promesse, un échéancier) : « Relancer » en
@@ -830,16 +881,54 @@ function ReponsesDuMoment({
 }: {
 	readonly creance: CreanceOuverte;
 	readonly onRubrique: (cle: SectionCreance) => void;
-	readonly onDemander: (intention: IntentionDuDossier | null) => void;
+	readonly onDemander: (intention: IntentionDuDossier | null, reponse?: string) => void;
 }) {
 	const proposition = gesteDuDossier(creance);
 	const peutRepondre =
 		creance.gestesGuides !== undefined &&
 		creance.etapes.etape !== 'REGLE' &&
 		creance.classement === undefined;
+	const [rayeEnCours, setRayeEnCours] = useState(false);
+	const rappel = rappelDuJour(creance);
+	const mene = proposition?.mene;
+	/*
+	  ⚠️ QUAND PLUME POSE UNE QUESTION, LA CARTE PORTE SES RÉPONSES (23/10/2026). « Il
+	  l'a fait ? » se répond par Non ou Oui sur la carte même, et la conversation
+	  s'ouvre à la question suivante ; un rappel se raye d'un toucher. Les deux réponses
+	  ont le même poids : « tenue » reste le mot du gérant.
+	*/
+	const questionDirecte =
+		creance.gestesGuides === undefined || mene === undefined || 'rubrique' in mene
+			? null
+			: mene.intention === 'PROMESSE'
+				? 'PROMESSE'
+				: mene.intention === 'RAPPEL_DU_JOUR' && rappel !== null
+					? 'RAPPEL'
+					: null;
 	return (
 		<>
-			{proposition === null ? null : (
+			{questionDirecte === 'PROMESSE' ? (
+				<RangeeDeReponses>
+					<BoutonDeReponse libelle="Non" onClick={() => onDemander('PROMESSE', 'NON')} />
+					<BoutonDeReponse libelle="Oui, il a payé" onClick={() => onDemander('PROMESSE', 'OUI')} />
+				</RangeeDeReponses>
+			) : questionDirecte === 'RAPPEL' && rappel !== null ? (
+				<RangeeDeReponses>
+					<BoutonDeReponse
+						libelle="Plus tard"
+						onClick={() => onDemander('RAPPEL_DU_JOUR', 'PLUS_TARD')}
+					/>
+					<BoutonDeReponse
+						principal
+						libelle="C’est fait"
+						enCours={rayeEnCours}
+						onClick={() => {
+							setRayeEnCours(true);
+							void creance.gestesGuides?.rappelFait(rappel.id).finally(() => setRayeEnCours(false));
+						}}
+					/>
+				</RangeeDeReponses>
+			) : proposition === null ? null : (
 				<BoutonDeReponse
 					principal
 					libelle={proposition.libelle}
@@ -860,6 +949,46 @@ function ReponsesDuMoment({
 	);
 }
 
+/** Sa promesse arrivée à son jour, que le gérant n'a pas encore tranchée : la plus récente. */
+function promesseAVerifier(creance: CreanceOuverte): PromesseAVerifier | null {
+	const note = creance.suiviDuDossier.notes
+		.filter(
+			(n) =>
+				n.genre === 'PROMESSE' &&
+				n.issue === undefined &&
+				n.promisPourLe !== undefined &&
+				n.promisPourLe <= creance.aujourdHui
+		)
+		.sort((a, b) => ((a.promisPourLe ?? '') < (b.promisPourLe ?? '') ? 1 : -1))[0];
+	if (note === undefined || note.promisPourLe === undefined) return null;
+	return {
+		id: note._id,
+		le: note.promisPourLe,
+		montant: note.montantPromis ?? null,
+		...(note.recuDepuis === undefined ? {} : { recuDepuis: note.recuDepuis })
+	};
+}
+
+/** Le rappel arrivé à son jour, pas encore fait : le plus ancien. */
+function rappelDuJour(creance: CreanceOuverte): RappelDuJour | null {
+	const note = creance.suiviDuDossier.notes
+		.filter(
+			(n) =>
+				n.genre === 'RAPPEL' &&
+				n.faitLe === undefined &&
+				n.rappelLe !== undefined &&
+				n.rappelLe <= creance.aujourdHui
+		)
+		.sort((a, b) => ((a.rappelLe ?? '') < (b.rappelLe ?? '') ? -1 : 1))[0];
+	if (note === undefined || note.rappelLe === undefined) return null;
+	return { id: note._id, texte: note.texte, le: note.rappelLe };
+}
+
+/** Une démarche est engagée, et une suite peut s'y noter. */
+function etapeANoter(creance: CreanceOuverte): boolean {
+	return creance.suivi !== null && !creance.suivi.terminal && creance.suivi.suites.length > 0;
+}
+
 /** Ce que la conversation du dossier sait pour proposer ses réponses. */
 function pourLesIntentions(creance: CreanceOuverte): DossierPourLesIntentions {
 	const classe = creance.classement !== undefined;
@@ -871,7 +1000,10 @@ function pourLesIntentions(creance: CreanceOuverte): DossierPourLesIntentions {
 			creance.santeDebiteur === 'PROCEDURE_COLLECTIVE' || creance.santeDebiteur === 'RADIEE',
 		questionsEnAttente: aConfirmer(creance),
 		classable: !classe && creance.gestesGuides !== undefined,
-		plumeJoignable: creance.onDemanderAPlume !== undefined
+		plumeJoignable: creance.onDemanderAPlume !== undefined,
+		procedureDeclarable:
+			!classe && creance.suivi === null && voiesDeclarables(creance.voies).length > 0,
+		etapeANoter: !classe && etapeANoter(creance)
 	};
 }
 
@@ -881,11 +1013,16 @@ function dossierDuGuide(creance: CreanceOuverte): DossierDuGuide {
 	const echeancier = creance.reponse?.echeancier;
 	return {
 		client: creance.debiteur,
+		debiteurId: creance.debiteurId,
 		aujourdHui: creance.aujourdHui,
 		resteDu,
 		echeancierPossible:
 			resteDu > 0n && echeancier?.etat !== 'EN_COURS' && echeancier?.etat !== 'EN_RETARD',
 		accordPossible: accordPossible(creance),
+		prochaineEtape:
+			creance.planAVenir?.[0] === undefined
+				? null
+				: { nom: creance.planAVenir[0].nom, le: creance.planAVenir[0].le },
 		relanceParPlume:
 			creance.horsPilote !== true &&
 			creance.santeDebiteur !== 'PROCEDURE_COLLECTIVE' &&
@@ -959,6 +1096,28 @@ function ceQueFaitPlume(creance: CreanceOuverte): {
 			humeur: 'attention',
 			phrase: `${client} est en procédure collective ou radié : je ne le relance pas.`,
 			siRienNeBouge: 'Je surveille ses dates, et ce qui le concerne au registre.'
+		};
+	}
+	/*
+	  ⚠️ CE QUI ATTEND LE GÉRANT, LE JOUR VENU (23/10/2026) : sa promesse, un rappel. Ces
+	  deux-là se lisaient au bouton « Tout l'historique · 2 à vérifier » ; Plume pose la
+	  question, et « Tenue » reste le mot du gérant.
+	*/
+	const promesse = promesseAVerifier(creance);
+	if (promesse !== null) {
+		return {
+			humeur: 'attention',
+			phrase: `${client} avait promis de payer${promesse.montant === null ? '' : ` ${eurosCentimes(promesse.montant)}`} le ${dateCourte(promesse.le)}. Il l’a fait ?`,
+			siRienNeBouge:
+				'Dites-le-moi : c’est vous qui le constatez. S’il n’a pas payé, je reprends le plan.'
+		};
+	}
+	const rappel = rappelDuJour(creance);
+	if (rappel !== null) {
+		return {
+			humeur: 'attention',
+			phrase: 'Vous m’aviez demandé de revenir sur ce dossier aujourd’hui.',
+			siRienNeBouge: `« ${rappel.texte} »`
 		};
 	}
 	const programme = creance.courriers.envois.find((e) => e.etat === 'PROGRAMME');
@@ -1541,20 +1700,25 @@ function RangeePieces({ creance }: { creance: CreanceOuverte }) {
  * trois mois partir du 20, soit dix-sept jours offerts en silence sur
  * l'échéance la plus dangereuse du produit.
  */
-function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
+function RangeeVoies({
+	creance,
+	onDeclarer
+}: {
+	creance: CreanceOuverte;
+	/** « Je l'ai engagée » : la conversation du dossier, cette voie déjà choisie. */
+	onDeclarer: (voie: string) => void;
+}) {
 	/*
 	  ⚠️ LES FEUILLES SONT UN ÉTAT D'ÉCRAN, PAS UN ÉTAT D'ADRESSE. On ne met pas
 	  en signet une feuille ouverte. L'annuaire, lui, vit dans la route : ses
 	  lectures ne partent qu'au geste qui ouvre le parcours (`onDemander`).
 	*/
 	const [voieOuverte, setVoieOuverte] = useState<string | null>(null);
-	const [voieDeclaree, setVoieDeclaree] = useState<string | null>(null);
 	const [carnetOuvert, setCarnetOuvert] = useState(false);
 
 	// Tout se DÉRIVE du rendu : aucune de ces valeurs n'est un état, donc aucune
 	// ne peut être en retard d'un rendu sur la donnée qui la porte.
 	const voie = creance.voies.find((v) => v.cle === voieOuverte) ?? null;
-	const declaree = creance.voies.find((v) => v.cle === voieDeclaree) ?? null;
 	const envisageables = creance.voies.filter((v) => v.disponible).length;
 
 	return (
@@ -1642,31 +1806,12 @@ function RangeeVoies({ creance }: { creance: CreanceOuverte }) {
 				voie={voie}
 				ouverte={voie !== null}
 				onFermer={() => setVoieOuverte(null)}
-				onDeclarer={() => setVoieDeclaree(voie?.cle ?? null)}
+				onDeclarer={() => {
+					if (voie === null) return;
+					setVoieOuverte(null);
+					onDeclarer(voie.cle);
+				}}
 			/>
-
-			{/*
-			  ⚠️ LA FEUILLE DE DÉCLARATION SE REMONTE À CHAQUE VOIE, par sa `key` :
-			  c'est ce qui remet la date à aujourd'hui et le choix à « rien dit » sans
-			  le moindre effet. Ouvrir une voie, refermer, en ouvrir une autre et
-			  retrouver la date de la première serait une erreur silencieuse sur la
-			  seule donnée que ce geste enregistre.
-			*/}
-			{declaree === null ? null : (
-				<FeuilleDeclaration
-					key={declaree.cle}
-					carnet={creance.carnet}
-					enCours={creance.enCours}
-					aujourdHui={creance.aujourdHui}
-					onFermer={() => setVoieDeclaree(null)}
-					professionnels={creance.professionnels}
-					onDeclarer={(engageeLe, choix) => {
-						creance.onDeclarerVoie(declaree.cle, engageeLe, choix);
-						setVoieDeclaree(null);
-						setVoieOuverte(null);
-					}}
-				/>
-			)}
 
 			{/*
 			  LE PARCOURS DU CHOIX (12/10/2026) : une page pleine, une profession par

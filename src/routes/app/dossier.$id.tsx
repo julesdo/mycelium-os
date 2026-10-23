@@ -15,7 +15,12 @@ import { personneNommeeDansLAnnonce } from '../../lib/verticales/recouvrement/pa
 import { TYPES_PIECE, aujourdHuiISO, pluriel } from '../../ui';
 import { EcranCreance, type CreanceOuverte } from '../../screens/creance';
 // Les rubriques seules : la validation de l'adresse se charge avec l'application.
-import { SECTIONS_CREANCE, type SectionCreance } from '../../screens/sections-creance';
+import {
+	GESTES_ADRESSABLES,
+	SECTIONS_CREANCE,
+	type GesteAdressable,
+	type SectionCreance
+} from '../../screens/sections-creance';
 import { useDirigeantsDuClient } from '../../app/use-professionnels';
 import { useAnnuaire } from '../../app/use-annuaire';
 import { useGestesDuGuide, versConvex } from '../../app/gestes-guides';
@@ -35,11 +40,22 @@ import {
  * notifications s'en servent.
  */
 export const Route = createFileRoute('/app/dossier/$id')({
-	validateSearch: (recherche: Record<string, unknown>): { ouvrir?: SectionCreance } =>
-		typeof recherche.ouvrir === 'string' &&
+	validateSearch: (
+		recherche: Record<string, unknown>
+	): { ouvrir?: SectionCreance; faire?: GesteAdressable; envoi?: string } => ({
+		...(typeof recherche.ouvrir === 'string' &&
 		(SECTIONS_CREANCE as readonly string[]).includes(recherche.ouvrir)
 			? { ouvrir: recherche.ouvrir as SectionCreance }
-			: {},
+			: {}),
+		...(typeof recherche.faire === 'string' &&
+		(GESTES_ADRESSABLES as readonly string[]).includes(recherche.faire)
+			? { faire: recherche.faire as GesteAdressable }
+			: {}),
+		// Le courrier à relire, quand le lien le désigne (« Part bientôt » du pilote).
+		...(typeof recherche.envoi === 'string' && recherche.envoi.length <= 64
+			? { envoi: recherche.envoi }
+			: {})
+	}),
 	/*
 	  ⚠️ LES DONNÉES PARTENT AU TOUCHER (09/10/2026) : ce que la page attend avant de
 	  s'afficher s'ouvre dès que le doigt se pose sur la carte du dossier
@@ -137,7 +153,11 @@ function PageCreance() {
 	const parole = useQuery(api.recouvrement.parole.duDossier, { creanceId });
 	const gestesParole = useGestesDeDossier();
 	/** Les gestes de la conversation du dossier : ce qu'il a répondu, un rappel, classer. */
-	const gestesGuides = useGestesDuGuide(creanceId, aujourdHui);
+	const gestesGuides = useGestesDuGuide(
+		creanceId,
+		creance === undefined || creance === null ? null : creance.debiteurId,
+		aujourdHui
+	);
 	/** Le pilote : s'il relance seul, la suite du plan le dit (« le pilote l'envoie »). */
 	// Le seul booléen que la page lit : l'état entier change à chaque coche du pilote.
 	const relancesAutomatiques = useQuery(api.recouvrement.pilote.relancesAutomatiques, {});
@@ -217,7 +237,6 @@ function PageCreance() {
 	const choisirOrdreImputation = useMutation(api.recouvrement.creances.choisirOrdreImputation);
 	const classerPiece = useMutation(api.recouvrement.pieces.classerPiece);
 	const consignerEvenement = useMutation(api.recouvrement.apresProcedure.consignerEvenement);
-	const engagerProcedure = useMutation(api.recouvrement.apresProcedure.engagerProcedure);
 	const designerIntervenant = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
 	const aucunIntervenant = useMutation(api.recouvrement.apresProcedure.aucunIntervenant);
 	// L'annuaire du parcours du choix : le carnet, puis les professionnels près du client.
@@ -899,27 +918,6 @@ function PageCreance() {
 		onConsigner: (cle, survenuLe) =>
 			void avec(() => consignerEvenement({ creanceId, cle, survenuLe })),
 		/*
-		  ⚠️ LE LOGICIEL N'ENGAGE PAS, IL ENREGISTRE — troisième ligne rouge. Et
-		  l'intervenant ne se rattache que s'il a été DIT : un silence n'est pas un
-		  « moi-même ». Si le rattachement échoue, l'engagement RESTE — il est déjà
-		  écrit, et il porte les délais.
-		*/
-		onDeclarerVoie: (procedure, engageeLe, choix) =>
-			void avec(async () => {
-				await engagerProcedure({ creanceId, procedure, engageeLe });
-				// « Moi-même » vide la liste ; les fiches nommées s'AJOUTENT à celles déjà là.
-				if (choix !== null) {
-					if (choix.ids.length === 0) await aucunIntervenant({ creanceId });
-					for (const id of choix.ids) {
-						await designerIntervenant({
-							creanceId,
-							intervenantId: id as Id<'intervenants'>,
-							designe: true
-						});
-					}
-				}
-			}),
-		/*
 		  LE PARCOURS CONFIRME UNE LISTE ENTIÈRE (12/10/2026) : ceux qui n'y sont plus
 		  se retirent, ceux qui manquent s'ajoutent. Une liste vide, c'est « Moi-même ».
 		  Les fiches venues d'un annuaire sont déjà au carnet, avec leur source et leur
@@ -960,6 +958,8 @@ function PageCreance() {
 			<EcranCreance
 				donnees={{ etat: 'pret', valeur }}
 				{...(recherche.ouvrir === undefined ? {} : { ouvrirAuDepart: recherche.ouvrir })}
+				{...(recherche.faire === undefined ? {} : { faireAuDepart: recherche.faire })}
+				{...(recherche.envoi === undefined ? {} : { envoiAuDepart: recherche.envoi })}
 			/>
 			{coffre.rendu}
 		</>

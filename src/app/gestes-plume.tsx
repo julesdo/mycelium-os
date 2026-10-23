@@ -349,6 +349,18 @@ export function useGestesDePlume({
 					{libelle}
 				</BoutonSecondaire>
 			);
+		/* La conversation du dossier, ouverte sur le geste (`?faire=`, 23/10/2026). */
+		const versGeste = (faire: string, libelle: string) =>
+			dossier === undefined ? undefined : (
+				<BoutonSecondaire
+					as={Lien}
+					to="/app/dossier/$id"
+					params={{ id: dossier.id } as never}
+					search={{ faire } as never}
+				>
+					{libelle}
+				</BoutonSecondaire>
+			);
 		const fiche =
 			dossier === undefined ? undefined : (
 				<BoutonSecondaire
@@ -361,11 +373,9 @@ export function useGestesDePlume({
 			);
 		switch (geste.genre) {
 			case 'RELANCER':
+				return versGeste('RELIRE', 'Relire le courrier');
 			case 'RETENIR':
-				return versDossier(
-					'courriers',
-					geste.genre === 'RELANCER' ? 'Relire le courrier' : 'Voir ses courriers'
-				);
+				return versDossier('courriers', 'Voir ses courriers');
 			case 'RAPPEL':
 			case 'PROMESSE':
 			case 'NOTE':
@@ -374,7 +384,7 @@ export function useGestesDePlume({
 			case 'CLASSER':
 				return versDossier('suivi', 'Voir le dossier');
 			case 'CONTESTATION':
-				return versDossier('litige', 'Les questions du dossier');
+				return versGeste('QUESTIONS', 'Les questions du dossier');
 			case 'EMAIL':
 			case 'RETIRER_DU_PILOTE':
 			case 'REMETTRE_AU_PILOTE':

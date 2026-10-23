@@ -16,3 +16,23 @@ export const SECTIONS_CREANCE = [
 	'suivi'
 ] as const;
 export type SectionCreance = (typeof SECTIONS_CREANCE)[number];
+
+/**
+ * LES GESTES DU DOSSIER, ADRESSABLES (`?faire=…`, 23/10/2026) : un lien ouvre la
+ * conversation du dossier déjà répondue — « La relire » sous le mot de Plume, une
+ * notification, un geste confirmé dans la conversation libre.
+ */
+export const GESTES_ADRESSABLES = [
+	'ECRIRE',
+	'RELIRE',
+	'REPONSE',
+	'QUESTIONS',
+	'RAPPEL',
+	'CONSEIL',
+	'CLASSER',
+	'PROMESSE',
+	'RAPPEL_DU_JOUR',
+	'PROCEDURE',
+	'ETAPE'
+] as const;
+export type GesteAdressable = (typeof GESTES_ADRESSABLES)[number];

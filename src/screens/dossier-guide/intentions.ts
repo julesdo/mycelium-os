@@ -24,7 +24,15 @@ export type IntentionDuDossier =
 	| 'RAPPEL'
 	| 'CONSEIL'
 	| 'CLASSER'
-	| 'PLUME';
+	| 'PLUME'
+	/** Sa promesse est arrivée à son jour : la carte de Plume pose la question. */
+	| 'PROMESSE'
+	/** Un rappel que le gérant s'était posé, arrivé à son jour. */
+	| 'RAPPEL_DU_JOUR'
+	/** Déclarer une démarche engagée : le logiciel compte ses délais. */
+	| 'PROCEDURE'
+	/** Noter ce qui s'est passé dans la démarche engagée. */
+	| 'ETAPE';
 
 /** Ce que la page sait du dossier, et qui décide des réponses proposées. */
 export interface DossierPourLesIntentions {
@@ -41,6 +49,10 @@ export interface DossierPourLesIntentions {
 	readonly classable: boolean;
 	/** La conversation libre du dossier est branchée. */
 	readonly plumeJoignable: boolean;
+	/** Une démarche peut être déclarée engagée (une voie a un déroulé, aucune ne l'est). */
+	readonly procedureDeclarable: boolean;
+	/** Une démarche est engagée, et une suite peut s'y noter. */
+	readonly etapeANoter: boolean;
 }
 
 export interface LibelleDIntention {
@@ -59,6 +71,8 @@ export function intentionsDuDossier(d: DossierPourLesIntentions): IntentionDuDos
 		'DOCUMENT',
 		'RAPPEL',
 		...(d.auTribunal || d.regle ? [] : (['CONSEIL'] as const)),
+		...(d.procedureDeclarable && !d.regle ? (['PROCEDURE'] as const) : []),
+		...(d.etapeANoter ? (['ETAPE'] as const) : []),
 		...(d.classable ? (['CLASSER'] as const) : []),
 		...(d.plumeJoignable ? (['PLUME'] as const) : [])
 	];
@@ -106,5 +120,13 @@ export function libelleDIntention(
 			return { titre: 'Classer le dossier', ligne: 'Rien n’est effacé, il se rouvre d’un toucher' };
 		case 'PLUME':
 			return { titre: 'Le dire avec mes mots', ligne: 'Plume comprend, et prépare le geste' };
+		case 'PROMESSE':
+			return { titre: 'Vérifier sa promesse', ligne: 'Il devait payer : l’a-t-il fait ?' };
+		case 'RAPPEL_DU_JOUR':
+			return { titre: 'Mon rappel', ligne: 'Ce que vous vouliez faire aujourd’hui' };
+		case 'PROCEDURE':
+			return { titre: 'Une démarche est engagée', ligne: 'Je compte ses délais depuis son jour' };
+		case 'ETAPE':
+			return { titre: 'Noter ce qui s’est passé', ligne: 'Une étape de la démarche, à sa date' };
 	}
 }

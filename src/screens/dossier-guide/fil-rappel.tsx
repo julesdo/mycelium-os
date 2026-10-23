@@ -34,7 +34,7 @@ const ORDRE: readonly Etape[] = ['QUAND', 'POURQUOI', 'TRAVAIL'];
 const SANS_PRECISION = 'Revenir sur ce dossier';
 
 /** Demain, lundi prochain, dans une semaine, dans quinze jours. */
-function joursDeRappel(aujourdHui: string): { libelle: string; date: string }[] {
+export function joursDeRappel(aujourdHui: string): { libelle: string; date: string }[] {
 	const jour = new Date(`${aujourdHui}T00:00:00.000Z`).getUTCDay();
 	const avantLundi = (1 - jour + 7) % 7 || 7;
 	const propositions = [

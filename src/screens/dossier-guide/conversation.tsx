@@ -6,6 +6,9 @@ import { FilClassement } from './fil-classement';
 import { FilConseil, type DefenseDuGuide } from './fil-conseil';
 import { FilEcrire, type LettresDuGuide } from './fil-ecrire';
 import { FilQuestions, type QuestionsDuGuide } from './fil-questions';
+import { FilEtape, FilProcedure, type ProcedureDuGuide } from './fil-procedure';
+import { FilPromesse, type PromesseAVerifier } from './fil-promesse';
+import { FilRappelDuJour, type RappelDuJour } from './fil-rappel-du-jour';
 import { FilRelire } from './fil-relire';
 import { FilRappel } from './fil-rappel';
 import { FilReponse } from './fil-reponse';
@@ -32,7 +35,11 @@ const GUIDEES: readonly IntentionDuDossier[] = [
 	'QUESTIONS',
 	'RAPPEL',
 	'CONSEIL',
-	'CLASSER'
+	'CLASSER',
+	'PROMESSE',
+	'RAPPEL_DU_JOUR',
+	'PROCEDURE',
+	'ETAPE'
 ];
 
 export function estGuidee(intention: IntentionDuDossier): boolean {
@@ -84,12 +91,16 @@ export function ConversationDuDossier({
 	ouverte,
 	depart,
 	envoiDepart = null,
+	voieDepart = null,
+	reponseDepart = null,
 	onFermer,
 	dossier,
 	gestes,
 	lettres,
 	questions,
 	defense,
+	attentes,
+	procedure,
 	sorties
 }: {
 	readonly ouverte: boolean;
@@ -97,6 +108,17 @@ export function ConversationDuDossier({
 	readonly depart: IntentionDuDossier | null;
 	/** Le courrier à relire, quand on l'a touché dans la liste des courriers. */
 	readonly envoiDepart?: string | null;
+	/** La démarche déjà choisie, quand on vient de sa fiche (« Je l'ai engagée »). */
+	readonly voieDepart?: string | null;
+	/** La réponse déjà donnée sur la carte de Plume ; elle ne vaut qu'au premier tour. */
+	readonly reponseDepart?: string | null;
+	/** Ce qui attend le gérant : sa promesse arrivée à son jour, un rappel du jour. */
+	readonly attentes: {
+		readonly promesse: PromesseAVerifier | null;
+		readonly rappel: RappelDuJour | null;
+	};
+	/** Les démarches du dossier : celles qu'on peut déclarer, celle qui est engagée. */
+	readonly procedure: ProcedureDuGuide;
 	readonly onFermer: () => void;
 	readonly dossier: DossierDuGuide;
 	readonly gestes: GestesDuGuide;
@@ -195,6 +217,39 @@ export function ConversationDuDossier({
 				/>
 			) : intention === 'QUESTIONS' ? (
 				<FilQuestions key={tour} {...commun} titre={titre} questions={questions} />
+			) : intention === 'PROMESSE' && attentes.promesse !== null ? (
+				<FilPromesse
+					key={tour}
+					{...commun}
+					titre={titre}
+					promesse={attentes.promesse}
+					{...(tour === 0 && (reponseDepart === 'OUI' || reponseDepart === 'NON')
+						? { reponseDepart }
+						: {})}
+					onFiche={() => {
+						onFermer();
+						sorties.onNoterUnReglement();
+					}}
+				/>
+			) : intention === 'RAPPEL_DU_JOUR' && attentes.rappel !== null ? (
+				<FilRappelDuJour
+					key={tour}
+					{...commun}
+					titre={titre}
+					rappel={attentes.rappel}
+					plusTardAuDepart={tour === 0 && reponseDepart === 'PLUS_TARD'}
+				/>
+			) : intention === 'PROCEDURE' ? (
+				<FilProcedure
+					key={tour}
+					{...commun}
+					titre={titre}
+					procedure={procedure}
+					defense={defense}
+					voieDepart={voieDepart}
+				/>
+			) : intention === 'ETAPE' ? (
+				<FilEtape key={tour} {...commun} titre={titre} procedure={procedure} />
 			) : intention === 'CONSEIL' ? (
 				<FilConseil key={tour} {...commun} titre={titre} defense={defense} />
 			) : intention === 'RAPPEL' ? (
@@ -207,17 +262,21 @@ export function ConversationDuDossier({
 					sousTitre={dossier.client}
 					onFermer={onFermer}
 					suivi={`choix-${tour}`}
-					reponses={
-						<ListeDeReponses
-							choix={intentions.map((i) => ({
-								cle: i,
-								...libelleDIntention(i, dossier.pourLesIntentions),
-								onClick: () => choisir(i)
-							}))}
-						/>
-					}
 				>
 					<Echange question={question} />
+					{/*
+					  ⚠️ LA LISTE EST DANS LE FIL, PAS SOUS LE POUCE (23/10/2026). Neuf réponses
+					  prenaient 555 px sur un écran de 667 dans la zone collée en bas, et un
+					  écran plus petit n'aurait pas pu les faire défiler : une zone collante plus
+					  haute que l'écran ne défile pas. Dans le fil, elle défile avec la page.
+					*/}
+					<ListeDeReponses
+						choix={intentions.map((i) => ({
+							cle: i,
+							...libelleDIntention(i, dossier.pourLesIntentions),
+							onClick: () => choisir(i)
+						}))}
+					/>
 				</CadreGuide>
 			)}
 		</PleinEcran>

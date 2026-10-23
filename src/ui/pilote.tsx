@@ -225,7 +225,7 @@ export function PiloteEnDirect({
 												<Lien
 													to="/app/dossier/$id"
 													params={{ id: relance.creanceId }}
-													search={{ ouvrir: 'courriers' }}
+													search={{ faire: 'RELIRE', envoi: relance.envoiId }}
 													className="underline underline-offset-2"
 												>
 													{relance.client}
