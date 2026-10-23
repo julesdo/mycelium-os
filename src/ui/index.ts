@@ -35,7 +35,7 @@ export {
 	type LectureEtapesAffichee
 } from './etapes-dossier';
 export { CeQuiBloque, type AlerteDossier, type SituationAffichee } from './ce-qui-bloque';
-export { ListeDeRangees, RangeeDepliable, RangeeLien } from './liste-rangees';
+export { ListeDeRangees, RangeeBouton, RangeeDepliable, RangeeLien } from './liste-rangees';
 export {
 	CarteBouton,
 	CarteFixe,
@@ -573,3 +573,13 @@ export {
 	type DestinationLaterale,
 	type GroupeLateral
 } from './coquille-bureau';
+export {
+	ApercuDeCourriel,
+	ApercuDePageDePaiement,
+	BandeDeMarque,
+	CarteDuLogo,
+	LogoDeMarque,
+	MiseEnPageDeMarque,
+	NuancierDeMarque,
+	type ImageDeMarque
+} from './marque';

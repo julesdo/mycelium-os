@@ -129,6 +129,27 @@ payer ») et l'accord écrit se font en conversation ; `?faire=` et `?envoi=` ou
 conversation depuis le pilote, le mot de Plume et ses gestes. Les listes longues défilent dans le
 fil, jamais dans la zone collée en bas (une zone collante plus haute que l'écran ne défile pas).
 
+**Les courriers que reçoit le client portent l'image du gérant depuis le 23/10/2026**
+(`docs/superpowers/specs/2026-10-23-logo-et-couleurs.md`, sur Square, Shopify, Xero, PandaDoc et
+Substack). Le fondateur : « pouvoir mettre son logo, changer la couleur […] la meilleure UX
+possible ». La rangée « Logo et couleurs » du Compte (`?ouvrir=marque`) ouvre UNE page pleine :
+l'aperçu exact (le vrai premier rappel, pour un client fictif, rendu par le MÊME générateur que
+l'envoi, `verticales/recouvrement/courriel-relance.ts`) qui bascule sur la page de paiement, la
+carte du logo, le nuancier (les teintes tirées du logo, huit couleurs sobres, « Sans couleur »,
+« Autre » qui ouvre l'éditeur de Cladd), et un seul bouton plein : « Enregistrer », puis
+« M'envoyer un exemple ». Le logo se prépare dans le navigateur (marges rognées, 600 × 200 au plus,
+PNG, `app/logo-courriers.ts`), la première teinte est proposée, rien ne s'écrit avant
+« Enregistrer », et seul un administrateur pose l'image (`recouvrement/marque.ts`). Une couleur
+trop claire pour du texte s'assombrit jusqu'à 4,5 pour 1 et l'écran le dit (`teintesDuCourriel`).
+**Le logo voyage DANS l'e-mail (`cid:`), jamais hébergé** : la relance part donc par l'API de
+Resend et non plus par le composant, qui envoie par lots sans pièce jointe
+(`recouvrement/expedition.ts`) — une clé d'idempotence par relance, des reprises sur 429 et 5xx,
+et un refus définitif qui rend la relance au gérant avec l'avis qui y mène. La page de paiement
+porte le logo et une bande de sa couleur ; sur Aujourd'hui, Plume demande le logo quand les
+relances partent sans. La couleur du gérant ne vit que dans SES courriers, jamais dans
+l'interface ; les fichiers où les couleurs sont des données sont exemptés NOMMÉMENT de la muselière
+(`eslint.config.js`).
+
 **L'écran « Aujourd'hui » a suivi le même soir, sur les files d'approbation de Remote et Wise.**
 Pas de grand titre ni de date en sous-titre (« on s'en fout ») : une barre collante compacte —
 établissement, recherche, dépôt —, la date en petit au-dessus du montant qu'elle date, et une

@@ -13,8 +13,7 @@ import {
 	prochainCreneauDEnvoi,
 	type CleEtapePlan
 } from '../../verticales/recouvrement/plan-relance';
-import { resend, assertResendApiKey } from '../emails/resend';
-import { relanceHtml } from '../emails/modeles/relance';
+import { assertResendApiKey } from '../emails/resend';
 import { requireEnv } from '../env';
 import { composer, preparerLeMontant, type ChoixCourrier } from './envois';
 import { paroleDuDossier, pauseDuDossier, planDuDossier } from './plan';
@@ -655,7 +654,9 @@ export const ouvrirLesDossiers = internalMutation({
       « remise à votre conseil » n'est jamais automatique.
 */
 
-const NOM_DE_L_ETAPE: Readonly<Record<'RAPPEL' | 'SECOND_RAPPEL' | 'LETTRE_OFFICIELLE', string>> = {
+export const NOM_DE_L_ETAPE: Readonly<
+	Record<'RAPPEL' | 'SECOND_RAPPEL' | 'LETTRE_OFFICIELLE', string>
+> = {
 	RAPPEL: 'le rappel',
 	SECOND_RAPPEL: 'le deuxième rappel',
 	LETTRE_OFFICIELLE: 'la lettre officielle'
@@ -1290,14 +1291,10 @@ async function envoyerMaintenant(ctx: MutationCtx, envoiId: Id<'envois'>): Promi
 	}
 
 	assertResendApiKey();
-	await resend.sendEmail(ctx, {
-		from: expediteurPour(profil.denomination),
-		to: envoi.destinataire,
-		subject: envoi.objet,
-		text: envoi.corps,
-		html: relanceHtml(envoi.corps, profil.denomination),
-		replyTo: [profil.email]
-	});
+	// Le logo du gérant voyage DANS l'e-mail : l'expédition passe par l'API de
+	// Resend, une relance à la fois, et rend la relance au gérant si elle échoue
+	// (`expedition.ts`).
+	await ctx.scheduler.runAfter(0, internal.recouvrement.expedition.expedier, { envoiId });
 	await ctx.db.patch(envoiId, {
 		etat: 'PARTI',
 		partiLe: new Date().toISOString().slice(0, 10),

@@ -326,6 +326,9 @@ function File() {
 	  jour, dits sur tous les écrans.
 	*/
 	const compte = useQuery(api.users.viewer, {});
+	// Les relances partent seules et sans image : Plume demande le logo à qui peut le poser.
+	const relancesAuto = useQuery(api.recouvrement.pilote.relancesAutomatiques, {});
+	const marque = useQuery(api.recouvrement.marque.lire, {});
 	useRemarquesDePlume(
 		'AUJOURDHUI',
 		indexDossiers === undefined || compte === undefined
@@ -336,7 +339,13 @@ function File() {
 						prenom: prenomDe(compte?.name),
 						dossiersSuivis: indexDossiers.filter(
 							(d) => !d.classe && d.etape !== 'REGLE' && d.principalRestantDu > 0n
-						).length
+						).length,
+						relancesSansImage:
+							relancesAuto === true &&
+							marque !== undefined &&
+							marque.modifiable &&
+							marque.logo === null &&
+							marque.couleur === null
 					},
 					NOM_DU_PILOTE
 				)

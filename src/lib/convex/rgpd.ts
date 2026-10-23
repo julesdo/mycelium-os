@@ -778,6 +778,16 @@ export const purgerEtablissement = internalMutation({
 		budget = await viderParIndexOrg(ctx, 'decomptes', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'creances', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'debiteurs', organizationId, budget);
+		// Le logo des courriers (23/10/2026) vit au stockage : il part avant le profil qui le nomme.
+		for (const profil of await ctx.db
+			.query('profilsCreancier')
+			.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
+			.take(10)) {
+			if (profil.logoCourriers !== undefined) {
+				await effacerDuStockage(ctx, profil.logoCourriers.storageId);
+				await ctx.db.patch(profil._id, { logoCourriers: undefined });
+			}
+		}
 		budget = await viderParIndexOrg(ctx, 'profilsCreancier', organizationId, budget);
 		budget = await viderParIndexOrg(ctx, 'notifications', organizationId, budget);
 		// battements ne référence rien et rien ne la référence : sa place dans

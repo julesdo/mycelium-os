@@ -14,6 +14,7 @@ import {
 	MailXIcon,
 	MonitorIcon,
 	MoonIcon,
+	PaletteIcon,
 	PlugIcon,
 	ShieldIcon,
 	SlidersHorizontalIcon,
@@ -29,6 +30,7 @@ import {
 	ListeAnalyses,
 	ListeDeRangees,
 	PageEcran,
+	RangeeBouton,
 	RangeeDepliable,
 	RangeeLien,
 	SectionsDepliables,
@@ -179,6 +181,15 @@ export interface CompteAffiche {
 	 * pas ouverte.
 	 */
 	readonly recommandation?: ApercuDeLaRecommandation;
+	/**
+	 * « Logo et couleurs » (23/10/2026) : l'image des courriers que reçoit le client.
+	 * La rangée ouvre une page pleine, que la route monte (`app/logo-et-couleurs.tsx`).
+	 */
+	readonly marque?: {
+		/** « Logo, bleu nuit », « Par défaut » ; `undefined` tant que la lecture court. */
+		readonly resume: string | undefined;
+		readonly onOuvrir: () => void;
+	};
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -370,6 +381,20 @@ export function EcranCompte({
 					  Ce sont les conditions générales du créancier qui disent ce que
 					  remboursent les paiements reçus.
 					*/}
+					{/*
+					  CE QUE VOIENT VOS CLIENTS : leur fournisseur se reconnaît à son logo
+					  avant de lire un montant (23/10/2026). Dans la carte de l'établissement,
+					  juste après lui, comme le « Branding » des réglages de Square.
+					*/}
+					{pret.marque === undefined ? null : (
+						<RangeeBouton
+							icone={<PaletteIcon />}
+							titre="Logo et couleurs"
+							valeur={pret.marque.resume ?? 'Lecture…'}
+							onClick={pret.marque.onOuvrir}
+						/>
+					)}
+
 					<RangeeDepliable
 						cle="regles"
 						icone={<SlidersHorizontalIcon />}

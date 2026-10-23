@@ -1,11 +1,13 @@
 import {
 	Avatar,
+	BandeDeMarque,
 	ChiffreHero,
 	EnTeteDeGroupe,
 	LigneCopiable,
 	LigneFixe,
 	LigneLien,
 	ListeAnalyses,
+	LogoDeMarque,
 	ListeDeRangees,
 	QrDeVirement,
 	dateCourte,
@@ -60,6 +62,9 @@ export interface PageDePaiementAffichee {
 		readonly adresse?: string;
 		readonly email?: string;
 		readonly telephone?: string;
+		/** Son logo et sa couleur, ceux de ses relances (23/10/2026). */
+		readonly logo?: { readonly url: string; readonly largeur: number; readonly hauteur: number };
+		readonly couleur?: string;
 	};
 	readonly clientNom: string;
 	readonly arreteAu: string;
@@ -132,8 +137,24 @@ export function EcranPaiement({ donnees }: { donnees: EtatPaiement }) {
 			  sans quoi la page ressemble à un hameçonnage, et c'est la fin. Ses
 			  initiales, son nom, centrés : l'en-tête de Square et de Vipps.
 			*/}
+			{p.creancier.couleur === undefined ? null : <BandeDeMarque couleur={p.creancier.couleur} />}
 			<header className="flex flex-col items-center gap-1 pt-cladd-2xs text-center">
-				<Avatar nom={nom} grand />
+				{/*
+				  SON LOGO, QUAND IL L'A POSÉ (23/10/2026) : celui de ses relances, que le
+				  client vient de voir dans sa boîte. Sinon ses initiales.
+				*/}
+				{p.creancier.logo === undefined ? (
+					<Avatar nom={nom} grand />
+				) : (
+					<LogoDeMarque
+						logo={{
+							src: p.creancier.logo.url,
+							largeur: p.creancier.logo.largeur,
+							hauteur: p.creancier.logo.hauteur
+						}}
+						nom={nom}
+					/>
+				)}
 				<h1 className="mt-1 text-cladd-sm font-semibold">{nom}</h1>
 				{p.clientNom === '' ? null : (
 					<p className="text-cladd-2xs text-cladd-fg-soft">À l’attention de {p.clientNom}</p>

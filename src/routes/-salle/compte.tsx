@@ -25,6 +25,7 @@ import type { ApercuDonnees, DonneesAffichees, FichierExport } from '../../scree
 import type { MesuresAffichees } from '../../screens/compte/mesures';
 import { CARNET_DEMO, ETABLISSEMENT_DEMO } from './communes';
 import { formeDemo, lectureDemo, type EcranDuProduit, type EtatDemo } from './demo';
+import { useMarqueDemo } from './marque';
 
 /**
  * LES ENTRÉES DE LA FAMILLE, DÉCLARÉES AVANT TOUT CE QUI S'EN CALCULE.
@@ -546,6 +547,10 @@ const FORMES_COMPTE_DEMO: Readonly<Record<string, FormeCompte>> = {
 	},
 	'nouveau client': { ...COMPTE_DEMO, contenu: CONTENU_NOUVEAU_CLIENT_DEMO },
 	'export prêt': { ...COMPTE_DEMO, fichier: FICHIER_DEMO },
+	/** « Logo et couleurs » ouvert d'emblée (`marque.tsx`) : rien de posé, tout posé, et vu par un membre. */
+	'logo et couleurs': COMPTE_DEMO,
+	'logo et couleurs posés': COMPTE_DEMO,
+	'logo et couleurs, vus par un membre': { ...COMPTE_DEMO, membres: MEMBRES_VUS_PAR_UN_MEMBRE },
 	'carnet vide': { ...COMPTE_DEMO, carnet: [] },
 	'sections en lecture': { ...COMPTE_DEMO, enLecture: true },
 
@@ -955,15 +960,22 @@ function CompteDemo({ etat, variante }: { etat: EtatDemo; variante?: string }) {
 
 	// Lue avant `lectureDemo` : une variante inconnue lève dans chaque état.
 	const forme = formeDemo(variante, COMPTE_DEMO, FORMES_COMPTE_DEMO);
+	const marque = useMarqueDemo(variante);
 
 	return (
-		<EcranCompte
-			donnees={lectureDemo(
-				etat,
-				compteDe(forme, theme, setTheme),
-				compteSansEtablissement(theme, setTheme)
-			)}
-		/>
+		<>
+			<EcranCompte
+				donnees={lectureDemo(
+					etat,
+					{
+						...compteDe(forme, theme, setTheme),
+						marque: { resume: marque.resume, onOuvrir: marque.ouvrir }
+					},
+					compteSansEtablissement(theme, setTheme)
+				)}
+			/>
+			{marque.feuille}
+		</>
 	);
 }
 

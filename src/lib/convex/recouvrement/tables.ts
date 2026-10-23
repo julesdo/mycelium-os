@@ -434,6 +434,27 @@ export const recouvrementTables = {
 		 * accorde d'habitude, et il reste modifiable sur chaque lettre.
 		 */
 		delaiRelanceParDefautJours: v.optional(v.number()),
+		/**
+		 * L'IMAGE DE SES COURRIERS (23/10/2026) : le logo que portent la relance et
+		 * la page où le client paie, et leur couleur (`verticales/recouvrement/marque.ts`).
+		 *
+		 * Le logo est un PNG préparé dans le navigateur, rogné et ramené à 600 × 200 :
+		 * il voyage DANS chaque e-mail, ses dimensions avec lui (Outlook ne lit pas
+		 * `height: auto`). Il est distinct du logo de l'établissement, qui se dessine
+		 * dans un rond.
+		 */
+		logoCourriers: v.optional(
+			v.object({
+				storageId: v.id('_storage'),
+				largeur: v.number(),
+				hauteur: v.number(),
+				/** Ses teintes franches, que le nuancier propose à la réouverture. */
+				teintes: v.optional(v.array(v.string()))
+			})
+		),
+		couleurCourriers: v.optional(v.string()),
+		/** Le dernier exemple que le gérant s'est envoyé : un toutes les trente secondes au plus. */
+		exempleCourrierLe: v.optional(v.number()),
 		majLe: v.number()
 	}).index('by_org', ['organizationId']),
 

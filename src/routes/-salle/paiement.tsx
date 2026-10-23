@@ -1,5 +1,6 @@
 import { composerVirementEpc } from '../../lib/socle/virement-epc';
 import { depuisCentimes } from '../../lib/socle/montants';
+import { COULEURS_DE_MARQUE } from '../../lib/verticales/recouvrement/marque';
 import { EcranPaiement, type PageDePaiementAffichee } from '../../screens/paiement';
 import type { EcranDuProduit, EtatDemo } from './demo';
 
@@ -60,9 +61,29 @@ const PAGE_DEMO: PageDePaiementAffichee = {
  * recopie. Un QR absent coûte trente secondes ; une page absente coûte le
  * paiement.
  */
+/** La couleur du charpentier, prise dans la palette proposée (« Terre cuite »). */
+const TERRE = COULEURS_DE_MARQUE[5].hex;
+
+/** Le logo d'un charpentier, dessiné : celui que porte aussi sa relance. */
+const LOGO_VIDAL = `data:image/svg+xml;utf8,${encodeURIComponent(
+	`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="140" viewBox="0 0 420 140">` +
+		`<path d="M10 120 L70 20 L130 120 Z" fill="${TERRE}"/>` +
+		`<text x="150" y="92" font-family="Georgia, serif" font-size="52" font-weight="700" fill="${COULEURS_DE_MARQUE[7].hex}">Vidal</text>` +
+		`</svg>`
+)}`;
+
 const FORMES: Record<string, PageDePaiementAffichee> = {
 	'avec le code': PAGE_DEMO,
-	'sans le code': { ...PAGE_DEMO, chargeQr: null }
+	'sans le code': { ...PAGE_DEMO, chargeQr: null },
+	/** Le logo et la couleur que le gérant a posés dans « Logo et couleurs » (23/10/2026). */
+	'avec son logo et sa couleur': {
+		...PAGE_DEMO,
+		creancier: {
+			...CREANCIER,
+			logo: { url: LOGO_VIDAL, largeur: 420, hauteur: 140 },
+			couleur: TERRE
+		}
+	}
 };
 
 export const ECRANS_PAIEMENT: readonly EcranDuProduit[] = [

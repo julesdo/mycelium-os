@@ -63,7 +63,10 @@ const vPageDePaiement = v.union(
 			denomination: v.string(),
 			adresse: v.optional(v.string()),
 			email: v.optional(v.string()),
-			telephone: v.optional(v.string())
+			telephone: v.optional(v.string()),
+			/** Son logo et sa couleur (23/10/2026), ceux de ses relances : le client le reconnaît. */
+			logo: v.optional(v.object({ url: v.string(), largeur: v.number(), hauteur: v.number() })),
+			couleur: v.optional(v.string())
 		}),
 		clientNom: v.string(),
 		arreteAu: v.string(),
@@ -146,12 +149,19 @@ export const pageDePaiement = query({
 						reference
 					});
 
+		const logo = profil.logoCourriers;
+		const urlDuLogo = logo === undefined ? null : await ctx.storage.getUrl(logo.storageId);
+
 		return {
 			creancier: {
 				denomination: profil.denomination,
 				adresse: profil.adresse,
 				email: profil.email,
-				telephone: profil.telephone
+				telephone: profil.telephone,
+				...(logo === undefined || urlDuLogo === null
+					? {}
+					: { logo: { url: urlDuLogo, largeur: logo.largeur, hauteur: logo.hauteur } }),
+				...(profil.couleurCourriers === undefined ? {} : { couleur: profil.couleurCourriers })
 			},
 			clientNom: debiteur?.denomination ?? '',
 			arreteAu: decompte.arreteAu,

@@ -64,7 +64,9 @@ export type CibleDePlume =
 	| { readonly genre: 'CLIENT'; readonly client: string; readonly rubrique?: 'identite' }
 	| { readonly genre: 'SANTE'; readonly client: string }
 	| { readonly genre: 'REMETTRE_AU_PILOTE'; readonly client: string }
-	| { readonly genre: 'PREPARER_RELANCE'; readonly dossier: string; readonly client: string };
+	| { readonly genre: 'PREPARER_RELANCE'; readonly dossier: string; readonly client: string }
+	/** « Logo et couleurs », la page pleine du compte (23/10/2026). */
+	| { readonly genre: 'MARQUE' };
 
 /** Quand Plume cesse d'en parler. */
 export type Silence =
@@ -136,6 +138,12 @@ export interface DonneesDAujourdhui {
 	/** Le premier mot du nom du compte, s'il en a un. */
 	readonly prenom: string | null;
 	readonly dossiersSuivis: number;
+	/**
+	 * Les relances partent seules, et sans logo ni couleur (23/10/2026) : le client
+	 * reçoit une lettre à son seul nom. Seul un administrateur peut y remédier, et
+	 * c'est à lui seul que la route le pose.
+	 */
+	readonly relancesSansImage?: boolean;
 }
 
 /**
@@ -170,7 +178,18 @@ export function remarquesDAujourdhui(
 		humeur: 'salue',
 		silence: 'UNE_FOIS'
 	};
-	return [presentation('AUJOURDHUI', nomDuPilote), bonjour];
+	const remarques = [presentation('AUJOURDHUI', nomDuPilote), bonjour];
+	if (donnees.relancesSansImage === true) {
+		remarques.push({
+			cle: 'sans-image',
+			texte:
+				'Vos relances partent avec votre seul nom en tête. Si vous me donnez votre logo, votre client reconnaîtra l’expéditeur avant de lire un montant.',
+			humeur: 'ecrit',
+			silence: 'AU_REFUS',
+			action: { libelle: 'Ajouter mon logo', cible: { genre: 'MARQUE' } }
+		});
+	}
+	return remarques;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

@@ -46,6 +46,22 @@ describe('Plume sur chaque écran', () => {
 		expect(aDemarrer?.texte).toContain('avant votre feu vert');
 	});
 
+	it('demande le logo quand les relances partent sans, avec le geste qui ouvre la page', () => {
+		const sans = remarquesDAujourdhui(
+			{ aujourdHui: '2026-10-23', prenom: null, dossiersSuivis: 2, relancesSansImage: true },
+			'Plume'
+		).find((r) => r.cle === 'sans-image');
+		expect(sans?.action?.cible).toEqual({ genre: 'MARQUE' });
+		expect(sans?.silence).toBe('AU_REFUS');
+		expect(sans?.texte).toContain('me donnez votre logo');
+		expect(sans?.texte).not.toContain('—');
+		const avec = remarquesDAujourdhui(
+			{ aujourdHui: '2026-10-23', prenom: null, dossiersSuivis: 2, relancesSansImage: false },
+			'Plume'
+		);
+		expect(avec.some((r) => r.cle === 'sans-image')).toBe(false);
+	});
+
 	it('dit bonjour une fois par jour : la clé porte la date', () => {
 		const remarques = remarquesDAujourdhui(
 			{ aujourdHui: '2026-10-13', prenom: null, dossiersSuivis: 1 },

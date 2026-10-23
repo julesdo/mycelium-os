@@ -361,6 +361,9 @@ function Plume({
 			case 'SANTE':
 				void navigate({ to: '/app/risque/$id', params: { id: cible.client } });
 				return;
+			case 'MARQUE':
+				void navigate({ to: '/app/compte', search: { ouvrir: 'marque' } });
+				return;
 			// Préparer une relance, reprendre un client : seul l'écran qui les porte sait les faire.
 			case 'REMETTRE_AU_PILOTE':
 			case 'PREPARER_RELANCE':

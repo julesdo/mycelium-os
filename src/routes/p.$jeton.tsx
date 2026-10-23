@@ -77,7 +77,9 @@ function PagePaiement() {
 						...(page.creancier.email === undefined ? {} : { email: page.creancier.email }),
 						...(page.creancier.telephone === undefined
 							? {}
-							: { telephone: page.creancier.telephone })
+							: { telephone: page.creancier.telephone }),
+						...(page.creancier.logo === undefined ? {} : { logo: page.creancier.logo }),
+						...(page.creancier.couleur === undefined ? {} : { couleur: page.creancier.couleur })
 					},
 					clientNom: page.clientNom,
 					arreteAu: page.arreteAu,

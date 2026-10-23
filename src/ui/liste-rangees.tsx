@@ -373,3 +373,46 @@ export function RangeeLien({
 		</Button>
 	);
 }
+
+/**
+ * UNE RANGÉE QUI OUVRE UNE PAGE PLEINE, dans la même liste (23/10/2026).
+ *
+ * « Logo et couleurs » n'est pas une section qui se déplie : c'est un parcours,
+ * avec son aperçu et son seul bouton plein (`FeuillePleinEcran`). La rangée a la
+ * silhouette de `RangeeLien` — titre, valeur, chevron qui ne tourne pas — et
+ * ouvre au lieu de mener.
+ */
+export function RangeeBouton({
+	onClick,
+	titre,
+	icone,
+	valeur
+}: {
+	readonly onClick: () => void;
+	readonly titre: string;
+	readonly icone?: ReactNode;
+	readonly valeur?: string;
+}) {
+	return (
+		<Button
+			variant="transparent"
+			outline={false}
+			hoverable={false}
+			size="md"
+			onClick={onClick}
+			className="h-auto min-h-13 w-full rounded-none"
+			contentClassName="w-full items-center justify-between gap-2 px-3.5 py-cladd-3xs"
+		>
+			<span className="flex min-w-0 flex-auto items-center gap-2.5 text-left">
+				{icone === undefined ? null : <VignetteIcone icone={icone} />}
+				<span className="min-w-0 text-cladd-xs font-semibold">{titre}</span>
+			</span>
+			<span className="flex min-w-0 items-center justify-end gap-2">
+				{valeur === undefined ? null : (
+					<span className="text-right text-cladd-xs text-cladd-fg-soft tabular-nums">{valeur}</span>
+				)}
+				<ChevronRightIcon className="size-5 shrink-0 text-cladd-fg-softer" aria-hidden />
+			</span>
+		</Button>
+	);
+}

@@ -92,6 +92,24 @@ export default defineConfig(
 			'no-restricted-syntax': ['error', ...MUSELIERE]
 		}
 	},
+	// LES COULEURS COMME DONNÉES (23/10/2026, « Logo et couleurs »). La couleur que le gérant
+	// pose sur SES courriers, la palette qu'on lui propose, et la lettre qui la porte : ces
+	// fichiers lisent, comparent et écrivent des couleurs dans un e-mail ; aucun ne style
+	// l'interface de Letikette. Nommés un à un, comme les modèles d'e-mail : un fichier nouveau
+	// n'entre pas ici par un motif. Les deux autres interdits de la muselière tiennent.
+	{
+		files: [
+			'src/lib/socle/couleurs.ts',
+			'src/lib/socle/__tests__/couleurs.test.ts',
+			'src/lib/verticales/recouvrement/marque.ts',
+			'src/lib/verticales/recouvrement/__tests__/marque.test.ts',
+			'src/lib/verticales/recouvrement/courriel-relance.ts',
+			'src/lib/verticales/recouvrement/__tests__/courriel-relance.test.ts'
+		],
+		rules: {
+			'no-restricted-syntax': ['error', MUSELIERE[0], MUSELIERE[2]]
+		}
+	},
 	// Pas de barrel import sur lucide-react : casse le tree-shaking.
 	{
 		files: ['src/**/*.{ts,tsx}'],

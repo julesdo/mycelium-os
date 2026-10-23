@@ -20,6 +20,7 @@ import {
 import type { EtatDirigeants, EtatImmatriculation, Lecture } from '../../ui';
 import { aujourdHuiISO, PileDeConnexions } from '../../ui';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
+import { LogoEtCouleursEnPlace, useResumeDeLaMarque } from '../../app/logo-et-couleurs';
 import type { OrdreParDefaut, ReglesAffichees } from '../../screens/compte/regles';
 import {
 	messageDErreur,
@@ -74,6 +75,10 @@ function PageCompte() {
 	const { ouvrir } = Route.useSearch();
 	// « Passer à l'année » depuis une célébration : la confirmation s'ouvre une fois.
 	const [anneeEnAttente, setAnneeEnAttente] = useState(ouvrir === 'annee');
+	// « Logo et couleurs » : `?ouvrir=marque` l'ouvre d'emblée ; chaque ouverture repart d'un brouillon neuf.
+	const [marqueOuverte, setMarqueOuverte] = useState(ouvrir === 'marque');
+	const [ouverturesMarque, setOuverturesMarque] = useState(0);
+	const resumeMarque = useResumeDeLaMarque();
 	const { theme, setTheme } = useTheme();
 
 	// ── L'établissement et l'identité du créancier ───────────────────────────
@@ -639,16 +644,30 @@ function PageCompte() {
 			onRegler: (parCourriel) => void reglerConseils({ parCourriel })
 		},
 		...(push === undefined ? {} : { push }),
+		marque: {
+			resume: resumeMarque,
+			onOuvrir: () => {
+				setOuverturesMarque((n) => n + 1);
+				setMarqueOuverte(true);
+			}
+		},
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};
 
 	return (
-		<EcranCompte
-			donnees={{ etat: 'pret', valeur: compteAffiche }}
-			ouvrir={ouvrir}
-			passerALAnnee={anneeEnAttente}
-			onAnneeOuverte={() => setAnneeEnAttente(false)}
-		/>
+		<>
+			<EcranCompte
+				donnees={{ etat: 'pret', valeur: compteAffiche }}
+				ouvrir={ouvrir}
+				passerALAnnee={anneeEnAttente}
+				onAnneeOuverte={() => setAnneeEnAttente(false)}
+			/>
+			<LogoEtCouleursEnPlace
+				key={ouverturesMarque}
+				ouverte={marqueOuverte}
+				onFermer={() => setMarqueOuverte(false)}
+			/>
+		</>
 	);
 }
 
