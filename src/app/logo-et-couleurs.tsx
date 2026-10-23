@@ -38,6 +38,10 @@ export interface MarqueLue {
 	readonly modifiable: boolean;
 	readonly courriel: string | null;
 	readonly envoiConfigure: boolean;
+	/** L'adresse d'où partent ses relances ; `null` sans adresse configurée. */
+	readonly adresseDEnvoi: string | null;
+	/** L'adresse où ses clients répondent. */
+	readonly repondreA: string | null;
 }
 
 /** Ce que l'écran demande au serveur : enregistrer (la raison d'un refus, ou `null`) et s'envoyer un exemple. */
@@ -173,6 +177,8 @@ export function useMarqueAffichee(
 		modifiable: enregistree.modifiable,
 		courriel: enregistree.courriel,
 		envoiConfigure: enregistree.envoiConfigure,
+		adresseDEnvoi: enregistree.adresseDEnvoi,
+		repondreA: enregistree.repondreA,
 		aujourdHui: aujourdHuiISO(),
 		etat,
 		erreurDuLogo,

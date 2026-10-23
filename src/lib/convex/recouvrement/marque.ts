@@ -9,7 +9,7 @@ import { lireCouleur, normaliserCouleur } from '../../socle/couleurs';
 import { LOGO_COTE_MAX, LOGO_POIDS_MAX } from '../../verticales/recouvrement/marque';
 import { CID_DU_LOGO, relanceHtml } from '../../verticales/recouvrement/courriel-relance';
 import { relanceDExemple } from '../../verticales/recouvrement/exemple-de-relance';
-import { expediteurPour } from './pilote';
+import { adresseDEnvoiConfiguree, adresseDEnvoiPour, expediteurPour } from './pilote';
 import { piecesDuLogo, posterChezResend } from './expedition';
 
 /**
@@ -52,7 +52,11 @@ export const lire = authedQuery({
 		couleur: v.union(v.null(), v.string()),
 		modifiable: v.boolean(),
 		courriel: v.union(v.null(), v.string()),
-		envoiConfigure: v.boolean()
+		envoiConfigure: v.boolean(),
+		/** L'adresse d'où partent ses relances (`expediteur.ts`) ; `null` sans adresse configurée. */
+		adresseDEnvoi: v.union(v.null(), v.string()),
+		/** L'adresse où le client répond : celle du gérant, au profil. */
+		repondreA: v.union(v.null(), v.string())
 	}),
 	handler: async (ctx) => {
 		const { user, org, organizationId } = await getUserOrg(ctx);
@@ -77,9 +81,11 @@ export const lire = authedQuery({
 			couleur: profil?.couleurCourriers ?? null,
 			modifiable: membre.role === 'ORG_ADMIN',
 			courriel: user.email === '' ? null : user.email,
-			envoiConfigure:
-				process.env.RESEND_API_KEY !== undefined &&
-				(process.env.RELANCES_EMAIL !== undefined || process.env.AUTH_EMAIL !== undefined)
+			envoiConfigure: process.env.RESEND_API_KEY !== undefined && adresseDEnvoiConfiguree(),
+			adresseDEnvoi: adresseDEnvoiConfiguree()
+				? adresseDEnvoiPour(profil?.denomination ?? org.name)
+				: null,
+			repondreA: profil?.email === undefined || profil.email === '' ? null : profil.email
 		};
 	}
 });

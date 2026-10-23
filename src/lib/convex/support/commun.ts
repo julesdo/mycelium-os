@@ -28,6 +28,7 @@ export function laReceptionEstOuverte(): boolean {
 		secret: process.env.RESEND_RECEPTION_WEBHOOK_SECRET,
 		domaine: process.env.SUPPORT_RECEPTION_DOMAINE,
 		relancesEmail: process.env.RELANCES_EMAIL,
+		relancesDomaine: process.env.RELANCES_DOMAINE,
 		authEmail: process.env.AUTH_EMAIL
 	});
 }

@@ -524,9 +524,12 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     courrier programmé dans le dossier aussi. En semaine, de 9 h à 18 h, heure de Paris
     (`prochainCreneauDEnvoi`). Ce qui manque pour envoyer (l'e-mail du client, le vôtre)
     arrive une fois dans la boîte de réception (`PILOTE_BLOQUE`). Sans envoi
-    configuré, la relance redevient un courrier à valider. L'adresse d'envoi est `RELANCES_EMAIL`,
-    à défaut celle d'`AUTH_EMAIL`, avec le nom du créancier devant : un domaine neutre reste à
-    poser pour qu'aucun e-mail ne nomme le logiciel.
+    configuré, la relance redevient un courrier à valider. **Chaque établissement relance depuis
+    SON adresse sur un domaine neutre** (23/10/2026, `verticales/recouvrement/expediteur.ts`) :
+    « Durand BTP » écrit de `durand-btp@<RELANCES_DOMAINE>`, sans boîte derrière, les réponses
+    chez le gérant ; une adresse commune trahirait un outil partagé. Tant que `RELANCES_DOMAINE`
+    n'est pas posé, l'adresse commune d'avant (`RELANCES_EMAIL`, à défaut `AUTH_EMAIL`), qui
+    nomme le logiciel : marche à suivre dans `serveurs/resend/LISEZMOI.md`.
 - **Le pilote s'appelle Plume, et il vit dans l'application**
   (`docs/superpowers/specs/2026-10-08-plume.md`, le soir du 08/10). Le fondateur : « personnifié
   comme une mascotte rassurante », « la bulle et popup de discussion est juste horrible »,
@@ -916,8 +919,9 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
   l'équipe** : le mot interdit et les verdicts ne partent jamais, un conseil ou une voie de justice
   après confirmation. La réponse part par e-mail dix minutes après si elle n'est pas lue, vers une
   adresse vérifiée seulement. **Dormant deux fois** : Plume support sans `PLUME_SUPPORT_OUVERT=oui`
-  (préavis de la politique 2.8), et la réception des e-mails (`/resend/reception`) tant que
-  `RELANCES_EMAIL` partage le domaine d'`AUTH_EMAIL` — un débiteur écrirait sinon à l'équipe. Un
+  (préavis de la politique 2.8), et la réception des e-mails (`/resend/reception`) tant que les
+  relances partent du domaine d'`AUTH_EMAIL` ou d'un de ses sous-domaines (le domaine neutre,
+  `RELANCES_DOMAINE`, l'ouvre) — un débiteur écrirait sinon à l'équipe. Un
   e-mail n'entre dans le fil que si l'expéditeur est le titulaire vérifié ET que DMARC passe ;
   un inconnu va « à trier », au fondateur seul, sans réponse. Les pièces jointes attendent la
   serrure du coffre. Les tests Convex appellent des cœurs extraits (`ecrireAuSupport`,

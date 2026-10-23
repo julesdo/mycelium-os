@@ -64,11 +64,14 @@ export function BandeDeMarque({ couleur }: { readonly couleur: string }) {
 export function ApercuDeCourriel({
 	html,
 	expediteur,
+	adresse = null,
 	destinataire,
 	objet
 }: {
 	readonly html: string;
 	readonly expediteur: string;
+	/** L'adresse d'envoi, sous le nom, comme la montre une messagerie. */
+	readonly adresse?: string | null;
 	readonly destinataire: string;
 	readonly objet: string;
 }) {
@@ -96,6 +99,9 @@ export function ApercuDeCourriel({
 				<Avatar nom={expediteur} />
 				<span className="flex min-w-0 flex-col">
 					<span className="truncate text-cladd-xs font-semibold">{expediteur}</span>
+					{adresse === null ? null : (
+						<span className="truncate text-cladd-3xs text-cladd-fg-soft">{adresse}</span>
+					)}
 					<span className="truncate text-cladd-3xs text-cladd-fg-soft">
 						À {destinataire} · {objet}
 					</span>

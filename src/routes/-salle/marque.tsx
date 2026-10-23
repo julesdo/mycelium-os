@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { COULEURS_DE_MARQUE, resumeDeLaMarque } from '../../lib/verticales/recouvrement/marque';
+import { partieLocale } from '../../lib/verticales/recouvrement/expediteur';
 import { useMarqueAffichee, type MarqueLue } from '../../app/logo-et-couleurs';
 import { FeuilleLogoEtCouleurs } from '../../screens/compte/marque';
 import { ETABLISSEMENT_DEMO } from './communes';
@@ -30,7 +31,9 @@ const SANS_RIEN: MarqueLue = {
 	couleur: null,
 	modifiable: true,
 	courriel: 'camille@thumbbb.fr',
-	envoiConfigure: true
+	envoiConfigure: true,
+	adresseDEnvoi: `${partieLocale(ETABLISSEMENT_DEMO.nom)}@suivi-factures.fr`,
+	repondreA: 'compta@thumbbb.fr'
 };
 
 /** Les variantes du compte qui ouvrent la page, et ce qui y est déjà posé. */

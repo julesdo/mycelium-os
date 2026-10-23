@@ -1,4 +1,5 @@
 import { jourDeParis } from '../admin/dates';
+import { lireDomaine } from '../verticales/recouvrement/expediteur';
 
 /**
  * CE QUI RÈGLE UNE CONVERSATION DE SUPPORT, HORS DE CONVEX (16/10/2026).
@@ -43,16 +44,24 @@ function domaineDe(adresse: string | undefined): string | null {
  * ⚠️ TANT QUE LES RELANCES PARTENT DU DOMAINE DE LETIKETTE, ELLE RESTE FERMÉE. Un
  * débiteur qui répond à une relance écrirait alors à l'équipe — et Letikette « ne
  * reçoit ni fonds ni réponse du débiteur » (ligne rouge n° 1). Poser le secret du
- * webhook ne suffit donc pas : il faut que `RELANCES_EMAIL` soit sur un autre domaine.
+ * webhook ne suffit donc pas : il faut que les relances partent d'un autre domaine —
+ * le domaine neutre (`RELANCES_DOMAINE`, une adresse par établissement, 23/10/2026), à
+ * défaut `RELANCES_EMAIL`. Un sous-domaine de Letikette reste Letikette.
  */
 export function receptionOuverte(env: {
 	readonly secret: string | undefined;
 	readonly domaine: string | undefined;
 	readonly relancesEmail: string | undefined;
+	readonly relancesDomaine?: string | undefined;
 	readonly authEmail: string | undefined;
 }): boolean {
 	if (!env.secret || !env.domaine) return false;
-	const relances = domaineDe(env.relancesEmail);
+	const relances = lireDomaine(env.relancesDomaine) ?? domaineDe(env.relancesEmail);
 	const letikette = domaineDe(env.authEmail);
-	return relances !== null && letikette !== null && relances !== letikette;
+	if (relances === null || letikette === null) return false;
+	const memeFamille =
+		relances === letikette ||
+		relances.endsWith(`.${letikette}`) ||
+		letikette.endsWith(`.${relances}`);
+	return !memeFamille;
 }

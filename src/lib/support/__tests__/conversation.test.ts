@@ -41,6 +41,21 @@ describe('receptionOuverte', () => {
 		expect(receptionOuverte({ ...pret, relancesEmail: 'Relances <relances@LETIKETTE.com>' })).toBe(false);
 	});
 
+	it('s’ouvre quand les relances partent du domaine neutre, une adresse par établissement', () => {
+		expect(
+			receptionOuverte({ ...pret, relancesEmail: undefined, relancesDomaine: 'suivi-factures.fr' })
+		).toBe(true);
+	});
+
+	it('reste fermée quand le « domaine neutre » est un sous-domaine de Letikette, ou n’en est pas un', () => {
+		expect(
+			receptionOuverte({ ...pret, relancesEmail: undefined, relancesDomaine: 'envoi.letikette.com' })
+		).toBe(false);
+		expect(
+			receptionOuverte({ ...pret, relancesEmail: undefined, relancesDomaine: 'pas un domaine' })
+		).toBe(false);
+	});
+
 	it('reste fermée sans secret ou sans domaine de réception', () => {
 		expect(receptionOuverte({ ...pret, secret: '' })).toBe(false);
 		expect(receptionOuverte({ ...pret, domaine: undefined })).toBe(false);

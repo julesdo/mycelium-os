@@ -34,6 +34,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 	Reflect.deleteProperty(process.env, 'RESEND_API_KEY');
 	Reflect.deleteProperty(process.env, 'RELANCES_EMAIL');
+	Reflect.deleteProperty(process.env, 'RELANCES_DOMAINE');
 });
 
 /** Un établissement à l'image posée, un client, son dossier, et une relance partie. */
@@ -155,6 +156,28 @@ describe('l’envoi d’une relance à l’image du gérant', () => {
 			expect(envoye.attachments[0]!.content_id).toBe('logo');
 			expect(envoye.attachments[0]!.content_type).toBe('image/png');
 			expect(envoye.attachments[0]!.content).toBe(btoa(String.fromCharCode(...OCTETS_PNG)));
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'part de l’adresse de l’établissement sur le domaine neutre, les réponses chez le gérant',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { envoiId } = await relancePartie(t);
+			process.env.RESEND_API_KEY = 're_test';
+			process.env.RELANCES_EMAIL = 'relances@example.com';
+			process.env.RELANCES_DOMAINE = 'suivi-factures.fr';
+			const appel = resendRepond(200, { id: 'courriel_3' });
+
+			await t.action(internal.recouvrement.expedition.expedier, { envoiId });
+
+			const envoye = JSON.parse(String(appel.mock.calls[0]![1]?.body)) as {
+				from: string;
+				reply_to: string[];
+			};
+			expect(envoye.from).toBe('"Ateliers Martin" <ateliers-martin@suivi-factures.fr>');
+			expect(envoye.reply_to).toEqual(['compta@ateliers-martin.fr']);
 		},
 		DELAI_CONVEX
 	);

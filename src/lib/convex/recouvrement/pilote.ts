@@ -15,6 +15,11 @@ import {
 } from '../../verticales/recouvrement/plan-relance';
 import { assertResendApiKey } from '../emails/resend';
 import { requireEnv } from '../env';
+import {
+	adresseDEnvoi,
+	enTeteExpediteur,
+	lireDomaine
+} from '../../verticales/recouvrement/expediteur';
 import { composer, preparerLeMontant, type ChoixCourrier } from './envois';
 import { paroleDuDossier, pauseDuDossier, planDuDossier } from './plan';
 import { promesseACiter } from '../../verticales/recouvrement/parole';
@@ -1168,13 +1173,35 @@ export async function preparerProchaineRelance(
 	return { ok: true, envoiId, etape: NOM_DE_L_ETAPE[cle] };
 }
 
-/** L'adresse d'où partent les relances, et le nom du créancier devant. */
+/**
+ * L'adresse d'où partent les relances de cet établissement : la sienne sur le domaine
+ * neutre quand `RELANCES_DOMAINE` est posé (`verticales/recouvrement/expediteur.ts`,
+ * 23/10/2026), l'adresse commune d'avant sinon.
+ */
+export function adresseDEnvoiPour(denomination: string): string {
+	const domaine = lireDomaine(process.env.RELANCES_DOMAINE);
+	return adresseDEnvoi(denomination, {
+		domaine,
+		commune:
+			domaine !== null
+				? ''
+				: (process.env.RELANCES_EMAIL ??
+					requireEnv('AUTH_EMAIL', { feature: 'relances du pilote' }))
+	});
+}
+
+/** L'en-tête `From` d'une relance : le nom du créancier devant son adresse d'envoi. */
 export function expediteurPour(denomination: string): string {
-	const brute =
-		process.env.RELANCES_EMAIL ?? requireEnv('AUTH_EMAIL', { feature: 'relances du pilote' });
-	const adresse = /<([^>]+)>/.exec(brute)?.[1] ?? brute.trim();
-	const nom = denomination.replace(/["<>]/g, '').trim();
-	return `"${nom}" <${adresse}>`;
+	return enTeteExpediteur(denomination, adresseDEnvoiPour(denomination));
+}
+
+/** Une adresse d'envoi existe : le domaine neutre, ou l'adresse commune. */
+export function adresseDEnvoiConfiguree(): boolean {
+	return (
+		lireDomaine(process.env.RELANCES_DOMAINE) !== null ||
+		process.env.RELANCES_EMAIL !== undefined ||
+		process.env.AUTH_EMAIL !== undefined
+	);
 }
 
 /**
@@ -1201,7 +1228,7 @@ export const lancerEnvoi = internalMutation({
 		const configure =
 			process.env.AUTH_E2E_TEST_SECRET === undefined &&
 			process.env.RESEND_API_KEY !== undefined &&
-			(process.env.RELANCES_EMAIL !== undefined || process.env.AUTH_EMAIL !== undefined);
+			adresseDEnvoiConfiguree();
 		if (!configure) {
 			await ctx.db.patch(envoiId, { etat: 'A_VALIDER', envoiProgramme: undefined });
 			if (envoi.etapePlan !== undefined) {

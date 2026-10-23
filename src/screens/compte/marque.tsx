@@ -17,6 +17,8 @@ import {
 	BoutonPrincipal,
 	CarteDuLogo,
 	FeuillePleinEcran,
+	LigneDeReleve,
+	ListeDeReleve,
 	MiseEnPageDeMarque,
 	NuancierDeMarque,
 	type ImageDeMarque
@@ -57,6 +59,10 @@ export interface MarqueAffichee {
 	/** L'adresse de la personne connectée, où part l'exemple. */
 	readonly courriel: string | null;
 	readonly envoiConfigure: boolean;
+	/** L'adresse d'où partent ses relances : la sienne sur le domaine neutre, quand il est posé. */
+	readonly adresseDEnvoi: string | null;
+	/** L'adresse où ses clients répondent. */
+	readonly repondreA: string | null;
 	readonly aujourdHui: string;
 	readonly etat: EtatDeLaMarque;
 	readonly erreurDuLogo: string | null;
@@ -167,6 +173,7 @@ export function FeuilleLogoEtCouleurs({
 						couleur: marque.couleur
 					})}
 					expediteur={marque.denomination}
+					adresse={marque.adresseDEnvoi}
 					destinataire={CLIENT_D_EXEMPLE}
 					objet={exemple.objet}
 				/>
@@ -182,6 +189,19 @@ export function FeuilleLogoEtCouleurs({
 			<p className="px-1 text-center text-cladd-3xs text-cladd-fg-softer">
 				Votre premier rappel, pour un client fictif.
 			</p>
+			{/*
+			  D'OÙ ÇA PART, OÙ ÇA REVIENT (23/10/2026) : l'adresse de l'établissement sur le
+			  domaine neutre, et la sienne pour les réponses. Rien ne revient chez Letikette.
+			*/}
+			{marque.adresseDEnvoi === null ? null : (
+				<ListeDeReleve>
+					<LigneDeReleve titre="Elles partent de" ligne={marque.adresseDEnvoi} />
+					<LigneDeReleve
+						titre="Les réponses arrivent à"
+						ligne={marque.repondreA ?? 'votre adresse, à renseigner dans Établissement'}
+					/>
+				</ListeDeReleve>
+			)}
 		</>
 	);
 
