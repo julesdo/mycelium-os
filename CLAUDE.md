@@ -527,9 +527,10 @@ Un semestre absent de la série de taux fait **lever en le nommant**, jamais ext
     configuré, la relance redevient un courrier à valider. **Chaque établissement relance depuis
     SON adresse sur un domaine neutre** (23/10/2026, `verticales/recouvrement/expediteur.ts`) :
     « Durand BTP » écrit de `durand-btp@<RELANCES_DOMAINE>`, sans boîte derrière, les réponses
-    chez le gérant ; une adresse commune trahirait un outil partagé. Tant que `RELANCES_DOMAINE`
-    n'est pas posé, l'adresse commune d'avant (`RELANCES_EMAIL`, à défaut `AUTH_EMAIL`), qui
-    nomme le logiciel : marche à suivre dans `serveurs/resend/LISEZMOI.md`.
+    chez le gérant ; une adresse commune trahirait un outil partagé. **En production depuis le
+    23/10/2026 sur `suivie-facture.com`** (vérifié chez Resend, zone chez OVH, aucune boîte
+    derrière). Sans `RELANCES_DOMAINE`, l'adresse commune d'avant (`RELANCES_EMAIL`, à défaut
+    `AUTH_EMAIL`), qui nomme le logiciel : marche à suivre dans `serveurs/resend/LISEZMOI.md`.
 - **Le pilote s'appelle Plume, et il vit dans l'application**
   (`docs/superpowers/specs/2026-10-08-plume.md`, le soir du 08/10). Le fondateur : « personnifié
   comme une mascotte rassurante », « la bulle et popup de discussion est juste horrible »,
