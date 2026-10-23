@@ -119,6 +119,15 @@ répondu ? », échéancier et classement, la rangée « Vos réponses » (`?ouv
 questions), les brouillons d'e-mail par niveau et les modèles de lettre de la rangée « Courriers
 et e-mails », qui ne garde que l'historique. La remise au conseil se déclare depuis le dossier
 (`conseil.remettreLeDossier`, le montant du jour daté). 17 → 12 cibles à 375 px.
+**Le lendemain (« va jusqu'au bout »), chaque friction restante est partie** : une lettre de
+relance ne demande que le délai, se valide d'un geste après lecture et s'envoie dans le même fil
+(`useEnvoi`, 9 → 6 touchers, lue une fois) ; un paiement se note dans le fil avec la répartition de
+la fiche (`useReglement`) ; la carte de Plume pose ce qui attend — sa promesse arrivée à son jour
+(« Il l'a fait ? », Non / Oui sur la carte) et le rappel du jour (« C'est fait » d'un toucher) ;
+déclarer une démarche engagée et en noter les étapes, la page de paiement (« Lui envoyer de quoi
+payer ») et l'accord écrit se font en conversation ; `?faire=` et `?envoi=` ouvrent la bonne
+conversation depuis le pilote, le mot de Plume et ses gestes. Les listes longues défilent dans le
+fil, jamais dans la zone collée en bas (une zone collante plus haute que l'écran ne défile pas).
 
 **L'écran « Aujourd'hui » a suivi le même soir, sur les files d'approbation de Remote et Wise.**
 Pas de grand titre ni de date en sous-titre (« on s'en fout ») : une barre collante compacte —

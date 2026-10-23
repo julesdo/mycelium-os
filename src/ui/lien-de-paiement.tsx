@@ -61,7 +61,7 @@ export interface LiensDePaiementAffiches {
  * ne nomme pas ce logiciel, il ne menace d'aucune suite, et il dit ce que la page
  * contient pour qu'on l'ouvre sans méfiance.
  */
-function courrielDuLien(
+export function courrielDuLien(
 	lien: LienDePaiementAffiche,
 	adresse: string,
 	signature: string | undefined
@@ -102,8 +102,8 @@ export function LiensDePaiement({
 			<SectionTitle>Le lien où votre client paie</SectionTitle>
 
 			<p className="text-cladd-2xs leading-relaxed text-cladd-fg-soft">
-				Une page à votre nom, avec le montant du jour et sa date, votre IBAN et un code à
-				scanner qui pré-remplit le virement. Votre client paie depuis sa banque : rien ne passe par ce
+				Une page à votre nom, avec le montant du jour et sa date, votre IBAN et un code à scanner
+				qui pré-remplit le virement. Votre client paie depuis sa banque : rien ne passe par ce
 				logiciel. C’est vous qui lui envoyez l’adresse.
 			</p>
 
@@ -119,9 +119,7 @@ export function LiensDePaiement({
 						<span className="text-cladd-sm font-semibold">
 							Montant au {dateCourte(lien.arreteAu)}
 						</span>
-						<span className="shrink-0 text-cladd-sm tabular-nums">
-							{eurosCentimes(lien.total)}
-						</span>
+						<span className="shrink-0 text-cladd-sm tabular-nums">{eurosCentimes(lien.total)}</span>
 					</div>
 					<ChampCopiable
 						etiquette="À coller dans votre lettre ou votre courriel"
@@ -169,8 +167,8 @@ export function LiensDePaiement({
 						Fermer ce lien
 					</BoutonSecondaire>
 					<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softest">
-						Fermer prend effet tout de suite : l’adresse cesse de répondre, même si votre
-						client l’a déjà ouverte.
+						Fermer prend effet tout de suite : l’adresse cesse de répondre, même si votre client l’a
+						déjà ouverte.
 					</p>
 				</Surface>
 			))}

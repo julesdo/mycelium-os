@@ -44,6 +44,7 @@ export function useGestesDuGuide(
 	const remettreLeDossier = useMutation(api.recouvrement.conseil.remettreLeDossier);
 	const designer = useMutation(api.recouvrement.apresProcedure.designerIntervenant);
 	const personne = useMutation(api.recouvrement.apresProcedure.aucunIntervenant);
+	const ouvrirLien = useMutation(api.recouvrement.paiement.ouvrirLienDePaiement);
 	const appliquer = useMutation(api.recouvrement.lettrage.appliquer);
 	const repartir = useMutation(api.recouvrement.lettrage.appliquerRepartition);
 	const trancher = useMutation(api.recouvrement.suivi.trancherPromesse);
@@ -130,6 +131,7 @@ export function useGestesDuGuide(
 				await designer({ creanceId, intervenantId: id as Id<'intervenants'>, designe: true });
 			}
 		},
+		ouvrirLienDePaiement: async () => await ouvrirLien({ creanceId }),
 		proposerReglement: async (montant) =>
 			await convex.query(api.recouvrement.lettrage.proposer, { debiteurId: client(), montant }),
 		/*

@@ -992,6 +992,7 @@ const GESTES_GUIDES_DEMO: NonNullable<CreanceOuverte['gestesGuides']> = {
 	repondreCondition: attendre,
 	remettre: attendre,
 	nommer: attendre,
+	ouvrirLienDePaiement: async () => (await attendre(), '3f1c4b8a-7d22-4e91-9a10-c5e0b2f7d461'),
 	proposerReglement: async (montant) => {
 		await attendre();
 		return {

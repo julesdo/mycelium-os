@@ -30,6 +30,7 @@ describe('« Que voulez-vous faire ? »', () => {
 	it('propose tout un dossier en cours, dans l’ordre d’un dossier', () => {
 		expect(intentionsDuDossier(EN_COURS)).toEqual([
 			'ECRIRE',
+			'LIEN',
 			'REPONSE',
 			'DOCUMENT',
 			'RAPPEL',
@@ -68,11 +69,13 @@ describe('« Que voulez-vous faire ? »', () => {
 		expect(libelleDIntention('ECRIRE', { ...EN_COURS, relancesSuspendues: true }).titre).toBe(
 			'Préparer un courrier'
 		);
+		expect(intentionsDuDossier({ ...EN_COURS, relancesSuspendues: true })).not.toContain('LIEN');
 	});
 
 	it('ne nomme jamais une voie de droit (ligne rouge n° 3)', () => {
 		const toutes = [
 			'ECRIRE',
+			'LIEN',
 			'REPONSE',
 			'QUESTIONS',
 			'DOCUMENT',

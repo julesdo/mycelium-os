@@ -91,15 +91,25 @@ export function FilEcrire({
 	onFermer,
 	onAutreChose,
 	lettres,
-	onRelire
+	onRelire,
+	lettreDepart
 }: PropsDuFil & {
 	readonly lettres: LettresDuGuide;
+	/**
+	 * Une lettre déjà choisie et remplie (l'accord écrit, depuis le paiement en
+	 * plusieurs fois) : la conversation commence à ce qu'il y a dedans.
+	 */
+	readonly lettreDepart?: { readonly modele: ModeleCourrierAffiche; readonly titre: string };
 	/** La lettre préparée, à relire et valider : la conversation enchaîne. */
 	readonly onRelire: (envoiId: string) => void;
 }) {
 	const { courriers } = lettres;
-	const [etape, setEtape] = useState<Etape>('QUOI');
-	const [choisi, setChoisi] = useState<Choisi | null>(null);
+	const [etape, setEtape] = useState<Etape>(() =>
+		lettreDepart === undefined ? 'QUOI' : 'REGLAGES'
+	);
+	const [choisi, setChoisi] = useState<Choisi | null>(() =>
+		lettreDepart === undefined ? null : { genre: 'LETTRE', ...lettreDepart }
+	);
 	const [local, setLocal] = useState<ChoixCourrierAffiche | null>(null);
 	const [ouvertureEmail, setOuvertureEmail] = useState<'MESSAGERIE' | 'COPIE' | null>(null);
 	/* La lettre telle qu'elle a été préparée : le fil la garde, la route oublie le choix. */
@@ -145,7 +155,7 @@ export function FilEcrire({
 	  autres modèles ont des champs que rien ne remplit (le mandataire, qui signe) : leur
 	  formulaire reste, présenté par Plume.
 	*/
-	const ordre: readonly Etape[] =
+	const ordreComplet: readonly Etape[] =
 		choisi?.genre === 'EMAIL'
 			? ['QUOI', 'EMAIL', 'EMAIL_PARTI', 'TRAVAIL']
 			: choisi?.genre === 'LETTRE' && choisi.modele === 'RELANCE_OFFICIELLE'
@@ -157,6 +167,9 @@ export function FilEcrire({
 						'TRAVAIL'
 					]
 				: ['QUOI', 'REGLAGES', 'APERCU', 'TRAVAIL'];
+	/* Une lettre déjà choisie (l'accord écrit) : « Je prépare quoi ? » n'a plus lieu d'être. */
+	const ordre =
+		lettreDepart === undefined ? ordreComplet : ordreComplet.filter((e) => e !== 'QUOI');
 
 	const libellesDuTravail =
 		choisi?.genre === 'EMAIL'

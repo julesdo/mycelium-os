@@ -393,6 +393,33 @@ function aConfirmer(creance: {
 	);
 }
 
+/** La conversation du dossier : ouverte ou non, et ce qu'elle sait déjà en s'ouvrant. */
+interface EtatDeConversation {
+	readonly ouverte: boolean;
+	/** Le geste déjà choisi, ou « Que voulez-vous faire ? ». */
+	readonly depart: IntentionDuDossier | null;
+	/** Le courrier à relire. */
+	readonly envoi: string | null;
+	/** La démarche déjà choisie (« Je l'ai engagée » sur sa fiche). */
+	readonly voie: string | null;
+	/** La réponse déjà donnée sur la carte de Plume (« Non », « Plus tard »). */
+	readonly reponse: string | null;
+	/** L'accord écrit, ouvert depuis l'échéancier qui court. */
+	readonly accord: boolean;
+	/** Remonte la conversation à chaque ouverture : elle repart de sa première question. */
+	readonly jeton: number;
+}
+
+const CONVERSATION_FERMEE: EtatDeConversation = {
+	ouverte: false,
+	depart: null,
+	envoi: null,
+	voie: null,
+	reponse: null,
+	accord: false,
+	jeton: 0
+};
+
 export function EcranCreance({
 	donnees,
 	ouvrirAuDepart,
@@ -416,27 +443,17 @@ export function EcranCreance({
 	 * LA CONVERSATION DU DOSSIER (22/10/2026) : ouverte, et le geste déjà choisi. Le
 	 * jeton la remonte à chaque ouverture : elle repart de sa première question.
 	 */
-	const [conversation, setConversation] = useState<{
-		readonly ouverte: boolean;
-		readonly depart: IntentionDuDossier | null;
-		readonly envoi: string | null;
-		readonly voie: string | null;
-		/** La réponse déjà donnée sur la carte de Plume (« Non », « Plus tard »). */
-		readonly reponse: string | null;
-		readonly jeton: number;
-	}>(() =>
+	const [conversation, setConversation] = useState<EtatDeConversation>(() =>
 		faireAuDepart !== undefined
 			? {
+					...CONVERSATION_FERMEE,
 					ouverte: true,
 					depart: faireAuDepart,
-					envoi: envoiAuDepart ?? null,
-					voie: null,
-					reponse: null,
-					jeton: 0
+					envoi: envoiAuDepart ?? null
 				}
 			: ouvrirAuDepart === 'litige'
-				? { ouverte: true, depart: 'QUESTIONS', envoi: null, voie: null, reponse: null, jeton: 0 }
-				: { ouverte: false, depart: null, envoi: null, voie: null, reponse: null, jeton: 0 }
+				? { ...CONVERSATION_FERMEE, ouverte: true, depart: 'QUESTIONS' }
+				: CONVERSATION_FERMEE
 	);
 
 	/**
@@ -473,11 +490,9 @@ export function EcranCreance({
 		if (cle === 'litige') {
 			if (pret?.gestesGuides !== undefined) {
 				setConversation((avant) => ({
+					...CONVERSATION_FERMEE,
 					ouverte: true,
 					depart: 'QUESTIONS',
-					envoi: null,
-					voie: null,
-					reponse: null,
 					jeton: avant.jeton + 1
 				}));
 			}
@@ -501,21 +516,7 @@ export function EcranCreance({
 					...(pret.onDemanderAPlume === undefined
 						? {}
 						: { onDemanderAPlume: () => pret.onDemanderAPlume?.() }),
-					onNoterUnReglement: pret.onNoterUnReglement ?? (() => undefined),
-					...(accordPossible(pret)
-						? {
-								onAccordEcrit: (calendrier: { nombre: number; premiereLe: string }) => {
-									pret.courriers.onChoisir(
-										choixDeLAccord(pret.courriers, {
-											nombre: calendrier.nombre,
-											premiereEcheance: calendrier.premiereLe,
-											intervalleMois: 1
-										})
-									);
-									ouvrir('courriers');
-								}
-							}
-						: {})
+					onNoterUnReglement: pret.onNoterUnReglement ?? (() => undefined)
 				};
 
 	/**
@@ -534,11 +535,25 @@ export function EcranCreance({
 			return;
 		}
 		setConversation((avant) => ({
+			...CONVERSATION_FERMEE,
 			ouverte: true,
 			depart: intention,
 			envoi,
 			voie,
 			reponse,
+			jeton: avant.jeton + 1
+		}));
+	}
+
+	/** L'accord écrit, depuis l'échéancier qui court : la lettre déjà choisie et remplie. */
+	function preparerLAccord() {
+		if (pret === null) return;
+		pret.courriers.onChoisir(choixDeLAccord(pret.courriers));
+		setConversation((avant) => ({
+			...CONVERSATION_FERMEE,
+			ouverte: true,
+			depart: 'ECRIRE',
+			accord: true,
 			jeton: avant.jeton + 1
 		}));
 	}
@@ -632,10 +647,7 @@ export function EcranCreance({
 									}}
 									{...(accordPossible(pret)
 										? {
-												onAccordEcrit: () => {
-													pret.courriers.onChoisir(choixDeLAccord(pret.courriers));
-													ouvrir('courriers');
-												}
+												onAccordEcrit: preparerLAccord
 											}
 										: {})}
 								/>
@@ -686,8 +698,19 @@ export function EcranCreance({
 					envoiDepart={conversation.envoi}
 					voieDepart={conversation.voie}
 					reponseDepart={conversation.reponse}
+					lettreAuDepart={
+						conversation.accord
+							? {
+									modele: 'ACCORD_ECHEANCIER',
+									titre:
+										pret.courriers.modeles.find((m) => m.cle === 'ACCORD_ECHEANCIER')?.titre ??
+										'Accord d’échéancier'
+								}
+							: null
+					}
 					attentes={{ promesse: promesseAVerifier(pret), rappel: rappelDuJour(pret) }}
 					procedure={{ voies: pret.voies, suivi: pret.suivi }}
+					paiement={pret.liensDePaiement}
 					onFermer={() => setConversation((avant) => ({ ...avant, ouverte: false }))}
 					dossier={dossierDuGuide(pret)}
 					gestes={pret.gestesGuides}

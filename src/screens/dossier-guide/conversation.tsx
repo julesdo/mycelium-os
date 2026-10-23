@@ -1,10 +1,20 @@
 import { useState } from 'react';
-import { CadreGuide, Echange, ListeDeReponses, PleinEcran, ReponseDePlume } from '../../ui';
+import {
+	CadreGuide,
+	Echange,
+	ListeDeReponses,
+	PleinEcran,
+	ReponseDePlume,
+	choixDeLAccord,
+	type LiensDePaiementAffiches,
+	type ModeleCourrierAffiche
+} from '../../ui';
 import type { SectionCreance } from '../sections-creance';
 import type { DossierDuGuide, GestesDuGuide, PropsDuFil } from './commun';
 import { FilClassement } from './fil-classement';
 import { FilConseil, type DefenseDuGuide } from './fil-conseil';
 import { FilEcrire, type LettresDuGuide } from './fil-ecrire';
+import { FilLien } from './fil-lien';
 import { FilQuestions, type QuestionsDuGuide } from './fil-questions';
 import { FilEtape, FilProcedure, type ProcedureDuGuide } from './fil-procedure';
 import { FilPromesse, type PromesseAVerifier } from './fil-promesse';
@@ -30,6 +40,7 @@ import { intentionsDuDossier, libelleDIntention, type IntentionDuDossier } from 
 /** Les gestes qui se font dans la conversation ; les autres mènent à leur parcours. */
 const GUIDEES: readonly IntentionDuDossier[] = [
 	'ECRIRE',
+	'LIEN',
 	'RELIRE',
 	'REPONSE',
 	'QUESTIONS',
@@ -53,8 +64,6 @@ export interface SortiesDeLaConversation {
 	readonly onDemanderAPlume?: () => void;
 	/** La fiche du client, sa feuille « Un virement reçu » ouverte. */
 	readonly onNoterUnReglement: () => void;
-	/** L'accord écrit, rempli du calendrier convenu. */
-	readonly onAccordEcrit?: (calendrier: { nombre: number; premiereLe: string }) => void;
 }
 
 /**
@@ -93,6 +102,7 @@ export function ConversationDuDossier({
 	envoiDepart = null,
 	voieDepart = null,
 	reponseDepart = null,
+	lettreAuDepart = null,
 	onFermer,
 	dossier,
 	gestes,
@@ -101,6 +111,7 @@ export function ConversationDuDossier({
 	defense,
 	attentes,
 	procedure,
+	paiement,
 	sorties
 }: {
 	readonly ouverte: boolean;
@@ -112,6 +123,11 @@ export function ConversationDuDossier({
 	readonly voieDepart?: string | null;
 	/** La réponse déjà donnée sur la carte de Plume ; elle ne vaut qu'au premier tour. */
 	readonly reponseDepart?: string | null;
+	/** La lettre déjà choisie et remplie quand on arrive (l'accord écrit, depuis l'échéancier). */
+	readonly lettreAuDepart?: {
+		readonly modele: ModeleCourrierAffiche;
+		readonly titre: string;
+	} | null;
 	/** Ce qui attend le gérant : sa promesse arrivée à son jour, un rappel du jour. */
 	readonly attentes: {
 		readonly promesse: PromesseAVerifier | null;
@@ -119,6 +135,8 @@ export function ConversationDuDossier({
 	};
 	/** Les démarches du dossier : celles qu'on peut déclarer, celle qui est engagée. */
 	readonly procedure: ProcedureDuGuide;
+	/** Sa page de paiement : les liens ouverts, leur adresse, l'e-mail qui les porte. */
+	readonly paiement: Pick<LiensDePaiementAffiches, 'liens' | 'adresseDe' | 'courriel'>;
 	readonly onFermer: () => void;
 	readonly dossier: DossierDuGuide;
 	readonly gestes: GestesDuGuide;
@@ -133,6 +151,15 @@ export function ConversationDuDossier({
 	const [intention, setIntention] = useState<IntentionDuDossier | null>(depart);
 	/* Le courrier à relire, quand la conversation enchaîne depuis sa préparation. */
 	const [envoiId, setEnvoiId] = useState<string | null>(envoiDepart);
+	/*
+	  L'ACCORD ÉCRIT APRÈS UN PAIEMENT EN PLUSIEURS FOIS (23/10/2026) : la conversation
+	  enchaîne sur « Le relancer », la lettre déjà choisie et remplie du calendrier,
+	  au lieu de fermer pour ouvrir les courriers de la page.
+	*/
+	const [lettreDepart, setLettreDepart] = useState<{
+		readonly modele: ModeleCourrierAffiche;
+		readonly titre: string;
+	} | null>(lettreAuDepart);
 	/* « Autre chose » à la fin d'un geste : la conversation repart de zéro. */
 	const [tour, setTour] = useState(0);
 
@@ -153,6 +180,7 @@ export function ConversationDuDossier({
 	function recommencer() {
 		setIntention(null);
 		setEnvoiId(null);
+		setLettreDepart(null);
 		setTour((t) => t + 1);
 	}
 
@@ -173,7 +201,9 @@ export function ConversationDuDossier({
 				reponse={
 					intention === null
 						? undefined
-						: libelleDIntention(intention, dossier.pourLesIntentions).titre
+						: intention === 'ECRIRE' && lettreDepart !== null
+							? lettreDepart.titre
+							: libelleDIntention(intention, dossier.pourLesIntentions).titre
 				}
 				{...(verrouille ? {} : { onModifier: () => setIntention(null) })}
 			/>
@@ -195,17 +225,41 @@ export function ConversationDuDossier({
 						onFermer();
 						sorties.onNoterUnReglement();
 					}}
-					{...(sorties.onAccordEcrit === undefined
-						? {}
-						: {
-								onAccordEcrit: (calendrier: { nombre: number; premiereLe: string }) => {
-									onFermer();
-									sorties.onAccordEcrit?.(calendrier);
-								}
-							})}
+					onAccordEcrit={(calendrier: { nombre: number; premiereLe: string }) => {
+						lettres.courriers.onChoisir(
+							choixDeLAccord(lettres.courriers, {
+								nombre: calendrier.nombre,
+								premiereEcheance: calendrier.premiereLe,
+								intervalleMois: 1
+							})
+						);
+						setLettreDepart({
+							modele: 'ACCORD_ECHEANCIER',
+							titre:
+								lettres.courriers.modeles.find((m) => m.cle === 'ACCORD_ECHEANCIER')?.titre ??
+								'Accord d’échéancier'
+						});
+						setIntention('ECRIRE');
+						setTour((t) => t + 1);
+					}}
 				/>
 			) : intention === 'ECRIRE' ? (
-				<FilEcrire key={tour} {...commun} titre={titre} lettres={lettres} onRelire={relire} />
+				<FilEcrire
+					key={tour}
+					{...commun}
+					titre={lettreDepart === null ? titre : lettreDepart.titre}
+					lettres={lettres}
+					onRelire={relire}
+					{...(lettreDepart === null ? {} : { lettreDepart })}
+				/>
+			) : intention === 'LIEN' ? (
+				<FilLien
+					key={tour}
+					{...commun}
+					titre={titre}
+					paiement={paiement}
+					{...(lettres.debiteurEmail === undefined ? {} : { debiteurEmail: lettres.debiteurEmail })}
+				/>
 			) : intention === 'RELIRE' ? (
 				<FilRelire
 					key={tour}

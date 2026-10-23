@@ -73,6 +73,10 @@ export interface GestesDuGuide {
 		readonly note?: string;
 	}) => Promise<Annulation>;
 
+	/* ── Sa page de paiement : l'IBAN du créancier, aucun fonds ne passe ──── */
+	/** Ouvre sa page sur le montant du jour, daté. Rend son jeton. */
+	readonly ouvrirLienDePaiement: () => Promise<string>;
+
 	/* ── Un paiement reçu : rapproché de ses factures, comme sur sa fiche ─── */
 	/** Ce que ce montant solde : une combinaison exacte, plusieurs, ou la répartition légale. */
 	readonly proposerReglement: (montant: bigint) => Promise<PropositionLettrage>;

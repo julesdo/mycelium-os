@@ -96,6 +96,7 @@ export { ChampCopiable, LigneCopiable } from './champ-copiable';
 export { QrDeVirement } from './qr-virement';
 export {
 	LiensDePaiement,
+	courrielDuLien,
 	type LienDePaiementAffiche,
 	type LiensDePaiementAffiches
 } from './lien-de-paiement';

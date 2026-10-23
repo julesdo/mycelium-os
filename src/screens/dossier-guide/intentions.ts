@@ -16,6 +16,8 @@
 
 export type IntentionDuDossier =
 	| 'ECRIRE'
+	/** Sa page de paiement, ouverte et envoyée : l'IBAN du créancier, aucun fonds ne passe. */
+	| 'LIEN'
 	/** Relire un courrier préparé : la proposition de la carte de Plume, jamais une réponse de la liste. */
 	| 'RELIRE'
 	| 'REPONSE'
@@ -66,6 +68,8 @@ export function intentionsDuDossier(d: DossierPourLesIntentions): IntentionDuDos
 	if (d.classe) return ['DOCUMENT', ...(d.plumeJoignable ? (['PLUME'] as const) : [])];
 	return [
 		'ECRIRE',
+		// Un client en procédure collective ne paie plus ce qu'il devait : pas de page.
+		...(d.regle || d.relancesSuspendues ? [] : (['LIEN'] as const)),
 		...(d.regle ? [] : (['REPONSE'] as const)),
 		...(d.questionsEnAttente > 0 ? (['QUESTIONS'] as const) : []),
 		'DOCUMENT',
@@ -89,6 +93,8 @@ export function libelleDIntention(
 				: d.regle
 					? { titre: 'Lui écrire', ligne: 'Un e-mail ou une lettre, prêts à relire' }
 					: { titre: 'Le relancer', ligne: 'Un e-mail ou une lettre, prêts à relire' };
+		case 'LIEN':
+			return { titre: 'Lui envoyer de quoi payer', ligne: 'Sa page de paiement, avec votre IBAN' };
 		case 'RELIRE':
 			return { titre: 'Relire le courrier', ligne: 'Le lire, le valider, l’envoyer' };
 		case 'REPONSE':
