@@ -40,9 +40,10 @@ Le code :
    letikette.com l'occupe, il faut la formule Pro (dix domaines). Elle lève aussi le plafond de cent
    e-mails par jour, que la production dépasserait vite.
 3. **Ajouter le domaine chez Resend** (Domains → Add Domain), le domaine lui-même, pas un
-   sous-domaine. Resend affiche les enregistrements DNS à créer : la signature DKIM
-   (`resend._domainkey`), et le SPF et le MX du sous-domaine `send` (le retour des erreurs). Les
-   recopier dans la zone DNS du bureau d'enregistrement, à l'identique.
+   sous-domaine. Resend affiche les enregistrements DNS à créer, et ce sont EUX qui font foi : la
+   signature DKIM (TXT `resend._domainkey`) et le SPF, qui prend aujourd'hui la forme de deux CNAME
+   (`send`, `rsend`, en octobre 2026 pour `suivie-facture.com`). Les recopier à l'identique dans la
+   zone DNS du bureau d'enregistrement ; en mode texte, chaque cible de CNAME finit par un point.
 4. **Ajouter une politique DMARC** : un enregistrement TXT `_dmarc` valant `v=DMARC1; p=none;`.
    La durcir (`p=quarantine`) après quelques semaines d'envois propres.
 5. **Attendre « Verified »** chez Resend : de quelques minutes à quelques heures.
