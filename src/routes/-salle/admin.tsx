@@ -335,6 +335,7 @@ function DemoProspects({ etat, variante }: { etat: EtatDemo; variante?: string }
 				onChangerStatut: (ids, statut) =>
 					setProspects((liste) => liste.map((p) => (ids.includes(p.id) ? { ...p, statut } : p))),
 				onAssigner: RIEN,
+				onChangerParcours: RIEN,
 				onAjouter: RIEN
 			}}
 		/>
@@ -421,6 +422,7 @@ function DemoFicheProspect({ etat, variante }: { etat: EtatDemo; variante?: stri
 				onChercherAuRegistre: async () => [],
 				onEmailEcrit: RIEN_ASYNC,
 				onChangerEtape: RIEN,
+				onChangerParcours: RIEN,
 				onNoterAppel: RIEN_ASYNC
 			}}
 			signataire={{ prenom: 'Jules', fondateur: true }}

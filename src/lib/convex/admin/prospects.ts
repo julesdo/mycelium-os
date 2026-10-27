@@ -5,6 +5,7 @@ import { empreinteDEmail, normaliserEmail } from '../../crm/empreinte';
 import { statutClos, type Cible } from '../../crm/statuts';
 import { aInformer } from '../../crm/consentement';
 import {
+	REGISTRE_DES_PARCOURS,
 	etapeInitiale,
 	etapeValide,
 	libelleDeLEtape,
@@ -303,11 +304,79 @@ export const modifier = equipeMutation('SUPPORT')({
 		if (p === null) throw new ConvexError('Prospect introuvable.');
 		if (p.statut === 'STOP')
 			throw new ConvexError('Ce prospect a demandé à ne plus être contacté.');
-		const propres = champsPropres(champs);
+		const { parcours, ...propres } = champsPropres(champs);
 		if (propres.entreprise === undefined && champs.entreprise !== undefined) {
 			throw new ConvexError('L’entreprise est obligatoire.');
 		}
 		await ctx.db.patch(prospectId, propres);
+		// Un parcours changé l'est avec son étape et sa trace, jamais seul.
+		if (parcours !== undefined) {
+			await deplacerDansLeParcours(ctx, [prospectId], parcours, ctx.equipier.email);
+		}
+		return null;
+	}
+});
+
+/** Ce qu'une fiche déplacée était : le « Annuler » du mot qui suit le déplacement. */
+const vAvantDuDeplacement = v.object({
+	id: v.id('prospects'),
+	parcours: vParcours,
+	etapeParcours: v.string()
+});
+
+/**
+ * CLASSER DES FICHES DANS UN AUTRE PARCOURS (lot pilote du 27/10/2026). Aucun geste ne
+ * le permettait : les fiches du lot pilote restaient dans « PME logiciel ».
+ *
+ * L'étape suit : gardée quand le parcours d'arrivée la connaît, la première sinon, et
+ * le déplacement se note à l'historique de chaque fiche. Une fiche « Stop » ne bouge
+ * pas, une fiche déjà dans ce parcours non plus. Le cœur, appelé tel quel par les tests
+ * (Better Auth n'y est pas).
+ */
+export async function deplacerDansLeParcours(
+	ctx: MutationCtx,
+	prospectIds: readonly Id<'prospects'>[],
+	parcours: Parcours,
+	auteur: string
+): Promise<{ id: Id<'prospects'>; parcours: Parcours; etapeParcours: string }[]> {
+	const avant = [];
+	for (const id of prospectIds.slice(0, 200)) {
+		const p = await ctx.db.get(id);
+		if (p === null || p.statut === 'STOP') continue;
+		const depart = parcoursDe(p);
+		if (depart === parcours) continue;
+		const etapeDepart = p.etapeParcours ?? etapeInitiale(depart);
+		const etape = etapeValide(parcours, etapeDepart) ? etapeDepart : etapeInitiale(parcours);
+		avant.push({ id, parcours: depart, etapeParcours: etapeDepart });
+		await ctx.db.patch(id, { parcours, etapeParcours: etape });
+		await ctx.db.insert('evenementsCrm', {
+			prospectId: id,
+			type: 'ETAPE',
+			texte: `${REGISTRE_DES_PARCOURS[parcours].libelle} · ${libelleDeLEtape(parcours, etape)}`,
+			auteur,
+			le: Date.now()
+		});
+	}
+	return avant;
+}
+
+export const changerDeParcours = equipeMutation('SUPPORT')({
+	args: { prospectIds: v.array(v.id('prospects')), parcours: vParcours },
+	returns: v.array(vAvantDuDeplacement),
+	handler: async (ctx, { prospectIds, parcours }) =>
+		deplacerDansLeParcours(ctx, prospectIds, parcours, ctx.equipier.email)
+});
+
+/** Remettre les fiches dans le parcours et l'étape d'avant : le « Annuler » du déplacement. */
+export const remettreParcours = equipeMutation('SUPPORT')({
+	args: { changements: v.array(vAvantDuDeplacement) },
+	returns: v.null(),
+	handler: async (ctx, { changements }): Promise<null> => {
+		for (const { id, parcours, etapeParcours } of changements.slice(0, 200)) {
+			const p = await ctx.db.get(id);
+			if (p === null || p.statut === 'STOP') continue;
+			await ctx.db.patch(id, { parcours, etapeParcours });
+		}
 		return null;
 	}
 });

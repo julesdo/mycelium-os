@@ -28,6 +28,7 @@ import {
 } from '../../lib/crm/parcours';
 import { quandInscrit } from './aujourdhui';
 import { evenementAffiche, nomCourt, type EvenementCrm, type TacheAffichee } from './commun';
+import { ChoixDuParcours } from './choix-du-parcours';
 import { CorpsDeFiche, type GestesDeFiche } from './fiche';
 import {
 	FeuilleProspect,
@@ -137,6 +138,8 @@ export interface GestesDuProspect extends GestesDeFiche {
 	readonly onChercherAuRegistre: (nom: string) => Promise<readonly CandidatDuRegistre[]>;
 	/** Avancer le prospect dans son parcours. */
 	readonly onChangerEtape: (etape: string) => void;
+	/** Le classer dans un autre parcours (lot pilote du 27/10/2026). */
+	readonly onChangerParcours?: (parcours: Parcours) => void;
 	/** Un appel passé depuis la feuille d'appel : son issue fait le reste. */
 	readonly onNoterAppel: (issue: IssueAppel, texte: string, dansJours?: DansJours) => Promise<void>;
 	/** Un e-mail écrit depuis son modèle : noté avec son étape, la relance suivante posée. */
@@ -449,6 +452,11 @@ export function EcranFicheProspect({
 							lectureSeule={!actif}
 							onChanger={(s) => gestes?.onChangerStatut(s)}
 						/>
+						<ChoixDuParcours
+							parcours={parcours}
+							lectureSeule={!actif || gestes?.onChangerParcours === undefined}
+							onChoisir={(p) => gestes?.onChangerParcours?.(p)}
+						/>
 						<SelecteurDEtape
 							parcours={parcours}
 							etape={fiche.etapeParcours}
@@ -522,6 +530,7 @@ export function EcranFicheProspect({
 						initial={{
 							entreprise: fiche.entreprise,
 							cible: fiche.cible,
+							parcours,
 							...(fiche.prochaineActionLe === undefined
 								? {}
 								: { prochaineActionLe: fiche.prochaineActionLe }),

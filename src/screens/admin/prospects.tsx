@@ -55,6 +55,7 @@ import {
 } from '../../lib/crm/statuts';
 import { quandInscrit } from './aujourdhui';
 import { nomCourt } from './commun';
+import { ChoixDuParcours } from './choix-du-parcours';
 
 /**
  * LES PROSPECTS (16/10/2026) : quatre vues sur le même état, comme chez folk et
@@ -129,6 +130,8 @@ export interface GestesProspects {
 	/** Avancer dans le parcours affiché (le kanban d'un parcours). */
 	readonly onChangerEtape?: (id: string, etape: string) => void;
 	readonly onAssigner: (ids: readonly string[], responsable: string | null) => void;
+	/** Classer les fiches choisies dans un autre parcours (lot pilote du 27/10/2026). */
+	readonly onChangerParcours?: (ids: readonly string[], parcours: Parcours) => void;
 	readonly onAjouter: () => void;
 }
 
@@ -702,6 +705,17 @@ export function EcranProspects({
 					>
 						Responsable
 					</Select>
+					{gestes.onChangerParcours === undefined ? null : (
+						<ChoixDuParcours
+							popoverPosition="top-end"
+							onChoisir={(p) => {
+								gestes.onChangerParcours?.(ids, p);
+								onSelection(new Set());
+							}}
+						>
+							Parcours
+						</ChoixDuParcours>
+					)}
 				</BarreDeSelection>
 			)}
 			{feuilles}

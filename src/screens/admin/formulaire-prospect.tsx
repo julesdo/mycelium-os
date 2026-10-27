@@ -12,6 +12,8 @@ import {
 } from '../../ui';
 import { BlocDeFiche } from '../../ui/admin';
 import { CIBLES, LIBELLES_DES_CIBLES, type Cible } from '../../lib/crm/statuts';
+import { parcoursParDefaut, type Parcours } from '../../lib/crm/parcours';
+import { ChoixDuParcours } from './choix-du-parcours';
 
 /**
  * AJOUTER OU MODIFIER UN PROSPECT (16/10/2026), en page pleine.
@@ -22,6 +24,10 @@ import { CIBLES, LIBELLES_DES_CIBLES, type Cible } from '../../lib/crm/statuts';
  *
  * « Trouvé où » est la source légale du contact : un annuaire public, un salon, une
  * recommandation. Il se garde avec le prospect.
+ *
+ * Le parcours se choisit ici (lot pilote du 27/10/2026) : proposé d'après la cible et
+ * l'activité tant qu'on n'en a pas choisi un, et un fournisseur public ou un pilote ne
+ * se proposent jamais, ils se décident.
  */
 
 const CHAMPS_TEXTE = [
@@ -44,6 +50,7 @@ type ChampTexte = (typeof CHAMPS_TEXTE)[number];
 /** Ce que le formulaire saisit, prêt pour le serveur : un texte vide efface, `null` efface la date. */
 export type ChampsProspect = Record<ChampTexte, string> & {
 	readonly cible: Cible;
+	readonly parcours: Parcours;
 	readonly prochaineActionLe: number | null;
 };
 
@@ -74,6 +81,7 @@ function versJour(instant: number | undefined): string {
 
 export type ProspectInitial = Partial<Record<ChampTexte, string>> & {
 	readonly cible?: Cible;
+	readonly parcours?: Parcours;
 	readonly prochaineActionLe?: number;
 };
 
@@ -100,6 +108,8 @@ export function FeuilleProspect({
 			>
 	);
 	const [cible, setCible] = useState<Cible>(initial?.cible ?? 'PME');
+	// Choisi, il tient ; sinon il suit la cible et l'activité.
+	const [parcoursChoisi, setParcoursChoisi] = useState<Parcours | null>(initial?.parcours ?? null);
 	const [jour, setJour] = useState(versJour(initial?.prochaineActionLe));
 	const [candidats, setCandidats] = useState<readonly CandidatDuRegistre[] | null>(null);
 	const [recherche, setRecherche] = useState<'repos' | 'en-cours' | 'echec'>('repos');
@@ -130,11 +140,13 @@ export function FeuilleProspect({
 		setCandidats(null);
 	}
 
+	const parcours = parcoursChoisi ?? parcoursParDefaut(cible, valeurs.activite);
+
 	async function enregistrer() {
 		setErreur(null);
 		setEnCours(true);
 		try {
-			await onEnregistrer({ ...valeurs, cible, prochaineActionLe: versInstant(jour) });
+			await onEnregistrer({ ...valeurs, cible, parcours, prochaineActionLe: versInstant(jour) });
 			onFermer();
 		} catch (e) {
 			setErreur(messageDeRefus(e));
@@ -229,6 +241,15 @@ export function FeuilleProspect({
 									</SegmentedButton>
 								))}
 							</Segmented>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<span className="px-1 text-cladd-2xs text-cladd-fg-soft">Parcours</span>
+							<ChoixDuParcours
+								parcours={parcours}
+								onChoisir={setParcoursChoisi}
+								pleineLargeur
+								popoverPosition="bottom-start"
+							/>
 						</div>
 					</div>
 				</BlocDeFiche>

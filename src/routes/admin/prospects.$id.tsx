@@ -14,6 +14,7 @@ import {
 } from '../../app/coquille-admin';
 import { EcranFicheProspect } from '../../screens/admin/fiche-prospect';
 import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
+import { REGISTRE_DES_PARCOURS } from '../../lib/crm/parcours';
 
 /** La fiche d'un prospect : ses champs, son historique, ses tâches, et « Stop ». */
 export const Route = createFileRoute('/admin/prospects/$id')({
@@ -36,6 +37,8 @@ function FicheProspectAdmin() {
 	const changerStatut = useMutation(api.admin.prospects.changerStatut);
 	const changerEtape = useMutation(api.admin.prospects.changerEtape);
 	const remettreStatuts = useMutation(api.admin.prospects.remettreStatuts);
+	const changerDeParcours = useMutation(api.admin.prospects.changerDeParcours);
+	const remettreParcours = useMutation(api.admin.prospects.remettreParcours);
 	const modifier = useMutation(api.admin.prospects.modifier);
 	const stop = useMutation(api.admin.prospects.stop);
 	const chercherAuRegistre = useAction(
@@ -105,6 +108,26 @@ function FicheProspectAdmin() {
 									texte: 'Il ne sera plus contacté, ni réimporté.'
 								}),
 							onChercherAuRegistre: async (nom) => (await chercherAuRegistre({ nom })).candidats,
+							onChangerParcours: (parcours) =>
+								void changerDeParcours({ prospectIds: [prospectId], parcours })
+									.then((avant) => {
+										if (avant.length === 0) return;
+										dire({
+											titre: 'Parcours changé',
+											texte: `Classé dans « ${REGISTRE_DES_PARCOURS[parcours].libelle} ». C’est dans l’historique.`,
+											geste: {
+												libelle: 'Annuler',
+												faire: () => void remettreParcours({ changements: avant })
+											}
+										});
+									})
+									.catch(() =>
+										dire({
+											titre: 'Pas fait',
+											texte: 'Le parcours n’a pas changé.',
+											humeur: 'attention'
+										})
+									),
 							onChangerEtape: (etape) =>
 								void changerEtape({ prospectId, etape })
 									.then((avant) => {

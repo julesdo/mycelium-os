@@ -16,7 +16,12 @@ import {
 } from '../../screens/admin/prospects';
 import { FeuilleProspect } from '../../screens/admin/formulaire-prospect';
 import { LIBELLES_DES_STATUTS } from '../../lib/crm/statuts';
-import { estParcours, libelleDeLEtape, type Parcours } from '../../lib/crm/parcours';
+import {
+	REGISTRE_DES_PARCOURS,
+	estParcours,
+	libelleDeLEtape,
+	type Parcours
+} from '../../lib/crm/parcours';
 
 /**
  * Les prospects : la vue se garde dans l'adresse, la présentation (liste ou
@@ -108,6 +113,8 @@ function ProspectsAdmin() {
 			}
 		}
 	);
+	const changerDeParcours = useMutation(api.admin.prospects.changerDeParcours);
+	const remettreParcours = useMutation(api.admin.prospects.remettreParcours);
 	const creer = useMutation(api.admin.prospects.creer);
 	const chercherAuRegistre = useAction(
 		api.recouvrement.monEtablissement.chercherAuRegistreALInscription
@@ -182,6 +189,30 @@ function ProspectsAdmin() {
 											? 'Plus personne ne les suit.'
 											: `${ids.length} prospect${ids.length > 1 ? 's' : ''} pour ${responsable}.`
 								}).catch(() => undefined),
+							onChangerParcours: (ids, vers) => {
+								void changerDeParcours({ prospectIds: ids as Id<'prospects'>[], parcours: vers })
+									.then((avant) => {
+										if (avant.length === 0) return;
+										dire({
+											titre: 'Parcours changé',
+											texte:
+												avant.length === 1
+													? `Classé dans « ${REGISTRE_DES_PARCOURS[vers].libelle} ».`
+													: `${avant.length} prospects classés dans « ${REGISTRE_DES_PARCOURS[vers].libelle} ».`,
+											geste: {
+												libelle: 'Annuler',
+												faire: () => void remettreParcours({ changements: avant })
+											}
+										});
+									})
+									.catch((e: unknown) =>
+										dire({
+											titre: 'Pas fait',
+											texte: e instanceof Error ? e.message : 'Le parcours n’a pas changé.',
+											humeur: 'attention'
+										})
+									);
+							},
 							onAjouter: () => void navigate({ search: (s) => ({ ...s, ajouter: 1 }) }),
 							onChangerEtape: (id, etape) => {
 								const prospectId = id as Id<'prospects'>;

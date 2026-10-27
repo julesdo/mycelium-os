@@ -636,12 +636,15 @@ export function BarreDeSelection({
 				aria-label={`${nombre} ${libelle} sélectionné${nombre > 1 ? 's' : ''}`}
 				className="verre-carte pointer-events-auto flex max-w-full items-center gap-1 rounded-full py-1.5 pr-1 pl-3.5 shadow-lg sm:gap-1.5 sm:pl-4"
 			>
-				{/* Au téléphone, le nombre seul : les deux menus et la croix tiennent sur la ligne. */}
+				{/* Au téléphone, le nombre seul ; les menus défilent sur la ligne, la croix reste
+				    toujours visible (trois menus depuis le parcours, le 27/10/2026). */}
 				<span className="shrink-0 text-cladd-2xs font-semibold tabular-nums">
 					{nombre}
 					<span className="hidden sm:inline"> {libelle}</span>
 				</span>
-				<span className="flex min-w-0 items-center gap-1.5">{children}</span>
+				<span className="flex min-w-0 items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+					{children}
+				</span>
 				<Button
 					size="md"
 					square
