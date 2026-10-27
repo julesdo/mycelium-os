@@ -5,6 +5,7 @@ import type { QueryCtx } from '../_generated/server';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
 import { questionsEnAttente } from './lecture';
+import { dossiersPrepares } from './prepares';
 import {
 	avancement,
 	fusionner,
@@ -43,12 +44,7 @@ async function ceQuiReste(
 	ctx: QueryCtx,
 	organizationId: Id<'organizations'>
 ): Promise<{ restants: ParGenre; lettre: ElementDuJour | null; question: ElementDuJour | null }> {
-	const prepares = await ctx.db
-		.query('creances')
-		.withIndex('by_org_and_aDemarrer', (q) =>
-			q.eq('organizationId', organizationId).eq('aDemarrer', true)
-		)
-		.take(500);
+	const prepares = await dossiersPrepares(ctx, organizationId);
 	const lettres = await ctx.db
 		.query('envois')
 		.withIndex('by_org_and_etat', (q) =>
@@ -60,7 +56,7 @@ async function ceQuiReste(
 	const premiereQuestion = questions[0];
 	return {
 		restants: {
-			demarrer: prepares.filter((c) => c.statut !== 'CLOSE').length,
+			demarrer: prepares.length,
 			relire: lettres.length,
 			repondre: questions.length
 		},

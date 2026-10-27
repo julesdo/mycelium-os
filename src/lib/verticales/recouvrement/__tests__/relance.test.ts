@@ -98,7 +98,9 @@ describe('le niveau 1 — le rappel administratif', () => {
 			promesseManquee: { le: '2026-08-20', montant: depuisEuros('4000,00') }
 		});
 		const texte = texteDe(relance);
-		expect(texte).toMatch(/Vous nous aviez annoncé un règlement de 4.000,00 € pour le 20\/08\/2026\./);
+		expect(texte).toMatch(
+			/Vous nous aviez annoncé un règlement de 4.000,00 € pour le 20\/08\/2026\./
+		);
 		expect(texte).toContain('Sauf erreur de notre part');
 		expect(texte).not.toMatch(/tenu|promesse|intérêts de retard|indemnité|pénalit|procédure/i);
 	});
@@ -196,6 +198,18 @@ describe('le niveau 3 — indisponible, et il dit pourquoi', () => {
 		const blocages = !relance.disponible && relance.blocages.join(' ');
 		expect(blocages).toMatch(/lettre de relance officielle/i);
 		expect(blocages).not.toMatch(/[a-z][A-Z]/);
+	});
+
+	it('dit où elle se prépare, au lieu de dire que le logiciel ne la compose pas', () => {
+		// Audit des parcours Pro du 27/10/2026 : le menu proposait la lettre officielle
+		// et disait, deux lignes plus bas, « ce logiciel ne compose pas encore cette
+		// lettre ». Elle se prépare avec son modèle de lettre, pas comme un e-mail.
+		const relance = composerRelance(3, BASE);
+		const texte = !relance.disponible && `${relance.constat} ${relance.blocages.join(' ')}`;
+		expect(texte).not.toMatch(/ne compose pas|pas encore disponible/i);
+		expect(texte).toMatch(/se prépare avec (son|le) modèle/i);
+		const intention = NIVEAUX_RELANCE.find((n) => n.niveau === 3)?.intention ?? '';
+		expect(intention).not.toMatch(/pas encore disponible/i);
 	});
 
 	it('ne prétend plus qu’une mise en demeure a des mentions obligatoires', () => {

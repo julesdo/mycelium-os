@@ -688,8 +688,7 @@ function File() {
 
 	const rangeeDeLitige = (
 		question: NonNullable<typeof questionsDeLitige>[number],
-		urgence: UrgenceRangee,
-		dateDuDossier?: string
+		urgence: UrgenceRangee
 	): RangeeDeLaFile => {
 		const creanceId = question.creanceId as string;
 
@@ -697,7 +696,6 @@ function File() {
 
 		return {
 			genre: 'LITIGE' as const,
-			...(dateDuDossier === undefined ? {} : { dateDuDossier }),
 			/**
 			 * ⚠️ UN IDENTIFIANT PRÉFIXÉ, ET DÉRIVÉ DE LA CRÉANCE. Sa créance porte
 			 * déjà une rangée du même identifiant : deux rangées de même clé se
@@ -750,10 +748,10 @@ function File() {
 		estUneCreance.has(rangee.id) ? rangee.id : (creanceDuDebiteur.get(rangee.id) ?? null);
 
 	/**
-	 * ⚠️ LA RANGÉE DE LITIGE SUIT CELLE DE SA CRÉANCE, et ce n'est pas cosmétique.
-	 * D6 sépare la composition de la réponse de litige pour qu'un tap unique
-	 * n'emporte pas deux qualifications ; les éloigner l'une de l'autre ferait
-	 * payer cette séparation par un balayage de l'écran entier.
+	 * ⚠️ LA RANGÉE DE LITIGE SUIT CELLE DE SA CRÉANCE dans le flux : l'écran range les
+	 * questions dans leur bloc (`partagerLaFile`), et elles y gardent l'ordre de leurs
+	 * dossiers. D6 sépare la composition de la réponse de litige pour qu'un tap unique
+	 * n'emporte pas deux qualifications ; la feuille où l'on répond rappelle le dossier.
 	 */
 	const rangeesAvecLitige: RangeeDeLaFile[] = [];
 	/**
@@ -773,11 +771,9 @@ function File() {
 		litigePose.add(creanceId);
 		// L'urgence de la question est celle du dossier qu'elle bloque : une
 		// créance qui se prescrit dans 41 jours n'attend pas sa réponse plus
-		// longtemps qu'elle n'attend le reste. Sa date aussi : elle se range avec lui.
+		// longtemps qu'elle n'attend le reste.
 		rangeesAvecLitige.push(
-			rangee.genre === 'OBSTACLE'
-				? rangeeDeLitige(question, rangee.urgence, rangee.dateDuFait)
-				: rangeeDeLitige(question, 'NORMALE')
+			rangeeDeLitige(question, rangee.genre === 'OBSTACLE' ? rangee.urgence : 'NORMALE')
 		);
 	}
 

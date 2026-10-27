@@ -63,7 +63,7 @@ export const Route = createFileRoute('/app/clients/$id')({
 	loader: ({ params }) => {
 		const debiteurId = params.id as Id<'debiteurs'>;
 		precharger(api.recouvrement.lecture.listerDebiteurs, {});
-		precharger(api.recouvrement.lecture.listerCreances, {});
+		precharger(api.recouvrement.lecture.indexDossiers, {});
 		precharger(api.recouvrement.lecture.listerFacturesDuDebiteur, { debiteurId });
 		precharger(api.recouvrement.pieces.listerPiecesDuDebiteur, { debiteurId });
 		precharger(api.recouvrement.comportement.lire, { debiteurId, aujourdHui: aujourdHuiISO() });
@@ -104,7 +104,8 @@ function DebiteurBranche({ debiteurId }: { debiteurId: Id<'debiteurs'> }) {
 	const plumeDit = usePlumeDit();
 
 	const debiteurs = useQuery(api.recouvrement.lecture.listerDebiteurs, {});
-	const creances = useQuery(api.recouvrement.lecture.listerCreances, {});
+	// L'index, parce qu'il porte l'étape de chaque dossier : sa carte dit où il en est.
+	const creances = useQuery(api.recouvrement.lecture.indexDossiers, {});
 	const factures = useQuery(api.recouvrement.lecture.listerFacturesDuDebiteur, { debiteurId });
 	const pieces = useQuery(api.recouvrement.pieces.listerPiecesDuDebiteur, { debiteurId });
 	// Sa santé : la rangée qui mène à son analyse, quand l'analyse est activée.

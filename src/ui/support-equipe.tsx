@@ -1,7 +1,8 @@
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Button, Segmented, SegmentedButton, Select, Textarea } from '@cladd-ui/react';
+import { Button, Segmented, SegmentedButton, Select } from '@cladd-ui/react';
 import { ArrowUpIcon, LockIcon } from 'lucide-react';
 import { Avatar } from './avatar';
+import { ZoneDeTexte } from './zone-de-texte';
 import { BoutonSecondaire, BoutonTexte } from './bouton';
 import { cn } from './cn';
 import { AvatarPlume, NOM_DU_PILOTE } from './plume';
@@ -65,7 +66,10 @@ export function MessageVuParLEquipe({
 				· {heure}
 			</span>
 			{onRetirer === undefined || retirePar !== undefined ? null : (
-				<BoutonTexte onClick={onRetirer} className="h-auto min-h-0 px-0 text-cladd-3xs text-cladd-fg-soft">
+				<BoutonTexte
+					onClick={onRetirer}
+					className="h-auto min-h-0 px-0 text-cladd-3xs text-cladd-fg-soft"
+				>
 					Retirer ce contenu
 				</BoutonTexte>
 			)}
@@ -143,7 +147,10 @@ export function CeQuePlumeACompris({
 	readonly depuis?: string;
 }) {
 	return (
-		<section aria-label="Ce que Plume a compris" className="verre-carte flex flex-col gap-1.5 rounded-cladd-xl px-3.5 py-3">
+		<section
+			aria-label="Ce que Plume a compris"
+			className="verre-carte flex flex-col gap-1.5 rounded-cladd-xl px-3.5 py-3"
+		>
 			<p className="flex items-center gap-2 text-cladd-xs font-semibold">
 				<AvatarPlume humeur="repos" taille={22} />
 				Ce que {NOM_DU_PILOTE} a compris
@@ -212,7 +219,9 @@ export function ComposeurDuSupport({
 			<div
 				className={cn(
 					'flex flex-col gap-2 rounded-cladd-xl px-3 py-2.5',
-					mode === 'NOTE' ? 'border border-dashed border-cladd-outline bg-cladd-surface-minus' : 'verre-carte'
+					mode === 'NOTE'
+						? 'border border-dashed border-cladd-outline bg-cladd-surface-minus'
+						: 'verre-carte'
 				)}
 			>
 				<div className="flex flex-wrap items-center gap-2">
@@ -239,19 +248,23 @@ export function ComposeurDuSupport({
 						</Select>
 					) : null}
 					{mode === 'REPONSE' && brouillon !== undefined ? (
-						<BoutonTexte onClick={brouillon.onDemander} disabled={brouillon.enCours} className="ml-auto">
+						<BoutonTexte
+							onClick={brouillon.onDemander}
+							disabled={brouillon.enCours}
+							className="ml-auto"
+						>
 							{brouillon.enCours ? 'Plume écrit…' : 'Brouillon de Plume'}
 						</BoutonTexte>
 					) : null}
 				</div>
 				{mode === 'REPONSE' && prenomManquant !== undefined ? prenomManquant : null}
-				<Textarea
+				<ZoneDeTexte
+					nom={mode === 'NOTE' ? 'Une note pour l’équipe seule' : 'Votre réponse au gérant'}
 					size="md"
 					value={valeur}
 					onChange={(v) => onChange(v)}
 					onKeyDown={touche}
 					placeholder={mode === 'NOTE' ? 'Une note pour l’équipe seule' : 'Votre réponse au gérant'}
-					aria-label={mode === 'NOTE' ? 'Une note pour l’équipe seule' : 'Votre réponse au gérant'}
 					className="min-w-0 bg-transparent"
 				/>
 				{avertissement === undefined ? null : (
@@ -276,7 +289,11 @@ export function ComposeurDuSupport({
 						onClick={() => onEnvoyer({ terminer: false, confirme: avertissement !== undefined })}
 					>
 						<ArrowUpIcon aria-hidden className="size-4" />
-						{mode === 'NOTE' ? 'Noter' : avertissement === undefined ? 'Envoyer' : 'Envoyer quand même'}
+						{mode === 'NOTE'
+							? 'Noter'
+							: avertissement === undefined
+								? 'Envoyer'
+								: 'Envoyer quand même'}
 					</Button>
 				</div>
 			</div>

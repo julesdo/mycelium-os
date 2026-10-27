@@ -6,9 +6,10 @@ import {
 	type KeyboardEvent,
 	type ReactNode
 } from 'react';
-import { Button, Input, Select, Spinner, Textarea } from '@cladd-ui/react';
+import { Button, Input, Select, Spinner } from '@cladd-ui/react';
 import { ArrowUpIcon, CheckIcon, ChevronRightIcon, EyeIcon, PlusIcon, XIcon } from 'lucide-react';
 import { cn } from './cn';
+import { ZoneDeTexte } from './zone-de-texte';
 import { DEGAGEMENT_LATERAL } from './coquille-bureau';
 import type { PhraseAffichee } from './conversation';
 import {
@@ -537,7 +538,9 @@ export function Composeur({
 								</Button>
 							</>
 						)}
-						<Textarea
+						<ZoneDeTexte
+							nom={`Votre message à ${NOM_DU_PILOTE}`}
+							aide="Entrée pour envoyer, Maj et Entrée pour aller à la ligne."
 							size="md"
 							value={valeur}
 							onChange={(v) => onChange(v)}

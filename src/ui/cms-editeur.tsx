@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Input, Segmented, SegmentedButton, Switch, Textarea } from '@cladd-ui/react';
+import { Input, Segmented, SegmentedButton, Switch } from '@cladd-ui/react';
 import {
 	CheckIcon,
 	CircleAlertIcon,
@@ -17,13 +17,10 @@ import {
 	XIcon
 } from 'lucide-react';
 import { cn } from './cn';
+import { ZoneDeTexte } from './zone-de-texte';
 import { ChoixDEntete, PastilleDArticle, type StatutArticle } from './cms';
 import { IconeDeGabarit } from './icones-blocs';
-import {
-	GROUPES_DE_GABARITS,
-	TYPE_GLISSE,
-	type GabaritDeBloc
-} from '../lib/blog/gabarits';
+import { GROUPES_DE_GABARITS, TYPE_GLISSE, type GabaritDeBloc } from '../lib/blog/gabarits';
 import {
 	avecChamp,
 	ecrireComposant,
@@ -360,7 +357,11 @@ export function TeteDArticle({
 					</span>
 				)}
 			</button>
-			<div onFocus={() => setFocus('titre')} onBlur={() => setFocus(null)} className="flex flex-col">
+			<div
+				onFocus={() => setFocus('titre')}
+				onBlur={() => setFocus(null)}
+				className="flex flex-col"
+			>
 				<ZoneQuiGrandit
 					valeur={titre}
 					onChange={onTitre}
@@ -387,7 +388,12 @@ export function TeteDArticle({
 					{...(onFinDuTitre === undefined ? {} : { onEntree: onFinDuTitre })}
 					className="text-chapeau leading-relaxed text-encre-site-douce"
 				/>
-				<Compteur longueur={description.length} min={50} max={170} visible={focus === 'description'} />
+				<Compteur
+					longueur={description.length}
+					min={50}
+					max={170}
+					visible={focus === 'description'}
+				/>
 			</div>
 			<PhrasesEnBrefEnPlace phrases={enBref} onChange={onEnBref} lectureSeule={lectureSeule} />
 		</header>
@@ -433,7 +439,11 @@ export function PanneauDEdition({
 }) {
 	return (
 		<div className="flex min-h-0 flex-col gap-cladd-2xs">
-			<Segmented activeColor="brand" activeVariant="solid-fill" aria-label="Le panneau de l’article">
+			<Segmented
+				activeColor="brand"
+				activeVariant="solid-fill"
+				aria-label="Le panneau de l’article"
+			>
 				{ONGLETS.map(({ cle, libelle, Icone }) => (
 					<SegmentedButton
 						key={cle}
@@ -544,7 +554,9 @@ export function PaletteDeBlocs({
 										</span>
 										<span className="flex min-w-0 flex-col">
 											<span className="truncate text-cladd-2xs font-medium">{g.libelle}</span>
-											<span className="truncate text-cladd-3xs text-cladd-fg-soft">{g.description}</span>
+											<span className="truncate text-cladd-3xs text-cladd-fg-soft">
+												{g.description}
+											</span>
 										</span>
 									</button>
 								</li>
@@ -646,11 +658,26 @@ export function ReglagesDeLArticle({
 				</span>
 				<Switch checked={brouillon} onChange={onBrouillon} disabled={lectureSeule} />
 			</label>
-			<ChoixDEntete libelle="Catégorie" valeur={categorie} options={categories} onChange={onCategorie} />
-			<ChoixDEntete libelle="Pilier" valeur={pilier} options={piliers} onChange={onPilier} vide="Aucun" />
+			<ChoixDEntete
+				libelle="Catégorie"
+				valeur={categorie}
+				options={categories}
+				onChange={onCategorie}
+			/>
+			<ChoixDEntete
+				libelle="Pilier"
+				valeur={pilier}
+				options={piliers}
+				onChange={onPilier}
+				vide="Aucun"
+			/>
 			<section className="flex flex-col gap-1.5" id="reglage-illustration">
 				<span className="px-1 text-cladd-3xs font-semibold text-cladd-fg-soft">Illustration</span>
-				<div className="light grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Illustration de couverture">
+				<div
+					className="light grid grid-cols-3 gap-1.5"
+					role="radiogroup"
+					aria-label="Illustration de couverture"
+				>
 					{illustrations.map((i) => (
 						<button
 							key={i}
@@ -663,7 +690,9 @@ export function ReglagesDeLArticle({
 							onClick={() => onIllustration(i)}
 							className={cn(
 								'overflow-hidden rounded-xl ring-offset-2 transition-shadow [&>svg]:rounded-none',
-								illustration === i ? 'ring-2 ring-encre-site' : 'hover:ring-1 hover:ring-filet-creme'
+								illustration === i
+									? 'ring-2 ring-encre-site'
+									: 'hover:ring-1 hover:ring-filet-creme'
 							)}
 						>
 							{couverturePour(i)}
@@ -681,7 +710,9 @@ export function ReglagesDeLArticle({
 				/>
 				<span className="px-1 text-cladd-3xs break-all text-cladd-fg-soft">
 					letikette.com/blog/{adresse}
-					{adresseModifiable ? ' : déduite du titre, modifiable avant la première publication.' : ''}
+					{adresseModifiable
+						? ' : déduite du titre, modifiable avant la première publication.'
+						: ''}
 				</span>
 			</label>
 			<p className="px-1 text-cladd-3xs text-cladd-fg-soft">Signé {auteur}.</p>
@@ -758,7 +789,8 @@ export function ReglagesDIllustration({
 				? null
 				: illustration.champs.map((champ) => {
 						const valeur = valeurDuChamp(composant, champ);
-						const changer = (v: string | boolean) => onSource(ecrireComposant(avecChamp(composant, champ, v)));
+						const changer = (v: string | boolean) =>
+							onSource(ecrireComposant(avecChamp(composant, champ, v)));
 						if (champ.genre === 'interrupteur') {
 							return (
 								<label key={champ.nom} className="flex items-center justify-between gap-3 px-1">
@@ -768,9 +800,10 @@ export function ReglagesDIllustration({
 							);
 						}
 						if (champ.genre === 'choix') {
-							const options = typeof valeur === 'string' && valeur !== '' && !champ.options.includes(valeur)
-								? [valeur, ...champ.options]
-								: champ.options;
+							const options =
+								typeof valeur === 'string' && valeur !== '' && !champ.options.includes(valeur)
+									? [valeur, ...champ.options]
+									: champ.options;
 							return (
 								<ChoixDEntete
 									key={champ.nom}
@@ -785,7 +818,8 @@ export function ReglagesDIllustration({
 							<label key={champ.nom} className="flex flex-col gap-1">
 								<span className="px-1 text-cladd-3xs text-cladd-fg-soft">{champ.libelle}</span>
 								{champ.genre === 'texte' && champ.long === true ? (
-									<Textarea
+									<ZoneDeTexte
+										nom={champ.libelle}
 										value={typeof valeur === 'string' ? valeur : ''}
 										onChange={changer}
 										readOnly={lectureSeule}
@@ -793,7 +827,9 @@ export function ReglagesDIllustration({
 								) : (
 									<Input
 										size="md"
-										type={champ.genre === 'date' ? 'date' : champ.genre === 'nombre' ? 'number' : 'text'}
+										type={
+											champ.genre === 'date' ? 'date' : champ.genre === 'nombre' ? 'number' : 'text'
+										}
 										value={typeof valeur === 'string' ? valeur : ''}
 										onChange={changer}
 										disabled={lectureSeule}
@@ -904,7 +940,13 @@ export function MiseEnPageDeLEditeur({
 }
 
 /** Sous 1280 px, le bloc choisi se règle depuis une pastille au-dessus de la barre du bas. */
-export function PastilleDuChoix({ libelle, onOuvrir }: { readonly libelle: string; readonly onOuvrir: () => void }) {
+export function PastilleDuChoix({
+	libelle,
+	onOuvrir
+}: {
+	readonly libelle: string;
+	readonly onOuvrir: () => void;
+}) {
 	return (
 		<button
 			type="button"
@@ -941,7 +983,9 @@ export function RecapitulatifDePublication({
 		<div className="flex flex-col gap-cladd-xs">
 			<div className="light flex flex-col gap-1 rounded-cladd-xl bg-creme p-cladd-xs text-encre-site">
 				<span className="font-serif text-intertitre leading-snug font-medium">{titre}</span>
-				<span className="text-cladd-2xs break-all text-encre-site-douce">letikette.com/blog/{adresse}</span>
+				<span className="text-cladd-2xs break-all text-encre-site-douce">
+					letikette.com/blog/{adresse}
+				</span>
 			</div>
 			<ul className="verre-carte flex flex-col rounded-cladd-xl [&>*+*]:border-t [&>*+*]:border-cladd-outline">
 				<li className="flex justify-between gap-3 px-3.5 py-2.5 text-cladd-2xs">

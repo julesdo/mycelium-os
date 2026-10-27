@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Input, Textarea } from '@cladd-ui/react';
+import { Input } from '@cladd-ui/react';
 import { InboxIcon, MessageSquareIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
@@ -8,6 +8,7 @@ import {
 	CarteLien,
 	ListeDeCartes,
 	PageEcran,
+	ZoneDeTexte,
 	type Lecture
 } from '../../ui';
 import { BlocDeFiche, ChampsDeFiche, FicheEnDeuxColonnes } from '../../ui/admin';
@@ -72,7 +73,13 @@ export function EcranFileSupport({
 								date={l.date}
 								attention={l.attention}
 								retour
-								icone={<VignetteIcone icone={l.attention ? <InboxIcon aria-hidden /> : <MessageSquareIcon aria-hidden />} />}
+								icone={
+									<VignetteIcone
+										icone={
+											l.attention ? <InboxIcon aria-hidden /> : <MessageSquareIcon aria-hidden />
+										}
+									/>
+								}
 							/>
 						))}
 					</ListeDeCartes>
@@ -118,7 +125,11 @@ export interface ConversationVueParLEquipe {
 	};
 	readonly elements: readonly ElementVuParLEquipe[];
 	readonly contexte: readonly { readonly libelle: string; readonly valeur: string }[] | null;
-	readonly precedentes: readonly { readonly id: string; readonly titre: string; readonly ligne: string }[];
+	readonly precedentes: readonly {
+		readonly id: string;
+		readonly titre: string;
+		readonly ligne: string;
+	}[];
 	readonly gestes: {
 		readonly assignee: string | null;
 		readonly onMePrendre?: () => void;
@@ -274,9 +285,13 @@ export function EcranConversationSupport({
 								reponses={composeur.reponses}
 								onInserer={composeur.onInserer}
 								enCours={composeur.enCours}
-								{...(composeur.avertissement === undefined ? {} : { avertissement: composeur.avertissement })}
+								{...(composeur.avertissement === undefined
+									? {}
+									: { avertissement: composeur.avertissement })}
 								{...(composeur.brouillon === undefined ? {} : { brouillon: composeur.brouillon })}
-								{...(composeur.prenomManquant === undefined ? {} : { prenomManquant: composeur.prenomManquant })}
+								{...(composeur.prenomManquant === undefined
+									? {}
+									: { prenomManquant: composeur.prenomManquant })}
 							/>
 						</div>
 					}
@@ -292,7 +307,13 @@ export function PoserSonPrenom({ onPoser }: { readonly onPoser: (prenom: string)
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<p className="text-cladd-2xs text-cladd-fg-soft">Le prénom que verront les clients :</p>
-			<Input size="md" value={prenom} onChange={(v) => setPrenom(v)} placeholder="Camille" className="w-40" />
+			<Input
+				size="md"
+				value={prenom}
+				onChange={(v) => setPrenom(v)}
+				placeholder="Camille"
+				className="w-40"
+			/>
 			<BoutonTexte disabled={prenom.trim() === ''} onClick={() => onPoser(prenom)}>
 				Poser
 			</BoutonTexte>
@@ -312,10 +333,16 @@ export function EcranReponsesEnregistrees({
 	onSupprimer
 }: {
 	readonly lecture: Lecture<readonly ReponseEnregistreeAffichee[]>;
-	readonly onEnregistrer?: (reponse: { id?: string; titre: string; texte: string }) => Promise<unknown>;
+	readonly onEnregistrer?: (reponse: {
+		id?: string;
+		titre: string;
+		texte: string;
+	}) => Promise<unknown>;
 	readonly onSupprimer?: (id: string) => void;
 }) {
-	const [edition, setEdition] = useState<{ id?: string; titre: string; texte: string } | null>(null);
+	const [edition, setEdition] = useState<{ id?: string; titre: string; texte: string } | null>(
+		null
+	);
 	const entete = { genre: 'onglet', titre: 'Réponses enregistrées' } as const;
 	if (lecture.etat !== 'pret') return <PageEcran entete={entete} etat={lecture.etat} />;
 	return (
@@ -335,7 +362,8 @@ export function EcranReponsesEnregistrees({
 							onChange={(v) => setEdition({ ...edition, titre: v })}
 							placeholder="Titre (« Rebrancher Pennylane »)"
 						/>
-						<Textarea
+						<ZoneDeTexte
+							nom="Le texte de la réponse"
 							size="md"
 							value={edition.texte}
 							onChange={(v) => setEdition({ ...edition, texte: v })}
@@ -364,7 +392,9 @@ export function EcranReponsesEnregistrees({
 							droite={
 								onEnregistrer === undefined ? undefined : (
 									<span className="flex gap-1">
-										<BoutonTexte onClick={() => setEdition({ id: r.id, titre: r.titre, texte: r.texte })}>
+										<BoutonTexte
+											onClick={() => setEdition({ id: r.id, titre: r.titre, texte: r.texte })}
+										>
 											Modifier
 										</BoutonTexte>
 										{onSupprimer === undefined ? null : (
@@ -374,7 +404,9 @@ export function EcranReponsesEnregistrees({
 								)
 							}
 						>
-							<p className="px-1 text-cladd-2xs leading-relaxed whitespace-pre-wrap text-cladd-fg">{r.texte}</p>
+							<p className="px-1 text-cladd-2xs leading-relaxed whitespace-pre-wrap text-cladd-fg">
+								{r.texte}
+							</p>
 						</BlocDeFiche>
 					))
 				)}
@@ -403,7 +435,11 @@ export interface MesureAffichee {
 }
 
 /** La mesure du support, trente jours comparés aux trente d'avant (Intercom, Help Scout). */
-export function EcranMesureSupport({ lecture }: { readonly lecture: Lecture<MesureAffichee | null> }) {
+export function EcranMesureSupport({
+	lecture
+}: {
+	readonly lecture: Lecture<MesureAffichee | null>;
+}) {
 	const entete = { genre: 'onglet', titre: 'Mesure du support' } as const;
 	if (lecture.etat !== 'pret') return <PageEcran entete={entete} etat={lecture.etat} />;
 	const m = lecture.valeur;
@@ -436,7 +472,9 @@ export function EcranMesureSupport({ lecture }: { readonly lecture: Lecture<Mesu
 				)}
 				<BlocDeFiche titre="Ce que Plume n’a pas su">
 					{m.lacunes.length === 0 ? (
-						<p className="px-1 text-cladd-2xs text-cladd-fg-soft">Rien ces trente derniers jours.</p>
+						<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
+							Rien ces trente derniers jours.
+						</p>
 					) : (
 						<div className="flex flex-col gap-2">
 							{m.lacunes.map((l) => (

@@ -605,6 +605,8 @@ function ligneDuDossier(
 	},
 	aujourdHui: string
 ): string {
+	// Réglé entre-temps, il n'a plus rien à démarrer (audit des parcours Pro du 27/10/2026).
+	if (dossier.etape === 'REGLE') return 'Réglé';
 	if (dossier.aDemarrer) return 'Prêt, à démarrer';
 	if (dossier.courrierAValider) return 'Un courrier à relire';
 	if (dossier.etape === 'TRIBUNAL') return 'Chez un professionnel';

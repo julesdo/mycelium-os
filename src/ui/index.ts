@@ -11,6 +11,7 @@
  */
 
 export { cn } from './cn';
+export { ZoneDeTexte } from './zone-de-texte';
 export { TableauConditions, type LigneConditionAffichee } from './conditions';
 export {
 	CANAL_DU_COURRIER,

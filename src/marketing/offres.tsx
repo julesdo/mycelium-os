@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation } from 'convex/react';
-import { Input, Textarea } from '@cladd-ui/react';
+import { Input } from '@cladd-ui/react';
 import { ArrowRightIcon, CheckIcon } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import { JOURS_OFFRE_DE_BIENVENUE, OFFRES } from '../lib/config/tarifs';
 import { nomDeLOffre, type OffreDemandable } from '../lib/crm/demande';
 import { ANNEES_DE_CONSERVATION } from '../lib/crm/consentement';
 import { suivre } from '../app/analytique';
-import { BoutonPrincipal, FeuillePleinEcran } from '../ui';
+import { BoutonPrincipal, FeuillePleinEcran, ZoneDeTexte } from '../ui';
 import { Chapeau, SectionMarketing, TitreSection } from './section';
 
 /**
@@ -216,7 +216,7 @@ export function FeuilleDeDemande({
 						<span className="text-cladd-sm font-semibold">
 							Ce que vous voulez nous dire (facultatif)
 						</span>
-						<Textarea {...champ('message')} size="lg" />
+						<ZoneDeTexte nom="Ce que vous voulez nous dire" {...champ('message')} size="lg" />
 					</label>
 					{/* Le champ piège : invisible, hors du parcours du clavier ; un humain le laisse vide. */}
 					<input

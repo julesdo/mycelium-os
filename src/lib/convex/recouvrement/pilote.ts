@@ -24,6 +24,7 @@ import { composer, preparerLeMontant, type ChoixCourrier } from './envois';
 import { paroleDuDossier, pauseDuDossier, planDuDossier } from './plan';
 import { promesseACiter } from '../../verticales/recouvrement/parole';
 import { resteDu } from './lecture';
+import { dossiersPrepares } from './prepares';
 import { pluriel } from '../../socle/francais';
 import { ZERO, additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
 import { rattacherFactures } from './arret';
@@ -1633,14 +1634,9 @@ export const etat = authedQuery({
 			.withIndex('by_org_and_commence', (q) => q.eq('organizationId', organizationId))
 			.order('desc')
 			.take(8);
-		const prepares = await ctx.db
-			.query('creances')
-			.withIndex('by_org_and_aDemarrer', (q) =>
-				q.eq('organizationId', organizationId).eq('aDemarrer', true)
-			)
-			.take(500);
+		const prepares = await dossiersPrepares(ctx, organizationId);
 		return {
-			aDemarrer: prepares.filter((c) => c.statut !== 'CLOSE').length,
+			aDemarrer: prepares.length,
 			envoiAutomatique: pilote?.envoiAutomatique === true,
 			activeLe: pilote?.activeLe ?? null,
 			activeParVous: pilote?.activePar === user._id,
@@ -1713,13 +1709,8 @@ export const humeurDePlume = authedQuery({
 			.withIndex('by_org_and_commence', (q) => q.eq('organizationId', organizationId))
 			.order('desc')
 			.take(8);
-		const prepares = await ctx.db
-			.query('creances')
-			.withIndex('by_org_and_aDemarrer', (q) =>
-				q.eq('organizationId', organizationId).eq('aDemarrer', true)
-			)
-			.take(500);
-		const aDemarrer = prepares.filter((c) => c.statut !== 'CLOSE').length;
+		// Ni classés ni soldés, comme la liste qu'ouvre la pastille.
+		const aDemarrer = (await dossiersPrepares(ctx, organizationId)).length;
 		// Il ÉCRIT quand le travail en cours est une relance (13/10/2026) : la feuille et
 		// la plume disent ce qu'il fait mieux que des yeux qui lisent.
 		const enCours = recents.find((t) => t.etat === 'EN_COURS');

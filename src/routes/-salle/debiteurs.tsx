@@ -606,19 +606,24 @@ function facturesDu(debiteurId: string) {
 }
 
 /**
- * Les créances, comme `listerCreances` les rend (`lecture.ts`, lignes 698 à
- * 726) : le reste dû et le nombre des factures qui leur sont rattachées.
+ * Les créances, comme `indexDossiers` les rend à la fiche client : le reste dû, le
+ * nombre des factures rattachées, et où en est le dossier (une seule démo de chaque).
  */
-const CREANCES_LISTEES_DEMO = CREANCES_DEMO.map((creance) => {
+const CREANCES_LISTEES_DEMO = CREANCES_DEMO.map((creance, rang) => {
 	const factures = LIGNES_FACTURES_DEMO.filter((facture) => facture.creanceId === creance._id);
 	const restes = factures.map(resteDu);
+	const principalRestantDu = enCentimes(restes.length > 0 ? additionner(...restes) : ZERO);
 
 	return {
 		_id: creance._id,
 		debiteurId: creance.debiteurId,
 		statut: creance.statut,
-		principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
-		nombreFactures: factures.length
+		principalRestantDu,
+		nombreFactures: factures.length,
+		classe: false,
+		// Le premier dossier attend son démarrage ; les autres sont démarrés.
+		aDemarrer: rang === 0,
+		etape: factures.length > 0 && principalRestantDu <= 0n ? ('REGLE' as const) : ('PRET' as const)
 	};
 });
 

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Input, Segmented, SegmentedButton, Textarea } from '@cladd-ui/react';
+import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import {
 	CalendarPlusIcon,
 	CheckCircle2Icon,
@@ -11,7 +11,13 @@ import {
 	StickyNoteIcon,
 	TagIcon
 } from 'lucide-react';
-import { BoutonPrincipal, EnTeteDeGroupe, FeuillePleinEcran, ListeDeCartes } from '../../ui';
+import {
+	BoutonPrincipal,
+	EnTeteDeGroupe,
+	FeuillePleinEcran,
+	ListeDeCartes,
+	ZoneDeTexte
+} from '../../ui';
 import { LigneDeTache, type EvenementAffiche } from '../../ui/admin';
 import { echeanceDeTache, grouperParJour, heureDeParis } from '../../lib/admin/dates';
 import { grouperTaches } from '../../lib/crm/taches';
@@ -280,7 +286,8 @@ export function FeuilleDEchange({
 					<span className="px-1 text-cladd-2xs text-cladd-fg-soft">
 						Ce qui s’est dit (facultatif)
 					</span>
-					<Textarea
+					<ZoneDeTexte
+						nom="Ce qui s’est dit"
 						size="lg"
 						value={texte}
 						onChange={(v) => setTexte(v)}

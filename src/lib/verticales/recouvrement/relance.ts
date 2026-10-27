@@ -37,9 +37,9 @@ import type { SanteDebiteur } from './scoring';
  * Une mise en demeure produit des effets de droit. La loi ne lui impose aucune
  * liste de mentions — une interpellation suffisante, que le juge apprécie
  * (`PARAMETRES.modesMiseEnDemeure`) — et ce module a longtemps affirmé le
- * contraire. Ce qui manque est le MODÈLE de lettre de relance officielle,
- * rédigé et contre-vérifié le 25/09/2026, qui arrive avec l'envoi des
- * courriers. D'ici là, le niveau se déclare indisponible et le dit.
+ * contraire. La lettre a son MODÈLE, rédigé et contre-vérifié le 25/09/2026 :
+ * elle se prépare comme une lettre, et ce niveau, qui ne compose que des
+ * e-mails, se déclare indisponible en disant où elle se prépare.
  *
  * ⚠️ UNE INTERPELLATION SUFFISANTE PEUT VALOIR MISE EN DEMEURE QUEL QUE SOIT
  * SON TITRE. Le niveau 2 ne dit donc pas qu'il « n'est pas une mise en
@@ -85,7 +85,7 @@ export const NIVEAUX_RELANCE: readonly DescriptionNiveau[] = [
 		nom: 'Lettre de relance officielle',
 		intention:
 			'Une demande de payer assez claire pour valoir lettre de relance officielle (mise en demeure). ' +
-			'Le modèle n’est pas encore disponible dans ce logiciel.'
+			'Elle se prépare avec son modèle de lettre, que vous relisez et validez avant tout envoi.'
 	}
 ];
 
@@ -391,10 +391,13 @@ const COUT_SANS_MISE_EN_DEMEURE =
  * interpellation suffisante (`PARAMETRES.modesMiseEnDemeure`), que le juge
  * apprécie. La relecture juridique du 25/09 l'a relevé.
  *
- * Ce qui manque vraiment est le MODÈLE : la lettre de relance officielle,
- * rédigée et contre-vérifiée le 25/09, qui arrive avec l'envoi des courriers.
- * D'ici là, ce niveau le dit, au lieu de composer un texte que personne n'a
- * relu.
+ * La lettre de relance officielle a son MODÈLE, rédigé et contre-vérifié le 25/09
+ * (`gabarits/lettre-relance-officielle.ts`) : elle se prépare comme une lettre, avec
+ * son décompte daté, et Plume la prépare à son étape du plan. Ce niveau ne compose
+ * donc pas d'e-mail, et le dit en nommant où elle se prépare.
+ *
+ * ⚠️ IL DISAIT « CE LOGICIEL NE COMPOSE PAS ENCORE CETTE LETTRE » (audit des parcours
+ * Pro du 27/10/2026), à deux lignes de la même lettre proposée dans le même menu.
  */
 function miseEnDemeure(): Relance {
 	const regle = parametre('modesMiseEnDemeure');
@@ -406,16 +409,16 @@ function miseEnDemeure(): Relance {
 		constat: regleRelevee
 			? 'La loi n’impose pas de liste de mentions à une lettre de relance officielle (mise en ' +
 				'demeure) : elle demande une ' +
-				'interpellation suffisante, que le juge apprécie. Ce logiciel ne compose pas encore ' +
-				'cette lettre ; elle viendra avec le modèle de lettre de relance officielle, que vous ' +
-				'relirez et validerez avant tout envoi.'
+				'interpellation suffisante, que le juge apprécie. Elle ne part pas comme un e-mail de ' +
+				'relance : elle se prépare avec son modèle de lettre, « Lettre de relance officielle », ' +
+				'que vous relisez et validez avant tout envoi.'
 			: 'La règle qui encadre une lettre de relance officielle n’est pas relevée au ' +
 				'référentiel juridique de ce logiciel. Il ne compose donc pas cette lettre.',
 		// ⚠️ NI CLÉ DE CODE, NI NOTE DE DÉVELOPPEUR À L'ÉCRAN. Le gérant a besoin
 		// de savoir CE QUI MANQUE, pas comment on l'a nommé.
 		blocages: [
 			regleRelevee
-				? 'Le modèle de lettre de relance officielle n’est pas encore disponible dans ce logiciel.'
+				? 'Elle se prépare avec le modèle « Lettre de relance officielle », parmi les lettres du dossier.'
 				: 'La règle qui encadre une lettre de relance officielle n’est pas relevée au référentiel juridique de ce logiciel.'
 		],
 		coutDeLAttente: COUT_SANS_MISE_EN_DEMEURE

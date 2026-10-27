@@ -269,11 +269,7 @@ export interface RangeeLitige extends CommunDeRangee {
 	readonly genre: 'LITIGE';
 	readonly question: string;
 	readonly urgence: UrgenceRangee;
-	/**
-	 * La date de la carte du dossier qu'elle suit (diagnostic UX du 27/10/2026) : sans
-	 * elle, la question tombait sous « À venir », loin de son dossier « En retard ».
-	 */
-	readonly dateDuDossier?: string;
+	/** Celui du dossier : rappelé dans la feuille où l'on répond, jamais additionné. */
 	readonly montant: bigint | null;
 	/** Présente, elle porte les appuis de la rangée — et les trois réponses cèdent. */
 	readonly proposition?: PropositionDeRangee;
@@ -515,9 +511,63 @@ function aTrancher(rangee: RangeeGroupee): boolean {
 }
 
 /** Le total d'un groupe, quand au moins une rangée porte un montant. */
-function totalDe(rangees: readonly RangeeGroupee[]): bigint | null {
+function totalDe(rangees: readonly RangeeObstacle[]): bigint | null {
 	const montants = rangees.flatMap((rangee) => (rangee.montant === null ? [] : [rangee.montant]));
 	return montants.length === 0 ? null : montants.reduce((total, montant) => total + montant, 0n);
+}
+
+/** Un groupe daté de la file : ses dossiers, leur nombre et ce qu'ils doivent. */
+export interface GroupeDeLaFile {
+	readonly cle: GroupeFile;
+	readonly rangees: readonly RangeeObstacle[];
+	readonly nombre: number;
+	readonly total: bigint | null;
+}
+
+/**
+ * LE PARTAGE DE LA FILE : les questions à part, les dossiers par date, les
+ * rapprochements hors des groupes.
+ *
+ * ⚠️ UNE QUESTION N'EST NI COMPTÉE NI ADDITIONNÉE (audit des parcours Pro du
+ * 27/10/2026). Elle suivait la carte de son dossier dans le même groupe, avec le
+ * montant du dossier : « En retard » comptait cinq éléments et 47 450 € quand
+ * l'accueil annonçait quatre factures et les listes 35 050 €, la facture Durand et la
+ * question sur ce dossier portant chacune ses 12 400 €. Elles ont leur bloc, en tête
+ * parce qu'elles attendent le gérant, et leur carte ne porte aucun montant : la
+ * feuille où l'on répond rappelle le dossier et ce qu'il doit.
+ *
+ * Les rangées arrivent déjà triées par `comparerEvenements` — le seul comparateur du
+ * produit — et le partage préserve cet ordre : on n'en refait aucun ici, sous peine de
+ * deux règles de tri qui divergeraient au premier changement du domaine.
+ */
+export function partagerLaFile(
+	rangees: readonly RangeeDeLaFile[],
+	aujourdHui: string
+): {
+	readonly questions: readonly RangeeLitige[];
+	readonly groupes: readonly GroupeDeLaFile[];
+	readonly lettrages: readonly RangeeLettrage[];
+} {
+	const questions: RangeeLitige[] = [];
+	const lettrages: RangeeLettrage[] = [];
+	const parGroupe = new Map<GroupeFile, RangeeObstacle[]>();
+	for (const rangee of rangees) {
+		if (rangee.genre === 'LETTRAGE') lettrages.push(rangee);
+		else if (rangee.genre === 'LITIGE') questions.push(rangee);
+		else {
+			const cle = groupeDe(rangee, aujourdHui);
+			const deja = parGroupe.get(cle);
+			if (deja === undefined) parGroupe.set(cle, [rangee]);
+			else deja.push(rangee);
+		}
+	}
+	const groupes = ORDRE_GROUPES.flatMap((cle) => {
+		const siennes = parGroupe.get(cle) ?? [];
+		return siennes.length === 0
+			? []
+			: [{ cle, rangees: siennes, nombre: siennes.length, total: totalDe(siennes) }];
+	});
+	return { questions, groupes, lettrages };
 }
 
 /**
@@ -594,32 +644,11 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	  groupes préserve cet ordre : on n'en refait aucun ici, sous peine de deux
 	  règles de tri qui divergeraient au premier changement du domaine.
 	*/
-	const parGroupe = new Map<GroupeFile, RangeeGroupee[]>();
-	const lettrages: RangeeLettrage[] = [];
-	for (const rangee of pleines) {
-		if (rangee.genre === 'LETTRAGE') lettrages.push(rangee);
-		else {
-			// Une question va dans le groupe de son dossier, jamais seule sous « À venir ».
-			const cle = groupeDe(
-				rangee.genre === 'LITIGE'
-					? {
-							urgence: rangee.urgence,
-							...(rangee.dateDuDossier === undefined ? {} : { dateDuFait: rangee.dateDuDossier })
-						}
-					: rangee,
-				aujourdHui
-			);
-			const deja = parGroupe.get(cle);
-			if (deja === undefined) parGroupe.set(cle, [rangee]);
-			else deja.push(rangee);
-		}
-	}
-
-	const groupes = ORDRE_GROUPES.map((cle) => ({ cle, rangees: parGroupe.get(cle) ?? [] })).filter(
-		(groupe) => groupe.rangees.length > 0
-	);
+	const { questions, groupes, lettrages } = partagerLaFile(pleines, aujourdHui);
 	const decision =
-		[...parGroupe.values()].flat().find((rangee) => rangee.id === enDecision) ?? null;
+		[...questions, ...groupes.flatMap((groupe) => groupe.rangees)].find(
+			(rangee) => rangee.id === enDecision
+		) ?? null;
 
 	const veilleurTravaille = travaux.some((tache) => tache.etat === 'EN_COURS');
 
@@ -712,19 +741,31 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 
 							{/* ── LA FILE ───────────────────────────────────────────────────── */}
 							<SourceDeRangees nom="Les rangées de la surveillance">
-								{groupes.length === 0 ? (
+								{questions.length === 0 ? null : (
+									<section className="flex flex-col gap-cladd-3xs">
+										<EnTeteDeGroupe libelle="À vous de répondre" nombre={questions.length} />
+										<ListeDeCartes>
+											{questions.map((rangee) => (
+												<LigneDeFile
+													key={rangee.id}
+													rangee={rangee}
+													aujourdHui={aujourdHui}
+													onTrancher={() => setEnDecision(rangee.id)}
+												/>
+											))}
+										</ListeDeCartes>
+									</section>
+								)}
+
+								{groupes.length === 0 && questions.length === 0 ? (
 									<p className="px-1 text-cladd-xs text-cladd-fg-soft">
 										Rien à trancher aujourd’hui. La surveillance continue sur vos échéances et sur
 										les dates limites pour agir en justice.
 									</p>
 								) : (
-									groupes.map(({ cle, rangees: siennes }) => (
+									groupes.map(({ cle, rangees: siennes, nombre, total }) => (
 										<section key={cle} className="flex flex-col gap-cladd-3xs">
-											<EnTeteDeGroupe
-												libelle={LIBELLE_GROUPE[cle]}
-												nombre={siennes.length}
-												total={totalDe(siennes)}
-											/>
+											<EnTeteDeGroupe libelle={LIBELLE_GROUPE[cle]} nombre={nombre} total={total} />
 											<ListeDeCartes>
 												{siennes.map((rangee) => (
 													<LigneDeFile
@@ -1153,12 +1194,15 @@ function LigneDeFile({
 		  entière — « ce client vous a-t-il écrit pour contester… » — est dans la
 		  feuille, où l'on répond.
 		*/
-		ligne: rangee.genre === 'LITIGE' ? 'Une question pour vous' : rangee.libelle,
+		ligne: rangee.genre === 'LITIGE' ? 'Une question sur son dossier' : rangee.libelle,
 		// CE QUI ATTEND UNE RÉPONSE PORTE LA PASTILLE DES QUESTIONS, quelle que soit
 		// sa famille : c'est elle, et non un point devant le nom, qui distingue ce
 		// qui s'ouvre en feuille de ce qui mène au dossier.
 		famille: rangee.genre === 'OBSTACLE' && !decision ? rangee.famille : ('QUESTION' as const),
-		...(rangee.montant === null ? {} : { montant: eurosCentimes(rangee.montant) }),
+		// Le montant est celui du dossier, déjà sur sa carte : la question ne le redit pas.
+		...(rangee.genre === 'LITIGE' || rangee.montant === null
+			? {}
+			: { montant: eurosCentimes(rangee.montant) }),
 		...(date === undefined ? {} : { date: dateRelative(date, aujourdHui) })
 	};
 

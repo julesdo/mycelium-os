@@ -1,9 +1,10 @@
 import type { KeyboardEvent, ReactNode } from 'react';
 import type { LinkProps } from '@tanstack/react-router';
-import { Button, Checkbox, Chip, Segmented, SegmentedButton, Textarea } from '@cladd-ui/react';
+import { Button, Checkbox, Chip, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { ArrowUpIcon, CheckIcon, XIcon } from 'lucide-react';
 import { Avatar } from './avatar';
 import { cn } from './cn';
+import { ZoneDeTexte } from './zone-de-texte';
 import { EnTeteDeGroupe } from './en-tete-groupe';
 import { Lien } from './lien';
 
@@ -306,13 +307,14 @@ export function ComposeurDeNote({
 	return (
 		<div className="fixed inset-x-0 bottom-0 z-30 px-cladd-2xs pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] lg:static lg:z-auto lg:p-0">
 			<div className="verre-carte flex items-end gap-2 rounded-cladd-xl py-1.5 pr-1.5 pl-3">
-				<Textarea
+				<ZoneDeTexte
+					nom={placeholder}
+					aide="Entrée pour enregistrer, Maj et Entrée pour aller à la ligne."
 					size="md"
 					value={valeur}
 					onChange={(v) => onChange(v)}
 					onKeyDown={touche}
 					placeholder={placeholder}
-					aria-label={placeholder}
 					className="min-w-0 flex-1 bg-transparent"
 				/>
 				<Button

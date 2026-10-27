@@ -219,6 +219,11 @@ export async function lireLEtatDuDossier(
 	const aujourdHui = new Date().toISOString().slice(0, 10);
 	const restes = await Promise.all(factures.map((facture) => resteDu(ctx, facture)));
 	const restantDu = enCentimes(additionner(...restes));
+	// Préparé ET encore dû : soldé, il n'a plus rien à démarrer (`prepares.ts`).
+	const aDemarrerVraiment =
+		creance.aDemarrer === true &&
+		creance.statut !== 'CLOSE' &&
+		(factures.length === 0 || restantDu > 0n);
 	const envois = await ctx.db
 		.query('envois')
 		.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
@@ -263,7 +268,7 @@ export async function lireLEtatDuDossier(
 		arretable,
 		echeancierEnCours: plan?.pause?.raison === 'ECHEANCIER',
 		classe: creance.statut === 'CLOSE',
-		aDemarrer: creance.aDemarrer === true
+		aDemarrer: aDemarrerVraiment
 	};
 	return {
 		aujourdHui,
@@ -457,7 +462,7 @@ export const contexteDuDossier = internalQuery({
 						vers: 'section:decompte'
 					}
 				: { texte: 'Ses factures sont payées.' },
-			...(creance.aDemarrer === true
+			...(pourGestes.aDemarrer
 				? [
 						{
 							texte:
@@ -482,7 +487,7 @@ export const contexteDuDossier = internalQuery({
 			...(enAttente
 				? [{ texte: 'Un courrier attend votre relecture.', vers: 'section:courriers' }]
 				: []),
-			...(plan === null || programmee !== undefined || creance.aDemarrer === true || !relancable
+			...(plan === null || programmee !== undefined || pourGestes.aDemarrer || !relancable
 				? []
 				: [
 						{

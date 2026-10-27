@@ -1,7 +1,13 @@
 import { useState } from 'react';
-import { List, ListButton, ListTitle, Segmented, SegmentedButton, Textarea } from '@cladd-ui/react';
+import { List, ListButton, ListTitle, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { CheckIcon, PhoneIcon } from 'lucide-react';
-import { BoutonPrincipal, BoutonSecondaire, EnTeteDeGroupe, FeuillePleinEcran } from '../../ui';
+import {
+	BoutonPrincipal,
+	BoutonSecondaire,
+	EnTeteDeGroupe,
+	FeuillePleinEcran,
+	ZoneDeTexte
+} from '../../ui';
 import { dateCourteDeParis, jourDeParis } from '../../lib/admin/dates';
 import { LIBELLES_DES_ISSUES, type IssueAppel } from '../../lib/crm/appels';
 import { prenomDe } from '../../lib/crm/modeles';
@@ -232,7 +238,8 @@ export function FeuilleDAppel({
 					<span className="px-1 text-cladd-2xs text-cladd-fg-soft">
 						Ce qui s’est dit (facultatif)
 					</span>
-					<Textarea
+					<ZoneDeTexte
+						nom="Ce qui s’est dit"
 						size="lg"
 						value={texte}
 						onChange={(v) => setTexte(v)}

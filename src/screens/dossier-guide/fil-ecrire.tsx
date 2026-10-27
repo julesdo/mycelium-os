@@ -136,7 +136,15 @@ export function FilEcrire({
 	*/
 	const impossibles: { readonly cle: string; readonly titre: string; readonly raison: string }[] =
 		[];
-	for (const niveau of lettres.relances.filter((n) => !n.disponible)) {
+	/*
+	  ⚠️ LA LETTRE DE RELANCE OFFICIELLE N'EST PAS UN E-MAIL IMPOSSIBLE (audit des parcours
+	  Pro du 27/10/2026) : le niveau 3 des e-mails la renvoie à son modèle de lettre. Le
+	  menu proposait la lettre et disait, sous elle, qu'on ne pouvait pas la préparer.
+	*/
+	const lettreOfficielle = courriers.modeles.some((m) => m.cle === 'RELANCE_OFFICIELLE');
+	for (const niveau of lettres.relances.filter(
+		(n) => !n.disponible && !(n.niveau === 3 && lettreOfficielle)
+	)) {
 		const raison = niveau.constat ?? 'indisponible';
 		const meme = impossibles.find((i) => i.cle.startsWith('email') && i.raison === raison);
 		if (meme === undefined)

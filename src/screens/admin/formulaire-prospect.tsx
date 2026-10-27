@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input, Segmented, SegmentedButton, Textarea } from '@cladd-ui/react';
+import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
 import { SearchIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
@@ -7,7 +7,8 @@ import {
 	CarteBouton,
 	FeuillePleinEcran,
 	ListeDeCartes,
-	MessageErreur
+	MessageErreur,
+	ZoneDeTexte
 } from '../../ui';
 import { BlocDeFiche } from '../../ui/admin';
 import { CIBLES, LIBELLES_DES_CIBLES, type Cible } from '../../lib/crm/statuts';
@@ -260,7 +261,12 @@ export function FeuilleProspect({
 						</div>
 						<label className="flex flex-col gap-1.5">
 							<span className="px-1 text-cladd-2xs text-cladd-fg-soft">Notes</span>
-							<Textarea size="lg" value={valeurs.notes} onChange={changer('notes')} />
+							<ZoneDeTexte
+								nom="Notes"
+								size="lg"
+								value={valeurs.notes}
+								onChange={changer('notes')}
+							/>
 						</label>
 					</div>
 				</BlocDeFiche>

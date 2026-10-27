@@ -262,8 +262,9 @@ export function modelesProposables(
 		{
 			cle: 'RELANCE_OFFICIELLE',
 			titre: 'Lettre de relance officielle',
+			// Ce qu'il lui faut se dit avant d'entrer (audit des parcours Pro du 27/10/2026).
 			description:
-				'Réclame officiellement le paiement, avec une date limite (le mot du droit : mise en demeure).',
+				'Réclame officiellement le paiement, avec une date limite (le mot du droit : mise en demeure). Il lui faut vos coordonnées (SIREN, adresse, qui signe) et le SIREN de votre client.',
 			indisponible: auClient
 		},
 		{

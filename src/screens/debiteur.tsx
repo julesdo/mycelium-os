@@ -110,6 +110,35 @@ export interface CreanceDuDebiteur {
 	readonly statut: string;
 	readonly principalRestantDu: bigint;
 	readonly nombreFactures: number;
+	/** Classé par le gérant. */
+	readonly classe: boolean;
+	/** Préparé par Plume, pas encore démarré. */
+	readonly aDemarrer: boolean;
+	readonly etape: 'PRET' | 'ON_LUI_ECRIT' | 'TRIBUNAL' | 'REGLE';
+}
+
+/**
+ * OÙ EN EST UN DOSSIER, sur sa carte de la fiche client : les mots de la page du
+ * dossier (`etatEnClair`), dans le même ordre que l'écran Dossiers.
+ *
+ * ⚠️ JAMAIS LE STATUT DU MODÈLE (audit des parcours Pro du 27/10/2026). Durand, démarré,
+ * restait « Brouillon » : le démarrage ne change pas `statut`, qui ne dit que si les
+ * conditions sont qualifiées. Le gérant lisait un dossier pas encore lancé.
+ */
+export function ligneDuDossierDuClient(
+	creance: Pick<CreanceDuDebiteur, 'statut' | 'classe' | 'aDemarrer' | 'etape'>
+): string {
+	if (creance.classe || creance.statut === 'CLOSE') return 'Classé';
+	switch (creance.etape) {
+		case 'REGLE':
+			return 'Réglé';
+		case 'TRIBUNAL':
+			return 'Confié à un professionnel';
+		case 'ON_LUI_ECRIT':
+			return 'Relancé';
+		default:
+			return creance.aDemarrer ? 'Prêt à démarrer' : 'Pas encore relancé';
+	}
 }
 
 export interface DebiteurAffiche {
@@ -686,13 +715,7 @@ function CorpsDebiteur({
 								icone={<VignetteRangee famille="ARGENT" className="size-10" />}
 								// « Dossier de » est dit par l'en-tête et la vignette ; il coupait le titre.
 								titre={`${creance.nombreFactures} facture${pluriel(creance.nombreFactures)}`}
-								// Un brouillon n'est pas encore qualifié : le dire évite d'ouvrir
-								// un dossier en croyant qu'il est prêt.
-								{...(creance.statut === 'BROUILLON'
-									? { ligne: 'Brouillon' }
-									: creance.statut === 'CLOSE'
-										? { ligne: 'Classé' }
-										: {})}
+								ligne={ligneDuDossierDuClient(creance)}
 								montant={eurosCentimes(creance.principalRestantDu)}
 							/>
 						))}

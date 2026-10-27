@@ -4,7 +4,7 @@ import type { Doc, Id } from '../_generated/dataModel';
 import type { QueryCtx } from '../_generated/server';
 import { authedMutation, authedQuery } from '../functions';
 import { getUserOrg } from '../lib/auth';
-import { additionner, depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
+import { depuisCentimes, enCentimes, versEuros } from '../../socle/montants';
 import { pluriel } from '../../socle/francais';
 import { dateDuCalendrier } from '../../verticales/recouvrement/compagnon/gestes';
 import { vReponseFait } from './tables';
@@ -13,6 +13,7 @@ import { rattacherFactures } from './arret';
 import { planDuDossier } from './plan';
 import { commencerTravail } from './pilote';
 import { apresUneParole } from './parole';
+import { dossiersPrepares } from './prepares';
 
 /**
  * DÉMARRER UN DOSSIER — seul et guidé, ou en lot (08/10/2026).
@@ -342,23 +343,12 @@ export const lot = authedQuery({
 	}),
 	handler: async (ctx) => {
 		const { organizationId } = await getUserOrg(ctx);
-		const prepares = (
-			await ctx.db
-				.query('creances')
-				.withIndex('by_org_and_aDemarrer', (q) =>
-					q.eq('organizationId', organizationId).eq('aDemarrer', true)
-				)
-				.take(500)
-		).filter((c) => c.statut !== 'CLOSE');
+		// Ni classés ni soldés : un dossier réglé n'a plus rien à démarrer.
+		const prepares = await dossiersPrepares(ctx, organizationId);
 		const dossiers = [];
-		for (const creance of prepares) {
+		for (const { creance, factures, restantDu } of prepares) {
 			const debiteur = await ctx.db.get(creance.debiteurId);
 			if (debiteur === null) continue;
-			const factures = await ctx.db
-				.query('facturesVente')
-				.withIndex('by_creance', (q) => q.eq('creanceId', creance._id))
-				.collect();
-			const restes = await Promise.all(factures.map((f) => resteDu(ctx, f)));
 			const suspendu =
 				debiteur.santeFinanciere === 'PROCEDURE_COLLECTIVE' ||
 				debiteur.santeFinanciere === 'RADIEE';
@@ -366,7 +356,7 @@ export const lot = authedQuery({
 				creanceId: creance._id,
 				debiteurId: debiteur._id,
 				client: debiteur.denomination,
-				restantDu: enCentimes(additionner(...restes)),
+				restantDu,
 				nombreFactures: factures.length,
 				manque: suspendu
 					? 'En procédure collective ou radié'
