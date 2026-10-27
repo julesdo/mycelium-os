@@ -895,7 +895,9 @@ export const listerCreances = authedQuery({
 			// ⚠️ NI SCORE NI « MÛRE » : dire qu'une créance remplit ses conditions est une
 			// qualification juridique, qui revient au gérant (relecture du 25/09/2026).
 			principalRestantDu: v.int64(),
-			nombreFactures: v.number()
+			nombreFactures: v.number(),
+			/** Préparé par Plume, pas encore démarré : l'accueil n'y pose pas de question. */
+			aDemarrer: v.boolean()
 		})
 	),
 	handler: async (ctx) => {
@@ -921,7 +923,8 @@ export const listerCreances = authedQuery({
 					debiteurId: creance.debiteurId,
 					statut: creance.statut,
 					principalRestantDu: enCentimes(restes.length > 0 ? additionner(...restes) : ZERO),
-					nombreFactures: factures.length
+					nombreFactures: factures.length,
+					aDemarrer: creance.aDemarrer === true
 				};
 			})
 		);

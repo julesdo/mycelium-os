@@ -65,6 +65,11 @@ export const INTITULE_DU_FAIT: Readonly<Record<string, string>> = {
 	PROPOSITION_RETENUE: 'Vous avez retenu une proposition du logiciel',
 	PROPOSITION_CORRIGEE: 'Vous avez corrigé une proposition retenue',
 	ABANDON_ASSUME_A_L_ARRET: 'Vous avez assumé ce que le décompte laisse de côté',
+	// Le rapprochement d'un virement (diagnostic UX du 27/10/2026) : le dossier réglé ne
+	// disait pas, dans son historique, ce qui l'avait réglé.
+	VIREMENT_NOTE: 'Vous avez noté un virement reçu',
+	VIREMENT_ANNULE: 'Vous avez annulé un virement noté',
+	GESTE_REGLEMENT: 'Vous avez noté un paiement reçu',
 	CONTESTATION_ECRITE: 'Vous avez répondu sur une contestation écrite',
 	RECONNAISSANCE_ECRITE: 'Vous avez répondu sur une reconnaissance écrite'
 };

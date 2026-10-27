@@ -121,6 +121,7 @@ function ConversationDePlume() {
 	const ouverts = (dossiers ?? []).filter(
 		(d) => !d.classe && d.etape !== 'REGLE' && d.principalRestantDu > 0n
 	);
+	const demarres = ouverts.filter((d) => d.aDemarrer !== true).length;
 	const parId = new Map((dossiers ?? []).map((d) => [d._id as string, d]));
 
 	const { question: questionDeLAdresse, depuis, client: clientDuRegard } = Route.useSearch();
@@ -415,6 +416,7 @@ function ConversationDePlume() {
 	const veille = etatDeLaVeille({
 		travail: travailDuPilote?.titre ?? null,
 		enAttente: journee === undefined ? aDemarrer : somme(journee.restants),
+		...(journee === undefined ? {} : { parGenre: journee.restants }),
 		dossiersSuivis: ouverts.length,
 		relancesAutomatiques,
 		prochaine: prochaine === undefined ? null : quandEnMots(prochaine.partiraLe)
@@ -430,9 +432,11 @@ function ConversationDePlume() {
 						valeur: pilote.derniereVeille === null ? 'À venir' : heureOuJour(pilote.derniereVeille),
 						libelle: 'dernière relecture'
 					},
+					// Démarrés, pas « suivis » (diagnostic UX du 27/10/2026) : « 5 dossiers suivis »
+					// à côté de « Démarrer 0 sur 5 » comptait des dossiers seulement préparés.
 					{
-						valeur: String(ouverts.length),
-						libelle: ouverts.length > 1 ? 'dossiers suivis' : 'dossier suivi'
+						valeur: String(demarres),
+						libelle: demarres > 1 ? 'dossiers démarrés' : 'dossier démarré'
 					},
 					{
 						valeur: relancesAutomatiques ? 'Activées' : 'Coupées',

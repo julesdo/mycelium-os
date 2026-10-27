@@ -42,6 +42,15 @@ export function etatDeLaVeille(args: {
 	readonly travail: string | null;
 	/** Ce qui attend le gérant : dossiers à démarrer, lettres à relire, questions. */
 	readonly enAttente: number;
+	/**
+	 * Le même compte, par genre (diagnostic UX du 27/10/2026) : « 10 choses attendent »
+	 * à côté de « Démarrer 0 sur 5 » ne disait pas ce qu'étaient les cinq autres.
+	 */
+	readonly parGenre?: {
+		readonly demarrer: number;
+		readonly relire: number;
+		readonly repondre: number;
+	};
 	readonly dossiersSuivis: number;
 	readonly relancesAutomatiques: boolean;
 	/** « demain à 9 h » : la prochaine relance programmée. */
@@ -56,6 +65,26 @@ export function etatDeLaVeille(args: {
 	}
 	if (args.enAttente > 0) {
 		const n = args.enAttente;
+		const g = args.parGenre;
+		const parts =
+			g === undefined
+				? []
+				: [
+						g.demarrer > 0 ? `${g.demarrer} dossier${pluriel(g.demarrer)} à démarrer` : null,
+						g.relire > 0 ? `${g.relire} courrier${pluriel(g.relire)} à relire` : null,
+						g.repondre > 0 ? `${g.repondre} réponse${pluriel(g.repondre)} à donner` : null
+					].filter((p): p is string => p !== null);
+		if (parts.length > 0) {
+			const titre =
+				parts.length === 1
+					? parts[0]!
+					: `${parts.slice(0, -1).join(', ')} et ${parts[parts.length - 1]}`;
+			return {
+				titre: titre.charAt(0).toUpperCase() + titre.slice(1),
+				ligne: 'J’ai tout préparé ; rien ne part sans vous.',
+				humeur: 'attention'
+			};
+		}
 		return {
 			titre: `${n} chose${pluriel(n)} ${n > 1 ? 'attendent' : 'attend'} votre feu vert`,
 			ligne: `${n > 1 ? 'Je les ai préparées' : 'Je l’ai préparée'} ; rien ne part sans vous.`,

@@ -5,6 +5,7 @@ import {
 	GRILLE,
 	JOURS_DE_REMBOURSEMENT,
 	OFFRES,
+	historiqueDeDecouverte,
 	montantDuRythme,
 	type Formule,
 	type Limites,
@@ -413,7 +414,7 @@ function EtatCourant({
 				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
 					{etat.resilie
 						? 'Votre abonnement est terminé. Vos factures, vos clients et vos calculs restent là, et vous voyez toujours ce qu’on vous doit.'
-						: 'Vous voyez ce qu’on vous doit, pénalités et frais de recouvrement compris.'}{' '}
+						: `Vous voyez ce qu’on vous doit sur ${historiqueDeDecouverte()}, pénalités et frais de recouvrement compris ; les plus anciennes sont gardées, et se chiffrent avec une formule.`}{' '}
 					{abonnement.essaiDisponible && caisse?.essai !== false
 						? 'Pour que les relances partent à votre nom, choisissez une formule : trente jours d’essai, 0 € aujourd’hui.'
 						: 'Pour que les relances partent à votre nom, choisissez une formule.'}
@@ -587,7 +588,7 @@ function OffreFondateurs({
 			<ListeDeReleve>
 				<LigneDeReleve
 					titre={`${GRILLE[f.formule].nom}, à l’année`}
-					ligne={`${ttc === undefined ? '' : `${montantHT(f.prixCentimes)} · `}Prix bloqué à vie · ${restantes} place${restantes > 1 ? 's' : ''} sur ${f.places}, jusqu’au ${date}`}
+					ligne={`${ttc === undefined ? '' : `${montantHT(f.prixCentimes)} · `}Prix bloqué à vie · encore ${restantes} place${restantes > 1 ? 's' : ''} sur ${f.places}, jusqu’au ${date}`}
 					montant={montantCourt(f.prixCentimes, ttc)}
 					retour
 				/>

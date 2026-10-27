@@ -13,6 +13,7 @@ import {
 	ParcoursDepot,
 	aujourdHuiISO,
 	cleDeRef,
+	eurosCentimes,
 	PileDeConnexions,
 	ceQuiManque,
 	travauxDuVeilleur,
@@ -30,7 +31,7 @@ import { DELAI_DE_RELANCE_PAR_DEFAUT, useGestesDeDossier } from '../../app/geste
 import { Recherche } from '../../app/recherche';
 import { SelecteurEtablissement } from '../../app/selecteur-etablissement';
 import { EcranFile, type FileAffichee, type RangeeDeLaFile } from '../../screens/file';
-import { prenomDe, useRemarquesDePlume } from '../../app/parole-de-plume';
+import { prenomDe, usePlumeDit, useRemarquesDePlume } from '../../app/parole-de-plume';
 import { remarquesDAujourdhui } from '../../lib/verticales/recouvrement/compagnon/presence';
 
 /**
@@ -400,6 +401,8 @@ function File() {
 			: { debiteurId: debiteurLettrage, montant: montantCherche }
 	);
 	const appliquerLettrage = useMutation(api.recouvrement.lettrage.appliquer);
+	const annulerLettrage = useMutation(api.recouvrement.lettrage.annuler);
+	const dire = usePlumeDit();
 
 	/**
 	 * LE PARCOURS DE DÉPÔT, le même que dans un dossier ou au coffre. Il vit ici
@@ -674,9 +677,19 @@ function File() {
 		(creances ?? []).map((c) => [c._id as string, c.principalRestantDu])
 	);
 
+	/**
+	 * Préparés par Plume, pas encore démarrés (diagnostic UX du 27/10/2026) : leur question
+	 * se pose au démarrage guidé, une à la fois. Posée ici aussi, elle doublait chaque
+	 * dossier d'une carte « Une question pour vous », cinq dossiers donnaient dix cartes.
+	 */
+	const creancesADemarrer = new Set(
+		(creances ?? []).filter((c) => c.aDemarrer).map((c) => c._id as string)
+	);
+
 	const rangeeDeLitige = (
 		question: NonNullable<typeof questionsDeLitige>[number],
-		urgence: UrgenceRangee
+		urgence: UrgenceRangee,
+		dateDuDossier?: string
 	): RangeeDeLaFile => {
 		const creanceId = question.creanceId as string;
 
@@ -684,6 +697,7 @@ function File() {
 
 		return {
 			genre: 'LITIGE' as const,
+			...(dateDuDossier === undefined ? {} : { dateDuDossier }),
 			/**
 			 * ⚠️ UN IDENTIFIANT PRÉFIXÉ, ET DÉRIVÉ DE LA CRÉANCE. Sa créance porte
 			 * déjà une rangée du même identifiant : deux rangées de même clé se
@@ -751,15 +765,19 @@ function File() {
 	for (const rangee of rangeesDuFlux) {
 		rangeesAvecLitige.push(rangee);
 		const creanceId = dossierDeLaRangee(rangee);
-		if (creanceId === null || litigePose.has(creanceId)) continue;
+		if (creanceId === null || litigePose.has(creanceId) || creancesADemarrer.has(creanceId)) {
+			continue;
+		}
 		const question = questionParCreance.get(creanceId);
 		if (question === undefined) continue;
 		litigePose.add(creanceId);
 		// L'urgence de la question est celle du dossier qu'elle bloque : une
 		// créance qui se prescrit dans 41 jours n'attend pas sa réponse plus
-		// longtemps qu'elle n'attend le reste.
+		// longtemps qu'elle n'attend le reste. Sa date aussi : elle se range avec lui.
 		rangeesAvecLitige.push(
-			rangeeDeLitige(question, rangee.genre === 'OBSTACLE' ? rangee.urgence : 'NORMALE')
+			rangee.genre === 'OBSTACLE'
+				? rangeeDeLitige(question, rangee.urgence, rangee.dateDuFait)
+				: rangeeDeLitige(question, 'NORMALE')
 		);
 	}
 
@@ -769,7 +787,7 @@ function File() {
 	  l'urgence est donc celle d'un suivi, pas d'un délai.
 	*/
 	for (const [creanceId, champs] of champsProposesAujourdHui) {
-		if (litigePose.has(creanceId)) continue;
+		if (litigePose.has(creanceId) || creancesADemarrer.has(creanceId)) continue;
 		const question = questionParCreance.get(creanceId);
 		// La question a été répondue depuis que la proposition a été posée : la
 		// reposer redemanderait ce qui vient d'être tranché. La proposition reste
@@ -848,7 +866,7 @@ function File() {
 		if (debiteurRapprochable === null) return;
 		setErreurLettrage(null);
 		try {
-			await appliquerLettrage({
+			const poses = await appliquerLettrage({
 				debiteurId: debiteurRapprochable,
 				references: [...references],
 				montant: total,
@@ -857,8 +875,29 @@ function File() {
 			// Soldées : la recherche a fait son travail. La laisser affichée
 			// proposerait de solder une seconde fois des factures qui ne sont plus
 			// candidates, et le serveur refuserait — un bouton qui ne peut plus rien.
+			const client = debiteursRapprochables.find((d) => d.id === debiteurRapprochable);
 			setMontantCherche(null);
 			setDebiteurLettrage(null);
+			// Le mot sur place (diagnostic UX du 27/10/2026) : le formulaire se vidait sans
+			// rien dire, et seule une notification confirmait plus tard.
+			dire({
+				titre: 'Virement noté',
+				texte: `${client?.denomination ?? 'Ce client'} : ${references.length} facture${references.length > 1 ? 's' : ''} soldée${references.length > 1 ? 's' : ''}, ${eurosCentimes(total)}. Personne ne sera relancé pour ce qu’il a payé.`,
+				humeur: 'content',
+				// Une erreur de client se défait d'un geste, dans la journée.
+				geste: {
+					libelle: 'Annuler',
+					faire: () =>
+						void annulerLettrage({ reglementIds: poses })
+							.then(() =>
+								dire({
+									titre: 'Virement annulé',
+									texte: 'Les factures sont de nouveau ouvertes, et le dossier le note.'
+								})
+							)
+							.catch((e: unknown) => setErreurLettrage(messageDuRefus(e)))
+				}
+			});
 		} catch (e) {
 			// Le refus vient du serveur et NOMME ce qu'il a compté — « les factures
 			// choisies font 4 810,00 €, pas 4 820,00 € ». Le reformuler perdrait le
@@ -966,6 +1005,16 @@ function File() {
 				montant: ligne.principalRestantDu + ligne.supplement,
 				...(ligne.exigibleDepuis === undefined ? {} : { exigibleDepuis: ligne.exigibleDepuis })
 			})),
+			// Découverte chiffre trois mois : ce qui est plus ancien se dit sous le chiffre.
+			...(revelation.du === null || revelation.horsPeriode.nombre === 0
+				? {}
+				: {
+						horsPeriode: {
+							du: revelation.du,
+							nombre: revelation.horsPeriode.nombre,
+							principal: revelation.horsPeriode.principal
+						}
+					}),
 			...(carteDuLundi === undefined || carteDuLundi === null
 				? {}
 				: {

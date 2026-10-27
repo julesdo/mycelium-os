@@ -577,6 +577,18 @@ const FORMES_FILE: Readonly<Record<string, FileAffichee>> = {
 			}
 		}
 	},
+	// Découverte et ses trois mois (diagnostic UX du 27/10/2026) : ce qui est plus ancien,
+	// compté sous le chiffre, et la colonne « plus de 90 j » qui dit « non chiffré ».
+	'découverte, factures plus anciennes': {
+		...GARNIE,
+		tete: {
+			...GARNIE.tete,
+			anciennete: GARNIE.tete.anciennete.filter(
+				(l) => l.exigibleDepuis === undefined || l.exigibleDepuis >= '2026-07-27'
+			),
+			horsPeriode: { du: '2026-07-27', nombre: 2, principal: 2_140_000n }
+		}
+	},
 	// Le branchement d'un logiciel par Nango, étape par étape, sur l'écran du premier jour.
 	...Object.fromEntries(
 		VARIANTES_LOGICIELS.map((variante) => [

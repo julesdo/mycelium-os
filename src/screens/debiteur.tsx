@@ -896,8 +896,10 @@ function CorpsDebiteur({
 					cle="documents"
 					famille="PAPIERS"
 					titre="Documents"
-					glose="Chiffrés au coffre, lus et classés tout seuls."
-					valeur={pieces.length === 0 ? 'aucun' : `${pieces.length}`}
+					// Les pièces qui appuient ses factures (diagnostic UX du 27/10/2026 : « aucun »
+					// se lisait comme si le PDF de sa facture, déposé au coffre, avait disparu).
+					glose="Contrats, bons de livraison, échanges : chiffrés au coffre, lus et classés tout seuls. Ses factures déposées sont au coffre-fort."
+					valeur={pieces.length === 0 ? 'aucun justificatif' : `${pieces.length}`}
 				>
 					<Pieces
 						pieces={pieces}

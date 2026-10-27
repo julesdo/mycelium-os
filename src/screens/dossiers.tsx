@@ -207,8 +207,11 @@ function resumeDe(
 	}
 	if (dossier.classe === true) return { ligne: 'Classé' };
 	if (dossier.courrierAValider) return { ligne: 'Un courrier à valider', famille: 'ENVOI' };
-	// Préparé par Plume : rien ne part tant que le gérant ne l'a pas démarré.
-	if (dossier.aDemarrer === true) return { ligne: 'Prêt à démarrer', famille: 'QUESTION' };
+	// Préparé par Plume : rien ne part tant que le gérant ne l'a pas démarré. Réglé entre-temps,
+	// il n'est plus « prêt à démarrer » (diagnostic UX du 27/10/2026).
+	if (dossier.aDemarrer === true && dossier.etape !== 'REGLE') {
+		return { ligne: 'Prêt à démarrer', famille: 'QUESTION' };
+	}
 	/*
 	  ⚠️ UNE DATE LIMITE PROCHE PASSE DEVANT LE PLAN. Un droit qui s'éteint dans
 	  quatre-vingt-dix jours se dit avant le prochain rappel : c'est la seule date

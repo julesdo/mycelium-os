@@ -615,7 +615,15 @@ export function EcranCreance({
 							<CeQuiBloque alertes={alertesDuDossier(pret)} />
 						</ZoneDuTableau>
 						<ZoneDuTableau place="cote-collant">
-							{pret.aDemarrer === true && pret.onDemarrer !== undefined ? (
+							{/*
+							  ⚠️ UN DOSSIER DONT LE PRINCIPAL EST RÉGLÉ NE SE « DÉMARRE » PLUS
+							  (diagnostic UX du 27/10/2026) : réglé par un virement, il affichait
+							  encore « Démarrer avec Plume ». Ce qu'il reste à réclamer (les pénalités)
+							  se dit dans la carte de Plume.
+							*/}
+							{pret.aDemarrer === true &&
+							pret.onDemarrer !== undefined &&
+							pret.principalRestantDu > 0n ? (
 								<PlumeADemarrer client={pret.debiteur} onDemarrer={pret.onDemarrer} />
 							) : (
 								<PlumeSurLeDossier

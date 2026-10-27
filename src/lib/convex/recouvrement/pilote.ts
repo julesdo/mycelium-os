@@ -1526,10 +1526,12 @@ export const relireApresImport = internalMutation({
 				},
 				{ libelle: 'Met à jour les dates limites pour agir' }
 			],
+			// « De ce dépôt » (diagnostic UX du 27/10/2026) : trois PDF déposés un à un
+			// donnaient trois bilans « 1 facture en retard chez 1 client », lus comme un total.
 			bilan:
 				enRetard === 0
 					? 'Rien en retard dans ce dépôt.'
-					: `${enRetard} facture${pluriel(enRetard)} en retard chez ${nbClientsEnRetard} client${pluriel(nbClientsEnRetard)}.`
+					: `${enRetard} facture${pluriel(enRetard)} en retard chez ${nbClientsEnRetard} client${pluriel(nbClientsEnRetard)} de ce dépôt.`
 		});
 
 		await ctx.runMutation(internal.recouvrement.pilote.reveiller, { organizationId });

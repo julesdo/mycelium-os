@@ -269,6 +269,11 @@ export interface RangeeLitige extends CommunDeRangee {
 	readonly genre: 'LITIGE';
 	readonly question: string;
 	readonly urgence: UrgenceRangee;
+	/**
+	 * La date de la carte du dossier qu'elle suit (diagnostic UX du 27/10/2026) : sans
+	 * elle, la question tombait sous « À venir », loin de son dossier « En retard ».
+	 */
+	readonly dateDuDossier?: string;
 	readonly montant: bigint | null;
 	/** Présente, elle porte les appuis de la rangée — et les trois réponses cèdent. */
 	readonly proposition?: PropositionDeRangee;
@@ -334,6 +339,20 @@ export interface TeteDeFile {
 	 * la bande d'ancienneté sous le montant héros (`BandeDAnciennete`).
 	 */
 	readonly anciennete: readonly LigneDAnciennete[];
+	/**
+	 * CE QUE DÉCOUVERTE NE CHIFFRE PAS (diagnostic UX du 27/10/2026) : les factures plus
+	 * anciennes que ses trois mois, comptées avec leur principal. Le parcours de test lisait
+	 * 18 803 € ici et 39 862 € dans les listes, sans que rien n'explique l'écart. Un total
+	 * borné se dit borné, à côté de lui (`revelation.ts`) : la légende le compte, une carte
+	 * le nomme et mène au choix d'une formule. Absent : rien n'est borné.
+	 */
+	readonly horsPeriode?: {
+		/** Le premier jour chiffré, AAAA-MM-JJ. */
+		readonly du: string;
+		readonly nombre: number;
+		/** Ce qui reste dû sur ces factures, en principal. */
+		readonly principal: bigint;
+	};
 	/**
 	 * LA CARTE DU MOMENT (21/10/2026, le parcours de l'habitude) : « Votre semaine », du
 	 * lundi au mercredi. Une seule à la fois, sous la bande d'ancienneté ; elle mène à son
@@ -580,7 +599,16 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 	for (const rangee of pleines) {
 		if (rangee.genre === 'LETTRAGE') lettrages.push(rangee);
 		else {
-			const cle = groupeDe(rangee, aujourdHui);
+			// Une question va dans le groupe de son dossier, jamais seule sous « À venir ».
+			const cle = groupeDe(
+				rangee.genre === 'LITIGE'
+					? {
+							urgence: rangee.urgence,
+							...(rangee.dateDuDossier === undefined ? {} : { dateDuFait: rangee.dateDuDossier })
+						}
+					: rangee,
+				aujourdHui
+			);
 			const deja = parGroupe.get(cle);
 			if (deja === undefined) parGroupe.set(cle, [rangee]);
 			else deja.push(rangee);
@@ -730,19 +758,23 @@ function FilePrete({ valeur }: { valeur: FileAffichee }) {
 					*/}
 							{lettrages.length === 0 ? null : (
 								<section className="flex flex-col gap-cladd-3xs">
-									<EnTeteDeGroupe libelle="À rapprocher" nombre={lettrages.length} total={null} />
+									{/*
+									  ⚠️ NI COMPTE NI « UN VIREMENT REÇU » (diagnostic UX du 27/10/2026) :
+									  « À rapprocher · 1 » et « Un virement reçu, de qui ? » laissaient croire
+									  qu'un virement était arrivé, et le compte restait à 1 après un
+									  rapprochement. Le logiciel ne voit aucun virement : c'est un geste que
+									  le gérant fait quand il en reçoit un, et le titre le dit.
+									*/}
+									<EnTeteDeGroupe libelle="Vos encaissements" />
 									<ListeDeRangees>
 										{lettrages.map((rangee) => (
 											<RangeeDepliable
 												key={rangee.id}
 												cle={`lettrage-${rangee.id}`}
 												famille="ARGENT"
-												titre="Un virement reçu"
+												titre="Noter un virement reçu"
 												glose="Dites de qui il vient : le logiciel solde les bonnes factures, et personne n’est relancé pour ce qu’il a déjà payé."
-												// Pas « à rapprocher » : l'en-tête du groupe le dit déjà, et le
-												// doublon revenait à la ligne à 375 px. La valeur dit ce qu'on
-												// vous demande en ouvrant.
-												valeur="De qui ?"
+												valeur="Le rapprocher"
 											>
 												<Lettrage {...rangee.lettrage} />
 											</RangeeDepliable>
@@ -987,6 +1019,7 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 	const enRetard = tete.nombreFactures;
 	const nonComptees = tete.nonChiffrees.length;
 	const jamaisReclame = tete.parts.interets + tete.parts.indemnites;
+	const plusAnciennes = tete.horsPeriode?.nombre ?? 0;
 
 	return (
 		<div className="flex flex-col gap-cladd-2xs">
@@ -1005,7 +1038,10 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 				surTitre={`Ce qu’on vous doit au ${dateCourte(aujourdHui)}`}
 				legende={
 					<>
-						{enRetard === 0 ? null : `${enRetard} facture${pluriel(enRetard)} en retard`}
+						{/* « pénalités comprises » : les listes, elles, comptent le principal. */}
+						{enRetard === 0
+							? null
+							: `${enRetard} facture${pluriel(enRetard)} en retard, pénalités comprises`}
 						{nonComptees === 0 ? null : (
 							<span className="font-semibold text-cladd-fg">
 								{enRetard === 0
@@ -1013,12 +1049,40 @@ function Tete({ tete, aujourdHui }: { tete: TeteDeFile; aujourdHui: string }) {
 									: ` · ${nonComptees} non comptée${pluriel(nonComptees)}`}
 							</span>
 						)}
+						{plusAnciennes === 0 ? null : (
+							<span className="font-semibold text-cladd-fg">
+								{` · ${plusAnciennes} plus ancienne${pluriel(plusAnciennes)} à part`}
+							</span>
+						)}
 					</>
 				}
 			/>
 
 			{/* DEPUIS COMBIEN DE TEMPS : la forme sous le nombre (Afterpay). */}
-			<BandeDAnciennete lignes={tete.anciennete} aujourdHui={aujourdHui} />
+			<BandeDAnciennete
+				lignes={tete.anciennete}
+				aujourdHui={aujourdHui}
+				ancienNonChiffre={plusAnciennes > 0}
+			/>
+
+			{/*
+			  LES FACTURES QUE DÉCOUVERTE NE CHIFFRE PAS, nommées sous le chiffre qu'elles ne
+			  font pas, avec leur principal, et le chemin pour les chiffrer.
+			*/}
+			{tete.horsPeriode === undefined || plusAnciennes === 0 ? null : (
+				<CarteLien
+					vers="/app/compte"
+					recherche={{ ouvrir: 'facturation' }}
+					icone={<VignetteRangee famille="TEMPS" className="size-10" />}
+					// Cinq mots, pas une phrase : une carte ne se coupe pas (`carte-rangee.tsx`).
+					// La règle entière est sur la page où elle mène.
+					titre={`${plusAnciennes} hors Découverte`}
+					ligne={`Avant le ${dateCourte(tete.horsPeriode.du).replace(/ \d{4}$/, '')}`}
+					{...(tete.horsPeriode.principal > 0n
+						? { montant: eurosCentimes(tete.horsPeriode.principal) }
+						: {})}
+				/>
+			)}
 
 			{tete.carteDuMoment?.onVue === undefined ? null : (
 				<SignalDeVue cle={tete.carteDuMoment.cle} onVue={tete.carteDuMoment.onVue} />

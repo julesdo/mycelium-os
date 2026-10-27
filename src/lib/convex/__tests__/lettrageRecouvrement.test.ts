@@ -4,6 +4,7 @@ import { convexTest } from 'convex-test';
 import schema from '../schema';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
+import { annulerLesReglements } from '../recouvrement/lettrage';
 
 /**
  * LE LETTRAGE, BRANCHÉ SUR LA BASE.
@@ -262,6 +263,98 @@ describe('l’application d’un lettrage', () => {
 					date: '2026-02-30'
 				})
 			).rejects.toThrow(/2026-02-30/);
+		},
+		DELAI_CONVEX
+	);
+});
+
+describe('l’annulation d’un rapprochement (diagnostic UX du 27/10/2026)', () => {
+	it(
+		'rend les factures ouvertes, et ne retire que les règlements qu’il a posés',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, debiteurId } = await poser(t, [
+				{ reference: 'FA-001', montantTTC: 120_000n },
+				{ reference: 'FA-002', montantTTC: 240_000n }
+			]);
+			const poses = await t.mutation(internal.recouvrement.lettrage.appliquerInterne, {
+				organizationId,
+				debiteurId,
+				references: ['FA-001', 'FA-002'],
+				montant: 360_000n,
+				date: '2026-04-15'
+			});
+			expect(poses).toHaveLength(2);
+
+			await t.run((ctx) => annulerLesReglements(ctx, organizationId, poses, 'gerant'));
+
+			await t.run(async (ctx) => {
+				expect(await ctx.db.query('reglements').collect()).toHaveLength(0);
+				const statuts = (await ctx.db.query('facturesVente').collect()).map(
+					(f) => f.statutPaiement
+				);
+				expect(statuts).toEqual(['IMPAYEE', 'IMPAYEE']);
+			});
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'refuse quand un autre paiement a été noté depuis, et ne touche à rien',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, debiteurId } = await poser(t, [
+				{ reference: 'FA-001', montantTTC: 120_000n }
+			]);
+			const poses = await t.mutation(internal.recouvrement.lettrage.appliquerInterne, {
+				organizationId,
+				debiteurId,
+				references: ['FA-001'],
+				montant: 120_000n,
+				date: '2026-04-15'
+			});
+			await t.run(async (ctx) => {
+				const facture = (await ctx.db.query('facturesVente').collect())[0]!;
+				await ctx.db.insert('reglements', {
+					organizationId,
+					factureId: facture._id,
+					date: '2026-04-16',
+					montant: 1n,
+					nature: 'PAIEMENT',
+					creeLe: Date.now() + 1000,
+					dateSource: 'REELLE'
+				});
+			});
+			await expect(
+				t.run((ctx) => annulerLesReglements(ctx, organizationId, poses, 'gerant'))
+			).rejects.toThrow(/Un autre paiement/);
+			await t.run(async (ctx) => {
+				expect(await ctx.db.query('reglements').collect()).toHaveLength(2);
+			});
+		},
+		DELAI_CONVEX
+	);
+
+	it(
+		'refuse le règlement d’un autre établissement',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, debiteurId } = await poser(t, [
+				{ reference: 'FA-001', montantTTC: 120_000n }
+			]);
+			const poses = await t.mutation(internal.recouvrement.lettrage.appliquerInterne, {
+				organizationId,
+				debiteurId,
+				references: ['FA-001'],
+				montant: 120_000n,
+				date: '2026-04-15'
+			});
+			const autre = await t.run((ctx) =>
+				ctx.db.insert('organizations', { name: 'Autre', createdAt: Date.now() })
+			);
+			await expect(
+				t.run((ctx) => annulerLesReglements(ctx, autre, poses, 'gerant'))
+			).rejects.toThrow(/ne s’annule plus/);
 		},
 		DELAI_CONVEX
 	);

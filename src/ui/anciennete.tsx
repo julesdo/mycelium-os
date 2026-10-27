@@ -74,10 +74,17 @@ export function repartirParAnciennete(
 
 export function BandeDAnciennete({
 	lignes,
-	aujourdHui
+	aujourdHui,
+	ancienNonChiffre = false
 }: {
 	readonly lignes: readonly LigneDAnciennete[];
 	readonly aujourdHui: string;
+	/**
+	 * Découverte ne chiffre pas les factures de plus de trois mois (diagnostic UX du
+	 * 27/10/2026) : la colonne « plus de 90 j » dit « non chiffré », jamais « 0,00 € »,
+	 * qui se lisait comme « rien de si ancien ».
+	 */
+	readonly ancienNonChiffre?: boolean;
 }) {
 	const { parTranche, sansDate } = repartirParAnciennete(lignes, aujourdHui);
 	const range = parTranche.recent + parTranche.moyen + parTranche.ancien;
@@ -133,7 +140,9 @@ export function BandeDAnciennete({
 								parTranche[cle] === 0n && 'text-cladd-fg-softer'
 							)}
 						>
-							{eurosCentimes(parTranche[cle])}
+							{cle === 'ancien' && ancienNonChiffre && parTranche[cle] === 0n
+								? 'Non chiffré'
+								: eurosCentimes(parTranche[cle])}
 						</dd>
 					</div>
 				))}

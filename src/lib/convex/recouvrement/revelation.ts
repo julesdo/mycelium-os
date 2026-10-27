@@ -433,6 +433,25 @@ async function composerRevelation(
 	};
 }
 
+/**
+ * D'OÙ PARTENT LES CHIFFRES, POUR PLUME (diagnostic UX du 27/10/2026) : Plume répondait
+ * « je ne peux pas reconstituer l'écart » entre l'accueil et les listes. Le premier jour
+ * chiffré (`null` : tout) et le nombre de factures plus anciennes, comptées à part.
+ */
+export async function periodeDesChiffres(
+	ctx: QueryCtx,
+	organizationId: Id<'organizations'>,
+	arreteAu: string
+): Promise<{ readonly du: string | null; readonly plusAnciennes: number }> {
+	const du = await plancherDe(ctx, organizationId, arreteAu);
+	if (du === null) return { du: null, plusAnciennes: 0 };
+	const { horsPeriode } = separerParPeriode(
+		await facturesPour(ctx, organizationId, arreteAu, new Map()),
+		du
+	);
+	return { du, plusAnciennes: horsPeriode.nombre };
+}
+
 const vDiagnostic = v.object({
 	du: v.union(v.string(), v.null()),
 	arreteAu: v.string(),

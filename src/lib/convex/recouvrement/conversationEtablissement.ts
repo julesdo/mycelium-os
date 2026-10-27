@@ -20,6 +20,7 @@ import {
 	vCompteur
 } from './conversationLecture';
 import { vDocumentJoint, vGestePropose, vSourceConstat } from './tables';
+import { periodeDesChiffres } from './revelation';
 import { vResume } from '../coffre/coffre';
 
 /**
@@ -243,11 +244,24 @@ export const contexteDeLEtablissement = internalQuery({
 				.take(50)
 		).filter((depot) => depot.statut === 'EN_ATTENTE' || depot.statut === 'LECTURE').length;
 
+		// Ce que mesure chaque écran (diagnostic UX du 27/10/2026) : sans cette ligne, Plume
+		// ne savait pas dire pourquoi l'accueil et les listes donnent deux totaux.
+		const periode = await periodeDesChiffres(ctx, organizationId, aujourdHui);
+		const ceQueMesurentLesEcrans =
+			periode.du === null
+				? '« Ce qu’on vous doit », sur l’écran Aujourd’hui, compte les pénalités et les frais de recouvrement ; les écrans Dossiers et Clients comptent le principal seul.'
+				: `Avec Découverte, « Ce qu’on vous doit », sur l’écran Aujourd’hui, ne chiffre que les factures échues depuis le ${jour(periode.du)}, pénalités et frais compris${
+						periode.plusAnciennes > 0
+							? ` ; ${periode.plusAnciennes} facture${pluriel(periode.plusAnciennes)} plus ancienne${pluriel(periode.plusAnciennes)} ${periode.plusAnciennes > 1 ? 'sont gardées et comptées' : 'est gardée et comptée'} à part, sous ce chiffre, et se chiffre${periode.plusAnciennes > 1 ? 'nt' : ''} avec une formule`
+							: ''
+					}. Les écrans Dossiers et Clients comptent toutes les factures, en principal seul.`;
+
 		const total = ouverts.reduce((somme, ligne) => somme + ligne.principalRestantDu, 0n);
 		const aDemarrer = ouverts.filter((ligne) => ligne.aDemarrer).length;
 		const aRelire = ouverts.filter((ligne) => ligne.courrierAValider).length;
 		const enBref = [
 			`${ouverts.length} dossier${pluriel(ouverts.length)} ouvert${pluriel(ouverts.length)} ; reste à payer, hors pénalités : ${euros(total)}.`,
+			ceQueMesurentLesEcrans,
 			pilote?.envoiAutomatique === true
 				? 'Les relances automatiques sont activées : Plume envoie les relances du plan au nom du dirigeant, une heure après les avoir montrées.'
 				: 'Les relances automatiques ne sont pas activées : Plume prépare les relances, le dirigeant les relit et les envoie.',

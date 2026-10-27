@@ -199,13 +199,16 @@ export const appliquerInterne = internalMutation({
 		debiteurId: v.id('debiteurs'),
 		references: v.array(v.string()),
 		montant: v.int64(),
-		date: v.string()
+		date: v.string(),
+		/** Qui a noté le virement : l'historique du dossier le signe. */
+		auteurUserId: v.optional(v.string())
 	},
-	returns: v.null(),
+	/** Les règlements posés : ce qu'« Annuler » retire, et rien d'autre. */
+	returns: v.array(v.id('reglements')),
 	handler: async (
 		ctx,
-		{ organizationId, debiteurId, references, montant, date }
-	): Promise<null> => {
+		{ organizationId, debiteurId, references, montant, date, auteurUserId }
+	): Promise<Id<'reglements'>[]> => {
 		// LA DATE ENTRE DANS LE CALCUL DES INTÉRÊTS. Un « 2026-02-30 » y produirait
 		// un décalage muet sur une somme réclamée — c'est exactement le défaut que
 		// `estDateReelle` existe pour empêcher.
@@ -247,8 +250,9 @@ export const appliquerInterne = internalMutation({
 			);
 		}
 
+		const poses: Id<'reglements'>[] = [];
 		for (const { facture, reste } of choisies) {
-			await ctx.db.insert('reglements', {
+			const pose = await ctx.db.insert('reglements', {
 				organizationId,
 				factureId: facture._id,
 				date,
@@ -261,11 +265,36 @@ export const appliquerInterne = internalMutation({
 				// Le jour que le gérant a donné : une date réelle.
 				dateSource: 'REELLE'
 			});
+			poses.push(pose);
 			await ctx.db.patch(facture._id, { statutPaiement: 'SOLDEE' });
 		}
+
+		// L'HISTORIQUE DE CHAQUE DOSSIER TOUCHÉ (diagnostic UX du 27/10/2026) : réglé par un
+		// virement, le dossier ne disait nulle part ce qui l'avait réglé.
+		const parDossier = new Map<string, { references: string[]; total: bigint }>();
+		for (const { facture, reste } of choisies) {
+			if (facture.creanceId === undefined) continue;
+			const deja = parDossier.get(facture.creanceId) ?? { references: [], total: 0n };
+			deja.references.push(facture.reference);
+			deja.total += reste;
+			parDossier.set(facture.creanceId, deja);
+		}
+		const [annee, mois, jour] = date.split('-');
+		for (const [creanceId, { references: refs, total }] of parDossier) {
+			await ctx.db.insert('journal', {
+				organizationId,
+				cible: creanceId,
+				cle: 'VIREMENT_NOTE',
+				apres: `${refs.join(', ')} ${refs.length > 1 ? 'soldées' : 'soldée'} : ${versEuros(depuisCentimes(total))} €, reçus le ${jour}/${mois}/${annee}.`,
+				auteur: 'GERANT',
+				...(auteurUserId === undefined ? {} : { auteurUserId }),
+				consigneLe: Date.now()
+			});
+		}
+
 		// Un paiement peut faire franchir un jalon (`recouvrement/jalons.ts`).
 		await ctx.scheduler.runAfter(0, internal.recouvrement.jalons.relever, { organizationId });
-		return null;
+		return poses;
 	}
 });
 
@@ -281,18 +310,106 @@ export const appliquer = authedMutation({
 		montant: v.int64(),
 		date: v.string()
 	},
-	returns: v.null(),
-	handler: async (ctx, args): Promise<null> => {
+	returns: v.array(v.id('reglements')),
+	handler: async (ctx, args): Promise<Id<'reglements'>[]> => {
 		const { organizationId } = await getUserOrg(ctx);
-		await ctx.runMutation(internal.recouvrement.lettrage.appliquerInterne, {
+		const poses = await ctx.runMutation(internal.recouvrement.lettrage.appliquerInterne, {
 			organizationId,
-			...args
+			...args,
+			auteurUserId: ctx.user._id
 		});
 		// Un virement rapproché déplace ce qui reste dû : le pilote relit tout de suite.
 		await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
-		return null;
+		return poses;
 	}
 });
+
+/** Une erreur de rapprochement se défait dans la journée, pas un mois plus tard. */
+const DELAI_POUR_ANNULER_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * « ANNULER » UN RAPPROCHEMENT (diagnostic UX du 27/10/2026 : « je n'ai pas trouvé de
+ * moyen d'annuler »). Un virement rapproché au mauvais client arrête les relances de qui
+ * n'a pas payé : la pire erreur d'un logiciel de recouvrement, après relancer qui a payé.
+ *
+ * ⚠️ IL NE RETIRE QUE LES RÈGLEMENTS QU'IL A POSÉS, nommés par leur identifiant, de la
+ * journée, et seulement si rien n'a été noté depuis sur ces factures : défaire par-dessus
+ * un autre paiement rendrait un reste dû faux.
+ */
+export const annuler = authedMutation({
+	args: { reglementIds: v.array(v.id('reglements')) },
+	returns: v.null(),
+	handler: async (ctx, { reglementIds }): Promise<null> => {
+		const { organizationId } = await getUserOrg(ctx);
+		return annulerLesReglements(ctx, organizationId, reglementIds, ctx.user._id);
+	}
+});
+
+/** Le cœur de l'annulation, appelé tel quel par les tests (Better Auth n'y est pas). */
+export async function annulerLesReglements(
+	ctx: MutationCtx,
+	organizationId: Id<'organizations'>,
+	reglementIds: readonly Id<'reglements'>[],
+	userId: string
+): Promise<null> {
+	const maintenant = Date.now();
+	const reglements = await Promise.all(reglementIds.map((id) => ctx.db.get(id)));
+	const parDossier = new Map<string, string[]>();
+	for (const reglement of reglements) {
+		if (
+			reglement === null ||
+			reglement.organizationId !== organizationId ||
+			reglement.nature !== 'PAIEMENT' ||
+			maintenant - reglement.creeLe > DELAI_POUR_ANNULER_MS
+		) {
+			throw new ConvexError(
+				'Ce virement ne s’annule plus d’ici : notez la correction sur la fiche du client.'
+			);
+		}
+		const autres = await ctx.db
+			.query('reglements')
+			.withIndex('by_facture', (q) => q.eq('factureId', reglement.factureId))
+			.collect();
+		if (autres.some((a) => a._id !== reglement._id && a.creeLe > reglement.creeLe)) {
+			throw new ConvexError(
+				'Un autre paiement a été noté depuis sur l’une de ces factures : rien n’a été annulé.'
+			);
+		}
+	}
+	for (const reglement of reglements) {
+		if (reglement === null) continue;
+		await ctx.db.delete(reglement._id);
+		const restants = (
+			await ctx.db
+				.query('reglements')
+				.withIndex('by_facture', (q) => q.eq('factureId', reglement.factureId))
+				.collect()
+		).filter((r) => r._id !== reglement._id);
+		const facture = await ctx.db.get(reglement.factureId);
+		if (facture === null) continue;
+		await ctx.db.patch(facture._id, {
+			statutPaiement: restants.length > 0 ? 'PARTIELLEMENT_PAYEE' : 'IMPAYEE'
+		});
+		if (facture.creanceId !== undefined) {
+			const refs = parDossier.get(facture.creanceId) ?? [];
+			refs.push(facture.reference);
+			parDossier.set(facture.creanceId, refs);
+		}
+	}
+	for (const [creanceId, refs] of parDossier) {
+		await ctx.db.insert('journal', {
+			organizationId,
+			cible: creanceId,
+			cle: 'VIREMENT_ANNULE',
+			apres: `${refs.join(', ')} de nouveau ${refs.length > 1 ? 'ouvertes' : 'ouverte'}.`,
+			auteur: 'GERANT',
+			auteurUserId: userId,
+			consigneLe: maintenant
+		});
+	}
+	await ctx.scheduler.runAfter(0, internal.recouvrement.pilote.reveiller, { organizationId });
+	return null;
+}
 
 /**
  * LE GÉRANT CONFIRME LA RÉPARTITION QUE PRÉVOIT LA LOI (C. civ. 1342-10).
