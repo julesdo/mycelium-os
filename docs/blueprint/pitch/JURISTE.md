@@ -1,5 +1,9 @@
 # Letikette — note à l'attention d'un avocat
 
+> **Périmé depuis le 27/10/2026.** Le plan d'affaires à jour (business plan, stratégie commerciale,
+> marketing et communication) : <https://claude.ai/artifact/H44FhFyJuEsfmKWojDYVtA>. Ce document
+> reste pour le raisonnement du pivot ; sa grille, sa « phase 2 » et ses projections ne font plus foi.
+
 **Objet :** validation d'un registre de paramètres juridiques et avis sur un positionnement.
 **Nature de la mission :** livrable borné, chiffrable. Ce n'est pas une mission de conseil ouverte.
 

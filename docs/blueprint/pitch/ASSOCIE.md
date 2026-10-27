@@ -1,5 +1,9 @@
 # Letikette — note à l'attention d'un futur associé
 
+> **Périmé depuis le 27/10/2026.** Le plan d'affaires à jour (business plan, stratégie commerciale,
+> marketing et communication) : <https://claude.ai/artifact/H44FhFyJuEsfmKWojDYVtA>. Ce document
+> reste pour le raisonnement du pivot ; sa grille, sa « phase 2 » et ses projections ne font plus foi.
+
 Écrite pour être lue en dix minutes, et pour ne rien cacher.
 Si vous cherchez un document qui donne envie, ce n'est pas celui-là : c'est celui qui dit où en est
 le projet, ce qui marche, ce qui n'existe pas encore, et où vous entreriez.

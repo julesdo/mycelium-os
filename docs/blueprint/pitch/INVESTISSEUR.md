@@ -1,5 +1,9 @@
 # Letikette — note à l'attention d'un investisseur
 
+> **Périmé depuis le 27/10/2026.** Le plan d'affaires à jour (business plan, stratégie commerciale,
+> marketing et communication) : <https://claude.ai/artifact/H44FhFyJuEsfmKWojDYVtA>. Ce document
+> reste pour le raisonnement du pivot ; sa grille, sa « phase 2 » et ses projections ne font plus foi.
+
 **Ce document ne contient aucun chiffre que nous n'avons pas construit ou relevé.** Là où une donnée
 de marché nous manque, nous le disons et nous nommons la source à consulter, plutôt que de citer un
 ordre de grandeur de mémoire. C'est la même discipline qui gouverne le produit, où aucune valeur

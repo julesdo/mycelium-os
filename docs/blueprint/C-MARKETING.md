@@ -1,5 +1,9 @@
 # C — Marketing
 
+> **Périmé depuis le 27/10/2026.** Le plan d'affaires à jour (business plan, stratégie commerciale,
+> marketing et communication) : <https://claude.ai/artifact/H44FhFyJuEsfmKWojDYVtA>. Ce document
+> reste pour le raisonnement du pivot ; sa grille, sa « phase 2 » et ses projections ne font plus foi.
+
 Positionnement, segments, messages, canaux, cycle de vente.
 
 ---

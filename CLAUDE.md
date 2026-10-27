@@ -1133,11 +1133,16 @@ calls ne sont **pas** exécutés. L'agent `general-purpose` intégré, lui, exé
 
 ## Liens utiles
 
-- **⭐ Le blueprint** : `/docs/blueprint/` — la direction du projet, d'aujourd'hui à cinq ans.
-  `00-MANIFESTE.md` est le document de référence ; `01-FRONTIERE-MVP.md` dit ce qui est dans le MVP
-  et ce qui n'y est pas ; `02-ROADMAP.md` porte les jalons et les murs. Les annexes couvrent le
-  business, le produit et la technique, le marketing, et le juridique.
-  **En cas de doute sur ce qu'on construit et pourquoi, c'est là qu'on va.**
+- **⭐ Le plan d'affaires** (27/10/2026) : <https://claude.ai/artifact/H44FhFyJuEsfmKWojDYVtA>, un
+  document Claude Docs qui réunit le business plan, la stratégie commerciale, marketing et la
+  communication, sur ce qui tourne en production. Il s'appuie sur l'audit stratégique
+  (`docs/superpowers/recherches/2026-10-19-audit/audit-strategique.md`) et ses décisions
+  (`docs/superpowers/specs/2026-10-19-trajectoire-de-l-audit.md`).
+  **En cas de doute sur ce qu'on vend, à qui et pourquoi, c'est là qu'on va.**
+- **Le blueprint** : `/docs/blueprint/` (07/09/2026), gardé pour le raisonnement du pivot. Sa grille
+  (bilan à 690-1 900 €, 190-390 € par mois), sa « phase 2 » avec agrément et commission et son
+  objectif de 65 M€ sont abandonnés : `A-BUSINESS.md`, `C-MARKETING.md`, `02-ROADMAP.md` et les
+  pitchs ne font plus foi.
 - **Le remodelage vers le recouvrement** : `/docs/remodelage/` — le brief, l'audit du code
   d'origine, l'architecture socle/verticales, et l'état d'avancement.
 - Gabarits extraits de Fleet : `/docs/superpowers/references/`
