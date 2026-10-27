@@ -298,3 +298,89 @@ describe('la purge d’un établissement qui a utilisé un code', () => {
 		DELAI
 	);
 });
+
+describe('un code réservé à un compte', () => {
+	ouvrirLaFacturation();
+
+	it(
+		'refuse tout autre établissement, avec le refus commun, et sert au sien',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, codeId } = await installer(t);
+			const autre = await t.run(async (ctx) => {
+				const id = await ctx.db.insert('organizations', { name: 'Autre', createdAt: Date.now() });
+				await ctx.db.patch(codeId, { reserveA: id });
+				return id;
+			});
+
+			const examen = await t.query(internal.codesPrivilege._examiner, {
+				userId: 'gerant',
+				empreinte: await empreinteDuCode(CODE)
+			});
+			expect(examen).toEqual({ ok: false, raison: REFUS_DU_CODE });
+			expect(await consommer(t)).toEqual({ ok: false, raison: REFUS_DU_CODE });
+			await t.run(async (ctx) => {
+				expect((await ctx.db.get(codeId))?.utiliseLe).toBeUndefined();
+			});
+
+			await t.run(async (ctx) => ctx.db.patch(codeId, { reserveA: organizationId }));
+			expect(await consommer(t)).toMatchObject({ ok: true });
+			expect(autre).not.toBe(organizationId);
+		},
+		DELAI
+	);
+
+	it(
+		'se crée seul, pour un compte qui existe, et se note au journal du compte',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId } = await installer(t);
+			const ligne = (fin: string) => ({ empreinte: `empreinte-${fin}`, fin });
+			const base = {
+				libelle: 'Menuiserie Dupont, geste commercial',
+				avantage: PRO_A_VIE,
+				auteur: 'fondateur@letikette.com'
+			};
+
+			await expect(
+				t.mutation(internal.admin.codes._inserer, {
+					...base,
+					lignes: [ligne('AAAA'), ligne('BBBB')],
+					reserveA: organizationId
+				})
+			).rejects.toThrow(/seul/);
+
+			await t.mutation(internal.admin.codes._inserer, {
+				...base,
+				lignes: [ligne('CCCC')],
+				reserveA: organizationId
+			});
+			await t.run(async (ctx) => {
+				const code = await ctx.db
+					.query('codesPrivilege')
+					.withIndex('by_empreinte', (q) => q.eq('empreinte', 'empreinte-CCCC'))
+					.unique();
+				expect(code?.reserveA).toBe(organizationId);
+				const journal = await ctx.db.query('journalEquipe').collect();
+				expect(journal.map((j) => j.organizationId)).toEqual([organizationId]);
+			});
+		},
+		DELAI
+	);
+
+	it(
+		'se révoque à la purge du compte, et perd son lien',
+		async () => {
+			const t = convexTest(schema, modules);
+			const { organizationId, codeId } = await installer(t);
+			await t.run(async (ctx) => ctx.db.patch(codeId, { reserveA: organizationId }));
+			await t.mutation(internal.rgpd.purgerEtablissement, { organizationId, passe: 0 });
+			await t.run(async (ctx) => {
+				const code = await ctx.db.get(codeId);
+				expect(code?.reserveA).toBeUndefined();
+				expect(code?.revoqueLe).toBeDefined();
+			});
+		},
+		DELAI
+	);
+});

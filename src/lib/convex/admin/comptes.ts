@@ -33,7 +33,7 @@ export const vVueComptes = v.union(
 	v.literal('CETTE_SEMAINE')
 );
 
-function formuleDe(org: Doc<'organizations'>): string {
+export function formuleDe(org: Doc<'organizations'>): string {
 	const nom =
 		org.paddlePlanTier === undefined
 			? 'Découverte'

@@ -87,6 +87,22 @@ function pourUnCode(org: Doc<'organizations'>): EtablissementPourUnCode {
 	};
 }
 
+/**
+ * Le code sert-il à CET établissement ? Disponible, et réservé à lui ou à personne. Un
+ * code réservé à un autre reçoit le refus commun : rien ne dit qu'il existe.
+ */
+function disponiblePour(
+	code: Doc<'codesPrivilege'> | null,
+	organizationId: Id<'organizations'>,
+	maintenant: number
+): code is Doc<'codesPrivilege'> {
+	return (
+		code !== null &&
+		etatDuCode(code, maintenant) === 'DISPONIBLE' &&
+		(code.reserveA === undefined || code.reserveA === organizationId)
+	);
+}
+
 /** Compte un essai d'examen ; rend le refus, ou `null` quand l'examen peut avoir lieu. */
 export const _compterUnEssai = internalMutation({
 	args: { userId: v.string() },
@@ -110,7 +126,7 @@ export const _examiner = internalQuery({
 			.query('codesPrivilege')
 			.withIndex('by_empreinte', (q) => q.eq('empreinte', empreinte))
 			.unique();
-		if (code === null || etatDuCode(code, Date.now()) !== 'DISPONIBLE') {
+		if (!disponiblePour(code, org._id, Date.now())) {
 			return { ok: false, raison: REFUS_DU_CODE };
 		}
 		const etablissement = pourUnCode(org);
@@ -165,8 +181,9 @@ export const _consommer = internalMutation({
 						.withIndex('by_empreinte', (q) => q.eq('empreinte', empreinte))
 						.unique();
 		const etablissement = pourUnCode(org);
+		const disponible = disponiblePour(code, org._id, maintenant);
 		const refus =
-			code === null || etatDuCode(code, maintenant) !== 'DISPONIBLE'
+			code === null || !disponible
 				? REFUS_DU_CODE
 				: refusPourLEtablissement(code.avantage, etablissement);
 		if (code === null || refus !== null) {

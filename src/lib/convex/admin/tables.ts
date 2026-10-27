@@ -108,6 +108,8 @@ export const adminTables = {
 		/** Pour qui, ou pourquoi (« Cabinet Dupont, partenaire ») : lu par l'équipe seule. */
 		libelle: v.string(),
 		avantage: vAvantagePrivilege,
+		/** Le seul établissement qui peut s'en servir ; absent : le premier qui le saisit. */
+		reserveA: v.optional(v.id('organizations')),
 		creePar: v.string(),
 		creeLe: v.number(),
 		expireLe: v.optional(v.number()),
@@ -121,6 +123,7 @@ export const adminTables = {
 		.index('by_empreinte', ['empreinte'])
 		.index('by_cree_le', ['creeLe'])
 		.index('by_organisation', ['utiliseParOrganisation'])
+		.index('by_reserve_a', ['reserveA'])
 };
 
 export const vStatutProspect = v.union(

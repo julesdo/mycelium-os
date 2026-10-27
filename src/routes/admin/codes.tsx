@@ -20,13 +20,17 @@ function CodesAdmin() {
 
 function CodesDuFondateur() {
 	const codes = useQuery(api.admin.codes.lister, {});
+	const comptes = useQuery(api.admin.codes.comptes, {});
 	const creer = useAction(api.admin.codes.creer);
 	const revoquer = useMutation(api.admin.codes.revoquer);
 	const dire = usePlumeDit();
 	return (
 		<EcranCodes
 			lecture={codes === undefined ? { etat: 'attente' } : { etat: 'pret', valeur: codes }}
-			onCreer={(creation) => creer(creation)}
+			comptes={comptes ?? []}
+			onCreer={(creation) =>
+				creer({ ...creation, compte: creation.compte as Id<'organizations'> | null })
+			}
 			onRevoquer={async (id) => {
 				await revoquer({ id: id as Id<'codesPrivilege'> });
 				dire({ titre: 'Code révoqué', texte: 'Il ne sert plus, et c’est noté au journal.' });

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Input, Segmented, SegmentedButton } from '@cladd-ui/react';
+import { Input, Segmented, SegmentedButton, Select } from '@cladd-ui/react';
 import { BadgePercentIcon, InfinityIcon, ShieldAlertIcon } from 'lucide-react';
 import {
 	BoutonPrincipal,
@@ -35,6 +35,10 @@ import { messageDeRefus } from './formulaire-prospect';
  * plus »), la révocation derrière une confirmation qui dit ce qu'elle coupe chez Vercel
  * et fal.
  *
+ * Un code peut être réservé à UN compte, cherché par son nom dans la feuille (la
+ * recherche du « Select » de Cladd, comme le choix d'un destinataire chez Stripe) : il se
+ * crée alors seul, et son libellé reprend le nom du compte.
+ *
  * ⚠️ AUCUN CODE N'EST RELU ICI. La liste montre le libellé, l'avantage et les quatre
  * derniers signes ; le code entier n'existe qu'à l'écran de sa création.
  */
@@ -51,7 +55,16 @@ export interface CodeAffiche {
 	readonly expireLe?: number;
 	readonly utiliseLe?: number;
 	readonly utiliseParNom?: string;
+	/** Le compte auquel il est réservé, s'il l'est. */
+	readonly reservePour?: string;
 	readonly revoqueLe?: number;
+}
+
+/** Un compte auquel réserver un code : le nom, et de quoi départager deux homonymes. */
+export interface CompteAChoisir {
+	readonly id: string;
+	readonly nom: string;
+	readonly detail: string;
 }
 
 export interface CreationDeCodes {
@@ -59,6 +72,8 @@ export interface CreationDeCodes {
 	readonly avantage: AvantagePrivilege;
 	readonly nombre: number;
 	readonly validiteJours: number | null;
+	/** Le seul compte qui pourra s'en servir ; `null` : le premier qui le saisit. */
+	readonly compte: string | null;
 }
 
 /** « 3 codes », « un code ». */
@@ -74,20 +89,32 @@ function etatEnClair(c: CodeAffiche): string {
 	if (c.etat === 'UTILISE' && c.utiliseLe !== undefined) {
 		return `Utilisé le ${dateCourteDeParis(c.utiliseLe)}${c.utiliseParNom ? ` par ${c.utiliseParNom}` : ''}`;
 	}
+	const pour = c.reservePour === undefined ? '' : `Pour ${c.reservePour} · `;
 	if (c.etat === 'EXPIRE' && c.expireLe !== undefined) {
-		return `Expiré le ${dateCourteDeParis(c.expireLe)}, jamais utilisé`;
+		return `${pour}Expiré le ${dateCourteDeParis(c.expireLe)}, jamais utilisé`;
 	}
 	return c.expireLe === undefined
-		? 'Valable sans limite'
-		: `Valable jusqu’au ${dateCourteDeParis(c.expireLe)}`;
+		? `${pour}Valable sans limite`
+		: `${pour}Valable jusqu’au ${dateCourteDeParis(c.expireLe)}`;
+}
+
+/** Sans accents ni capitales : « menuiserie » trouve « Menuiserie Dupont ». */
+function simple(texte: string): string {
+	return texte
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase();
 }
 
 export function EcranCodes({
 	lecture,
+	comptes,
 	onCreer,
 	onRevoquer
 }: {
 	readonly lecture: Lecture<readonly CodeAffiche[]>;
+	/** Les comptes auxquels réserver un code ; vide tant qu'ils se lisent. */
+	readonly comptes: readonly CompteAChoisir[];
 	/** Rend les codes en clair, une seule fois. */
 	readonly onCreer: (creation: CreationDeCodes) => Promise<readonly string[]>;
 	readonly onRevoquer: (id: string) => Promise<void>;
@@ -97,6 +124,7 @@ export function EcranCodes({
 	const [crees, setCrees] = useState<{
 		readonly libelle: string;
 		readonly codes: readonly string[];
+		readonly reservePour?: string;
 	} | null>(null);
 	const [aRevoquer, setARevoquer] = useState<CodeAffiche | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
@@ -185,11 +213,17 @@ export function EcranCodes({
 			<FeuilleDeCreation
 				key={ouvertures}
 				ouverte={creationOuverte}
+				comptes={comptes}
 				onFermer={() => setCreationOuverte(false)}
 				onCreer={async (creation) => {
 					const resultat = await onCreer(creation);
+					const reservePour = comptes.find((c) => c.id === creation.compte)?.nom;
 					setCreationOuverte(false);
-					setCrees({ libelle: creation.libelle, codes: resultat });
+					setCrees({
+						libelle: creation.libelle,
+						codes: resultat,
+						...(reservePour === undefined ? {} : { reservePour })
+					});
 				}}
 			/>
 
@@ -213,6 +247,9 @@ export function EcranCodes({
 							Vous ne {crees !== null && crees.codes.length > 1 ? 'les' : 'le'} reverrez plus :
 							Letikette n’en garde qu’une empreinte. Copiez maintenant, puis envoyez à qui c’est
 							destiné, par un canal privé.
+							{crees?.reservePour === undefined
+								? null
+								: ` Seul ${crees.reservePour} pourra s’en servir.`}
 						</p>
 					</div>
 					<ListeDeRangees>
@@ -280,10 +317,12 @@ export function EcranCodes({
 /** La feuille de création : ce qu'il offre, pour qui, combien de temps, combien. */
 function FeuilleDeCreation({
 	ouverte,
+	comptes,
 	onFermer,
 	onCreer
 }: {
 	readonly ouverte: boolean;
+	readonly comptes: readonly CompteAChoisir[];
 	readonly onFermer: () => void;
 	readonly onCreer: (creation: CreationDeCodes) => Promise<void>;
 }) {
@@ -294,12 +333,21 @@ function FeuilleDeCreation({
 	const [libelle, setLibelle] = useState('');
 	const [validite, setValidite] = useState<number | null>(30);
 	const [nombre, setNombre] = useState<number>(1);
+	const [compte, setCompte] = useState<CompteAChoisir | null>(null);
 	const [erreur, setErreur] = useState<string | null>(null);
 	const [enCours, setEnCours] = useState(false);
 
 	const avantage: AvantagePrivilege =
 		genre === 'A_VIE' ? { genre, formule } : { genre, pourcent, mois };
 	const pret = libelle.trim().length >= 2 && !enCours;
+	// Un code réservé à un compte se crée seul.
+	const combien = compte === null ? nombre : 1;
+
+	const choisirLeCompte = (choisi: CompteAChoisir | null) => {
+		// Le libellé suit le compte tant qu'on ne l'a pas écrit soi-même.
+		if (libelle.trim() === '' || libelle === compte?.nom) setLibelle(choisi?.nom ?? '');
+		setCompte(choisi);
+	};
 
 	const choix = (titre: string, contenu: ReactNode, aide?: string) => (
 		<div className="flex flex-col gap-1.5">
@@ -323,12 +371,18 @@ function FeuilleDeCreation({
 					onClick={() => {
 						setErreur(null);
 						setEnCours(true);
-						onCreer({ libelle: libelle.trim(), avantage, nombre, validiteJours: validite })
+						onCreer({
+							libelle: libelle.trim(),
+							avantage,
+							nombre: combien,
+							validiteJours: validite,
+							compte: compte?.id ?? null
+						})
 							.catch((e: unknown) => setErreur(messageDeRefus(e)))
 							.finally(() => setEnCours(false));
 					}}
 				>
-					{`Créer ${codes(nombre)}`}
+					{`Créer ${codes(combien)}`}
 				</BoutonPrincipal>
 			}
 		>
@@ -388,6 +442,14 @@ function FeuilleDeCreation({
 				</p>
 
 				{choix(
+					'Pour quel compte',
+					<ChoixDuCompte comptes={comptes} compte={compte} onChoisir={choisirLeCompte} />,
+					compte === null
+						? 'Le premier qui le saisit s’en sert. Choisissez un compte pour le lui réserver.'
+						: 'Lui seul pourra s’en servir : tout autre compte qui le saisit sera refusé.'
+				)}
+
+				{choix(
 					'Pour qui',
 					<Input
 						size="lg"
@@ -419,20 +481,77 @@ function FeuilleDeCreation({
 					'Passé ce délai, un code jamais utilisé ne sert plus. Utilisé à temps, son avantage tient.'
 				)}
 
-				{choix(
-					'Combien',
-					<Segmented activeColor="brand" activeVariant="solid-fill" className="w-full">
-						{NOMBRES_DE_CODES.map((n) => (
-							<SegmentedButton key={n} active={nombre === n} onClick={() => setNombre(n)}>
-								{String(n)}
-							</SegmentedButton>
-						))}
-					</Segmented>,
-					'Chacun ne sert qu’une fois.'
-				)}
+				{compte !== null
+					? null
+					: choix(
+							'Combien',
+							<Segmented activeColor="brand" activeVariant="solid-fill" className="w-full">
+								{NOMBRES_DE_CODES.map((n) => (
+									<SegmentedButton key={n} active={nombre === n} onClick={() => setNombre(n)}>
+										{String(n)}
+									</SegmentedButton>
+								))}
+							</Segmented>,
+							'Chacun ne sert qu’une fois.'
+						)}
 
 				{erreur === null ? null : <MessageErreur>{erreur}</MessageErreur>}
 			</div>
 		</FeuillePleinEcran>
+	);
+}
+
+const TOUS_LES_COMPTES: CompteAChoisir = {
+	id: '',
+	nom: 'N’importe quel compte',
+	detail: 'Le premier qui saisit le code'
+};
+
+/**
+ * Le compte, cherché par son nom : le « Select » de Cladd avec sa recherche, le compte
+ * choisi en clair dans le déclencheur. « N’importe quel compte » reste en tête pour
+ * défaire un choix.
+ */
+function ChoixDuCompte({
+	comptes,
+	compte,
+	onChoisir
+}: {
+	readonly comptes: readonly CompteAChoisir[];
+	readonly compte: CompteAChoisir | null;
+	readonly onChoisir: (compte: CompteAChoisir | null) => void;
+}) {
+	const options = [TOUS_LES_COMPTES, ...comptes];
+	return (
+		<Select<CompteAChoisir, string>
+			size="lg"
+			surface="cut"
+			className="w-full"
+			title="Pour quel compte"
+			options={options}
+			value={compte?.id ?? ''}
+			getOptionValue={(c) => c.id}
+			renderOption={({ value }) => value.nom}
+			renderOptionInfo={({ value }) => value.detail}
+			onChange={(id) => onChoisir(comptes.find((c) => c.id === id) ?? null)}
+			search
+			searchFocus
+			searchPlaceholder="Nom du compte"
+			searchNotFound="Aucun compte à ce nom"
+			keyboardHints={false}
+			scrollToSelected
+			popoverPosition="bottom-start"
+			popoverOffset={[0, 4]}
+			popoverClassName="w-80 max-h-96"
+			onSearch={(q) => {
+				const cherche = simple(q.trim());
+				return cherche === ''
+					? options
+					: comptes.filter((c) => simple(`${c.nom} ${c.detail}`).includes(cherche));
+			}}
+			aria-label={`Pour quel compte : ${compte?.nom ?? TOUS_LES_COMPTES.nom}`}
+		>
+			{compte?.nom ?? TOUS_LES_COMPTES.nom}
+		</Select>
 	);
 }

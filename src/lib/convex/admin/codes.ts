@@ -5,6 +5,8 @@ import type { Id } from '../_generated/dataModel';
 import { equipeMutation, equipeQuery, noterAuJournal } from './enveloppe';
 import { equipeAction } from './action';
 import { vAvantagePrivilege } from './tables';
+import { formuleDe } from './comptes';
+import { dateCourteDeParis } from '../../admin/dates';
 import {
 	MAX_CODES_PAR_CREATION,
 	OCTETS_D_UN_CODE,
@@ -25,6 +27,9 @@ import {
  * quand Convex la reprend, celui d'une action vient du système. Le code en clair ne
  * quitte l'action que vers l'écran qui l'a demandé, une fois ; la base n'en reçoit que
  * l'empreinte et les quatre derniers signes.
+ *
+ * Un code peut être RÉSERVÉ à un compte : il se crée seul, et tout autre établissement
+ * reçoit le refus commun. La purge du compte le révoque et en efface le lien.
  *
  * Révoquer un code utilisé met fin à son avantage : l'accès à vie se retire, la remise
  * en attente s'efface, et celle déjà posée chez Paddle s'en retire.
@@ -50,6 +55,8 @@ const vCodeListe = v.object({
 	utiliseLe: v.optional(v.number()),
 	utiliseParNom: v.optional(v.string()),
 	utiliseParOrganisation: v.optional(v.id('organizations')),
+	/** Le nom du compte auquel il est réservé, lu aujourd'hui. */
+	reservePour: v.optional(v.string()),
 	revoqueLe: v.optional(v.number())
 });
 export type CodeListe = Infer<typeof vCodeListe>;
@@ -64,6 +71,12 @@ export const lister = equipeQuery('FONDATEUR')({
 			.order('desc')
 			.take(300);
 		const maintenant = Date.now();
+		const noms = new Map<Id<'organizations'>, string>();
+		for (const c of codes) {
+			if (c.reserveA !== undefined && !noms.has(c.reserveA)) {
+				noms.set(c.reserveA, (await ctx.db.get(c.reserveA))?.name ?? 'un compte supprimé');
+			}
+		}
 		return codes.map((c) => ({
 			id: c._id,
 			fin: c.fin,
@@ -79,7 +92,32 @@ export const lister = equipeQuery('FONDATEUR')({
 			...(c.utiliseParOrganisation === undefined
 				? {}
 				: { utiliseParOrganisation: c.utiliseParOrganisation }),
+			...(c.reserveA === undefined ? {} : { reservePour: noms.get(c.reserveA) }),
 			...(c.revoqueLe === undefined ? {} : { revoqueLe: c.revoqueLe })
+		}));
+	}
+});
+
+const vCompteAChoisir = v.object({
+	id: v.id('organizations'),
+	nom: v.string(),
+	detail: v.string()
+});
+export type CompteAChoisir = Infer<typeof vCompteAChoisir>;
+
+/**
+ * Les comptes auxquels réserver un code, pour la recherche de la feuille de création :
+ * le nom, la formule et le jour d'inscription, qui départagent deux homonymes.
+ */
+export const comptes = equipeQuery('FONDATEUR')({
+	args: {},
+	returns: v.array(vCompteAChoisir),
+	handler: async (ctx): Promise<CompteAChoisir[]> => {
+		const organisations = await ctx.db.query('organizations').order('desc').take(2000);
+		return organisations.map((org) => ({
+			id: org._id,
+			nom: org.name,
+			detail: `${org.accesOffert === undefined ? formuleDe(org) : 'Accès offert'} · inscrit le ${dateCourteDeParis(org.createdAt)}`
 		}));
 	}
 });
@@ -93,9 +131,11 @@ export const creer = equipeAction('FONDATEUR')({
 		avantage: vAvantagePrivilege,
 		nombre: v.number(),
 		/** La validité avant usage, en jours ; `null` : sans limite. */
-		validiteJours: v.union(v.number(), v.null())
+		validiteJours: v.union(v.number(), v.null()),
+		/** Le seul compte qui pourra s'en servir ; `null` : le premier qui le saisit. */
+		compte: v.optional(v.union(v.id('organizations'), v.null()))
 	},
-	handler: async (ctx, { libelle, avantage, nombre, validiteJours }): Promise<string[]> => {
+	handler: async (ctx, { libelle, avantage, nombre, validiteJours, compte }): Promise<string[]> => {
 		const nom = libelle.trim();
 		if (nom.length < 2 || nom.length > 80) {
 			throw new ConvexError('Dites pour qui est ce code, en deux à quatre-vingts signes.');
@@ -119,6 +159,7 @@ export const creer = equipeAction('FONDATEUR')({
 			libelle: nom,
 			avantage,
 			...(validiteJours === null ? {} : { expireLe: Date.now() + validiteJours * JOUR }),
+			...(compte == null ? {} : { reserveA: compte }),
 			auteur: ctx.equipier.email
 		});
 		return codes.map(formaterCode);
@@ -131,11 +172,20 @@ export const _inserer = internalMutation({
 		libelle: v.string(),
 		avantage: vAvantagePrivilege,
 		expireLe: v.optional(v.number()),
+		reserveA: v.optional(v.id('organizations')),
 		auteur: v.string()
 	},
 	returns: v.null(),
-	handler: async (ctx, { lignes, libelle, avantage, expireLe, auteur }): Promise<null> => {
+	handler: async (
+		ctx,
+		{ lignes, libelle, avantage, expireLe, reserveA, auteur }
+	): Promise<null> => {
 		const maintenant = Date.now();
+		const compte = reserveA === undefined ? null : await ctx.db.get(reserveA);
+		if (reserveA !== undefined) {
+			if (compte === null) throw new ConvexError('Ce compte n’existe plus.');
+			if (lignes.length !== 1) throw new ConvexError('Un code réservé à un compte se crée seul.');
+		}
 		for (const { empreinte, fin } of lignes) {
 			// 80 bits ne se croisent pas ; si cela arrivait, rien ne s'écrit et la création
 			// se refait, plutôt qu'un code qui en ouvrirait deux.
@@ -151,15 +201,17 @@ export const _inserer = internalMutation({
 				avantage,
 				creePar: auteur,
 				creeLe: maintenant,
-				...(expireLe === undefined ? {} : { expireLe })
+				...(expireLe === undefined ? {} : { expireLe }),
+				...(reserveA === undefined ? {} : { reserveA })
 			});
 		}
 		await noterAuJournal(ctx, auteur, {
 			action: 'CODES_CREES',
 			cible: {
 				type: 'CODE',
-				libelle: `${lignes.length > 1 ? `${lignes.length} codes` : 'un code'} « ${libelle} » (${libelleDeLAvantage(avantage)})`
-			}
+				libelle: `${lignes.length > 1 ? `${lignes.length} codes` : 'un code'} « ${libelle} » (${libelleDeLAvantage(avantage)})${compte === null ? '' : `, réservé à ${compte.name}`}`
+			},
+			...(compte === null ? {} : { organizationId: compte._id })
 		});
 		return null;
 	}

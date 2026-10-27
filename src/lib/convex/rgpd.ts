@@ -808,6 +808,19 @@ export const purgerEtablissement = internalMutation({
 			.take(50)) {
 			await ctx.db.patch(code._id, { utiliseParOrganisation: undefined, utiliseParNom: undefined });
 		}
+		// Un code qui lui était réservé ne servira plus à personne : il se révoque, et son
+		// lien part avec le compte.
+		for (const code of await ctx.db
+			.query('codesPrivilege')
+			.withIndex('by_reserve_a', (q) => q.eq('reserveA', organizationId))
+			.take(50)) {
+			await ctx.db.patch(code._id, {
+				reserveA: undefined,
+				...(code.revoqueLe === undefined && code.utiliseLe === undefined
+					? { revoqueLe: Date.now(), revoquePar: 'la suppression du compte' }
+					: {})
+			});
+		}
 
 		// 7. L'établissement lui-même, en dernier, et son logo avec lui.
 		const org = await ctx.db.get(organizationId);

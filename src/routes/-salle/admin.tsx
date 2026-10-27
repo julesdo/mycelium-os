@@ -26,7 +26,7 @@ import { EcranTravaux, type TravailDeLaFile } from '../../screens/admin/travaux'
 import { EcranAppels, type FileDAppels } from '../../screens/admin/appels';
 import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
 import { EcranJournal, type EntreeDuJournal } from '../../screens/admin/journal';
-import { EcranCodes, type CodeAffiche } from '../../screens/admin/codes';
+import { EcranCodes, type CodeAffiche, type CompteAChoisir } from '../../screens/admin/codes';
 import type { TacheAffichee } from '../../screens/admin/commun';
 import { bornesDuJourDeParis } from '../../lib/admin/dates';
 import { BarreLateraleAdmin } from '../../app/coquille-admin';
@@ -832,6 +832,17 @@ const CODES: CodeAffiche[] = [
 		expireLe: MAINTENANT + 30 * JOUR
 	},
 	{
+		id: 'k5',
+		fin: 'W2HB',
+		libelle: 'Menuiserie Dupont',
+		avantage: { genre: 'A_VIE', formule: 'solo' },
+		titre: 'Accès Solo offert à vie',
+		etat: 'DISPONIBLE',
+		creePar: 'jules@letikette.com',
+		creeLe: MAINTENANT - 2 * HEURE,
+		reservePour: 'Menuiserie Dupont'
+	},
+	{
 		id: 'k2',
 		fin: 'Q4TZ',
 		libelle: 'Premier client du transport',
@@ -856,10 +867,20 @@ const CODES: CodeAffiche[] = [
 	}
 ];
 
+const COMPTES_A_CHOISIR: readonly CompteAChoisir[] = [
+	{ id: 'org-1', nom: 'Menuiserie Dupont', detail: 'Solo · essai · inscrit le 12 oct.' },
+	{ id: 'org-2', nom: 'Transports Lefèvre et Fils', detail: 'Pro · inscrit le 3 oct.' },
+	{ id: 'org-3', nom: 'Atelier Martin', detail: 'Découverte · inscrit le 27 oct.' },
+	{ id: 'org-4', nom: 'Boulangerie Moreau', detail: 'Accès offert · inscrit le 21 sept.' },
+	{ id: 'org-5', nom: 'Cabinet Girard', detail: 'Équipe · inscrit le 1 oct.' },
+	{ id: 'org-6', nom: 'Électricité Bernard SARL', detail: 'Découverte · inscrit le 19 oct.' }
+];
+
 function DemoCodes({ etat }: { etat: EtatDemo }) {
 	return (
 		<EcranCodes
 			lecture={lectureDemo(etat, CODES, [])}
+			comptes={COMPTES_A_CHOISIR}
 			onCreer={async ({ nombre }) =>
 				['7K2Q-M9XP-4TRC-H8VD', 'B3NF-6WQA-ZP2K-9EJM', 'R5TC-X8VH-2MDQ-KA4W'].slice(
 					0,
