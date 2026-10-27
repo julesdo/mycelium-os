@@ -95,6 +95,12 @@ export function resolveEffectivePlan(org: Doc<'organizations'>): {
 
 	if (org.devPlan) return avec('dev', false);
 
+	// L'accès offert à vie par un code privilège (27/10/2026) : sa formule, sans
+	// prélèvement, avant tout abonnement — celui d'avant se résilie à son échéance.
+	if (org.accesOffert !== undefined) {
+		return paiementOuvert() ? avec(org.accesOffert.formule, false) : avec('dev', true);
+	}
+
 	if (org.paddleStatus === 'active' || org.paddleStatus === 'trialing') {
 		return avec(formuleSouscrite(org) ?? 'equipe', false);
 	}
@@ -205,6 +211,19 @@ export const etatAbonnement = authedQuery({
 			// ferait afficher « il reste -12 jours ».
 			offertJusquAu:
 				org.freeTrialEndsAt && org.freeTrialEndsAt > maintenant ? org.freeTrialEndsAt : null,
+			// Les codes privilèges (27/10/2026) : l'accès offert à vie, la remise d'un code.
+			accesOffert:
+				org.accesOffert === undefined
+					? null
+					: { formule: org.accesOffert.formule, depuis: org.accesOffert.depuis },
+			remisePrivilege:
+				org.remisePrivilege === undefined
+					? null
+					: {
+							pourcent: org.remisePrivilege.pourcent,
+							mois: org.remisePrivilege.mois,
+							etat: org.remisePrivilege.etat
+						},
 			// Le portail Paddle (carte, factures, résiliation) n'a de sens que pour
 			// un établissement que Paddle connaît déjà.
 			clientPaddle: Boolean(org.paddleCustomerId),

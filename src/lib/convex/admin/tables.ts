@@ -33,11 +33,22 @@ export const vCibleJournal = v.object({
 		v.literal('IMPORT'),
 		v.literal('CONVERSATION'),
 		// Le CMS du blog (19/10/2026) : l'adresse de l'article publié.
-		v.literal('ARTICLE')
+		v.literal('ARTICLE'),
+		// Les codes privilèges (27/10/2026) : le libellé du code, jamais le code.
+		v.literal('CODE')
 	),
 	id: v.optional(v.string()),
 	libelle: v.string()
 });
+
+/** Ce qu'offre un code privilège (`AvantagePrivilege`, `lib/paiement/codes-privilege.ts`). */
+export const vAvantagePrivilege = v.union(
+	v.object({ genre: v.literal('REMISE'), pourcent: v.number(), mois: v.number() }),
+	v.object({
+		genre: v.literal('A_VIE'),
+		formule: v.union(v.literal('solo'), v.literal('equipe'), v.literal('pro'))
+	})
+);
 
 export const adminTables = {
 	equipe: defineTable({
@@ -70,14 +81,46 @@ export const adminTables = {
 			v.literal('CONTENU_RETIRE'),
 			v.literal('RELANCES_SUSPENDUES'),
 			// Le CMS du blog (19/10/2026) : chaque publication est un commit sur le dépôt.
-			v.literal('ARTICLE_PUBLIE')
+			v.literal('ARTICLE_PUBLIE'),
+			// Les codes privilèges (27/10/2026) : chaque création, chaque révocation.
+			v.literal('CODES_CREES'),
+			v.literal('CODE_REVOQUE')
 		),
 		cible: vCibleJournal,
 		organizationId: v.optional(v.id('organizations')),
 		le: v.number()
 	})
 		.index('by_org', ['organizationId'])
-		.index('by_le', ['le'])
+		.index('by_le', ['le']),
+
+	/**
+	 * LES CODES PRIVILÈGES (27/10/2026, `admin/codes.ts`, logique dans
+	 * `lib/paiement/codes-privilege.ts`). Une donnée de Letikette : le code naît sans
+	 * établissement, et ne s'y rattache qu'à son usage.
+	 *
+	 * ⚠️ AUCUN CODE EN CLAIR : l'empreinte SHA-256 et les quatre derniers signes. Le code
+	 * se montre une fois, à sa création, puis personne ne peut le relire, pas même le
+	 * fondateur.
+	 */
+	codesPrivilege: defineTable({
+		empreinte: v.string(),
+		fin: v.string(),
+		/** Pour qui, ou pourquoi (« Cabinet Dupont, partenaire ») : lu par l'équipe seule. */
+		libelle: v.string(),
+		avantage: vAvantagePrivilege,
+		creePar: v.string(),
+		creeLe: v.number(),
+		expireLe: v.optional(v.number()),
+		utiliseLe: v.optional(v.number()),
+		utiliseParOrganisation: v.optional(v.id('organizations')),
+		/** Le nom de l'établissement au jour de l'usage ; effacé par sa purge RGPD. */
+		utiliseParNom: v.optional(v.string()),
+		revoqueLe: v.optional(v.number()),
+		revoquePar: v.optional(v.string())
+	})
+		.index('by_empreinte', ['empreinte'])
+		.index('by_cree_le', ['creeLe'])
+		.index('by_organisation', ['utiliseParOrganisation'])
 };
 
 export const vStatutProspect = v.union(

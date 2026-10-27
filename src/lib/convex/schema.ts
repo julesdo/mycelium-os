@@ -139,6 +139,32 @@ export default defineSchema({
 		recompenseEnAttente: v.optional(v.boolean()),
 		/** Une application en cours chez Paddle : deux ne se chevauchent pas. */
 		recompenseEnCoursLe: v.optional(v.number()),
+		/**
+		 * LES CODES PRIVILÈGES (27/10/2026, `codesPrivilege.ts`). L'accès offert à vie par un
+		 * code : la formule ouverte, sans prélèvement (`resolveEffectivePlan`). La remise d'un
+		 * code : en attente d'un abonnement, puis posée chez Paddle. Les essais de saisie :
+		 * cinq par quart d'heure (`tenterUnCode`).
+		 */
+		accesOffert: v.optional(
+			v.object({
+				formule: v.union(v.literal('solo'), v.literal('equipe'), v.literal('pro')),
+				depuis: v.number(),
+				codeId: v.id('codesPrivilege')
+			})
+		),
+		remisePrivilege: v.optional(
+			v.object({
+				pourcent: v.number(),
+				mois: v.number(),
+				codeId: v.id('codesPrivilege'),
+				etat: v.union(v.literal('EN_ATTENTE'), v.literal('APPLIQUEE')),
+				remiseId: v.optional(v.string()),
+				appliqueeLe: v.optional(v.number()),
+				/** Une application en cours chez Paddle : deux ne se chevauchent pas. */
+				enCoursLe: v.optional(v.number())
+			})
+		),
+		essaisDeCodes: v.optional(v.object({ nombre: v.number(), depuis: v.number() })),
 		paddleStatus: v.optional(
 			v.union(
 				v.literal('active'),
@@ -167,7 +193,9 @@ export default defineSchema({
 		// La recommandation : le lien, les recommandés, les mois qui attendent Paddle.
 		.index('by_code_parrainage', ['codeParrainage'])
 		.index('by_parraine_par', ['parrainePar'])
-		.index('by_recompense_en_attente', ['recompenseEnAttente']),
+		.index('by_recompense_en_attente', ['recompenseEnAttente'])
+		// La remise d'un code privilège qui attend Paddle : le passage quotidien la reprend.
+		.index('by_remise_privilege', ['remisePrivilege.etat']),
 
 	/**
 	 * LES PRIX PADDLE DE CE DÉPLOIEMENT, rangés par le catalogue

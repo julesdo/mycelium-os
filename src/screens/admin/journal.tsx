@@ -9,7 +9,9 @@ import {
 	EraserIcon,
 	MessageSquareIcon,
 	BellOffIcon,
-	NewspaperIcon
+	NewspaperIcon,
+	TicketIcon,
+	TicketXIcon
 } from 'lucide-react';
 import { PageEcran, type Lecture } from '../../ui';
 import { HistoriqueParJour } from '../../ui/admin';
@@ -49,7 +51,9 @@ const PHRASES: Readonly<Record<string, { icone: ReactNode; phrase: (libelle: str
 			icone: <BellOffIcon />,
 			phrase: (l) => `a suspendu les relances automatiques de ${l}`
 		},
-		ARTICLE_PUBLIE: { icone: <NewspaperIcon />, phrase: (l) => `a publié l’article « ${l} »` }
+		ARTICLE_PUBLIE: { icone: <NewspaperIcon />, phrase: (l) => `a publié l’article « ${l} »` },
+		CODES_CREES: { icone: <TicketIcon />, phrase: (l) => `a créé ${l}` },
+		CODE_REVOQUE: { icone: <TicketXIcon />, phrase: (l) => `a révoqué ${l}` }
 	};
 
 export function EcranJournal({

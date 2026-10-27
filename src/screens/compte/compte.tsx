@@ -19,6 +19,7 @@ import {
 	ShieldIcon,
 	SlidersHorizontalIcon,
 	SunIcon,
+	TicketIcon,
 	UserIcon,
 	UsersIcon
 } from 'lucide-react';
@@ -49,6 +50,7 @@ import { FormulaireEtablissement, type EtablissementAffiche } from './etablissem
 import { SectionRegles, resumeRegles, type ReglesAffichees } from './regles';
 import { SectionProfil, type ProfilAffiche } from './profil';
 import { SectionFacturation, type AbonnementAffiche, type CaisseAffichee } from './facturation';
+import { resumeDuCodePrivilege } from './code-privilege';
 import type { GestionAffichee } from './gestion-formule';
 import { SectionEquipe, type EquipeAffichee } from './equipe';
 import { SectionDonnees, type DonneesAffichees } from './donnees';
@@ -190,6 +192,11 @@ export interface CompteAffiche {
 		readonly resume: string | undefined;
 		readonly onOuvrir: () => void;
 	};
+	/**
+	 * « Code privilège » (27/10/2026) : pour un administrateur seulement. La rangée ouvre
+	 * une page pleine, que la route monte (`app/code-privilege.tsx`).
+	 */
+	readonly codePrivilege?: { readonly onOuvrir: () => void };
 	readonly onSeDeconnecter: () => void;
 }
 
@@ -432,6 +439,21 @@ export function EcranCompte({
 							)}
 						</AvecLaLecture>
 					</RangeeDepliable>
+
+					{/*
+					  LE CODE PRIVILÈGE, JUSTE SOUS L'ABONNEMENT qu'il change, comme « Redeem
+					  Gift Card or Code » sous les achats de l'App Store (27/10/2026).
+					*/}
+					{pret.codePrivilege === undefined ? null : (
+						<RangeeBouton
+							icone={<TicketIcon />}
+							titre="Code privilège"
+							valeur={resumeDuCodePrivilege(
+								pret.abonnement.etat === 'pret' ? pret.abonnement.valeur : undefined
+							)}
+							onClick={pret.codePrivilege.onOuvrir}
+						/>
+					)}
 
 					<RangeeDepliable
 						cle="equipe"

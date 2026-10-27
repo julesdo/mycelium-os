@@ -21,6 +21,7 @@ import type { EtatDirigeants, EtatImmatriculation, Lecture } from '../../ui';
 import { aujourdHuiISO, PileDeConnexions } from '../../ui';
 import { EcranCompte, type CompteAffiche } from '../../screens/compte/compte';
 import { LogoEtCouleursEnPlace, useResumeDeLaMarque } from '../../app/logo-et-couleurs';
+import { CodePrivilegeEnPlace } from '../../app/code-privilege';
 import type { OrdreParDefaut, ReglesAffichees } from '../../screens/compte/regles';
 import {
 	messageDErreur,
@@ -79,6 +80,9 @@ function PageCompte() {
 	const [marqueOuverte, setMarqueOuverte] = useState(ouvrir === 'marque');
 	const [ouverturesMarque, setOuverturesMarque] = useState(0);
 	const resumeMarque = useResumeDeLaMarque();
+	// « Code privilège » (27/10/2026) : `?ouvrir=code` l'ouvre d'emblée ; chaque ouverture repart d'une saisie vide.
+	const [codeOuvert, setCodeOuvert] = useState(ouvrir === 'code');
+	const [ouverturesCode, setOuverturesCode] = useState(0);
 	const { theme, setTheme } = useTheme();
 
 	// ── L'établissement et l'identité du créancier ───────────────────────────
@@ -631,6 +635,17 @@ function PageCompte() {
 				setMarqueOuverte(true);
 			}
 		},
+		// Un code change l'abonnement : seul un administrateur le saisit.
+		...(monRole?.role === 'ORG_ADMIN'
+			? {
+					codePrivilege: {
+						onOuvrir: () => {
+							setOuverturesCode((n) => n + 1);
+							setCodeOuvert(true);
+						}
+					}
+				}
+			: {}),
 		onSeDeconnecter: () => void authClient.signOut().then(() => navigate({ to: '/connexion' }))
 	};
 
@@ -647,6 +662,13 @@ function PageCompte() {
 				ouverte={marqueOuverte}
 				onFermer={() => setMarqueOuverte(false)}
 			/>
+			{monRole?.role === 'ORG_ADMIN' ? (
+				<CodePrivilegeEnPlace
+					key={`code-${ouverturesCode}`}
+					ouverte={codeOuvert}
+					onFermer={() => setCodeOuvert(false)}
+				/>
+			) : null}
 		</>
 	);
 }

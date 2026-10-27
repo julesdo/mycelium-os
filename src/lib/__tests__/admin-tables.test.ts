@@ -36,6 +36,9 @@ const TABLES_AUTORISEES = new Set([
 	// publiques et leurs ajouts au CRM, jamais un dossier.
 	'travauxEquipe',
 	'reglagesProspection',
+	// Les codes privilèges (27/10/2026) : des empreintes, des libellés et l'établissement qui
+	// en a usé, jamais un dossier.
+	'codesPrivilege',
 	// Le support (16/10/2026) : ce que le gérant écrit À l'équipe, pas ses dossiers. Le
 	// contexte du compte passe par `support/contexte.ts`, qui ne rend que des scalaires.
 	'conversationsSupport',

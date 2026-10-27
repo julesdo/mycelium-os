@@ -22,7 +22,8 @@ import {
 	placesFondateurs
 } from '../paiement/offres';
 import { jourDeParis } from '../admin/dates';
-import { essaiDisponible, limitesDe, paiementOuvert } from './billing';
+import { essaiDisponible, formuleSouscrite, limitesDe, paiementOuvert } from './billing';
+import { corpsDeLaRemisePrivilege } from '../paiement/codes-privilege';
 import { remiseQuiCourt } from '../croissance/parrainage';
 import {
 	CLE_ORGANISATION,
@@ -420,6 +421,15 @@ export const upsertSubscription = internalMutation({
 		// Un mois offert qui attendait un abonnement, ou la fin d'une autre remise.
 		if (org.recompenseEnAttente === true) {
 			await ctx.scheduler.runAfter(0, internal.paddle.appliquerLesRecompenses, {
+				organizationId: org._id
+			});
+		}
+		// La remise d'un code privilège qui attendait un abonnement (27/10/2026).
+		if (
+			org.remisePrivilege?.etat === 'EN_ATTENTE' &&
+			(statut === 'active' || statut === 'trialing')
+		) {
+			await ctx.scheduler.runAfter(0, internal.paddle.appliquerLaRemisePrivilege, {
 				organizationId: org._id
 			});
 		}
@@ -848,9 +858,238 @@ export const appliquerLesRecompenses = internalAction({
 	}
 });
 
+// ── Les codes privilèges (27/10/2026, `codesPrivilege.ts`) ──────────────────
+
+/**
+ * LA REMISE D'UN CODE PRIVILÈGE, POSÉE SUR L'ABONNEMENT : un pourcentage sur les N
+ * prochains prélèvements au mois, ou un montant déduit de la prochaine échéance annuelle
+ * (`corpsDeLaRemisePrivilege`). Elle remplace une remise qui courait : c'est un geste du
+ * fondateur. Un refus de Paddle la laisse en attente ; le passage quotidien la reprend.
+ */
+export const appliquerLaRemisePrivilege = internalAction({
+	args: { organizationId: v.id('organizations') },
+	returns: v.null(),
+	handler: async (ctx, { organizationId }): Promise<null> => {
+		if (!process.env.PADDLE_API_KEY || !paiementOuvert()) return null;
+		const reserve = await ctx.runMutation(internal.paddle._reserverLaRemisePrivilege, {
+			organizationId
+		});
+		if (reserve === null) return null;
+		try {
+			const remise = await appelerPaddle(
+				'POST',
+				'/discounts',
+				corpsDeLaRemisePrivilege({
+					organisationId: organizationId,
+					avantage: { genre: 'REMISE', pourcent: reserve.pourcent, mois: reserve.mois },
+					formule: reserve.formule,
+					rythme: reserve.rythme
+				})
+			);
+			const remiseId = typeof remise.id === 'string' ? remise.id : null;
+			if (remiseId === null) throw new Error('Paddle n’a pas rendu la remise.');
+			await appelerPaddle('PATCH', `/subscriptions/${reserve.abonnementId}`, {
+				discount: { id: remiseId, effective_from: 'next_billing_period' }
+			});
+			await ctx.runMutation(internal.paddle._noterLaRemisePrivilege, {
+				organizationId,
+				codeId: reserve.codeId,
+				remiseId,
+				abonnementId: reserve.abonnementId
+			});
+			await ctx.scheduler.runAfter(0, internal.paddle.releverLeProchainPrelevement, {
+				organizationId,
+				abonnementId: reserve.abonnementId
+			});
+		} catch {
+			await ctx.runMutation(internal.paddle._libererLaRemisePrivilege, { organizationId });
+		}
+		return null;
+	}
+});
+
+const DIX_MINUTES = 10 * 60 * 1000;
+
+export const _reserverLaRemisePrivilege = internalMutation({
+	args: { organizationId: v.id('organizations') },
+	returns: v.union(
+		v.null(),
+		v.object({
+			abonnementId: v.string(),
+			codeId: v.id('codesPrivilege'),
+			pourcent: v.number(),
+			mois: v.number(),
+			formule: vFormule,
+			rythme: vRythme
+		})
+	),
+	handler: async (
+		ctx,
+		{ organizationId }
+	): Promise<{
+		abonnementId: string;
+		codeId: Id<'codesPrivilege'>;
+		pourcent: number;
+		mois: number;
+		formule: Formule;
+		rythme: Rythme;
+	} | null> => {
+		const org = await ctx.db.get(organizationId);
+		const remise = org?.remisePrivilege;
+		if (org === null || remise === undefined || remise.etat !== 'EN_ATTENTE') return null;
+		if (org.accesOffert !== undefined) return null;
+		if (org.paddleStatus !== 'active' && org.paddleStatus !== 'trialing') return null;
+		const formule = formuleSouscrite(org);
+		if (formule === null || org.paddleRythme === undefined || !org.paddleSubscriptionId)
+			return null;
+		// Deux applications ne se chevauchent pas : la seconde attend la fin de la première.
+		const maintenant = Date.now();
+		if (remise.enCoursLe !== undefined && maintenant - remise.enCoursLe < DIX_MINUTES) return null;
+		await ctx.db.patch(organizationId, { remisePrivilege: { ...remise, enCoursLe: maintenant } });
+		return {
+			abonnementId: org.paddleSubscriptionId,
+			codeId: remise.codeId,
+			pourcent: remise.pourcent,
+			mois: remise.mois,
+			formule,
+			rythme: org.paddleRythme
+		};
+	}
+});
+
+export const _libererLaRemisePrivilege = internalMutation({
+	args: { organizationId: v.id('organizations') },
+	returns: v.null(),
+	handler: async (ctx, { organizationId }): Promise<null> => {
+		const org = await ctx.db.get(organizationId);
+		const remise = org?.remisePrivilege;
+		if (org === null || remise === undefined || remise.etat !== 'EN_ATTENTE') return null;
+		await ctx.db.patch(organizationId, {
+			remisePrivilege: {
+				pourcent: remise.pourcent,
+				mois: remise.mois,
+				codeId: remise.codeId,
+				etat: 'EN_ATTENTE'
+			}
+		});
+		return null;
+	}
+});
+
+export const _noterLaRemisePrivilege = internalMutation({
+	args: {
+		organizationId: v.id('organizations'),
+		codeId: v.id('codesPrivilege'),
+		remiseId: v.string(),
+		abonnementId: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, { organizationId, codeId, remiseId, abonnementId }): Promise<null> => {
+		const org = await ctx.db.get(organizationId);
+		const remise = org?.remisePrivilege;
+		// Révoqué pendant que Paddle répondait : la remise qui vient d'être posée s'en retire.
+		if (org === null || remise === undefined || remise.codeId !== codeId) {
+			await ctx.scheduler.runAfter(0, internal.paddle.retirerLaRemisePrivilege, {
+				organizationId,
+				abonnementId,
+				remiseId
+			});
+			return null;
+		}
+		await ctx.db.patch(organizationId, {
+			remisePrivilege: {
+				pourcent: remise.pourcent,
+				mois: remise.mois,
+				codeId: remise.codeId,
+				etat: 'APPLIQUEE',
+				remiseId,
+				appliqueeLe: Date.now()
+			}
+		});
+		return null;
+	}
+});
+
+/**
+ * L'ABONNEMENT D'AVANT UN ACCÈS À VIE, RÉSILIÉ : à son échéance (ce qui est payé est
+ * acquis), tout de suite pendant un essai (rien n'a été prélevé). Paddle muet : on
+ * réessaie, une heure plus tard, puis deux, jusqu'à cinq fois.
+ */
+export const resilierPourAccesOffert = internalAction({
+	args: { organizationId: v.id('organizations'), tentative: v.number() },
+	returns: v.null(),
+	handler: async (ctx, { organizationId, tentative }): Promise<null> => {
+		if (!process.env.PADDLE_API_KEY) return null;
+		const abonnement = await ctx.runQuery(internal.paddle._abonnementAResilier, { organizationId });
+		if (abonnement === null) return null;
+		try {
+			const data = await appelerPaddle('POST', `/subscriptions/${abonnement.id}/cancel`, {
+				effective_from: abonnement.statut === 'trialing' ? 'immediately' : 'next_billing_period'
+			});
+			await inscrireLaReponse(ctx, data, organizationId);
+		} catch {
+			if (tentative < 5) {
+				await ctx.scheduler.runAfter(
+					(tentative + 1) * 60 * 60 * 1000,
+					internal.paddle.resilierPourAccesOffert,
+					{ organizationId, tentative: tentative + 1 }
+				);
+			}
+		}
+		return null;
+	}
+});
+
+export const _abonnementAResilier = internalQuery({
+	args: { organizationId: v.id('organizations') },
+	returns: v.union(
+		v.null(),
+		v.object({ id: v.string(), statut: v.union(v.literal('active'), v.literal('trialing')) })
+	),
+	handler: async (
+		ctx,
+		{ organizationId }
+	): Promise<{ id: string; statut: 'active' | 'trialing' } | null> => {
+		const org = await ctx.db.get(organizationId);
+		if (org === null || org.accesOffert === undefined || !org.paddleSubscriptionId) return null;
+		if (org.paddleStatus !== 'active' && org.paddleStatus !== 'trialing') return null;
+		if (org.paddleResiliationLe !== undefined) return null;
+		return { id: org.paddleSubscriptionId, statut: org.paddleStatus };
+	}
+});
+
+/**
+ * LA REMISE D'UN CODE RÉVOQUÉ, RETIRÉE DE L'ABONNEMENT — seulement si c'est encore elle
+ * qui court : une autre remise posée depuis n'est pas la nôtre à retirer.
+ */
+export const retirerLaRemisePrivilege = internalAction({
+	args: {
+		organizationId: v.id('organizations'),
+		abonnementId: v.string(),
+		remiseId: v.string()
+	},
+	returns: v.null(),
+	handler: async (ctx, { organizationId, abonnementId, remiseId }): Promise<null> => {
+		if (!process.env.PADDLE_API_KEY) return null;
+		try {
+			const abonnement = await appelerPaddle('GET', `/subscriptions/${abonnementId}`);
+			const enCours = abonnement.discount as { id?: unknown } | null | undefined;
+			if (enCours?.id !== remiseId) return null;
+			await appelerPaddle('PATCH', `/subscriptions/${abonnementId}`, { discount: null });
+			await ctx.scheduler.runAfter(0, internal.paddle.releverLeProchainPrelevement, {
+				organizationId,
+				abonnementId
+			});
+		} catch {
+			// Paddle muet : la remise court jusqu'à sa fin, le code reste révoqué.
+		}
+		return null;
+	}
+});
+
 /** Inscrit l'abonnement que Paddle vient de rendre, comme le ferait son rappel. */
 async function inscrireLaReponse(
-	ctx: CtxAction,
+	ctx: Pick<ActionCtx, 'runMutation'>,
 	data: Record<string, unknown>,
 	organizationId: Id<'organizations'>
 ): Promise<void> {

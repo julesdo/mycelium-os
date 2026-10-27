@@ -38,7 +38,8 @@ import {
 	BriefcaseIcon,
 	HandshakeIcon,
 	NewspaperIcon,
-	ListRestartIcon
+	ListRestartIcon,
+	TicketIcon
 } from 'lucide-react';
 import { api } from '../lib/convex/_generated/api';
 import type { RoleEquipe } from '../lib/admin/acces';
@@ -402,6 +403,14 @@ const GROUPES: readonly {
 				vers: '/admin/journal',
 				Icone: ScrollTextIcon,
 				prefixes: ['/admin/journal']
+			},
+			// Les codes privilèges (27/10/2026) : le fondateur seul les crée et les révoque.
+			{
+				cle: 'codes',
+				libelle: 'Codes privilèges',
+				vers: '/admin/codes',
+				Icone: TicketIcon,
+				prefixes: ['/admin/codes']
 			}
 		]
 	}

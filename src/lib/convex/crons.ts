@@ -177,6 +177,14 @@ crons.daily(
 	{}
 );
 
+// La remise d'un code privilège que Paddle n'a pas prise le jour de l'activation (27/10/2026).
+crons.daily(
+	'remisesPrivilege',
+	{ hourUTC: 7, minuteUTC: 40 },
+	internal.codesPrivilege.reprendreLesRemises,
+	{}
+);
+
 export default crons;
 
 /*

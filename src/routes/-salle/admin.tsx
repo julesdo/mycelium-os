@@ -26,6 +26,7 @@ import { EcranTravaux, type TravailDeLaFile } from '../../screens/admin/travaux'
 import { EcranAppels, type FileDAppels } from '../../screens/admin/appels';
 import { EcranEquipe, type MembreDeLEquipe } from '../../screens/admin/equipe';
 import { EcranJournal, type EntreeDuJournal } from '../../screens/admin/journal';
+import { EcranCodes, type CodeAffiche } from '../../screens/admin/codes';
 import type { TacheAffichee } from '../../screens/admin/commun';
 import { bornesDuJourDeParis } from '../../lib/admin/dates';
 import { BarreLateraleAdmin } from '../../app/coquille-admin';
@@ -818,6 +819,58 @@ function DemoJournal({ etat }: { etat: EtatDemo }) {
 	);
 }
 
+const CODES: CodeAffiche[] = [
+	{
+		id: 'k1',
+		fin: 'H8VD',
+		libelle: 'Cabinet Martin, partenaire',
+		avantage: { genre: 'REMISE', pourcent: 100, mois: 3 },
+		titre: '3 mois offerts',
+		etat: 'DISPONIBLE',
+		creePar: 'jules@letikette.com',
+		creeLe: MAINTENANT - HEURE,
+		expireLe: MAINTENANT + 30 * JOUR
+	},
+	{
+		id: 'k2',
+		fin: 'Q4TZ',
+		libelle: 'Premier client du transport',
+		avantage: { genre: 'A_VIE', formule: 'pro' },
+		titre: 'Accès Pro offert à vie',
+		etat: 'UTILISE',
+		creePar: 'jules@letikette.com',
+		creeLe: MAINTENANT - 6 * JOUR,
+		utiliseLe: MAINTENANT - 2 * JOUR,
+		utiliseParNom: 'Garnier Bâtiment'
+	},
+	{
+		id: 'k3',
+		fin: '7MNC',
+		libelle: 'Salon des TPE, Paris',
+		avantage: { genre: 'REMISE', pourcent: 50, mois: 3 },
+		titre: '−50\u00a0% pendant 3 mois',
+		etat: 'REVOQUE',
+		creePar: 'jules@letikette.com',
+		creeLe: MAINTENANT - 9 * JOUR,
+		revoqueLe: MAINTENANT - 3 * JOUR
+	}
+];
+
+function DemoCodes({ etat }: { etat: EtatDemo }) {
+	return (
+		<EcranCodes
+			lecture={lectureDemo(etat, CODES, [])}
+			onCreer={async ({ nombre }) =>
+				['7K2Q-M9XP-4TRC-H8VD', 'B3NF-6WQA-ZP2K-9EJM', 'R5TC-X8VH-2MDQ-KA4W'].slice(
+					0,
+					Math.min(nombre, 3)
+				)
+			}
+			onRevoquer={RIEN_ASYNC}
+		/>
+	);
+}
+
 /** La barre latérale du CRM, seule : la salle rend ses écrans dans la coquille de l'application. */
 function DemoBarreLaterale({ variante }: { etat: EtatDemo; variante?: string }) {
 	const [reduite, setReduite] = useState(variante === 'repliée');
@@ -907,5 +960,6 @@ export const ECRANS_ADMIN: readonly EcranDuProduit[] = [
 	{ route: '/admin/taches', libelle: 'admin · tâches', vide: true, Demo: DemoTaches },
 	{ route: '/admin/travaux', libelle: 'admin · file d’attente', vide: true, Demo: DemoTravaux },
 	{ route: '/admin/equipe', libelle: 'admin · équipe', vide: false, Demo: DemoEquipe },
-	{ route: '/admin/journal', libelle: 'admin · journal', vide: true, Demo: DemoJournal }
+	{ route: '/admin/journal', libelle: 'admin · journal', vide: true, Demo: DemoJournal },
+	{ route: '/admin/codes', libelle: 'admin · codes privilèges', vide: true, Demo: DemoCodes }
 ];

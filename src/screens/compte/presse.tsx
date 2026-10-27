@@ -1,6 +1,6 @@
 import type { Lecture } from '../../ui';
 import { pluriel } from '../../ui';
-import { GRILLE } from '../../lib/config/tarifs';
+import { GRILLE, type Formule } from '../../lib/config/tarifs';
 import type { Theme } from '../../app/use-theme';
 import type { AbonnementAffiche } from './facturation';
 import type { EquipeAffichee } from './equipe';
@@ -214,6 +214,7 @@ export type EtatFacturation =
 	| { readonly genre: 'developpement' }
 	| { readonly genre: 'essai'; readonly jours: number; readonly finLe: number | null }
 	| { readonly genre: 'abonne' }
+	| { readonly genre: 'aVie'; readonly formule: Formule }
 	| { readonly genre: 'offert'; readonly jours: number }
 	| { readonly genre: 'decouverte'; readonly resilie: boolean }
 	| { readonly genre: 'ferme'; readonly cause: CauseDeFermeture }
@@ -225,6 +226,11 @@ export function etatDeLaFacturation(
 	abonnement: AbonnementAffiche,
 	maintenant: number
 ): EtatFacturation {
+	// Un code privilège qui offre l'accès à vie prime sur l'abonnement d'avant, qui
+	// s'arrête à son échéance (27/10/2026, `resolveEffectivePlan`).
+	if (abonnement.accesOffert && abonnement.paiementOuvert) {
+		return { genre: 'aVie', formule: abonnement.accesOffert.formule };
+	}
 	if (abonnement.statut === 'trialing') {
 		const finLe = abonnement.essaiFinLe ?? abonnement.prochainPrelevementLe;
 		return { genre: 'essai', jours: finLe === null ? 0 : joursJusqua(finLe, maintenant), finLe };
@@ -306,6 +312,8 @@ export function resumeFacturation(
 					? {}
 					: { legende: abonnement.rythme === 'annuel' ? 'À l’année' : 'Au mois' })
 			};
+		case 'aVie':
+			return { valeur: `${GRILLE[etat.formule].nom}, offert à vie` };
 		case 'offert':
 			return { valeur: `Offert, ${etat.jours} j` };
 		case 'decouverte':

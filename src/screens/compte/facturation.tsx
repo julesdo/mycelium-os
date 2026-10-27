@@ -22,6 +22,7 @@ import {
 	RefusEnQuatreParties
 } from '../../ui';
 import { montantPreleve } from '../../lib/paiement/paddle';
+import { libelleDeLAvantage } from '../../lib/paiement/codes-privilege';
 import type { MontantsTTC } from '../../ui/choix-formule';
 import { ceQuiEstPreleve, montantCourt, montantHT } from '../../ui/montants-abonnement';
 import { OuvertureEnCours } from './offre';
@@ -56,6 +57,14 @@ export interface AbonnementAffiche {
 	readonly resiliationLe: number | null;
 	/** Un accès offert qui court encore. */
 	readonly offertJusquAu: number | null;
+	/** L'accès offert à vie par un code privilège (27/10/2026). */
+	readonly accesOffert?: { readonly formule: Formule; readonly depuis: number } | null;
+	/** La remise d'un code privilège : en attente d'un abonnement, ou posée chez Paddle. */
+	readonly remisePrivilege?: {
+		readonly pourcent: number;
+		readonly mois: number;
+		readonly etat: 'EN_ATTENTE' | 'APPLIQUEE';
+	} | null;
 	/** Paddle connaît déjà l'établissement : le portail (carte, factures, résiliation) s'ouvre. */
 	readonly clientPaddle: boolean;
 	/** Trente jours offerts à la souscription, ou un prélèvement tout de suite. */
@@ -189,6 +198,16 @@ export function SectionFacturation({
 					enCours={caisse.enCours === 'formule'}
 					onChoisir={caisse.onChoisirFondateurs}
 				/>
+			) : null}
+
+			{abonnement.remisePrivilege ? (
+				<p className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Votre code privilège :{' '}
+					{libelleDeLAvantage({ genre: 'REMISE', ...abonnement.remisePrivilege })}.{' '}
+					{abonnement.remisePrivilege.etat === 'EN_ATTENTE'
+						? 'La remise s’appliquera dès que votre formule courra.'
+						: 'La remise est posée sur votre abonnement.'}
+				</p>
 			) : null}
 
 			{etat.genre === 'ouverture' || etat.genre === 'developpement' ? null : (
@@ -417,6 +436,21 @@ function EtatCourant({
 				/>
 				{gerer}
 			</>
+		);
+	}
+
+	if (etat.genre === 'aVie') {
+		return (
+			<CarteEtat titre={`${GRILLE[etat.formule].nom}, offert à vie`}>
+				<span className="text-cladd-xs leading-relaxed text-cladd-fg-soft">
+					Offert par un code privilège
+					{abonnement.accesOffert ? ` le ${dateEnClair(abonnement.accesOffert.depuis)}` : ''} :
+					toutes les fonctions de {GRILLE[etat.formule].nom}, sans aucun prélèvement.
+					{abonnement.resiliationLe !== null
+						? ` L’abonnement d’avant s’arrête le ${dateEnClair(abonnement.resiliationLe)}.`
+						: ''}
+				</span>
+			</CarteEtat>
 		);
 	}
 

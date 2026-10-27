@@ -34,6 +34,7 @@ import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as TauxDesPenalitesDeRetardRouteImport } from './routes/taux-des-penalites-de-retard'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAppelsRouteImport } from './routes/admin/appels'
+import { Route as AdminCodesRouteImport } from './routes/admin/codes'
 import { Route as AdminEquipeRouteImport } from './routes/admin/equipe'
 import { Route as AdminJournalRouteImport } from './routes/admin/journal'
 import { Route as AdminTachesRouteImport } from './routes/admin/taches'
@@ -220,6 +221,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAppelsRoute = AdminAppelsRouteImport.update({
   id: '/appels',
   path: '/appels',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCodesRoute = AdminCodesRouteImport.update({
+  id: '/codes',
+  path: '/codes',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminEquipeRoute = AdminEquipeRouteImport.update({
@@ -548,6 +554,7 @@ export interface FileRoutesByFullPath {
   '/tarifs': typeof TarifsRoute
   '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
   '/admin/appels': typeof AdminAppelsRoute
+  '/admin/codes': typeof AdminCodesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -633,6 +640,7 @@ export interface FileRoutesByTo {
   '/tarifs': typeof TarifsRoute
   '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
   '/admin/appels': typeof AdminAppelsRoute
+  '/admin/codes': typeof AdminCodesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -721,6 +729,7 @@ export interface FileRoutesById {
   '/tarifs': typeof TarifsRoute
   '/taux-des-penalites-de-retard': typeof TauxDesPenalitesDeRetardRoute
   '/admin/appels': typeof AdminAppelsRoute
+  '/admin/codes': typeof AdminCodesRoute
   '/admin/equipe': typeof AdminEquipeRoute
   '/admin/journal': typeof AdminJournalRoute
   '/admin/taches': typeof AdminTachesRoute
@@ -810,6 +819,7 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/taux-des-penalites-de-retard'
     | '/admin/appels'
+    | '/admin/codes'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -895,6 +905,7 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/taux-des-penalites-de-retard'
     | '/admin/appels'
+    | '/admin/codes'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -982,6 +993,7 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/taux-des-penalites-de-retard'
     | '/admin/appels'
+    | '/admin/codes'
     | '/admin/equipe'
     | '/admin/journal'
     | '/admin/taches'
@@ -1257,6 +1269,13 @@ declare module '@tanstack/react-router' {
       path: '/appels'
       fullPath: '/admin/appels'
       preLoaderRoute: typeof AdminAppelsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/codes': {
+      id: '/admin/codes'
+      path: '/codes'
+      fullPath: '/admin/codes'
+      preLoaderRoute: typeof AdminCodesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/equipe': {
@@ -1684,6 +1703,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteRouteChildren {
   AdminAppelsRoute: typeof AdminAppelsRoute
+  AdminCodesRoute: typeof AdminCodesRoute
   AdminEquipeRoute: typeof AdminEquipeRoute
   AdminJournalRoute: typeof AdminJournalRoute
   AdminTachesRoute: typeof AdminTachesRoute
@@ -1706,6 +1726,7 @@ interface AdminRouteRouteChildren {
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAppelsRoute: AdminAppelsRoute,
+  AdminCodesRoute: AdminCodesRoute,
   AdminEquipeRoute: AdminEquipeRoute,
   AdminJournalRoute: AdminJournalRoute,
   AdminTachesRoute: AdminTachesRoute,

@@ -800,6 +800,15 @@ export const purgerEtablissement = internalMutation({
 			return null;
 		}
 
+		// Les codes privilèges qu'il a utilisés (27/10/2026) : ce sont des données de
+		// Letikette, ils restent ; son nom et son lien, eux, partent avec lui.
+		for (const code of await ctx.db
+			.query('codesPrivilege')
+			.withIndex('by_organisation', (q) => q.eq('utiliseParOrganisation', organizationId))
+			.take(50)) {
+			await ctx.db.patch(code._id, { utiliseParOrganisation: undefined, utiliseParNom: undefined });
+		}
+
 		// 7. L'établissement lui-même, en dernier, et son logo avec lui.
 		const org = await ctx.db.get(organizationId);
 		if (org) {
