@@ -5,6 +5,7 @@ import { resolveEffectivePlan } from '../billing';
 import { GRILLE } from '../../config/tarifs';
 import { heureDeParis, jourDeParis } from '../../admin/dates';
 import type { EtatDeConnexion } from '../../support/prompt-support';
+import { dossiersPrepares } from '../recouvrement/prepares';
 
 /**
  * LE CONTEXTE DU COMPTE, POUR PLUME SUPPORT ET POUR L'ÉQUIPE (16/10/2026).
@@ -19,8 +20,12 @@ import type { EtatDeConnexion } from '../../support/prompt-support';
  * du gérant. Il compte des dossiers et des relances pour dire « 2 dossiers à
  * démarrer », il ne rend jamais un nom de client ni un montant : le validateur de
  * retour l'interdit, `support-tables.test.ts` refuse qu'un autre fichier du support
- * lise ces tables, et `supportContexte.test.ts` sème un client sentinelle pour
- * vérifier qu'il ne ressort pas.
+ * lise ces tables, et `support.test.ts` sème un client sentinelle pour vérifier qu'il
+ * ne ressort pas.
+ *
+ * Les dossiers à démarrer se comptent par `dossiersPrepares`, la définition que lisent
+ * les écrans du gérant : elle lit les factures et les règlements pour écarter un dossier
+ * soldé, et il n'en ressort ici qu'un nombre (audit des parcours Pro du 27/10/2026).
  */
 
 export const vContexteDuCompte = v.object({
@@ -114,12 +119,9 @@ export async function lireContexteDuCompte(
 		.query('pilotes')
 		.withIndex('by_org', (q) => q.eq('organizationId', organizationId))
 		.first();
-	const aDemarrer = await ctx.db
-		.query('creances')
-		.withIndex('by_org_and_aDemarrer', (q) =>
-			q.eq('organizationId', organizationId).eq('aDemarrer', true)
-		)
-		.take(PLAFOND_DE_LECTURE);
+	// Les dossiers que les écrans du gérant proposent de démarrer, et pas un de plus :
+	// un dossier soldé garde son drapeau en base, mais n'a plus rien à démarrer.
+	const aDemarrer = await dossiersPrepares(ctx, organizationId);
 	const programmes = (
 		await ctx.db
 			.query('envois')

@@ -353,6 +353,70 @@ describe('le contexte que lit Plume', () => {
 		},
 		DELAI_CONVEX
 	);
+
+	// Audit des parcours Pro du 27/10/2026 : Arnaud, soldé, restait « à démarrer » ici
+	// alors que les écrans du gérant ne le proposaient plus.
+	it(
+		'ne compte pas à démarrer un dossier préparé que son client a soldé',
+		async () => {
+			const t = convexTest(schema, modules);
+			const organizationId = await etablissement(t);
+			await t.run(async (ctx) => {
+				for (const [nom, montantTTC, regle] of [
+					['Arnaud', 481_240n, 481_240n],
+					['Durand', 1_240_000n, 0n]
+				] as const) {
+					const debiteurId = await ctx.db.insert('debiteurs', {
+						organizationId,
+						denomination: nom,
+						denominationNormalisee: nom.toUpperCase(),
+						denominationsBrutes: [nom],
+						estCommercant: 'ok',
+						santeFinanciere: 'SAINE',
+						creeLe: Date.now()
+					});
+					const creanceId = await ctx.db.insert('creances', {
+						organizationId,
+						debiteurId,
+						statut: 'BROUILLON',
+						certaine: 'unknown',
+						liquide: 'ok',
+						exigible: 'ok',
+						entreCommercants: 'ok',
+						aDemarrer: true,
+						creeLe: Date.now()
+					});
+					const factureId = await ctx.db.insert('facturesVente', {
+						organizationId,
+						debiteurId,
+						creanceId,
+						reference: `F-${nom}`,
+						montantHT: 0n,
+						montantTTC,
+						dateEmission: '2026-01-01',
+						dateEcheance: '2026-02-01',
+						statutPaiement: 'IMPAYEE',
+						creeLe: Date.now()
+					});
+					if (regle > 0n) {
+						await ctx.db.insert('reglements', {
+							organizationId,
+							factureId,
+							date: '2026-10-20',
+							montant: regle,
+							nature: 'PAIEMENT',
+							creeLe: Date.now()
+						});
+					}
+				}
+			});
+
+			const contexte = await t.run((ctx) => lireContexteDuCompte(ctx, organizationId, 'user_gerant'));
+
+			expect(contexte.dossiersADemarrer).toBe(1);
+		},
+		DELAI_CONVEX
+	);
 });
 
 describe('la réponse de l’équipe', () => {

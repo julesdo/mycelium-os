@@ -170,7 +170,7 @@ const vFacture = v.object({
 });
 
 /** Ce qui reste dû sur une facture. Exporté pour la recherche, qui ne le recalcule pas. */
-export async function resteDu(ctx: QueryCtx, facture: Doc<'facturesVente'>) {
+export async function resteDu(ctx: Pick<QueryCtx, 'db'>, facture: Doc<'facturesVente'>) {
 	const reglements = await ctx.db
 		.query('reglements')
 		.withIndex('by_facture', (q) => q.eq('factureId', facture._id))

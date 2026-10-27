@@ -42,6 +42,33 @@ const TABLES_DU_CONTEXTE = new Set([
 	'importsRecouvrement'
 ]);
 
+/**
+ * LES MODULES CONVEX QU'UN FICHIER DU SUPPORT PEUT IMPORTER (27/10/2026). Le balayage
+ * des \`query('<table>')\` ne voit pas une fonction importée : une aide de
+ * \`recouvrement/\` qui lit les factures passerait à travers. Chaque module Convex
+ * importé est donc nommé ici, avec ce qu'il apporte.
+ */
+const MODULES_DU_SUPPORT = new Set([
+	'../functions', // les enveloppes d'authentification
+	'../lib/auth',
+	'../emails/resend',
+	'../emails/helpers',
+	'../emails/modeles/support'
+]);
+/** Ce que `contexte.ts` importe en plus, et seulement lui. */
+const MODULES_DU_CONTEXTE = new Set([
+	'../billing', // la formule effective de l'établissement
+	// Les dossiers à démarrer, définis comme sur les écrans du gérant : l'aide lit les
+	// factures et les règlements pour écarter un dossier soldé, il n'en sort qu'un nombre.
+	'../recouvrement/prepares'
+]);
+
+function modulesConvex(fichier: string): string[] {
+	return [...readFileSync(join(RACINE, fichier), 'utf8').matchAll(/from '(\.\.\/[^.'][^']*)'/g)]
+		.map((m) => m[1] ?? '')
+		.filter((chemin) => !chemin.startsWith('../_generated/'));
+}
+
 function lectures(fichier: string): string[] {
 	return [...readFileSync(join(RACINE, fichier), 'utf8').matchAll(/query\(\s*'(\w+)'/g)].map(
 		(m) => m[1] ?? ''
@@ -66,5 +93,17 @@ describe('la barrière des tables du support', () => {
 	it('le contexte ne compte que ce que la spec nomme', () => {
 		const interdites = lectures('contexte.ts').filter((t) => !TABLES_DU_CONTEXTE.has(t));
 		expect(interdites).toEqual([]);
+	});
+
+	it('n’importe que les modules Convex nommés', () => {
+		expect(modulesConvex('contexte.ts')).toContain('../recouvrement/prepares');
+		const interdits = fichiers.flatMap((f) =>
+			modulesConvex(f)
+				.filter(
+					(m) => !MODULES_DU_SUPPORT.has(m) && !(f === 'contexte.ts' && MODULES_DU_CONTEXTE.has(m))
+				)
+				.map((m) => `${f} importe ${m}`)
+		);
+		expect(interdits).toEqual([]);
 	});
 });

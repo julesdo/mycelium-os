@@ -15,7 +15,7 @@ import { resteDu } from './lecture';
  * Un dossier sans facture reste proposé : rien ne dit qu'il est réglé.
  */
 export async function dossiersPrepares(
-	ctx: QueryCtx,
+	ctx: Pick<QueryCtx, 'db'>,
 	organizationId: Id<'organizations'>
 ): Promise<
 	{
