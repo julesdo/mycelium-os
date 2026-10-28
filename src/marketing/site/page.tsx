@@ -8,12 +8,16 @@ import {
 	demarrerHorsChamp,
 	demarrerRegardDePlume
 } from '../../ui/site/gestes';
+import { demarrerLoi } from '../../ui/site/loi';
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { SpriteDuSite } from '../../ui/site/sprite';
 import { demarrerVitrine } from '../../ui/site/vitrine';
 import { SectionAppel } from './appel';
 import { BarreDuSite } from './barre';
+import { SectionLoi } from './loi';
+import { FACTURE_DE_LA_LOI, LOI } from './loi-demo';
 import { PiedDuSite } from './pied';
+import { BandeDesPreuves } from './preuves';
 import { EnTete } from './tete';
 import { VITRINE } from './vitrine-demo';
 
@@ -40,6 +44,12 @@ export function PageSite() {
 		// L'ordre est celui du script de la maquette.
 		const arrets = [
 			demarrerPaysages(el),
+			demarrerLoi(el, {
+				depart: FACTURE_DE_LA_LOI.echeance,
+				jours: LOI.jours,
+				penalites: LOI.penalites,
+				segments: LOI.segments
+			}),
 			demarrerBarre(el),
 			demarrerBoutonsQuiComptent(el),
 			demarrerVitrine(el, VITRINE),
@@ -62,6 +72,8 @@ export function PageSite() {
 			<BarreDuSite />
 			<main id="haut">
 				<EnTete />
+				<BandeDesPreuves />
+				<SectionLoi />
 				<SectionAppel />
 			</main>
 			<PiedDuSite />

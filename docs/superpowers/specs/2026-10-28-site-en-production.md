@@ -81,7 +81,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 0 | Socle : référence, polices, peinture, gestes communs, champ d'inscription, comparateur, adresse cachée ; l'appel en premier essai | livré |
 | 1 | Barre (ton lu au défilement, capsule, menu « Logiciel » illustré, feuille au téléphone) et pied | livré |
 | 2 | En-tête : le téléphone qu'on essaie | livré |
-| 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l'argent ») | |
+| 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l’argent ») | livré |
 | 4 | Plume : quatre scènes, barres en récit, balayage | |
 | 5 | Tout ce qui va avec | |
 | 6 | Métiers | |
@@ -138,3 +138,24 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - L'interrupteur des relances agit.
 - **Une phrase où s'insère une valeur s'écrit d'une seule chaîne** (`` {`${n} factures en retard`} ``). React la couperait sinon en deux nœuds de texte, et le dessin des lettres change à la jointure.
 - Les couleurs des avatars de démonstration vivent dans `ui/site/avatars.ts`, la muselière les refusant dans `marketing/`.
+
+## Lot 3, mesuré
+
+- **La bande des preuves : 0,00 % avec le texte de la maquette.** Ses logos sont ceux du site (`public/connecteurs/`), les mêmes fichiers que la maquette, octet pour octet.
+  - Puis 1,13 % à 1440 px et une ligne de plus à 375 px (+28 px), exprès : la maquette citait « BODACC », et le site dit « Journal officiel des entreprises », le mot de tous les jours (`lexique.test.ts`).
+- **La loi : de 0,23 à 0,27 % au bureau, 0,51 % à 375 px.** Les seuls écarts sont voulus :
+  - la cassure de la courbe et les deux lignes par semestre suivent le moteur, 95 j à 392,13 € puis 119 j à 501,30 €, au lieu des 94 j à 404,12 € puis 120 j à 489,31 € de la maquette ;
+  - la phrase des frais dit « Des frais forfaitaires » au lieu de « Une indemnité forfaitaire » (`lexique.test.ts`).
+- **Tout ce que la section chiffre sort du moteur et du registre** (`loi-demo.ts`, calculé à l'import) :
+  - les jours, les pénalités par semestre et leur total ;
+  - les frais ;
+  - la date limite pour agir et celle du transport ;
+  - la durée qui reste (« 4 ans et 5 mois ») et les « dix points » ;
+  - les articles cités (L441-10, D441-5, L110-4, lus dans les sources du registre).
+
+  Le jour est figé au 28 octobre 2026 : la frise va de mars à octobre.
+- **La mention de retard de la facture dessinée** vient de `pays/france/mention-de-facture.ts`. C'est le vocabulaire du document, dans la zone de droit, composé de `majorationEnChiffres()` et de l'indemnité du registre.
+- **Deux pièges de la feuille, corrigés pour toute la page** :
+  - **La remise à zéro de Tailwind** effaçait les valeurs par défaut du navigateur, dont la maquette dépend (1em autour d'un paragraphe : 28 px de moins sur les preuves). `styles/site/defauts.css` les rend sous `.site`, dans une couche placée après celles de Tailwind et sous la moindre règle de la maquette.
+  - **Un nom de classe de la maquette peut être un utilitaire Tailwind** : la carte `.table` de la conclusion devenait `display: table` et disparaissait. Le nom est neutralisé dans `defauts.css`, et `feuille-du-site.test.ts` refuse un nom nouveau qui ne le serait pas.
+- **Le pied : +93 px au bureau, tout entiers dans les liens ajoutés** (deux ressources, la rangée légale). Les +69 px d'avant cachaient la marge du paragraphe, effacée sur le site.

@@ -713,7 +713,7 @@ function rgbaDe(c: string): [number, number, number, number] {
 	return [m[0] ?? 0, m[1] ?? 0, m[2] ?? 0, m[3] ?? 1];
 }
 
-function meler(a: string, b: string, t: number): string {
+export function meler(a: string, b: string, t: number): string {
 	const x = rgbaDe(a),
 		y = rgbaDe(b);
 	return (

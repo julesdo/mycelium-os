@@ -1,0 +1,131 @@
+/* Site public : LES VALEURS PAR DÉFAUT DU NAVIGATEUR, rendues au site (28/10/2026).
+
+   La maquette s'est dessinée sans Tailwind : là où elle ne fixe rien, c'est la feuille par défaut
+   du navigateur qui décide (1em de marge autour d'un paragraphe, 40 px de retrait d'une liste, une
+   image en ligne…). Le site, lui, charge `app.css` et sa remise à zéro (« preflight »), qui efface
+   tout cela : relevé par la comparaison au pixel, sur la bande des preuves (28 px de moins, les
+   deux marges d'un paragraphe).
+
+   Ces règles rendent, sous `.site` seulement, ce que la remise à zéro retire. Elles vivent dans une
+   COUCHE, `site-defauts`, déclarée après celles de Tailwind : elles l'emportent sur la remise à zéro,
+   et la moindre règle de la maquette (hors couche) l'emporte sur elles, quelle que soit sa
+   précision, comme sur la feuille du navigateur. */
+@layer site-defauts {
+	.site *,
+	.site ::before,
+	.site ::after {
+		border-style: none;
+		border-width: medium;
+	}
+	.site p,
+	.site dl,
+	.site pre {
+		margin-block: 1em;
+	}
+	.site blockquote,
+	.site figure {
+		margin: 1em 40px;
+	}
+	.site ul,
+	.site ol,
+	.site menu {
+		margin-block: 1em;
+		padding-inline-start: 40px;
+	}
+	.site ul,
+	.site menu {
+		list-style: disc;
+	}
+	.site ol {
+		list-style: decimal;
+	}
+	.site dd {
+		margin-inline-start: 40px;
+	}
+	.site h1 {
+		font-size: 2em;
+		margin-block: 0.67em;
+	}
+	.site h2 {
+		font-size: 1.5em;
+		margin-block: 0.83em;
+	}
+	.site h3 {
+		font-size: 1.17em;
+		margin-block: 1em;
+	}
+	.site h4 {
+		font-size: 1em;
+		margin-block: 1.33em;
+	}
+	.site h5 {
+		font-size: 0.83em;
+		margin-block: 1.67em;
+	}
+	.site h6 {
+		font-size: 0.67em;
+		margin-block: 2.33em;
+	}
+	.site h1,
+	.site h2,
+	.site h3,
+	.site h4,
+	.site h5,
+	.site h6,
+	.site th {
+		font-weight: bold;
+	}
+	.site th {
+		text-align: center;
+	}
+	.site table {
+		border-collapse: separate;
+		border-spacing: 2px;
+		text-indent: initial;
+	}
+	.site td,
+	.site th {
+		padding: 1px;
+	}
+	.site img,
+	.site svg,
+	.site video,
+	.site canvas,
+	.site iframe,
+	.site object {
+		display: inline;
+		vertical-align: baseline;
+	}
+	.site img,
+	.site video {
+		max-width: none;
+	}
+	.site button {
+		padding-block: 1px;
+		padding-inline: 6px;
+	}
+	.site input {
+		padding-block: 1px;
+		padding-inline: 2px;
+	}
+	.site hr {
+		margin-block: 0.5em;
+		border-style: inset;
+		border-width: 1px;
+	}
+	.site a {
+		text-decoration: underline;
+	}
+
+	/* LES NOMS DE LA MAQUETTE QUI SONT AUSSI DES UTILITAIRES TAILWIND. Tailwind génère un
+	   utilitaire pour tout mot qu'il lit dans les sources : la carte de la conclusion (`.table`)
+	   devenait `display: table` et se réduisait à rien. Cette couche passe après les utilitaires ;
+	   chaque nom y reprend la valeur du navigateur. `feuille-du-site.test.ts` refuse un nom
+	   nouveau qui ne serait pas neutralisé ici. */
+	.site .table {
+		display: block;
+	}
+	.site .visible {
+		visibility: inherit;
+	}
+}

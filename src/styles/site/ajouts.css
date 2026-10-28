@@ -3,7 +3,7 @@
 
 /* Le pied : la rangée des cinq pages légales, sous la phrase qui borne le produit, dans son
    style (13 px, le gris de la phrase). La maquette n'en avait aucune ; la loi les veut visibles. */
-.site .pied .pied-legal { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: -18px; color: var(--gris); font-size: 13px; }
+.site .pied .pied-legal { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: calc(-18px - 1em); color: var(--gris); font-size: 13px; }
 .site .pied .pied-legal a { text-decoration: underline; text-decoration-color: rgba(12, 17, 36, 0.18); text-underline-offset: 3px; }
 @media (hover: hover) {
 	.site .pied a:hover { color: var(--encre); }

@@ -100,6 +100,38 @@ describe('la feuille du site', () => {
 		expect(index.replace(/@import[^;]+;/g, '').trim()).toBe('');
 	});
 
+	/**
+	 * ⚠️ UN NOM DE CLASSE DE LA MAQUETTE PEUT ÊTRE UN UTILITAIRE TAILWIND. Tailwind génère un
+	 * utilitaire pour tout mot qu'il lit dans les sources : la carte `.table` de la loi devenait
+	 * `display: table` et disparaissait (28/10/2026). Chaque nom de cette liste — les utilitaires
+	 * sans valeur, ceux qu'un mot seul déclenche — doit être neutralisé dans `defauts.css`.
+	 */
+	it('neutralise chaque classe qui porte le nom d’un utilitaire Tailwind', () => {
+		const UTILITAIRES = new Set(
+			'block inline inline-block flex inline-flex grid inline-grid table table-row table-cell table-caption contents list-item hidden flow-root static fixed absolute relative sticky visible invisible collapse isolate truncate italic underline overline uppercase lowercase capitalize grow shrink container border rounded shadow ring outline blur transform transition filter invert grayscale sepia resize'.split(
+				' '
+			)
+		);
+		const sources = ['site', join('..', 'ui', 'site')].flatMap((d) => {
+			const dossier = join(import.meta.dirname, '..', d);
+			return readdirSync(dossier)
+				.filter((f) => /\.tsx?$/.test(f))
+				.map((f) => readFileSync(join(dossier, f), 'utf8'));
+		});
+		const classes = new Set(
+			sources.flatMap((t) =>
+				[...t.matchAll(/class(?:Name)?=["']([^"']+)["']/g)].flatMap((m) =>
+					(m[1] ?? '').split(/\s+/)
+				)
+			)
+		);
+		const defauts = readFileSync(join(DOSSIER, 'defauts.css'), 'utf8');
+		const nues = [...classes].filter(
+			(c) => UTILITAIRES.has(c) && !defauts.includes(`.site .${c} {`)
+		);
+		expect(nues).toEqual([]);
+	});
+
 	it('lit ses sélecteurs comme il faut', () => {
 		expect(
 			selecteurs('.a, .b:is(.c, .d) { x: 1; } @media (x) { .e { y: 2; } }').selecteurs
