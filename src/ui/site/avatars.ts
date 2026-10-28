@@ -17,3 +17,10 @@ export const AVATARS_DE_LA_VITRINE = {
 	/** L'établissement de la démonstration, sur l'onglet Compte. */
 	laurent: degrade('#8f7cf2', '#5b3fd4')
 } as const;
+
+/** Les portraits dessinés de la tuile « Votre défense » : des initiales, jamais un visage. */
+export const PORTRAITS_DE_LA_DEFENSE = {
+	rousseau: degrade('#8f7cf2', '#5b3fd4'),
+	marchand: degrade('#ffb79a', '#d9739a'),
+	bernard: degrade('#5b80f7', '#2a46c8')
+} as const;

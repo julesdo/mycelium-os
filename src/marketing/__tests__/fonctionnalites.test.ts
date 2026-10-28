@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { FONCTIONNALITES, LOGICIELS_BRANCHES } from '../fonctionnalites';
+import { FONCTIONNALITES, LOGICIELS_BRANCHES, TUILES_DU_SITE } from '../fonctionnalites';
 import { LOGOS_DES_SERVICES } from '../../ui/logos-services';
 
 /**
@@ -39,6 +39,28 @@ describe('le registre des fonctions', () => {
 				expect(ids.has(id), `aucune section ne pose id="${id}" (${fonctionnalite.cle})`).toBe(true);
 			}
 		}
+	});
+
+	it('mène le menu et les tuiles du nouveau site à une de ses sections', () => {
+		const dossier = join(MARKETING, 'site');
+		const ids = new Set<string>();
+		for (const fichier of readdirSync(dossier).filter((nom) => nom.endsWith('.tsx'))) {
+			const source = readFileSync(join(dossier, fichier), 'utf8');
+			for (const [, id] of source.matchAll(/\bid="([a-z-]+)"/g)) if (id !== undefined) ids.add(id);
+		}
+		// La section que le site construit encore (`2026-10-28-site-en-production.md`, lot 7). Elle
+		// sort de cette liste le jour où elle est livrée.
+		for (const id of ['securite']) ids.add(id);
+		for (const { cle, menu, carte } of FONCTIONNALITES) {
+			for (const ancre of [menu?.ancre, carte?.ancre]) {
+				if (ancre === undefined) continue;
+				expect(ids.has(ancre.slice(1)), `aucune section du site ne pose ${ancre} (${cle})`).toBe(
+					true
+				);
+			}
+		}
+		for (const cle of TUILES_DU_SITE)
+			expect(FONCTIONNALITES.find((f) => f.cle === cle)?.carte, cle).toBeDefined();
 	});
 
 	it('donne à chaque fonction un nom de cinq mots au plus', () => {

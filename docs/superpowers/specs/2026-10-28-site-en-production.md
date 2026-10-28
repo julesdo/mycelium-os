@@ -83,7 +83,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 2 | En-tête : le téléphone qu'on essaie | livré |
 | 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l’argent ») | livré |
 | 4 | Plume : quatre scènes, barres en récit, balayage | livré |
-| 5 | Tout ce qui va avec | |
+| 5 | Tout ce qui va avec | livré |
 | 6 | Métiers | |
 | 7 | Sécurité : enveloppe, relevé, lettre | |
 | 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | |
@@ -172,3 +172,18 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - l'heure du rappel, dans `HEURES_D_ENVOI`.
 - Les clients sont ceux des autres démonstrations : Durand et sa facture de la loi (12 400,00 €, 214 jours), Rousseau et Vidal du téléphone. Le dépôt du matin (198 factures, 40 règlements) reste une fiction, la même que sur le téléphone.
 - Plume est le composant du produit : au travail dans le coin de la plaque, content dans la conversation (la maquette dessinait un Plume sans bras ; le composant n'a pas cette tête).
+
+## Lot 5, mesuré
+
+- **Les six tuiles : 0,00 à 0,01 % aux cinq largeurs**, le décor de la tuile santé mis de côté (`--masquer '[data-tuile="sante"] .decor'`). Avec lui : de 0,46 à 1,12 %, tout entiers dans ce décor, exprès.
+- **La santé d'un client est celle que calcule le produit** (`analyserLeRisque`, sur une entreprise de démonstration, dans `tout-demo.ts`). La maquette inventait ses poids (−14, −6, +2, soit 32). Le moteur dit :
+  - −15, il paie à 75 jours de retard ;
+  - −8, aucun compte déposé ;
+  - +8, douze ans d'existence ;
+  - soit 35 sur 100, prudence.
+
+  L'aiguille part de 50 (`INDICE_DE_DEPART`) et passe par 35, 27, puis 35, fait après fait. `tout-demo.test.ts` tient le chemin.
+- **Le nom, la phrase et le lien de chaque tuile se lisent au registre** : champ `carte` de `fonctionnalites.ts`, ordre `TUILES_DU_SITE`. La phrase de la santé cite `INDICE_DE_DEPART`. `fonctionnalites.test.ts` vérifie que le menu et les tuiles mènent à une section du nouveau site ; `#securite` y est admis jusqu'au lot 7.
+- **Les coupons du paiement en trois fois suivent `versements`** (2 000 € le 1er de chaque mois, le deuxième « dans 4 jours » au 28 octobre). La page de paiement règle la facture de la loi.
+- **Un écart de mesure, corrigé dans le comparateur.** Au doigt, une tuile joue sa scène une fois, à son entrée à l'écran, et la garde. Tant que le site n'a pas toutes ses sections, sa page est plus courte, et le passage du début ne montrait pas les mêmes tuiles des deux côtés. Le comparateur les fait maintenant toutes passer à l'écran avant de capturer.
+- Au survol, chaque scène joue comme dans la maquette : le coffre scelle le devis à l'heure qu'il est, l'échéancier passe à 4 000 € reçus, les factures se comptent jusqu'à 198.

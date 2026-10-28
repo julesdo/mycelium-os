@@ -160,7 +160,14 @@ const SCENES: Readonly<Record<string, { grille: string; noms: readonly string[] 
 };
 
 type Boite = { x: number; y: number; w: number; h: number };
-type Capture = { image: Buffer; plumes: Boite[] };
+type Capture = { image: Buffer; plumes: Boite[]; masques: Boite[] };
+
+/**
+ * CE QUI DIFFÈRE EXPRÈS SE MET DE CÔTÉ, NOMMÉMENT. `--masquer <sélecteur>` exclut des deux côtés la
+ * place de ces éléments (un chiffre que le moteur corrige) : le reste de la section doit alors
+ * être identique, et l'écart voulu se regarde à part.
+ */
+const MASQUER = option('masquer');
 
 async function capturer(
 	page: Page,
@@ -174,9 +181,40 @@ async function capturer(
 	await page.waitForTimeout(
 		700 + (ATTENTES[Object.keys(SECTIONS).find((k) => SECTIONS[k] === selecteur) ?? ''] ?? 0)
 	);
+	// Au doigt, une tuile joue sa scène une fois, quand elle entre à l'écran, et la garde. Tant que
+	// le site n'a pas toutes ses sections, sa page est plus courte, et le passage du début n'en
+	// montre pas les mêmes : on les fait toutes passer à l'écran, des deux côtés.
+	const tuiles = await el.evaluate(async (s) => {
+		const liste = Array.from(s.querySelectorAll('[data-tuile]'));
+		for (const t of liste) {
+			t.scrollIntoView({ block: 'center' });
+			await new Promise((ok) => setTimeout(ok, 150));
+		}
+		return liste.length;
+	});
+	if (tuiles) {
+		await el.scrollIntoViewIfNeeded();
+		await page.waitForTimeout(2600);
+	}
 	// Après l'isolement : la page raccourcie a pu défiler, et la barre relire son ton.
 	if (avant) await avant(page);
 	const image = await el.screenshot({ animations: 'disabled' });
+	const boites = (sel: string) =>
+		el.evaluate((s, q) => {
+			const base = s.getBoundingClientRect();
+			return Array.from(s.querySelectorAll(q))
+				.map((p) => {
+					const r = p.getBoundingClientRect();
+					return {
+						x: Math.round(r.left - base.left),
+						y: Math.round(r.top - base.top),
+						w: Math.round(r.width),
+						h: Math.round(r.height)
+					};
+				})
+				.filter((b) => b.w > 0 && b.h > 0);
+		}, sel);
+	const masques = MASQUER ? await boites(MASQUER) : [];
 	const plumes = await el.evaluate((s) => {
 		const base = s.getBoundingClientRect();
 		return Array.from(s.querySelectorAll('svg.plume'))
@@ -192,7 +230,7 @@ async function capturer(
 			.filter((b) => b.w > 0 && b.h > 0);
 	});
 	await style.evaluate((s) => s.remove());
-	return { image, plumes };
+	return { image, plumes, masques };
 }
 
 /** Les Plume qui ne sont pas à la même place des deux côtés (à un pixel près). */
@@ -299,7 +337,12 @@ for (const largeur of LARGEURS) {
 			}
 			continue;
 		}
-		const { ecart, image } = await comparer(a.image, b.image, [...a.plumes, ...b.plumes]);
+		const { ecart, image } = await comparer(a.image, b.image, [
+			...a.plumes,
+			...b.plumes,
+			...a.masques,
+			...b.masques
+		]);
 		const part = (100 * ecart.differents) / ecart.total;
 		const deplaces = plumesDeplaces(a.plumes, b.plumes);
 		const taille =

@@ -13,6 +13,7 @@ import { demarrerLoi } from '../../ui/site/loi';
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { demarrerPlume } from '../../ui/site/plume';
 import { SpriteDuSite } from '../../ui/site/sprite';
+import { demarrerTuiles } from '../../ui/site/tuiles';
 import { demarrerVitrine } from '../../ui/site/vitrine';
 import { SectionAppel } from './appel';
 import { BarreDuSite } from './barre';
@@ -23,6 +24,8 @@ import { SectionPlume } from './plume';
 import { PLUME } from './plume-demo';
 import { BandeDesPreuves } from './preuves';
 import { EnTete } from './tete';
+import { SectionTout } from './tout';
+import { SANTE } from './tout-demo';
 import { VITRINE } from './vitrine-demo';
 
 /**
@@ -56,6 +59,7 @@ export function PageSite() {
 			}),
 			demarrerBarre(el),
 			demarrerBoutonsQuiComptent(el),
+			demarrerTuiles(el, { sante: SANTE }),
 			demarrerVitrine(el, VITRINE),
 			demarrerBlocsVivants(el),
 			demarrerRegardDePlume(el),
@@ -81,6 +85,7 @@ export function PageSite() {
 				<BandeDesPreuves />
 				<SectionLoi />
 				<SectionPlume />
+				<SectionTout />
 				<SectionAppel />
 			</main>
 			<PiedDuSite />

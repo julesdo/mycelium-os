@@ -1,3 +1,4 @@
+import { INDICE_DE_DEPART } from '../lib/verticales/recouvrement/risque/regles';
 import type { FamilleRangee } from '../ui/familles';
 import type { CaptureProduit, TeinteSite } from './section';
 
@@ -64,7 +65,25 @@ export interface Fonctionnalite {
 		readonly teinte: 'part' | 'argent' | 'papiers' | 'temps' | 'question';
 		readonly court?: string;
 	};
+	/**
+	 * Sa tuile dans « Tout ce qui va avec » sur le même site (ordre `TUILES_DU_SITE`) : la phrase de
+	 * la maquette, et la section où elle mène.
+	 */
+	readonly carte?: {
+		readonly phrase: string;
+		readonly ancre: `#${string}`;
+	};
 }
+
+/** L'ordre des tuiles de « Tout ce qui va avec » sur le nouveau site, celui de la maquette. */
+export const TUILES_DU_SITE: readonly CleFonctionnalite[] = [
+	'coffre',
+	'sante',
+	'parole',
+	'paiement',
+	'defense',
+	'logiciels'
+];
 
 /** L'ordre du menu « Logiciel » du nouveau site, celui de la maquette. */
 export const MENU_DU_SITE: readonly CleFonctionnalite[] = [
@@ -128,7 +147,12 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'PAPIERS',
 		ancre: '/#logiciels',
 		capture: 'logiciels',
-		tuile: false
+		tuile: false,
+		carte: {
+			phrase:
+				'Vos factures et vos règlements arrivent seuls. Sans logiciel, un fichier suffit : FEC, Factur-X, PDF, photo.',
+			ancre: '#tout'
+		}
 	},
 	{
 		cle: 'coffre',
@@ -145,6 +169,10 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 			ancre: '#securite',
 			teinte: 'papiers',
 			court: 'Coffre-fort'
+		},
+		carte: {
+			phrase: 'Chaque document est scellé à son arrivée, et chaque ouverture est notée.',
+			ancre: '#securite'
 		}
 	},
 	{
@@ -162,6 +190,10 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 			ancre: '#tout',
 			teinte: 'temps',
 			court: 'Santé clients'
+		},
+		carte: {
+			phrase: `Un indice sur cent qui part de ${INDICE_DE_DEPART}, et chacun des faits qui le font bouger, à sa source.`,
+			ancre: '#tout'
 		}
 	},
 	{
@@ -172,7 +204,11 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'QUESTION',
 		ancre: '/#parole',
 		capture: 'echeancier',
-		tuile: true
+		tuile: true,
+		carte: {
+			phrase: 'Le paiement en plusieurs fois se convient, puis se suit versement par versement.',
+			ancre: '#tout'
+		}
 	},
 	{
 		cle: 'defense',
@@ -189,6 +225,11 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 			ligne: 'Avocats et commissaires près de votre client.',
 			ancre: '#tout',
 			teinte: 'question'
+		},
+		carte: {
+			phrase:
+				'Les avocats et commissaires de justice près de chez votre client, trouvés d’après son SIREN.',
+			ancre: '#tout'
 		}
 	},
 	{
@@ -205,6 +246,11 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 			ligne: 'Votre IBAN, le montant, la référence. Rien ne passe par nous.',
 			ancre: '#tout',
 			teinte: 'argent'
+		},
+		carte: {
+			phrase:
+				'Votre client voit le montant, votre IBAN et la référence. Il paie depuis sa banque, l’argent arrive chez vous.',
+			ancre: '#securite'
 		}
 	},
 	{
