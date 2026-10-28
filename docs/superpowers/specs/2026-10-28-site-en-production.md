@@ -45,7 +45,7 @@ On ne retape pas la maquette, on la **transplante**. Son style et ses moteurs pa
   - L'adresse est portée par l'état de l'historique (`adresseDInscription`), jamais par l'URL.
   - `/inscription` s'ouvre au mot de passe, seulement après l'hydratation.
   - Le bloc « C'est noté » de la maquette a disparu.
-- **L'enveloppe de la sécurité se glisse avec dnd-kit**, déjà dans le projet. Les autres animations GSAP deviennent natives, aux mêmes durées et aux mêmes courbes. Aucune dépendance ajoutée.
+- **L'enveloppe de la sécurité se glisse aux événements de pointeur, sans GSAP ni dnd-kit** (décidé au lot 7). dnd-kit range des listes dans React ; il ne sait ni borner un objet libre au tableau, ni le faire résister au bord, ni l'incliner sous le doigt, et le moteur vit hors de React. Les mouvements de GSAP deviennent natifs, aux mêmes durées et aux mêmes courbes (`COURBES` dans `ui/site/securite.ts`). Aucune dépendance ajoutée.
 - **Le téléphone de l'en-tête reste dessiné.** Une capture ne se touche pas. Ses textes et ses chiffres se lisent sur les constantes du produit (`HEURES_D_ENVOI`, `DELAI_POUR_RETENIR_MS`, les données de démonstration de la salle).
 
 ## Ce qui sort de l'accueil actuel
@@ -85,7 +85,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 4 | Plume : quatre scènes, barres en récit, balayage | livré |
 | 5 | Tout ce qui va avec | livré |
 | 6 | Métiers | livré |
-| 7 | Sécurité : enveloppe, relevé, lettre | |
+| 7 | Sécurité : enveloppe, relevé, lettre | livré |
 | 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | |
 | 9 | Blog : les champs des articles, puis la section | |
 | 10 | Appel définitif, bascule de `/`, `/securite`, plan du site, `llms.txt` | |
@@ -202,3 +202,21 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - la date se dit comme sur une carte du produit (`dateRelative`) : « aujourd’hui » pour les services, au lieu de « 10:00 ».
 - **Deux écarts de mesure, corrigés dans le comparateur** : une photo en chargement différé pouvait n'être pas arrivée d'un côté (34 % à 1280 px), et le bouton d'un panneau ouvert se touche sous son contenu.
 - Au survol, au clavier et au toucher, les panneaux s'ouvrent comme dans la maquette.
+
+## Lot 7, mesuré
+
+- **La sécurité contre la maquette : de 0,00 à 0,01 %** aux cinq largeurs.
+  - Un premier essai donnait 0,09 à 0,28 %, au bord de la facture et de l'enveloppe. GSAP pose `translate3d` : la facture a son propre calque, et ses bords se lissent autrement. Le moteur fait de même, ce qui la fait aussi glisser sans repeindre la scène.
+- **Sans GSAP, la scène joue comme la maquette**, relevé à 1, 2,5, 4,5 et 7 s :
+  - la visite saisit la facture, la porte au-dessus de l'enveloppe, la scelle, puis l'étiquette tombe ;
+  - un vrai glisser à la souris s'arrête au bord du tableau, allume l'enveloppe au-dessus et scelle au lâcher, à l'heure qu'il est ;
+  - au doigt aussi, sans faire défiler la page ;
+  - la touche Entrée scelle au clavier.
+- **Ce que la section dit se lit sur le produit** :
+  - l'algorithme du coffre (`ALGORITHME`, AES-256-GCM) ;
+  - les heures d'envoi (`HEURES_D_ENVOI`, « de 9 h à 18 h ») ;
+  - le délai pour retenir (« une heure », « dans 59:59 ») ;
+  - l'heure du rappel (10:00, dans ces heures).
+- **Le relevé reçoit ce que doivent les clients des autres démonstrations** (`securite-demo.ts`, tenu par `securite-demo.test.ts`) : Durand sa facture de la loi, Vidal et Bâti-Sud les montants du téléphone. Ce qui passe par Letikette reste à 0,00 € : la ligne rouge n° 2.
+- Le lien « Toutes nos mesures de sécurité » mène à `/securite`. Le cachet de cire et le corps de l'enveloppe, en couleur, sont dessinés dans `ui/site/dessins-securite.tsx`.
+- `#securite` sort de la liste d'attente de `fonctionnalites.test.ts` : le menu et les tuiles mènent tous à une section posée.

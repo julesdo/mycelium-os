@@ -13,6 +13,7 @@ import { demarrerLoi } from '../../ui/site/loi';
 import { demarrerMetiers } from '../../ui/site/metiers';
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { demarrerPlume } from '../../ui/site/plume';
+import { demarrerSecurite } from '../../ui/site/securite';
 import { SpriteDuSite } from '../../ui/site/sprite';
 import { demarrerTuiles } from '../../ui/site/tuiles';
 import { demarrerVitrine } from '../../ui/site/vitrine';
@@ -25,6 +26,8 @@ import { PiedDuSite } from './pied';
 import { SectionPlume } from './plume';
 import { PLUME } from './plume-demo';
 import { BandeDesPreuves } from './preuves';
+import { SectionSecurite } from './securite';
+import { RELEVE } from './securite-demo';
 import { EnTete } from './tete';
 import { SectionTout } from './tout';
 import { SANTE } from './tout-demo';
@@ -65,6 +68,11 @@ export function PageSite() {
 			demarrerVitrine(el, VITRINE),
 			demarrerBlocsVivants(el),
 			demarrerRegardDePlume(el),
+			demarrerSecurite(el, {
+				virements: RELEVE.virements,
+				solde: RELEVE.solde,
+				delai: PLUME.scenario.delai
+			}),
 			demarrerChampsEmail(el, (adresse) => {
 				void navigate({
 					to: '/inscription',
@@ -90,6 +98,7 @@ export function PageSite() {
 				<SectionPlume />
 				<SectionTout />
 				<SectionMetiers />
+				<SectionSecurite />
 				<SectionAppel />
 			</main>
 			<PiedDuSite />

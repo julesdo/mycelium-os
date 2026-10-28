@@ -48,9 +48,6 @@ describe('le registre des fonctions', () => {
 			const source = readFileSync(join(dossier, fichier), 'utf8');
 			for (const [, id] of source.matchAll(/\bid="([a-z-]+)"/g)) if (id !== undefined) ids.add(id);
 		}
-		// La section que le site construit encore (`2026-10-28-site-en-production.md`, lot 7). Elle
-		// sort de cette liste le jour où elle est livrée.
-		for (const id of ['securite']) ids.add(id);
 		for (const { cle, menu, carte } of FONCTIONNALITES) {
 			for (const ancre of [menu?.ancre, carte?.ancre]) {
 				if (ancre === undefined) continue;
