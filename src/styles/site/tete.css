@@ -1,0 +1,20 @@
+/* Site public, « tete » : transplanté de la maquette V26, lignes 136 à 149
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── L'EN-TÊTE : L'AUBE ────────────────────────────────── */
+.site .tete { position: relative; z-index: 2; background: var(--nuit); color: #fff; padding-top: calc(env(safe-area-inset-top, 0px) + 150px); }
+.site .tete-fond { position: absolute; inset: 0; overflow: hidden; }
+.site .tete-fond canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+@supports (animation-timeline: scroll()) {
+	.site .tete-fond canvas { animation: site-parallaxe linear both; animation-timeline: scroll(root); animation-range: 0 1000px; }
+	@keyframes site-parallaxe { to { transform: translateY(150px); } }
+}
+.site .brume-flottante { position: absolute; left: -15%; right: -15%; top: calc(var(--horizon, 700px) - 40px); height: 260px; background: radial-gradient(38% 55% at 28% 55%, rgba(246, 222, 244, 0.32), transparent 70%), radial-gradient(32% 45% at 72% 48%, rgba(255, 214, 220, 0.26), transparent 70%), radial-gradient(45% 50% at 50% 80%, rgba(236, 236, 252, 0.3), transparent 72%); animation: site-derive 42s ease-in-out infinite alternate; pointer-events: none; }
+@keyframes site-derive { from { transform: translateX(-5%); } to { transform: translateX(5%); } }
+.site .tete-texte { position: relative; z-index: 2; }
+.site .tete h1 { font-family: var(--f-titre); font-weight: 330; font-size: clamp(44px, 5.2vw, 80px); line-height: 0.98; letter-spacing: -0.035em; text-shadow: 0 2px 30px rgba(6, 10, 28, 0.35); }
+.site .tete h1 span { display: inline; }
+.site .tete .chapeau { color: rgba(255, 255, 255, 0.74); max-width: 50ch; margin-top: 30px; }

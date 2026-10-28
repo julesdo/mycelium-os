@@ -54,6 +54,8 @@ const ATTEINTS_AUTREMENT: Readonly<Record<string, string>> = {
 		'Le flux du blog. Les lecteurs de flux le trouvent par la balise alternate des pages du blog.',
 	'/llms.txt':
 		'Ce qu’est Letikette, pour les assistants qui lisent le site. Ils le cherchent à la racine (llmstxt.org), pas par un lien.',
+	'/nouveau-site':
+		'Le site d’après la maquette V26, en chantier (docs/superpowers/specs/2026-10-28-site-en-production.md). Non liée et non indexée exprès, jusqu’au jour où `/` la sert.',
 	'/desinscription/$jeton':
 		'Le lien du pied des e-mails de prospection (crm/consentement.ts). Le prospect qui l’ouvre n’a pas de compte ici ; l’adresse est une chaîne écrite dans un e-mail, pas un lien de routeur.',
 	'/attente/$jeton':

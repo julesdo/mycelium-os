@@ -1,0 +1,19 @@
+/* Site public, « preuves » : transplanté de la maquette V26, lignes 298 à 310
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LES PREUVES, CENTRÉES ─────────────────────────────── */
+.site .preuves { position: relative; z-index: 1; background: var(--papier); text-align: center; }
+.site .preuves .enveloppe { padding-block: 64px 72px; display: grid; gap: 26px; justify-items: center; }
+.site .preuves .legende-preuves { font-size: 15px; color: var(--encre-2); margin: 0; }
+.site .defile { width: 100%; max-width: 980px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+.site .defile-piste { display: flex; gap: 48px; width: max-content; animation: site-defile 38s linear infinite; }
+.site .logo { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 18px; letter-spacing: -0.02em; color: var(--encre-2); white-space: nowrap; }
+.site .logo img { width: 26px; height: 26px; border-radius: 7px; filter: grayscale(1) contrast(1.1); opacity: 0.8; }
+@keyframes site-defile { to { transform: translateX(-50%); } }
+.site .sources { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; font-size: 14px; color: var(--gris); max-width: 760px; }
+.site .sources b { color: var(--encre-2); font-weight: 500; }
+.site .sources i { font-style: normal; opacity: 0.5; }
+

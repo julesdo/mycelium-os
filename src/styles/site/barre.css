@@ -1,0 +1,85 @@
+/* Site public, « barre » : transplanté de la maquette V26, lignes 57 à 135
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LA BARRE ───────────────────────────────────────────── */
+/* Une barre pleine largeur, transparente sur l'aube ; au défilement, une bande de verre qui prend
+   la couleur de la section qu'elle survole (data-ton), sur les codes de Linear, AngelList et Frontify. */
+.site .barre { --b-texte: rgba(255, 255, 255, 0.76); --b-fort: #fff; --b-fond: rgba(7, 11, 30, 0.58); --b-filet: rgba(255, 255, 255, 0.09); --b-capsule: rgba(255, 255, 255, 0.06); --b-capsule-bord: rgba(255, 255, 255, 0.1); --b-glisseur: rgba(255, 255, 255, 0.12); --b-cta: #fff; --b-cta-texte: var(--encre); position: fixed; z-index: 50; top: env(safe-area-inset-top, 0px); left: 0; right: 0; color: var(--b-texte); transition: color 300ms ease; }
+.site .barre[data-ton="clair"] { --b-texte: rgba(12, 17, 36, 0.64); --b-fort: var(--encre); --b-fond: rgba(248, 248, 252, 0.74); --b-filet: rgba(12, 17, 36, 0.08); --b-capsule: rgba(12, 17, 36, 0.035); --b-capsule-bord: rgba(12, 17, 36, 0.06); --b-glisseur: rgba(12, 17, 36, 0.07); --b-cta: var(--encre); --b-cta-texte: #fff; }
+.site .barre::before { content: ""; position: absolute; inset: 0; background: var(--b-fond); border-bottom: 1px solid var(--b-filet); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); opacity: 0; transition: opacity 300ms ease, background 300ms ease, border-color 300ms ease; }
+.site .barre[data-defile="oui"]::before, .site .barre.mega-ouvert::before { opacity: 1; }
+.site .barre-int { position: relative; max-width: 1240px; margin-inline: auto; height: 76px; display: flex; align-items: center; gap: 14px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); transition: height 350ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .barre[data-defile="oui"] .barre-int { height: 62px; }
+.site .marque { display: flex; align-items: center; gap: 10px; font-family: var(--f-titre); font-weight: 500; font-size: 22px; letter-spacing: -0.02em; }
+.site .barre .marque { color: var(--b-fort); transition: color 300ms ease; margin-right: auto; }
+.site .marque svg { width: 28px; height: 28px; }
+.site .capsule { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px; background: var(--b-capsule); box-shadow: inset 0 0 0 1px var(--b-capsule-bord); transition: background 300ms ease, box-shadow 300ms ease; }
+.site .glisseur { position: absolute; left: 0; top: 4px; height: calc(100% - 8px); width: 0; border-radius: 999px; background: var(--b-glisseur); opacity: 0; transition: transform 320ms cubic-bezier(0.23, 1, 0.32, 1), width 320ms cubic-bezier(0.23, 1, 0.32, 1), opacity 200ms ease, background 300ms ease; pointer-events: none; }
+.site .lien-nav { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 14px; border: 0; background: none; border-radius: 999px; font-size: 14.5px; font-weight: 500; color: inherit; cursor: pointer; transition: color 200ms ease; }
+.site .lien-nav svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; transition: transform 250ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .lien-nav[aria-expanded="true"] svg { transform: rotate(180deg); }
+/* Le texte fort suit l'indicateur : un seul lien marqué à la fois, qu'on le lise ou qu'on le vise. */
+.site .lien-nav.sous-glisseur { color: var(--b-fort); }
+.site .actions { display: flex; align-items: center; gap: 6px; }
+.site .barre .connexion { padding: 8px 12px; border-radius: 999px; font-size: 14.5px; font-weight: 500; color: inherit; transition: color 200ms ease; }
+.site .bouton-barre { gap: 0; height: 40px; background: var(--b-cta); color: var(--b-cta-texte); transition: transform 120ms ease-out, background 300ms ease, color 300ms ease; }
+.site .progres-lecture { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, #ffcfa8, #b9a4ff 55%, #3d6bf5); opacity: 0; transition: opacity 300ms ease; }
+.site .barre[data-defile="oui"] .progres-lecture { opacity: 0.85; }
+/* Le menu « Logiciel » : une carte claire, quelle que soit la section dessous. */
+.site .mega { position: absolute; left: 50%; top: calc(100% + 8px); width: min(960px, calc(100% - 32px)); display: grid; grid-template-columns: 1.55fr 1fr; gap: 8px; padding: 8px; border-radius: 24px; background: rgba(255, 255, 255, 0.97); color: var(--encre); box-shadow: 0 40px 90px rgba(20, 22, 70, 0.28), 0 0 0 1px rgba(12, 17, 36, 0.06); transform: translateX(-50%) translateY(-6px) scale(0.985); transform-origin: 50% 0; opacity: 0; visibility: hidden; transition: opacity 180ms ease-out, transform 260ms cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 260ms; }
+.site .barre.mega-ouvert .mega { opacity: 1; visibility: visible; transform: translateX(-50%); transition: opacity 180ms ease-out, transform 260ms cubic-bezier(0.23, 1, 0.32, 1), visibility 0s; }
+.site .mega-liste { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 10px; }
+.site .mega-titre { grid-column: 1 / -1; padding: 6px 10px 8px; color: var(--gris); }
+.site .mega-item { display: flex; gap: 12px; padding: 10px; border-radius: 14px; transition: background 160ms ease; }
+.site .mega-item b { display: block; font-size: 14.5px; font-weight: 600; }
+/* Ciblé sur la description seule : un sélecteur « .mega-item span » attrapait aussi la vignette,
+   la passait en bloc et lui prenait sa couleur, d'où des pictogrammes collés en haut à gauche. */
+.site .mega-desc { display: block; font-size: 13px; color: var(--encre-2); line-height: 1.4; margin-top: 1px; }
+.site .mega-ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+.site .mega-ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) and (pointer: fine) { .site .mega-item:hover { background: #f3f3f9; } }
+.site .mega-vedette { position: relative; overflow: hidden; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; justify-content: flex-end; min-height: 300px; color: #fff; background: #2a2f7a; }
+.site .mega-vedette canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.site .mega-vedette .plume-mega { position: absolute; top: 18px; right: 18px; width: 92px; filter: drop-shadow(0 12px 18px rgba(20, 10, 60, 0.35)); }
+.site .mega-vedette .plume-mega svg { width: 100%; height: auto; display: block; }
+.site .mega-vedette b, .site .mega-vedette p, .site .mega-vedette .lien-vedette { position: relative; z-index: 1; }
+.site .mega-vedette b { font-family: var(--f-titre); font-weight: 400; font-size: 26px; letter-spacing: -0.02em; line-height: 1.1; text-shadow: 0 2px 20px rgba(20, 20, 70, 0.4); }
+.site .mega-vedette p { margin: 6px 0 14px; font-size: 14px; color: rgba(255, 255, 255, 0.86); max-width: 30ch; text-shadow: 0 1px 12px rgba(20, 20, 70, 0.4); }
+.site .lien-vedette { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 99px; background: rgba(255, 255, 255, 0.95); color: var(--encre); font-size: 13.5px; font-weight: 600; }
+/* Le menu au téléphone : une page pleine, l'aube au pied. */
+.site .menu { display: none; position: relative; width: 40px; height: 40px; border-radius: 999px; border: 0; background: var(--b-capsule); box-shadow: inset 0 0 0 1px var(--b-capsule-bord); color: var(--b-fort); transition: background 300ms ease, color 300ms ease; }
+.site .menu span { position: absolute; left: 12px; right: 12px; height: 1.6px; border-radius: 2px; background: currentColor; transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .menu span:first-child { transform: translateY(-3.5px); }
+.site .menu span:last-child { transform: translateY(3.5px); }
+.site .menu[aria-expanded="true"] span:first-child { transform: rotate(45deg); }
+.site .menu[aria-expanded="true"] span:last-child { transform: rotate(-45deg); }
+.site .feuille-menu { position: fixed; inset: 0; z-index: 49; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--papier); padding: calc(env(safe-area-inset-top, 0px) + 84px) max(20px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(20px, env(safe-area-inset-left, 0px)); opacity: 0; visibility: hidden; transition: opacity 220ms ease-out, visibility 0s linear 220ms; }
+.site .feuille-menu.ouverte { opacity: 1; visibility: visible; transition: opacity 220ms ease-out, visibility 0s; }
+.site .feuille-menu canvas { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 46svh; display: block; z-index: -1; pointer-events: none; }
+.site .feuille-liens { display: grid; }
+.site .feuille-liens a { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--filet); font-family: var(--f-titre); font-size: 32px; font-weight: 400; letter-spacing: -0.02em; color: var(--encre); }
+.site .feuille-liens a svg { width: 18px; height: 18px; fill: none; stroke: var(--gris); stroke-width: 1.6; stroke-linecap: round; }
+.site .feuille-titre { margin: 26px 0 8px; color: var(--gris); }
+.site .feuille-logiciel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.site .feuille-logiciel a { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.8); box-shadow: 0 0 0 1px var(--filet); font-size: 14px; font-weight: 600; }
+.site .feuille-logiciel .mega-ic { width: 30px; height: 30px; border-radius: 9px; }
+.site .feuille-logiciel .mega-ic svg { width: 15px; height: 15px; }
+.site .feuille-pied { margin-top: auto; padding-top: 28px; display: grid; gap: 10px; }
+.site .feuille-pied .bouton { height: 50px; font-size: 16px; }
+.site .feuille-pied .connexion-feuille { text-align: center; padding: 10px; font-weight: 600; color: var(--encre); }
+.site .feuille-menu .anim { opacity: 0; transform: translateY(10px); transition: opacity 360ms ease-out, transform 460ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .feuille-menu.ouverte .anim { opacity: 1; transform: none; transition-delay: calc(var(--i, 0) * 40ms + 60ms); }
+html.menu-ouvert { overflow: hidden; }
+.site .bouton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 999px; border: 0; font-weight: 600; font-size: 15px; white-space: nowrap; transition: transform 0.12s ease-out, background 0.15s; }
+.site .bouton:active { transform: scale(0.97); }
+.site .bouton-clair { background: #fff; color: var(--encre); }
+.site .bouton-encre { background: var(--encre); color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+	.site .lien-nav:hover, .site .barre .connexion:hover { color: var(--b-fort); }
+	.site .bouton-clair:hover { background: #ecebff; }
+	.site .bouton-encre:hover { background: #1d2442; }
+}
+

@@ -1,0 +1,137 @@
+/* Site public, « plume-scenes » : transplanté de la maquette V26, lignes 1412 à 1542
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── PLUME, LES SCÈNES VIVANTES ─────────────────────────
+   Chaque capacité joue sa scène sur la plaque, seule : le dépôt qui se relit puis deux dossiers qu'on
+   démarre, la relance que Plume écrit puis qu'on retient, la réponse du client qu'il comprend (et les
+   deux autres réponses possibles), la phrase du gérant qu'il transforme en geste à confirmer. Le même
+   doigt fantôme et la même pastille que l'en-tête. La barre de chaque capacité suit l'horloge de sa
+   scène ; au téléphone, les quatre barres se rangent en tête comme des récits, et le texte de la
+   capacité en cours reste collé à sa scène. */
+.site .plume-grille .capacite .progres { width: calc(var(--avance, 0) * 100%); animation: none; }
+.site .plume-grille .capacite.active .progres { animation: none; }
+.site .vue.active { animation: site-monte 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.site .plaque { --sortie: cubic-bezier(0.23, 1, 0.32, 1); }
+.site .plaque .vue button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.site .pilote-tete .p-direct { display: inline-flex; align-items: center; gap: 5px; height: 20px; margin-left: auto; padding: 0 8px; border-radius: 99px; background: #eceffb; color: var(--bleu-2); font-size: 10.5px; font-weight: 600; white-space: nowrap; transition: opacity 260ms ease; }
+.site .p-direct::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: site-v-pouls 1.6s ease-out infinite; }
+.site .p-pilote.repos .p-direct { opacity: 0; }
+.site .p-etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 13px; }
+.site .p-etapes li { display: flex; align-items: center; gap: 9px; color: var(--gris); transition: color 250ms ease; }
+.site .p-etapes li.encours { color: var(--encre-2); }
+.site .p-etapes li.fait { color: var(--encre); }
+.site .p-part { opacity: 0.35; transition: opacity 400ms ease; }
+.site .p-part.ouverte { opacity: 1; }
+.site .p-part:not(.ouverte) button { pointer-events: none; }
+.site .p-part .part-ligne { position: relative; }
+.site .p-part .part-ligne button { transition: transform 140ms ease-out, opacity 200ms ease, background 200ms ease; }
+.site .p-part .part-ligne button:active { transform: scale(0.94); }
+.site .p-fait { position: absolute; right: 0; top: 50%; margin-top: -8px; opacity: 0; transform: scale(0.6); transition: opacity 220ms ease, transform 360ms cubic-bezier(0.3, 1.6, 0.5, 1); }
+.site .p-fait .v-coche { background: #1d2340; box-shadow: none; }
+.site .p-fait .v-coche svg { stroke-dashoffset: 0; }
+.site .part-ligne.demarre button { opacity: 0; pointer-events: none; }
+.site .part-ligne.demarre .p-fait { opacity: 1; transform: none; }
+.site .part-ligne.demarre [data-sous] { color: var(--bleu-2); }
+.site .p-courriel .de { position: relative; }
+.site .p-ecrit { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; font-size: 11.5px; color: var(--bleu-2); opacity: 0; transition: opacity 200ms ease; }
+.site .p-ecrit i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: site-v-pense 1s ease-in-out infinite; }
+.site .p-ecrit i:nth-child(2) { animation-delay: 0.15s; }
+.site .p-ecrit i:nth-child(3) { animation-delay: 0.3s; margin-right: 4px; }
+.site .p-ecrit.vu { opacity: 1; }
+.site .p-courriel p { min-height: 63px; }
+.site .p-envoi { opacity: 0; transform: translateY(10px); transition: opacity 300ms ease, transform 420ms var(--sortie); }
+.site .p-envoi.ouverte { opacity: 1; transform: none; }
+.site .p-envoi .heure b { font-variant-numeric: tabular-nums; transition: color 200ms ease; }
+.site .p-envoi .heure span { font-variant-numeric: tabular-nums; }
+.site .p-envoi button { transition: transform 140ms ease-out, background 200ms ease; }
+.site .p-envoi button:active { transform: scale(0.94); }
+.site .p-envoi.retenue .heure b { color: var(--gris); text-decoration: line-through; text-decoration-color: rgba(12, 17, 36, 0.3); }
+.site .p-envoi.retenue .heure span { color: var(--bleu-2); }
+.site .p-parole { padding: 16px; display: grid; gap: 12px; font-size: 14px; }
+.site .p-recu { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--gris); }
+.site .p-recu b { display: block; font-size: 13.5px; color: var(--encre); }
+.site .p-message { margin: 0; padding: 11px 14px; border-radius: 4px 16px 16px 16px; background: var(--papier); font-family: var(--f-titre); font-size: 18px; letter-spacing: -0.01em; transition: opacity 220ms ease, transform 320ms var(--sortie), filter 220ms ease; }
+.site .p-message.change { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+.site .p-compris { position: relative; display: flex; align-items: center; gap: 12px; min-height: 38px; }
+.site .p-compris > div { flex: 1; min-width: 0; transition: opacity 220ms ease; }
+.site .p-compris b { display: block; font-size: 13.5px; font-weight: 600; }
+.site .p-compris span { display: block; font-size: 12px; color: var(--encre-2); }
+.site .p-compris .vignette { transition: background 300ms ease, color 300ms ease; }
+.site .p-lit { position: absolute; left: 46px; top: 50%; display: flex; gap: 4px; margin-top: -3px; opacity: 0; transition: opacity 200ms ease; }
+.site .p-lit i { width: 6px; height: 6px; border-radius: 50%; background: #7e84a6; animation: site-v-pense 1s ease-in-out infinite; }
+.site .p-lit i:nth-child(2) { animation-delay: 0.15s; }
+.site .p-lit i:nth-child(3) { animation-delay: 0.3s; }
+.site .p-compris.lit > div { opacity: 0; }
+.site .p-compris.lit .p-lit { opacity: 1; }
+.site .p-frise { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.site .p-frise li { padding: 10px; border-radius: 10px; border: 1px solid var(--filet); font-size: 12px; color: var(--encre-2); transition: opacity 260ms ease, transform 380ms var(--sortie), background 300ms ease; }
+.site .p-frise li b { display: block; font-size: 13px; color: var(--encre); font-variant-numeric: tabular-nums; }
+.site .p-frise li.calme { background: #f1f2fa; }
+.site .p-frise.cache li { opacity: 0; transform: translateY(6px); }
+.site .p-frise li:nth-child(2) { transition-delay: 60ms; }
+.site .p-frise li:nth-child(3) { transition-delay: 120ms; }
+.site .p-choix { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 12px; border-top: 1px solid var(--filet); }
+.site .plaque .plume-coin { pointer-events: none; }
+.site .p-choix > span { width: 100%; margin-bottom: 1px; font-size: 12.5px; color: var(--encre-2); }
+.site .p-choix button { height: 32px; padding: 0 12px; border: 0; border-radius: 99px; background: var(--papier); box-shadow: inset 0 0 0 1px var(--filet); font-family: var(--f-titre); font-size: 15px; color: var(--encre-2); transition: background 200ms ease, color 200ms ease, transform 140ms ease-out, box-shadow 200ms ease; }
+.site .p-choix button:active { transform: scale(0.95); }
+.site .p-choix button[aria-pressed="true"] { background: #1d2340; color: #fff; box-shadow: 0 8px 18px -10px rgba(29, 35, 64, 0.7); }
+.site .p-conv { min-height: 300px; align-content: start; }
+.site .p-conv .question { font-size: 14px; transition: opacity 200ms ease; }
+.site .p-conv .question:empty { opacity: 0; }
+.site .p-conv .reponse { opacity: 0; transition: opacity 260ms ease; }
+.site .p-conv .reponse.vu { opacity: 1; }
+.site .p-conv .reponse > svg { width: 24px; height: 24px; }
+.site .p-conv .reponse.pense span::after { content: "…"; animation: site-v-pense 1s ease-in-out infinite; display: inline-block; }
+.site .p-geste { opacity: 0; transform: translateY(8px); transition: opacity 300ms ease, transform 420ms var(--sortie); }
+.site .p-geste.vu { opacity: 1; transform: none; }
+.site .p-geste .actions button { flex: 1; height: 32px; border: 0; border-radius: 99px; font-size: 12.5px; font-weight: 600; transition: transform 140ms ease-out, opacity 200ms ease; }
+.site .p-geste .actions button:active { transform: scale(0.96); }
+.site .p-geste .actions .plein { background: var(--encre); color: #fff; }
+.site .p-geste .actions .vide { background: transparent; color: var(--encre-2); }
+.site .p-geste .p-etapes { display: none; margin-top: 4px; font-size: 12.5px; }
+.site .p-geste.confirme .actions { display: none; }
+.site .p-geste.confirme .p-etapes { display: grid; }
+.site .p-geste.annule { opacity: 0.5; }
+.site .p-geste.annule .actions { display: none; }
+.site .p-fin { margin: 0; font-size: 13px; color: var(--encre-2); opacity: 0; transition: opacity 300ms ease; }
+.site .p-fin.vu { opacity: 1; }
+.site .plaque .p-doigt { z-index: 5; }
+.site .plaque .p-visite { top: auto; bottom: 18px; left: auto; right: 18px; z-index: 4; margin: 0; transform: none; animation: none; }
+@media (hover: hover) and (pointer: fine) {
+	.site .p-part .part-ligne button:hover, .site .p-envoi button:hover { background: var(--papier); }
+	.site .p-choix button:not([aria-pressed="true"]):hover { background: #eceefa; color: var(--encre); }
+}
+@media (min-width: 901px) and (max-width: 1240px) {
+	/* La plaque est trop étroite pour la scène et Plume côte à côte : Plume prend le bas. */
+	.site .plaque { padding-bottom: 150px; place-items: start end; }
+	.site .plaque .plume-coin { width: 118px; }
+}
+@media (max-width: 900px) {
+	/* Au téléphone, les capacités deviennent quatre barres en tête, comme des récits, et seule
+	   la capacité en cours garde son titre et son texte, juste au-dessus de sa scène. */
+	.site .capacites { position: relative; display: block; padding-top: 30px; }
+	.site .capacite { position: absolute; top: 0; left: calc(var(--k) * 25%); width: calc(25% - 6px); height: 30px; padding: 0; border: 0; }
+	.site .capacite:last-child { border-bottom: 0; }
+	.site .capacite h3, .site .capacite p { display: none; }
+	.site .capacite::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 99px; background: rgba(12, 17, 36, 0.1); }
+	.site .plume-grille .capacite .progres { top: 0; height: 3px; border-radius: 99px; }
+	.site .plume-grille .capacite.fini .progres { width: 100%; }
+	.site .capacite.active { position: static; width: auto; height: auto; padding: 0; }
+	.site .capacite.active h3, .site .capacite.active p { display: block; }
+	.site .capacite.active p { max-height: none; }
+	.site .capacite.active::before { left: calc(var(--k) * 25%); right: auto; width: calc(25% - 6px); }
+	.site .plume-grille .capacite.active .progres { left: calc(var(--k) * 25%); width: calc(var(--avance, 0) * (25% - 6px)); }
+}
+@media (max-width: 760px) {
+	.site .plaque .p-visite { bottom: 14px; right: 14px; }
+	.site .p-choix button { font-size: 14px; padding: 0 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.site .p-envoi, .site .p-geste, .site .p-frise li, .site .p-message, .site .p-part { transition-duration: 1ms !important; }
+	.site .p-direct::before, .site .p-ecrit i, .site .p-lit i { animation: none !important; }
+}
+

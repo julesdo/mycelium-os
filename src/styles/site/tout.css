@@ -1,0 +1,162 @@
+/* Site public, « tout » : transplanté de la maquette V26, lignes 618 à 773
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── TOUT CE QUI VA AVEC ───────────────────────────────── */
+.site .tout { background: var(--papier); }
+.site .tuiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 64px; }
+/* LES SIX TUILES : au repos, une scène complète, en papier sur sa brume. Sous la souris, la tuile se
+   soulève, un liseré de lumière suit le curseur, la scène se décale en profondeur, et chacune joue
+   son instant : un document tombe dans le coffre et se scelle, l'aiguille refait le calcul de
+   l'indice, le versement du mois reçoit son tampon, l'IBAN se copie puis le virement arrive, les
+   professionnels s'ouvrent en éventail, les factures coulent des logiciels jusqu'à Letikette.
+   Au doigt, l'instant se joue une fois, quand la tuile entre à l'écran. */
+.site .tuile { --mx: 50%; --my: 50%; --px: 0px; --py: 0px; position: relative; display: flex; flex-direction: column; padding: 8px 8px 24px; border-radius: 24px; background: #fff; color: inherit; box-shadow: 0 1px 2px rgba(12, 17, 36, 0.04), 0 0 0 1px var(--filet); transition: transform 560ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 420ms ease; -webkit-tap-highlight-color: transparent; }
+.site .tuile::before { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; padding: 1.2px; background: radial-gradient(240px circle at var(--mx) var(--my), rgba(170, 150, 255, 0.95), rgba(255, 196, 160, 0.7) 32%, transparent 62%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: 0; transition: opacity 300ms ease; pointer-events: none; }
+.site .tuile h3 { display: flex; align-items: center; gap: 8px; font-family: var(--f-titre); font-weight: 420; font-size: 25px; letter-spacing: -0.02em; padding: 0 16px; }
+.site .t-fleche { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: translateX(-6px); transition: opacity 220ms ease, transform 320ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .tuile p { margin: 6px 0 0; padding: 0 16px; font-size: 15px; color: var(--encre-2); }
+.site .tuile:focus-visible { outline: 2px solid var(--bleu); outline-offset: 4px; }
+.site .decor { position: relative; height: 240px; margin-bottom: 20px; overflow: hidden; border-radius: 17px; isolation: isolate; background: #e9e6f5; }
+.site .decor > canvas { position: absolute; inset: -6%; z-index: -1; width: 112%; height: 112%; display: block; transform: translate3d(calc(var(--px) * -0.5), calc(var(--py) * -0.5), 0) scale(1); transition: transform 700ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .plan { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transform: translate3d(var(--px), var(--py), 0); transition: transform 700ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .tuile.anime .decor > canvas { transform: translate3d(calc(var(--px) * -0.5), calc(var(--py) * -0.5), 0) scale(1.05); }
+@media (hover: hover) and (pointer: fine) {
+	.site .tuile.anime { transform: translateY(-6px); box-shadow: 0 34px 60px -26px rgba(60, 40, 140, 0.3), 0 0 0 1px var(--filet); }
+	.site .tuile.anime::before { opacity: 1; }
+	.site .tuile.anime .t-fleche { opacity: 1; transform: none; }
+}
+/* Le papier : crème, grain, ombre en deux couches. */
+.site .pap { position: relative; background: linear-gradient(180deg, #fffdf8, #f5f0e6); color: var(--encre); box-shadow: 0 1px 2px rgba(40, 30, 100, 0.08), 0 14px 28px -8px rgba(40, 30, 100, 0.24); }
+.site .pap::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grain); opacity: 0.28; mix-blend-mode: multiply; pointer-events: none; }
+.site .barres { display: grid; gap: 6px; }
+.site .barres i { display: block; height: 4.5px; border-radius: 3px; background: #e5e1ee; }
+.site .ressort { transition: transform 800ms cubic-bezier(0.34, 1.3, 0.64, 1), opacity 260ms ease; }
+
+/* 1. Le coffre : une pile de documents scellés ; le survol en fait tomber un nouveau. */
+.site .pile-docs { position: relative; width: 142px; height: 172px; margin: -6px 120px 0 0; }
+.site .feuillet { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 9px; padding: 15px 13px; border-radius: 6px; }
+.site .feuillet b { font-size: 10.5px; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.site .feuillet .barres i:nth-child(1) { width: 82%; } .site .feuillet .barres i:nth-child(2) { width: 64%; } .site .feuillet .barres i:nth-child(3) { width: 72%; } .site .feuillet .barres i:nth-child(4) { width: 48%; }
+.site .sceau-doc { position: absolute; right: 10px; bottom: 10px; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #5b80f7, #2a46c8 60%, #24339a); box-shadow: 0 4px 10px rgba(42, 70, 200, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.site .sceau-doc svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+.site .d1 { transform: translate(-22px, 10px) rotate(-8deg); }
+.site .d2 { transform: translate(14px, 0) rotate(4deg); }
+.site .d3 { transform: translate(-4px, -210px) rotate(-18deg); opacity: 0; }
+/* Un seul sceau visible : celui du document du dessus. */
+.site .d1 .sceau-doc, .site .anime .d2 .sceau-doc { opacity: 0; transition: opacity 200ms ease; }
+.site .d3 .sceau-doc { transform: scale(0.2); opacity: 0; transition: transform 520ms cubic-bezier(0.34, 1.7, 0.64, 1), opacity 160ms ease; }
+.site .anime .d1 { transform: translate(-40px, 16px) rotate(-13deg); }
+.site .anime .d2 { transform: translate(30px, 8px) rotate(9deg); }
+.site .anime .d3 { transform: translate(-2px, -2px) rotate(-1.5deg); opacity: 1; }
+.site .anime .d3 .sceau-doc { transform: none; opacity: 1; transition-delay: 620ms; }
+.site .etq-tuile { position: absolute; z-index: 2; right: 18px; bottom: 16px; filter: drop-shadow(0 10px 16px rgba(20, 16, 60, 0.26)); transform-origin: 16px -10px; }
+.site .etq-tuile::before { content: ""; position: absolute; left: 15px; top: -14px; width: 1.2px; height: 22px; background: rgba(100, 92, 160, 0.6); }
+.site .etq-tuile .etq-papier { padding: 10px 13px 10px 27px; border-radius: 8px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+.site .etq-tuile .etq-oeillet { left: 10px; top: 11px; width: 10px; height: 10px; -webkit-mask: radial-gradient(circle, transparent 0 2.4px, #000 2.9px); mask: radial-gradient(circle, transparent 0 2.4px, #000 2.9px); }
+.site .etq-tuile .etq-pli { width: 10px; height: 10px; }
+.site .etq-tuile small { display: block; font-size: 10.5px; color: var(--encre-2); white-space: nowrap; }
+.site .etq-tuile b { display: block; font-family: var(--f-titre); font-weight: 400; font-size: 17px; letter-spacing: -0.01em; white-space: nowrap; }
+.site .etq-tuile.balance { animation: site-balance 1.4s cubic-bezier(0.3, 0.7, 0.4, 1); }
+
+/* 2. La santé : un cadran d'instrument ; l'aiguille part de 50 et chaque fait la déplace. */
+.site .sante { display: flex; align-items: center; gap: 10px; padding: 0 16px; width: 100%; justify-content: center; }
+.site .cadran { position: relative; width: 178px; flex: none; }
+.site .cadran svg { display: block; width: 100%; height: auto; overflow: visible; }
+.site .cadran .graduation { stroke: rgba(12, 17, 36, 0.2); stroke-width: 1.6; stroke-linecap: round; transition: stroke 180ms ease; }
+.site .cadran .graduation.majeure { stroke-width: 2.2; }
+.site .cadran .graduation.allumee { stroke: #2a46c8; }
+.site .cadran .chiffre-grad { font: 500 8.5px var(--f-mono); fill: rgba(12, 17, 36, 0.45); }
+.site .cadran .aiguille { stroke: var(--encre); stroke-width: 2.4; stroke-linecap: round; }
+.site .cadran .pivot { fill: var(--encre); }
+.site .cadran .pivot-int { fill: #fffdf8; }
+.site .cadran-val { margin-top: 2px; text-align: center; }
+.site .cadran-val b { display: block; font-family: var(--f-titre); font-weight: 300; font-size: 38px; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.site .cadran-val span { font-size: 11px; color: var(--encre-2); }
+.site .faits { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.site .faits li { display: flex; align-items: baseline; gap: 7px; padding: 7px 10px; border-radius: 9px; font-size: 11.5px; line-height: 1.25; color: var(--encre-2); transition: opacity 300ms ease, transform 420ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .faits li b { flex: none; font-family: var(--f-mono); font-weight: 500; font-size: 11px; color: var(--encre); }
+.site .faits.cache li { opacity: 0; transform: translateX(10px); }
+
+/* 3. L'échéancier : trois coupons ; le versement du mois reçoit son tampon. */
+.site .echeancier { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; padding: 0 14px; }
+.site .coupons { display: flex; gap: 8px; }
+.site .coupon { position: relative; width: 98px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 14px 12px 16px; border-radius: 8px; -webkit-mask: radial-gradient(circle 4px at 0 50%, transparent 3.5px, #000 4px) left / 51% 100% no-repeat, radial-gradient(circle 4px at 100% 50%, transparent 3.5px, #000 4px) right / 51% 100% no-repeat; mask: radial-gradient(circle 4px at 0 50%, transparent 3.5px, #000 4px) left / 51% 100% no-repeat, radial-gradient(circle 4px at 100% 50%, transparent 3.5px, #000 4px) right / 51% 100% no-repeat; }
+.site .coupon .mono { font-size: 9.5px; color: var(--gris); }
+.site .coupon b { font-family: var(--f-titre); font-weight: 400; font-size: 21px; letter-spacing: -0.02em; white-space: nowrap; }
+.site .coupon small { font-size: 10.5px; color: var(--encre-2); }
+.site .coupon.a-venir { opacity: 0.72; }
+.site .tampon { position: absolute; right: 6px; bottom: 9px; z-index: 1; padding: 3px 7px 2px; border: 1.8px solid rgba(42, 70, 200, 0.85); border-radius: 5px; color: rgba(42, 70, 200, 0.9); font: 600 10px/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; transform: rotate(-12deg); mix-blend-mode: multiply; }
+.site .tampon-mois { opacity: 0; transform: rotate(-4deg) scale(1.8); transition: opacity 120ms ease, transform 380ms cubic-bezier(0.2, 1.4, 0.4, 1); }
+.site .anime .tampon-mois { opacity: 1; transform: rotate(-12deg) scale(1); transition-delay: 320ms; }
+.site .anime .coupon-mois small { opacity: 0; }
+.site .coupon-mois small { transition: opacity 200ms ease 300ms; }
+.site .jauge-ech { width: min(310px, 100%); }
+.site .jauge-ech .piste { position: relative; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.7); box-shadow: inset 0 0 0 1px rgba(12, 17, 36, 0.06); overflow: hidden; }
+.site .jauge-ech .piste i { position: absolute; inset: 0; width: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffcfa8, #8f7cf2 60%, #2a46c8); transform-origin: 0 50%; transform: scaleX(0.3333); transition: transform 900ms cubic-bezier(0.65, 0, 0.35, 1); }
+.site .anime .jauge-ech .piste i { transform: scaleX(0.6667); transition-delay: 380ms; }
+.site .jauge-ech span { display: block; margin-top: 7px; font-size: 12px; color: var(--encre-2); text-align: center; font-variant-numeric: tabular-nums; }
+.site .jauge-ech span b { color: var(--encre); font-weight: 600; }
+
+/* 4. La page de paiement : le bordereau ; l'IBAN se copie, puis le virement arrive. */
+.site .bordereau { width: 236px; padding: 15px 15px 9px; border-radius: 12px; }
+.site .bordereau .mono { display: block; font-size: 9.5px; color: var(--gris); }
+.site .bordereau .somme { display: block; margin: 3px 0 9px; font-family: var(--f-titre); font-weight: 400; font-size: 30px; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.site .copie { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin: 0 -7px; padding: 7px; border-radius: 8px; border-top: 1px solid rgba(12, 17, 36, 0.07); font-size: 11px; transition: background 240ms ease; }
+.site .copie > span { color: var(--gris); }
+.site .copie code { font: 500 10.5px var(--f-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.site .copier { position: relative; display: inline-grid; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--bleu-2); }
+.site .copier > * { grid-area: 1 / 1; text-align: right; transition: opacity 200ms ease, transform 300ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .copier .fait { display: inline-flex; align-items: center; gap: 3px; opacity: 0; transform: translateY(6px); }
+.site .copier .fait svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.site .anime .copie-iban { background: rgba(61, 107, 245, 0.08); transition-delay: 260ms; }
+.site .anime .copie-iban .copier .avant { opacity: 0; transform: translateY(-6px); transition-delay: 300ms; }
+.site .anime .copie-iban .copier .fait { opacity: 1; transform: none; transition-delay: 300ms; }
+.site .virement { position: absolute; left: 50%; bottom: 14px; display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 9px; border-radius: 99px; background: rgba(14, 18, 48, 0.9); color: #fff; font-size: 12px; white-space: nowrap; box-shadow: 0 12px 26px rgba(20, 16, 60, 0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: translate(-50%, 70px); opacity: 0; transition: transform 640ms cubic-bezier(0.23, 1, 0.32, 1), opacity 240ms ease; }
+.site .virement i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #ffcfa8, #b9a4ff); }
+.site .virement i svg { width: 11px; height: 11px; fill: none; stroke: #10142e; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.site .virement b { font-weight: 600; }
+.site .anime .virement { transform: translate(-50%, 0); opacity: 1; transition-delay: 1100ms; }
+.site .anime .bordereau { transform: translateY(-16px); transition-delay: 1000ms; }
+.site .bordereau { transition: transform 640ms cubic-bezier(0.23, 1, 0.32, 1); }
+
+/* 5. La défense : trois portraits en pile ; le survol les ouvre en éventail. */
+.site .eventail { position: relative; width: 120px; height: 160px; }
+.site .pro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 16px 10px 12px; border-radius: 12px; text-align: center; }
+.site .portrait { display: grid; place-items: center; width: 50px; height: 50px; margin-bottom: 4px; border-radius: 50%; font-family: var(--f-titre); font-size: 20px; color: #fff; box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(40, 30, 100, 0.2); }
+.site .pro b { font-size: 11.5px; font-weight: 600; line-height: 1.2; }
+.site .pro span:not(.portrait) { font-size: 10px; color: var(--encre-2); line-height: 1.25; }
+.site .pro em { display: inline-flex; align-items: center; gap: 3px; margin-top: auto; padding: 3px 8px; border-radius: 99px; background: #efecf8; font-style: normal; font-size: 10px; font-weight: 600; color: var(--bleu-2); white-space: nowrap; }
+.site .pro em svg { width: 9px; height: 9px; fill: currentColor; }
+.site .p1 { z-index: 1; transform: translate(-14px, 6px) rotate(-8deg); }
+.site .p2 { z-index: 3; transform: translate(0, 0) rotate(0); }
+.site .p3 { z-index: 2; transform: translate(14px, 6px) rotate(8deg); }
+.site .anime .p1 { transform: translate(-112px, 10px) rotate(-11deg); }
+.site .anime .p2 { transform: translate(0, -10px) scale(1.05); }
+.site .anime .p3 { transform: translate(112px, 10px) rotate(11deg); transition-delay: 40ms; }
+
+/* 6. Les logiciels : quatre logiciels reliés à Letikette ; le survol fait couler les factures. */
+.site .reseau { position: absolute; inset: 0; }
+/* Les fils seulement (enfant direct) : « .reseau svg » attrapait aussi le logo du centre et le collait en haut à gauche. */
+.site .reseau > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.site .reseau .fil { fill: none; stroke: rgba(80, 70, 150, 0.32); stroke-width: 1.3; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
+.site .reseau .flux { fill: none; stroke: #2a46c8; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.06 1; stroke-dashoffset: 1.06; opacity: 0; vector-effect: non-scaling-stroke; }
+.site .anime .reseau .flux { opacity: 1; animation: site-flux 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.site .anime .reseau .flux:nth-of-type(2) { animation-delay: 0.3s; }
+.site .anime .reseau .flux:nth-of-type(3) { animation-delay: 0.6s; }
+.site .anime .reseau .flux:nth-of-type(4) { animation-delay: 0.9s; }
+@keyframes site-flux { to { stroke-dashoffset: 0; } }
+.site .puce { position: absolute; z-index: 1; display: flex; align-items: center; gap: 7px; padding: 7px 11px 7px 7px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; transform: translate(-50%, -50%); }
+.site .puce img { width: 20px; height: 20px; border-radius: 6px; }
+.site .centre-logo { position: absolute; left: 50%; top: 50%; z-index: 2; display: grid; place-items: center; width: 62px; height: 62px; border-radius: 18px; background: #fff; box-shadow: 0 12px 28px rgba(42, 46, 120, 0.25), 0 0 0 1px rgba(12, 17, 36, 0.05); transform: translate(-50%, -50%); transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease; }
+.site .centre-logo svg { width: 38px; height: 38px; }
+.site .anime .centre-logo { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 8px rgba(61, 107, 245, 0.12), 0 14px 32px rgba(42, 46, 120, 0.3); }
+.site .compte-factures { position: absolute; left: 50%; top: calc(50% + 46px); z-index: 2; padding: 4px 10px; border-radius: 99px; background: rgba(14, 18, 48, 0.88); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; transform: translate(-50%, 6px); opacity: 0; transition: opacity 240ms ease, transform 400ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .anime .compte-factures { opacity: 1; transform: translate(-50%, 0); transition-delay: 500ms; }
+@media (max-width: 760px) {
+	.site .anime .p1 { transform: translate(-100px, 10px) rotate(-11deg); }
+	.site .anime .p3 { transform: translate(100px, 10px) rotate(11deg); }
+}
+

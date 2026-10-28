@@ -33,6 +33,11 @@ declare module '@tanstack/react-router' {
 		questionPourPlume?: string;
 		/** Le fil neuf de l'Aide vient du Plume de l'espace : il rappelle de relire. */
 		depuisPlume?: boolean;
+		/**
+		 * L'adresse tapée dans un champ d'inscription du site (28/10/2026) : l'inscription
+		 * s'ouvre au mot de passe. Jamais dans l'adresse de la page (journaux, mesure d'audience).
+		 */
+		adresseDInscription?: string;
 	}
 }
 

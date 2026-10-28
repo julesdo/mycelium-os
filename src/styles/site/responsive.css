@@ -1,0 +1,67 @@
+/* Site public, « responsive » : transplanté de la maquette V26, lignes 2087 à 2147
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── TABLETTE ET TÉLÉPHONE ─────────────────────────────── */
+@media (max-width: 1080px) {
+	.site .capsule, .site .mega { display: none; }
+	.site .menu { display: block; }
+}
+/* Sous 1024 px, la conclusion se lit d'un bloc : le texte, puis la facture et son étiquette complète. */
+@media (max-width: 1023px) {
+	.site .conclusion { grid-template-columns: 1fr; gap: 28px; }
+	.site .recit-scene { max-width: 620px; }
+	.site .table { height: auto; padding: 32px 18px 150px; }
+	.site .facture { position: relative; left: auto; top: auto; width: 100%; max-width: 420px; }
+	.site .etiquette-recit { position: relative; left: auto; top: auto; width: min(320px, 90%); margin: -36px 0 0 auto; }
+	.site .cordon { display: none; }
+	.site .plume-loi { left: 18px; right: auto; bottom: 16px; width: 100px; }
+}
+@media (max-width: 900px) {
+	.site .tuiles { grid-template-columns: 1fr; }
+	.site .plume-grille { grid-template-columns: 1fr; gap: 32px; }
+	.site .appel-plaque { grid-template-columns: 1fr; }
+	.site .pied .enveloppe { grid-template-columns: 1fr 1fr; }
+	.site .coffre { grid-template-columns: 1fr; gap: 56px; margin-top: 90px; }
+	.site .piste { grid-template-columns: 1fr; justify-content: stretch; justify-items: center; row-gap: 28px; }
+	.site .piste::before { left: 50%; right: auto; top: 20px; bottom: 20px; width: 2px; height: auto; background: linear-gradient(180deg, rgba(255, 207, 168, 0.75), rgba(143, 176, 255, 0.75)); }
+	.site .goutte { display: none; }
+	.site .piste::before { bottom: 150px; }
+	.site .letikette-noeud { grid-column: 1; margin-top: 18px; }
+	.site .connecteur { display: none; }
+	.site .registre { grid-template-columns: 1fr; margin-top: 100px; }
+	.site .chemin { margin-top: 110px; }
+}
+@media (max-width: 760px) {
+	.site .barre .connexion { display: none; }
+	.site .barre-int { height: 64px; }
+	.site .barre[data-defile="oui"] .barre-int { height: 56px; }
+	.site .bouton-barre { height: 36px; padding: 0 14px; font-size: 14px; }
+	.site .bouton-barre .long { display: none; }
+	.site .marque { font-size: 20px; }
+	.site .facture-dessin, .site .trace { left: 18px; width: 136px; }
+	.site .telephone-coffre { right: -66px; }
+	.site .tete { padding-top: calc(env(safe-area-inset-top, 0px) + 118px); }
+	.site .tete .chapeau { font-size: 17px; }
+	/* Au téléphone, le champ et le bouton s'empilent dans la même pièce de verre, chacun à pleine
+	   largeur et à hauteur de pouce. */
+	.site .inscription { flex-direction: column; align-items: stretch; gap: 6px; border-radius: 28px; }
+	.site .champ { flex: none; height: 56px; }
+	.site .inscription .bouton { width: 100%; height: 52px; font-size: 16px; }
+	.site .inscription-ok { flex-wrap: wrap; align-content: center; padding: 14px 18px; }
+	.site .ok-texte { white-space: normal; }
+	.site .ok-modifier { width: 100%; height: 44px; }
+	.site .aide { margin-left: 12px; }
+	.site .preuves .enveloppe { padding-block: 72px 56px; }
+	.site .plaque { min-height: 0; padding: 36px 16px 150px; place-items: center; }
+	.site .plaque .plume-coin { width: 110px; left: 14px; bottom: 10px; }
+	.site .appel-plaque { padding-bottom: 240px; }
+	.site .plume-fete-cadre { width: 170px; right: 20px; bottom: 30px; }
+	.site .pied .enveloppe { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.site *, .site *::before, .site *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+	.site .defile-piste { flex-wrap: wrap; justify-content: center; width: auto; }
+}

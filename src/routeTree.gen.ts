@@ -23,6 +23,7 @@ import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
+import { Route as NouveauSiteRouteImport } from './routes/nouveau-site'
 import { Route as PaiementRouteImport } from './routes/paiement'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as ProcedureSansJugeRouteImport } from './routes/procedure-sans-juge'
@@ -164,6 +165,11 @@ const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
 const NouveauMotDePasseRoute = NouveauMotDePasseRouteImport.update({
   id: '/nouveau-mot-de-passe',
   path: '/nouveau-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NouveauSiteRoute = NouveauSiteRouteImport.update({
+  id: '/nouveau-site',
+  path: '/nouveau-site',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaiementRoute = PaiementRouteImport.update({
@@ -544,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/nouveau-site': typeof NouveauSiteRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/procedure-sans-juge': typeof ProcedureSansJugeRoute
@@ -630,6 +637,7 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/nouveau-site': typeof NouveauSiteRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/procedure-sans-juge': typeof ProcedureSansJugeRoute
@@ -719,6 +727,7 @@ export interface FileRoutesById {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
+  '/nouveau-site': typeof NouveauSiteRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/procedure-sans-juge': typeof ProcedureSansJugeRoute
@@ -809,6 +818,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/nouveau-site'
     | '/paiement'
     | '/politique-de-confidentialite'
     | '/procedure-sans-juge'
@@ -895,6 +905,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/nouveau-site'
     | '/paiement'
     | '/politique-de-confidentialite'
     | '/procedure-sans-juge'
@@ -983,6 +994,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
+    | '/nouveau-site'
     | '/paiement'
     | '/politique-de-confidentialite'
     | '/procedure-sans-juge'
@@ -1072,6 +1084,7 @@ export interface RootRouteChildren {
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
+  NouveauSiteRoute: typeof NouveauSiteRoute
   PaiementRoute: typeof PaiementRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   ProcedureSansJugeRoute: typeof ProcedureSansJugeRoute
@@ -1192,6 +1205,13 @@ declare module '@tanstack/react-router' {
       path: '/nouveau-mot-de-passe'
       fullPath: '/nouveau-mot-de-passe'
       preLoaderRoute: typeof NouveauMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nouveau-site': {
+      id: '/nouveau-site'
+      path: '/nouveau-site'
+      fullPath: '/nouveau-site'
+      preLoaderRoute: typeof NouveauSiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paiement': {
@@ -1869,6 +1889,7 @@ const rootRouteChildren: RootRouteChildren = {
   MentionsLegalesRoute: MentionsLegalesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
+  NouveauSiteRoute: NouveauSiteRoute,
   PaiementRoute: PaiementRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   ProcedureSansJugeRoute: ProcedureSansJugeRoute,

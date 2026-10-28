@@ -1,0 +1,140 @@
+/* Site public, « securite » : transplanté de la maquette V26, lignes 1686 à 1819
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── SÉCURITÉ : TROIS CHAPITRES ───────────────────────────
+   Chaque garde-fou a son tableau peint, de la nuit à l'aube, et UN objet de papier qu'on manipule.
+   La scène se dessine à une taille fixe (620 × 460 au bureau, 400 × 480 au téléphone) et se met à
+   l'échelle du tableau : les objets gardent leurs proportions à toutes les largeurs. */
+.site .securite .nuit-fond { height: 900px; }
+.site .chapitres { position: relative; z-index: 2; display: grid; gap: clamp(80px, 9vw, 128px); margin-top: clamp(84px, 9vw, 124px); }
+.site .chapitre { display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); gap: clamp(36px, 5.5vw, 88px); align-items: center; }
+.site .chapitre:nth-child(even) { grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr); }
+.site .chapitre:nth-child(even) .chapitre-texte { order: 2; }
+.site .chapitre-texte h3 { font-family: var(--f-titre); font-weight: 400; font-size: clamp(30px, 3.1vw, 42px); line-height: 1.07; letter-spacing: -0.022em; color: #fff; max-width: 14ch; }
+.site .chapitre-texte p { max-width: 36ch; margin: 18px 0 0; font-size: 17px; color: rgba(255, 255, 255, 0.72); }
+.site .chapitre-fait { display: inline-block; margin-top: 24px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.14); font: 500 11.5px/1.4 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: rgba(214, 220, 255, 0.72); }
+
+.site .tableau-sec-ombre { filter: drop-shadow(0 40px 60px rgba(0, 0, 0, 0.42)); }
+.site .tableau-sec { --coin: 40px; --k: 1; position: relative; overflow: hidden; aspect-ratio: 620 / 460; border-radius: 28px; background: #1b2366; }
+.site .tableau-sec canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.site .tableau-sec > .pli { background: rgba(255, 255, 255, 0.32); }
+.site .scene-sec { position: absolute; z-index: 2; left: 0; top: 0; width: 620px; height: 460px; transform-origin: 0 0; scale: var(--k); transition: opacity 420ms ease; }
+.site .scene-sec.voile { opacity: 0; }
+.site .tableau-sec button { font: inherit; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.site .tableau-sec .s-visite { top: auto; bottom: 16px; left: 16px; right: auto; z-index: 6; margin: 0; transform: none; animation: none; }
+.site .tableau-sec .s-doigt { z-index: 7; }
+
+/* 1. Le scellé : la facture glisse dans l'enveloppe, le rabat se ferme, le cachet tombe. */
+.site .tableau-sec .s-facture { left: 58px; top: 96px; z-index: 6; }
+.site .s-trace { position: absolute; z-index: 1; left: 58px; top: 96px; width: 152px; height: 214px; border-radius: 8px; border: 1.5px dashed rgba(255, 255, 255, 0.24); transform: rotate(-7deg); opacity: 0; transition: opacity 300ms ease; }
+.site .deplace .s-trace { opacity: 1; }
+.site .depose .s-trace { opacity: 0; }
+.site .env-corps { position: absolute; z-index: 4; left: 230px; top: 196px; width: 270px; height: 176px; overflow: hidden; border-radius: 8px; background: linear-gradient(180deg, #faf6ee, #eee6d5); box-shadow: 0 22px 36px -12px rgba(4, 7, 30, 0.6), 0 2px 3px rgba(4, 7, 30, 0.22); transition: box-shadow 260ms ease, translate 260ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .env-corps::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.32; mix-blend-mode: multiply; pointer-events: none; }
+.site .env-corps svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.site .env-rabat { position: absolute; z-index: 1; left: 230px; top: 196px; width: 270px; height: 122px; clip-path: polygon(0 0, 100% 0, 52% 97%, 50% 100%, 48% 97%); background: linear-gradient(180deg, #e6dcc7, #d8ccb2); transform-origin: 50% 0; transform: perspective(800px) rotateX(180deg); transition: transform 600ms cubic-bezier(0.5, 0, 0.2, 1), z-index 0s linear 300ms, background 600ms ease; }
+.site .ferme .env-rabat { z-index: 5; background: linear-gradient(180deg, #f6f0e4, #e9dfcc); transform: perspective(800px) rotateX(0deg); }
+.site .au-dessus .env-corps { translate: 0 -4px; box-shadow: 0 0 0 3px rgba(255, 207, 168, 0.85), 0 26px 40px -12px rgba(4, 7, 30, 0.6); }
+.site .au-dessus .env-rabat { transform: perspective(800px) rotateX(165deg); }
+.site .env-cachet { position: absolute; z-index: 6; left: 337px; top: 270px; width: 58px; height: 58px; opacity: 0; scale: 1.7; filter: drop-shadow(0 6px 8px rgba(10, 14, 60, 0.45)); pointer-events: none; }
+.site .env-cachet svg { display: block; width: 100%; height: 100%; }
+.site .scelle .env-cachet { animation: site-cachet-pose 560ms cubic-bezier(0.3, 1.4, 0.5, 1) forwards; }
+@keyframes site-cachet-pose { 0% { opacity: 0; scale: 1.7; } 55% { opacity: 1; scale: 0.9; } 100% { opacity: 1; scale: 1; } }
+.site .env-fil { position: absolute; z-index: 5; left: 366px; top: 316px; width: 1.4px; height: 0; background: rgba(236, 232, 250, 0.85); transform-origin: 50% 0; rotate: -43deg; transition: height 380ms ease; }
+.site .etiquetee .env-fil { height: 51px; }
+.site .env-etiquette { position: absolute; z-index: 6; left: 382px; top: 334px; width: 186px; opacity: 0; transform: translateY(-12px) rotate(-10deg); transform-origin: 19px 19px; transition: opacity 300ms ease, transform 900ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+.site .etiquetee .env-etiquette { opacity: 1; transform: rotate(3deg); }
+.site .env-etiquette .etq-papier { padding: 13px 14px 12px 14px; }
+.site .env-etiquette .etq-label b { color: var(--encre); font-weight: 600; }
+.site .env-etiquette .etq-ligne { margin-top: 8px; padding-top: 7px; font-size: 11.5px; }
+
+/* 2. L'argent : le relevé où arrivent les virements, et ce qui passe par Letikette, dans le ciel. */
+.site .zero { position: absolute; left: 46px; top: 46px; margin: 0; color: #fff; }
+.site .zero b { display: block; font-family: var(--f-titre); font-weight: 300; font-size: 100px; line-height: 0.9; letter-spacing: -0.045em; white-space: nowrap; text-shadow: 0 6px 34px rgba(10, 10, 60, 0.35); }
+.site .zero span { display: block; margin-top: 14px; font: 500 11.5px/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(228, 232, 255, 0.82); }
+.site .releve { position: absolute; left: 304px; top: 112px; width: 284px; rotate: -2.5deg; filter: drop-shadow(0 24px 30px rgba(4, 7, 30, 0.5)) drop-shadow(0 2px 3px rgba(4, 7, 30, 0.2)); }
+.site .releve-papier { position: relative; display: block; padding: 18px 18px 12px; border-radius: 10px; background: linear-gradient(180deg, #fffdf8, #f6f1e7); color: var(--encre); clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%); }
+.site .releve-papier::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.3; mix-blend-mode: multiply; pointer-events: none; }
+.site .releve > .etq-pli { width: 20px; height: 20px; }
+.site .releve-tete { display: block; padding-bottom: 12px; border-bottom: 1px dashed rgba(12, 17, 36, 0.16); }
+.site .releve-titre { display: block; font: 500 10px/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--gris); }
+.site .releve-tete b { display: block; margin-top: 7px; font-family: var(--f-titre); font-weight: 500; font-size: 18px; line-height: 1.15; }
+.site .releve-iban { display: block; margin-top: 2px; font-size: 11.5px; letter-spacing: 0.02em; color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.site .releve-solde { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 12px 0 10px; font-size: 12px; color: var(--encre-2); }
+.site .releve-solde b { font-family: var(--f-titre); font-weight: 400; font-size: 27px; letter-spacing: -0.02em; color: var(--encre); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.site .releve-lignes { display: grid; }
+.site .releve-ligne { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: end; gap: 8px; padding: 7px 4px; margin: 0 -4px; border-top: 1px solid rgba(12, 17, 36, 0.07); font-size: 11.5px; }
+.site .releve-ligne i { font-style: normal; font-size: 10.5px; color: var(--gris); white-space: nowrap; }
+.site .releve-ligne span { overflow: hidden; color: var(--encre); white-space: nowrap; text-overflow: ellipsis; }
+.site .releve-ligne small { display: block; margin-bottom: 2px; font: 500 9px/1.2 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--gris); }
+.site .releve-ligne b { font-weight: 600; color: #2a3fae; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.site .releve-ligne b.moins { font-weight: 500; color: var(--encre-2); }
+.site .releve-ligne.arrive { border-radius: 4px; background: linear-gradient(90deg, rgba(61, 107, 245, 0.12), rgba(61, 107, 245, 0) 85%); animation: site-ligne-imprime 760ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes site-ligne-imprime { from { clip-path: inset(0 100% 0 0); opacity: 0.4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+.site .releve-solde b.monte { animation: site-solde-monte 600ms cubic-bezier(0.23, 1, 0.32, 1); }
+@keyframes site-solde-monte { 30% { color: #2a3fae; } }
+
+/* 3. La lettre qui va partir : elle flotte, prête ; retenue, elle se pose. */
+.site .lettre-porteur { position: absolute; inset: 0; translate: 0 -16px; transition: translate 800ms cubic-bezier(0.34, 1.3, 0.64, 1); }
+.site .retenue .lettre-porteur { translate: 0 0; }
+.site .lettre-flotte { position: absolute; inset: 0; animation: site-lettre-flotte 3.4s ease-in-out infinite; }
+.site .retenue .lettre-flotte { animation-play-state: paused; }
+@keyframes site-lettre-flotte { 0%, 100% { transform: translateY(0) rotate(-1.6deg); } 50% { transform: translateY(-7px) rotate(-0.6deg); } }
+.site .lettre { position: absolute; left: 122px; top: 124px; width: 300px; height: 190px; border-radius: 8px; background: linear-gradient(180deg, #fffdf8, #f2ede3); color: var(--encre); box-shadow: 0 2px 3px rgba(4, 7, 30, 0.2); }
+.site .lettre::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.3; mix-blend-mode: multiply; pointer-events: none; border-radius: inherit; }
+.site .lettre-trou { position: absolute; right: 14px; bottom: 14px; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fff 0 16%, #d4d4e0 30%, #8f92aa 66%, #6b6e8c 100%); -webkit-mask: radial-gradient(circle, transparent 0 2.2px, #000 2.7px); mask: radial-gradient(circle, transparent 0 2.2px, #000 2.7px); }
+.site .lettre-de { position: absolute; left: 20px; top: 16px; font-size: 10.5px; line-height: 1.35; color: var(--encre-2); }
+.site .lettre-fenetre { position: absolute; left: 110px; top: 76px; width: 172px; padding: 10px 12px; border-radius: 6px; background: rgba(214, 224, 250, 0.38); box-shadow: inset 0 0 0 1px rgba(120, 130, 180, 0.24); font-size: 11px; line-height: 1.4; color: var(--encre-2); }
+.site .lettre-fenetre b { display: block; font-family: var(--f-titre); font-weight: 500; font-size: 15px; color: var(--encre); }
+.site .lettre-objet { position: absolute; left: 20px; bottom: 16px; font: 500 9.5px/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--gris); }
+.site .lettre-fil { position: absolute; left: 403px; top: 295px; width: 1.4px; height: 42px; background: rgba(70, 60, 120, 0.7); transform-origin: 50% 0; rotate: -15deg; }
+.site .lettre-etiquette { position: absolute; left: 395px; top: 316px; width: 180px; transform-origin: 19px 0; rotate: 4deg; transition: rotate 700ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+.site .retenue .lettre-etiquette { rotate: -2deg; }
+.site .lettre-etiquette .etq-papier { padding: 14px 14px 13px 14px; }
+.site .lettre-etiquette .etq-label { font-family: var(--f-titre); font-size: 19px; color: var(--encre); padding-left: 24px; letter-spacing: -0.01em; }
+.site .lettre-compte { display: block; margin-top: 6px; font-size: 12px; color: var(--encre-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.site .lettre-retenir { display: block; width: 100%; height: 34px; margin-top: 12px; border: 0; border-radius: 99px; background: linear-gradient(180deg, #252d57 0%, #0c1124 100%); color: #fff; font-size: 13.5px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(6, 8, 26, 0.22), 0 6px 14px -6px rgba(6, 8, 26, 0.45); transition: transform 120ms ease-out, background 260ms ease, color 260ms ease, box-shadow 260ms ease; }
+.site .lettre-retenir:active { transform: scale(0.97); }
+.site .retenue .lettre-retenir { background: transparent; color: var(--encre); box-shadow: inset 0 0 0 1px rgba(12, 17, 36, 0.28); }
+.site .lettre-ombre { position: absolute; left: 150px; top: 336px; width: 250px; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgba(6, 8, 30, 0.5), rgba(6, 8, 30, 0)); scale: 0.82; opacity: 0.55; transition: scale 800ms cubic-bezier(0.34, 1.3, 0.64, 1), opacity 800ms ease; }
+.site .retenue .lettre-ombre { scale: 1; opacity: 0.9; }
+
+@media (hover: hover) and (pointer: fine) {
+	.site .lettre-retenir:hover { background: linear-gradient(180deg, #2f3868 0%, #141a36 100%); }
+	.site .retenue .lettre-retenir:hover { background: rgba(255, 255, 255, 0.6); }
+}
+@media (max-width: 900px) {
+	.site .chapitre, .site .chapitre:nth-child(even) { grid-template-columns: 1fr; gap: 28px; }
+	.site .chapitre:nth-child(even) .chapitre-texte { order: 0; }
+	.site .tableau-sec-ombre { width: 100%; max-width: 640px; }
+}
+@media (max-width: 760px) {
+	.site .securite .nuit-fond { height: 760px; }
+	.site .chapitres { gap: 72px; }
+	.site .chapitre-texte h3 { font-size: 30px; }
+	.site .chapitre-texte p { font-size: 16px; }
+	.site .tableau-sec { --coin: 32px; aspect-ratio: 400 / 480; border-radius: 24px; }
+	.site .scene-sec { width: 400px; height: 480px; }
+	.site .tableau-sec .s-facture, .site .s-trace { left: 30px; top: 34px; }
+	.site .env-corps, .site .env-rabat { left: 112px; top: 196px; }
+	.site .env-cachet { left: 219px; top: 270px; }
+	.site .env-fil { left: 248px; top: 322px; rotate: 39deg; }
+	.site .etiquetee .env-fil { height: 51px; }
+	.site .env-etiquette { left: 196px; top: 348px; }
+	.site .zero { left: 30px; top: 36px; }
+	.site .zero b { font-size: 78px; }
+	.site .releve { left: 58px; top: 146px; width: 304px; }
+	.site .lettre { left: 24px; top: 70px; }
+	.site .lettre-fil { left: 305px; top: 241px; height: 113px; rotate: 49deg; }
+	.site .lettre-etiquette { left: 200px; top: 296px; }
+	.site .lettre-ombre { left: 50px; top: 292px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.site .lettre-flotte, .site .scelle .env-cachet, .site .releve-ligne.arrive { animation: none; }
+	.site .scelle .env-cachet { opacity: 1; scale: 1; }
+	.site .env-rabat, .site .lettre-porteur, .site .lettre-ombre, .site .env-etiquette, .site .scene-sec { transition-duration: 1ms; }
+}
+

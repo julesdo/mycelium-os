@@ -1,0 +1,58 @@
+/* Site public, « boutons » : transplanté de la maquette V26, lignes 989 à 1040
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LES BOUTONS QUI COMPTENT ──────────────────────────
+   Ceux qui mènent à l'essai. Au repos : un objet de verre et de métal (reflet en haut, ombre courte),
+   et le bouton de la barre laisse passer un reflet toutes les sept secondes. Sous la souris : il se
+   soulève, s'éclaire là où est le curseur, le suit de quelques pixels, prend une lueur aux couleurs de
+   l'aube, son chevron devient une flèche, et une étiquette de papier se balance dessous :
+   « 30 jours d'essai, 0 € aujourd'hui ». Pressé : il s'enfonce, vite ; relâché, il revient en souplesse. */
+.site .bouton.cta { --tx: 0px; --ty: 0px; --s: 1; --mx: 50%; --my: 50%; --cta-lueur: rgba(91, 63, 212, 0.42); --cta-lueur-2: rgba(255, 160, 130, 0.34); --cta-spot: rgba(255, 255, 255, 0.24); --cta-reflet: rgba(255, 255, 255, 0.5); --cta-repos: 0 1px 2px rgba(6, 8, 26, 0.22), 0 4px 10px -4px rgba(6, 8, 26, 0.3); position: relative; isolation: isolate; gap: 7px; padding: 0 16px 0 20px; transform: translate(var(--tx), var(--ty)) scale(var(--s)); box-shadow: var(--cta-repos); transition: transform 520ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 320ms ease, background 300ms ease, color 300ms ease; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.site .cta-clair, .site .barre:not([data-ton="clair"]) .bouton-barre { --cta-lueur: rgba(255, 207, 168, 0.5); --cta-lueur-2: rgba(185, 164, 255, 0.45); --cta-spot: rgba(185, 164, 255, 0.34); --cta-reflet: rgba(140, 120, 255, 0.28); --cta-repos: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 16px -6px rgba(0, 0, 0, 0.35); }
+.site .bouton-encre.cta { background: linear-gradient(180deg, #252d57 0%, #0c1124 100%); }
+.site .cta-fond { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 0, 0.06)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.08); }
+.site .cta-fond::before { content: ""; position: absolute; inset: 0; background: radial-gradient(110px circle at var(--mx) var(--my), var(--cta-spot), transparent 70%); opacity: 0; transition: opacity 260ms ease; }
+.site .cta-fond::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 100%; background: linear-gradient(100deg, transparent 32%, var(--cta-reflet) 48%, transparent 62%); transform: translateX(-130%); }
+.site [data-luit] .cta-fond::after { animation: site-cta-reflet-lent 7s cubic-bezier(0.45, 0, 0.2, 1) 2.5s infinite; }
+@keyframes site-cta-reflet-lent { 0%, 84% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+@keyframes site-cta-reflet { from { transform: translateX(-130%); } to { transform: translateX(130%); } }
+.site .cta-txt { position: relative; }
+.site .cta-fleche { width: 10px; height: 10px; flex: none; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.site .cta-fleche .ligne { opacity: 0; transition: opacity 180ms ease; }
+.site .cta-fleche .pointe { transition: transform 260ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .cta:active { --s: 0.965; transition-duration: 110ms, 110ms, 300ms, 300ms; box-shadow: 0 1px 2px rgba(6, 8, 26, 0.25) !important; }
+.site .cta:focus-visible { outline: 2px solid #ffcfa8; outline-offset: 3px; }
+/* L'étiquette qui se balance sous le bouton : le fil, l'œillet, le coin coupé. */
+.site .cta-etq { position: absolute; z-index: 6; top: calc(100% + 12px); right: 16px; pointer-events: none; transform-origin: 14px -12px; opacity: 0; transform: translateY(-8px) rotate(-12deg); filter: drop-shadow(0 10px 18px rgba(12, 10, 50, 0.3)) drop-shadow(0 1px 2px rgba(12, 10, 50, 0.18)); transition: opacity 140ms ease, transform 200ms ease; }
+.site .cta-etq::before { content: ""; position: absolute; left: 14px; top: -12px; width: 1.2px; height: 21px; background: rgba(120, 112, 170, 0.75); }
+.site .cta-etq-papier { position: relative; display: block; padding: 9px 13px 9px 27px; border-radius: 8px; background: linear-gradient(180deg, #fffdf8, #f3eee4); color: var(--encre-2); font-size: 11.5px; font-weight: 500; line-height: 1.35; text-align: left; white-space: nowrap; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+.site .cta-etq-papier::before { content: ""; position: absolute; left: 10px; top: 9px; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fff 0 16%, #d4d4e0 30%, #8f92aa 66%, #6b6e8c 100%); -webkit-mask: radial-gradient(circle, transparent 0 2.2px, #000 2.7px); mask: radial-gradient(circle, transparent 0 2.2px, #000 2.7px); }
+.site .cta-etq-papier b { display: block; font-family: var(--f-titre); font-weight: 500; font-size: 13.5px; color: var(--encre); letter-spacing: -0.01em; }
+@media (hover: hover) and (pointer: fine) {
+	.site .bouton.cta:hover { --s: 1.02; box-shadow: 0 16px 34px -12px var(--cta-lueur-2), 0 8px 20px -8px var(--cta-lueur), 0 0 0 1px rgba(255, 255, 255, 0.06); }
+	.site .cta:hover .cta-fond::before { opacity: 1; }
+	.site .cta:hover .cta-fond::after { animation: site-cta-reflet 900ms cubic-bezier(0.23, 1, 0.32, 1) 1; }
+	.site .cta:hover .cta-fleche .ligne { opacity: 1; }
+	.site .cta:hover .cta-fleche .pointe { transform: translateX(3px); }
+	.site .cta:hover .cta-etq { opacity: 1; transform: none; transition: opacity 220ms ease 140ms, transform 900ms cubic-bezier(0.34, 1.56, 0.64, 1) 140ms; }
+	.site .barre .connexion { background-image: linear-gradient(currentColor, currentColor); background-repeat: no-repeat; background-position: 12px calc(100% - 6px); background-size: 0 1px; transition: color 200ms ease, background-size 320ms cubic-bezier(0.23, 1, 0.32, 1); }
+	.site .barre .connexion:hover { background-size: calc(100% - 24px) 1px; }
+	.site .lien-calcul:hover svg, .site .lien-fleche:hover svg { transform: translateX(4px); }
+	.site .lien-calcul:hover { color: var(--bleu-2); border-color: var(--bleu-2); }
+	.site .mega-vedette:hover .lien-vedette { transform: translateY(-1px); box-shadow: 0 10px 22px -8px rgba(20, 16, 70, 0.45); }
+	.site .mega-vedette:hover .lien-vedette svg { transform: translateX(3px); }
+	.site .rejouer:hover { background: rgba(255, 255, 255, 0.18); }
+}
+.site .lien-calcul { align-items: center; gap: 8px; transition: color 200ms ease, border-color 200ms ease; }
+.site .lien-calcul svg, .site .lien-fleche svg, .site .lien-vedette svg { transition: transform 260ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .lien-vedette { transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 300ms ease; }
+@media (max-width: 760px) {
+	.site .bouton-barre.cta { padding: 0 12px 0 14px; gap: 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.site .cta-etq { transform: none !important; }
+}
+

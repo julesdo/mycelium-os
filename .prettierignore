@@ -11,3 +11,9 @@ docs/references/
 # Generated files
 **/_generated/
 src/env.d.ts
+
+# La maquette V26, référence de la comparaison au pixel, et la feuille du site qui en est
+# transplantée : ni l'une ni l'autre ne se reformate (un blanc de plus dans le HTML peut
+# changer un rendu ; une règle par ligne garde la trace de la maquette).
+docs/superpowers/maquettes/
+src/styles/site/

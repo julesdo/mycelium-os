@@ -1,0 +1,37 @@
+/*
+ * LA FEUILLE DU SITE PUBLIC (28/10/2026), d'après la maquette V26.
+ *
+ * Elle n'est chargée que par les pages publiques, par le `head` de leur route : l'application
+ * ne la porte pas, et TanStack la retire quand on quitte la page. L'ordre des imports EST
+ * l'ordre de la maquette : la cascade en dépend.
+ *
+ * Polices hébergées chez nous, aucun appel à Google Fonts : Newsreader avec son axe de taille
+ * optique (la maquette le demandait, 6 à 72), Hanken Grotesk et IBM Plex Mono.
+ */
+@import '@fontsource-variable/newsreader/opsz.css';
+@import '@fontsource-variable/hanken-grotesk/wght.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import './base.css';
+@import './barre.css';
+@import './tete.css';
+@import './champ-email.css';
+@import './preuves.css';
+@import './loi.css';
+@import './plume.css';
+@import './tout.css';
+@import './securite-nuit.css';
+@import './appel.css';
+@import './pied.css';
+@import './boutons.css';
+@import './vitrine.css';
+@import './vivants.css';
+@import './plume-scenes.css';
+@import './tarifs.css';
+@import './securite.css';
+@import './blog.css';
+@import './metiers.css';
+@import './balayer.css';
+@import './fluidite.css';
+@import './plume-dessin.css';
+@import './responsive.css';

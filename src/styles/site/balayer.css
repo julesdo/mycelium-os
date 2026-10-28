@@ -1,0 +1,14 @@
+/* Site public, « balayer » : transplanté de la maquette V26, lignes 2000 à 2007
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── BALAYER LES RÉCITS (téléphone) ───────────────────────
+   Le geste horizontal appartient au récit, le vertical à la page. Pendant un balayage, les
+   animations d'entrée habituelles se taisent : c'est le doigt qui mène. */
+@media (max-width: 900px) {
+	.site .plume-grille .plaque { touch-action: pan-y; }
+	.site .plaque[data-sens] .vue.active, .site .plaque[data-sens] .b-feuille .b-papier { animation: none !important; }
+}
+

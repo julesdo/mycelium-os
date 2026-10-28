@@ -1,0 +1,155 @@
+/* Site public, « champ-email » : transplanté de la maquette V26, lignes 150 à 297
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LE CHAMP D'E-MAIL ─────────────────────────────────
+   Une pilule de verre : l'enveloppe s'ouvre au focus, le libellé monte au-dessus de la saisie, un
+   anneau aux couleurs de l'aube l'entoure. Adresse valide : une coche se trace et le bouton s'allume
+   (au doigt, il n'y a pas de survol : c'est là que le geste se récompense). Faute de frappe sur un
+   domaine connu : une correction d'un toucher. Envoi : le bouton attend, puis la pilule devient la
+   confirmation. Les couleurs vivent dans des variables, une nuit (en-tête) et un jour (appel). */
+.site .inscription { --i-fond: rgba(255, 255, 255, 0.08); --i-fond-focus: rgba(255, 255, 255, 0.13); --i-bord: rgba(255, 255, 255, 0.16); --i-bord-survol: rgba(255, 255, 255, 0.28); --i-texte: #fff; --i-libelle: rgba(255, 255, 255, 0.58); --i-libelle-haut: rgba(255, 255, 255, 0.66); --i-icone: rgba(255, 255, 255, 0.5); --i-accent: #ffcfa8; --i-halo: rgba(185, 164, 255, 0.16); --i-ombre: 0 0 0 rgba(0, 0, 0, 0); --i-ombre-focus: 0 18px 40px -18px rgba(4, 6, 30, 0.6); --i-ok: #ffd9b8; --i-alerte: #ffcfa8;
+	position: relative; margin-top: 34px; display: flex; align-items: center; gap: 6px; max-width: 520px; padding: 6px; border-radius: 999px; background: var(--i-fond); border: 1px solid var(--i-bord); box-shadow: var(--i-ombre); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); transition: background 260ms ease, border-color 260ms ease, box-shadow 360ms cubic-bezier(0.23, 1, 0.32, 1), transform 360ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .inscription-jour { --i-fond: rgba(255, 255, 255, 0.8); --i-fond-focus: #fff; --i-bord: rgba(255, 255, 255, 0.95); --i-bord-survol: #fff; --i-texte: var(--encre); --i-libelle: #7d82a0; --i-libelle-haut: #8a8fac; --i-icone: #9a9eb8; --i-accent: var(--bleu-2); --i-halo: rgba(91, 63, 212, 0.12); --i-ombre: 0 10px 30px rgba(42, 30, 110, 0.14); --i-ombre-focus: 0 22px 46px -16px rgba(42, 30, 110, 0.32); --i-ok: var(--bleu-2); --i-alerte: #b4416f; }
+.site .inscription::before { content: ""; position: absolute; inset: -1px; z-index: 0; border-radius: inherit; padding: 1.5px; background: linear-gradient(100deg, #ffcfa8, #c7b2ff 45%, #6d8bff); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: 0; transition: opacity 260ms ease; pointer-events: none; }
+.site .inscription:focus-within { background: var(--i-fond-focus); box-shadow: 0 0 0 6px var(--i-halo), var(--i-ombre-focus); }
+.site .inscription:focus-within::before { opacity: 1; }
+.site .inscription.erreur::before { background: linear-gradient(100deg, var(--i-alerte), var(--i-alerte)); opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .site .inscription:not(:focus-within):hover { border-color: var(--i-bord-survol); } }
+.site .champ { position: relative; z-index: 1; flex: 1; min-width: 0; height: 50px; border-radius: 999px; cursor: text; }
+.site .champ input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 19px 44px 0 50px; border: 0; border-radius: inherit; background: transparent; color: var(--i-texte); font: 500 16px/1.2 var(--f-texte); letter-spacing: 0.005em; outline: none; caret-color: var(--i-accent); -webkit-appearance: none; appearance: none; }
+.site .champ input::selection { background: rgba(185, 164, 255, 0.4); }
+.site .champ input:-webkit-autofill, .site .champ input:-webkit-autofill:focus { -webkit-text-fill-color: var(--i-texte); -webkit-box-shadow: 0 0 0 40px transparent inset; transition: background-color 9999s ease 0s; caret-color: var(--i-accent); }
+@media (hover: hover) { .site .champ input:-webkit-autofill:hover { -webkit-text-fill-color: var(--i-texte); -webkit-box-shadow: 0 0 0 40px transparent inset; transition: background-color 9999s ease 0s; caret-color: var(--i-accent); } }
+.site .champ label { position: absolute; left: 50px; top: 50%; color: var(--i-libelle); font-size: 16px; line-height: 1; white-space: nowrap; pointer-events: none; transform: translateY(-50%); transform-origin: 0 50%; transition: transform 260ms cubic-bezier(0.23, 1, 0.32, 1), color 200ms ease, letter-spacing 200ms ease; }
+.site .champ input:focus + label, .site .champ input:not(:placeholder-shown) + label, .site .champ input:-webkit-autofill + label { transform: translateY(-112%) scale(0.72); color: var(--i-libelle-haut); letter-spacing: 0.02em; }
+.site .champ-icone { position: absolute; left: 18px; top: 50%; width: 21px; height: 21px; margin-top: -10.5px; fill: none; stroke: var(--i-icone); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; overflow: visible; pointer-events: none; transition: stroke 220ms ease; }
+.site .inscription:focus-within .champ-icone { stroke: var(--i-accent); animation: site-enveloppe 460ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes site-enveloppe { 0% { transform: scale(1); } 35% { transform: scale(0.86) translateY(1px); } 100% { transform: scale(1); } }
+/* L'étiquette du bouton attire avant le premier geste ; une fois qu'on écrit, elle laisse la place. */
+.site .inscription:focus-within .cta-etq, .site .inscription.envoye .cta-etq { opacity: 0 !important; }
+.site .champ-bout { position: absolute; right: 8px; top: 50%; width: 30px; height: 30px; margin-top: -15px; }
+.site .champ-ok { position: absolute; inset: 5px; width: 20px; height: 20px; fill: none; stroke: var(--i-ok); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.site .champ-ok circle, .site .champ-ok path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 420ms cubic-bezier(0.65, 0, 0.35, 1); }
+.site .champ-ok path { transition-delay: 0ms; }
+.site .valide .champ-ok circle { stroke-dashoffset: 0; }
+.site .valide .champ-ok path { stroke-dashoffset: 0; transition-delay: 260ms; }
+.site .champ-effacer { position: absolute; inset: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--i-icone); cursor: pointer; opacity: 0; transform: scale(0.8); pointer-events: none; transition: opacity 180ms ease, transform 220ms cubic-bezier(0.23, 1, 0.32, 1), background 160ms ease; touch-action: manipulation; }
+.site .champ-effacer svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.site .inscription.rempli:not(.valide) .champ-effacer { opacity: 1; transform: none; pointer-events: auto; }
+.site .champ-effacer:active { transform: scale(0.9); }
+@media (hover: hover) and (pointer: fine) { .site .champ-effacer:hover { background: rgba(127, 127, 160, 0.16); } }
+.site .inscription .bouton { position: relative; z-index: 1; height: 50px; }
+.site .inscription.valide .cta { box-shadow: 0 14px 30px -12px var(--cta-lueur-2), 0 6px 18px -8px var(--cta-lueur); }
+.site .inscription.valide .cta-fleche .ligne { opacity: 1; }
+.site .inscription.valide .cta-fleche .pointe { transform: translateX(3px); }
+.site .cta.reflet .cta-fond::after { animation: site-cta-reflet 900ms cubic-bezier(0.23, 1, 0.32, 1) 1; }
+.site .cta-txt, .site .cta-fleche { transition: opacity 200ms ease, filter 200ms ease, transform 260ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .cta-attente { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; opacity: 0; transform: scale(0.7); transition: opacity 200ms ease, transform 260ms cubic-bezier(0.23, 1, 0.32, 1); animation: site-tourne 700ms linear infinite; }
+.site .cta.envoi .cta-txt, .site .cta.envoi .cta-fleche { opacity: 0; filter: blur(4px); transform: scale(0.94); }
+.site .cta.envoi .cta-attente { opacity: 1; transform: none; }
+.site .cta.envoi { pointer-events: none; }
+@keyframes site-secoue { 0%, 100% { transform: translateX(0); } 18% { transform: translateX(-7px); } 38% { transform: translateX(6px); } 58% { transform: translateX(-4px); } 78% { transform: translateX(2px); } }
+.site .inscription.secoue { animation: site-secoue 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+/* La confirmation : la pilule garde sa place et change de contenu. */
+.site .inscription > .champ, .site .inscription > .bouton { transition: opacity 220ms ease, filter 220ms ease; }
+.site .inscription.envoye > .champ, .site .inscription.envoye > .bouton { opacity: 0; filter: blur(4px); pointer-events: none; }
+.site .inscription.envoye::before { opacity: 0; }
+.site .inscription-ok { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 0 8px 0 16px; color: var(--i-texte); opacity: 0; transform: translateY(6px); pointer-events: none; transition: opacity 260ms ease, transform 420ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .inscription.envoye .inscription-ok { opacity: 1; transform: none; pointer-events: auto; transition-delay: 160ms; }
+.site .ok-coche { width: 30px; height: 30px; flex: none; fill: none; stroke: var(--i-ok); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.site .ok-coche circle, .site .ok-coche path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 520ms cubic-bezier(0.65, 0, 0.35, 1); }
+.site .inscription.envoye .ok-coche circle { stroke-dashoffset: 0; transition-delay: 220ms; }
+.site .inscription.envoye .ok-coche path { stroke-dashoffset: 0; transition-delay: 560ms; }
+.site .ok-texte { flex: 1; min-width: 0; font-size: 14.5px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.site .ok-texte b { font-weight: 600; }
+.site .ok-texte small { display: block; font-size: 12.5px; opacity: 0.72; }
+.site .ok-modifier { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 99px; background: rgba(127, 127, 170, 0.16); color: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background 160ms ease, transform 140ms ease-out; touch-action: manipulation; }
+.site .ok-modifier:active { transform: scale(0.96); }
+@media (hover: hover) and (pointer: fine) { .site .ok-modifier:hover { background: rgba(127, 127, 170, 0.26); } }
+/* La ligne d'aide : erreur précise, correction proposée, ou confirmation. */
+.site .aide { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-height: 22px; margin: 10px 0 0 18px; font-size: 13.5px; color: rgba(255, 255, 255, 0.72); }
+.site .aide:empty { margin-top: 10px; }
+.site .aide .signe { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; font-size: 11px; font-weight: 700; background: var(--aide-alerte, #ffcfa8); color: #10142e; flex: none; }
+.site .aide-entree { animation: site-aide-entre 320ms cubic-bezier(0.23, 1, 0.32, 1); }
+@keyframes site-aide-entre { from { opacity: 0; transform: translateY(-4px); } }
+.site .correction { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 99px; background: rgba(255, 255, 255, 0.14); color: inherit; font-size: 13px; cursor: pointer; transition: background 160ms ease, transform 140ms ease-out; touch-action: manipulation; }
+.site .correction b { font-weight: 600; }
+.site .correction:active { transform: scale(0.96); }
+@media (hover: hover) and (pointer: fine) { .site .correction:hover { background: rgba(255, 255, 255, 0.22); } }
+.site .leves { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0 0; padding: 0; list-style: none; font-size: 14px; color: rgba(255, 255, 255, 0.62); }
+.site .leves li { display: flex; align-items: center; gap: 8px; }
+.site .leves svg { width: 14px; height: 14px; color: var(--aurore); }
+
+
+
+.site .carte { background: #fff; border: 1px solid var(--filet); border-radius: 14px; box-shadow: 0 1px 2px rgba(12, 17, 36, 0.04); }
+.site .montant-bloc { padding: 22px 22px 18px; text-align: center; }
+.site .montant-bloc .date { font-size: 13px; color: var(--encre-2); }
+.site .montant { font-size: 50px; font-weight: 600; letter-spacing: -0.04em; line-height: 1.05; font-variant-numeric: tabular-nums; margin: 4px 0; }
+.site .montant small { font-size: 0.5em; letter-spacing: -0.02em; }
+.site .montant-bloc .sous { font-size: 13px; color: var(--encre-2); }
+.site .anciennete { margin: 16px 0 0; }
+.site .anciennete .bande { display: flex; height: 8px; border-radius: 99px; overflow: hidden; gap: 2px; }
+.site .anciennete .bande span:nth-child(1) { flex: 1; background: #c9d0ee; }
+.site .anciennete .bande span:nth-child(2) { flex: 3; background: #6d82d6; }
+.site .anciennete .bande span:nth-child(3) { flex: 24; background: #1f3591; }
+.site .anciennete .legende { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 10px; text-align: left; font-size: 12px; color: var(--encre-2); }
+.site .anciennete .legende b { display: block; color: var(--encre); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.site .rangee { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.site .rangee + .rangee { border-top: 1px solid var(--filet); }
+.site .vignette { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+.site .vignette svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.site .v-argent { background: #e7ebff; color: #2a46c8; }
+.site .v-temps { background: #efe9ff; color: #6a4ae0; }
+.site .v-papiers { background: #e2f5fa; color: #0e8fae; }
+.site .v-part { background: #e6eeff; color: #2f63e6; }
+.site .v-question { background: #fde8f2; color: #c63d84; }
+.site .rangee .txt { flex: 1; min-width: 0; }
+.site .rangee .txt b { display: block; font-size: 13.5px; font-weight: 600; }
+.site .rangee .txt span { display: block; font-size: 12px; color: var(--encre-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.site .rangee .val { font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.site .rangee .val span { display: block; font-size: 11.5px; font-weight: 400; color: var(--gris); }
+.site .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 12px; font-weight: 600; background: #eef0f7; color: var(--encre-2); }
+.site .pilote { padding: 16px; }
+.site .pilote-tete { display: flex; align-items: center; gap: 10px; }
+.site .pilote-tete > svg { width: 38px; height: 38px; }
+.site .pilote-tete b { display: block; font-size: 14px; }
+.site .pilote-tete span { display: block; font-size: 12px; color: var(--encre-2); }
+.site .pilote h4 { margin: 14px 0 8px; font-size: 14px; font-weight: 600; }
+.site .coches { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 13px; }
+.site .coches li { display: flex; align-items: center; gap: 9px; color: var(--gris); transition: color 0.3s; }
+.site .coches li i { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid #cfd3e4; flex: none; position: relative; transition: all 0.3s; }
+.site .coches li.fait { color: var(--encre); }
+.site .coches li.fait i { border-color: var(--bleu-2); background: var(--bleu-2); }
+.site .coches li.fait i::after { content: ""; position: absolute; left: 4px; top: 1.5px; width: 3.5px; height: 7px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+.site .coches li.encours i { border-color: var(--bleu-2); border-right-color: transparent; animation: site-tourne 0.8s linear infinite; }
+.site .coches li.encours { color: var(--encre); }
+@keyframes site-tourne { to { transform: rotate(360deg); } }
+.site .part { margin-top: 14px; border-top: 1px solid var(--filet); padding-top: 10px; }
+.site .part h5 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--encre-2); }
+.site .part-ligne { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 12.5px; }
+.site .part-ligne b { font-weight: 600; }
+.site .part-ligne > div span { display: block; font-size: 11.5px; color: var(--gris); }
+.site .part-ligne button { margin-left: auto; height: 26px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--filet); background: #fff; font-size: 12px; font-weight: 600; color: var(--encre); }
+.site .fil { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.site .question { align-self: flex-end; max-width: 82%; background: #fff; border: 1px solid var(--filet); padding: 9px 12px; border-radius: 16px 16px 4px 16px; }
+.site .reponse { display: flex; gap: 8px; align-items: flex-start; line-height: 1.45; }
+.site .reponse > svg { width: 22px; height: 22px; flex: none; }
+.site .mini { background: #fff; border: 1px solid var(--filet); border-radius: 13px; }
+.site .mini .rangee { padding: 9px 10px; }
+.site .mini .avatar { width: 28px; height: 28px; font-size: 10.5px; }
+.site .mini .rangee .txt b, .site .mini .rangee .val { font-size: 12.5px; }
+.site .mini .rangee .txt span { font-size: 11px; }
+.site .geste { padding: 11px; }
+.site .geste b { display: block; font-size: 12.5px; }
+.site .geste p { margin: 2px 0 10px; font-size: 11.5px; color: var(--encre-2); line-height: 1.4; }
+.site .geste .actions { display: flex; gap: 6px; }
+.site .geste .actions span { flex: 1; height: 30px; border-radius: 99px; display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+.site .geste .actions .plein { background: var(--encre); color: #fff; }
+.site .geste .actions .vide { color: var(--encre-2); }
+.site .compositeur { margin: 0 10px 14px; height: 40px; border-radius: 99px; background: #fff; border: 1px solid var(--filet); display: flex; align-items: center; padding: 0 6px 0 14px; color: var(--gris); font-size: 12.5px; }
+.site .compositeur i { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; background: var(--encre); }
+

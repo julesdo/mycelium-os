@@ -1,0 +1,37 @@
+/* Site public, « vivants » : transplanté de la maquette V26, lignes 1381 à 1411
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LES BLOCS VIVANTS ─────────────────────────────────
+   La grammaire des tuiles, en plus discret, sur toutes les grandes scènes peintes : un liseré de
+   lumière qui suit le curseur et le paysage qui recule d'un cran. Un seul geste par bloc, toujours
+   lié à ce qu'il raconte. Souris seulement ; au doigt, rien ne bouge en plus. */
+.site [data-vivant] > canvas { transition: transform 800ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site [data-vivant].survol > canvas { transform: translate3d(calc(var(--px, 0px) * -1), calc(var(--py, 0px) * -1), 0) scale(1.045); }
+.site .lueur { position: absolute; inset: 0; z-index: 6; border-radius: inherit; padding: 1.2px; background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(190, 172, 255, 0.95), rgba(255, 200, 166, 0.7) 32%, transparent 64%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: 0; transition: opacity 320ms ease; pointer-events: none; }
+.site .survol > .lueur { opacity: 1; }
+/* Les saisons et la courbe se lisent à la souris, de gauche à droite. */
+.site [data-tableau="saisons"].pret, .site [data-tableau="courbe"].pret { cursor: ew-resize; }
+.site .t-curseur, .site .t-curseur-halo, .site .t-curseur-ligne { opacity: 0; transition: opacity 200ms ease; pointer-events: none; }
+.site .t-curseur { fill: #fffaf0; }
+.site .t-curseur-halo { fill: rgba(255, 236, 204, 0.38); }
+.site .t-curseur-ligne { stroke: rgba(255, 255, 255, 0.6); stroke-width: 1; stroke-dasharray: 2 4; stroke-linecap: round; }
+.site .t-info { position: absolute; z-index: 5; left: 0; top: 0; padding: 7px 11px; border-radius: 10px; background: rgba(14, 18, 48, 0.88); color: rgba(255, 255, 255, 0.82); font-size: 12px; white-space: nowrap; pointer-events: none; box-shadow: 0 10px 24px rgba(20, 16, 60, 0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: translate(-50%, calc(-100% - 16px)); opacity: 0; transition: opacity 180ms ease; }
+.site .t-info b { margin-left: 7px; color: #fff; font-family: var(--f-titre); font-weight: 400; font-size: 15.5px; font-variant-numeric: tabular-nums; }
+.site .lecture .t-curseur, .site .lecture .t-curseur-halo, .site .lecture .t-curseur-ligne, .site .lecture .t-info { opacity: 1; }
+.site .t-repere { transition: opacity 200ms ease; }
+.site .lecture .t-repere { opacity: 0; }
+/* Les étiquettes de 40 € se frôlent : elles se balancent et reviennent en souplesse. */
+.site .pendant { rotate: 0deg; transition: rotate 1300ms cubic-bezier(0.25, 1.65, 0.45, 1); }
+/* Les capacités de Plume attendent qu'on ait fini de lire. */
+.site .plume-grille.en-pause .capacite.active .progres { animation-play-state: paused; }
+@media (hover: hover) and (pointer: fine) {
+	.site .defile:hover .defile-piste { animation-play-state: paused; }
+	.site .defile .logo { transition: color 200ms ease; }
+	.site .defile .logo img { transition: filter 280ms ease, opacity 280ms ease, transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+	.site .defile .logo:hover { color: var(--encre); }
+	.site .defile .logo:hover img { filter: none; opacity: 1; transform: scale(1.12); }
+}
+

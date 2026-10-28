@@ -1,0 +1,19 @@
+/* Site public, « appel » : transplanté de la maquette V26, lignes 961 à 973
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── L'APPEL : LE LEVER ────────────────────────────────── */
+.site .appel { background: var(--papier); }
+.site .appel-ombre { filter: drop-shadow(0 40px 80px rgba(60, 40, 120, 0.22)); }
+.site .appel-plaque { --coin: 56px; border-radius: 34px; padding: clamp(56px, 7vw, 100px) clamp(24px, 6vw, 80px) clamp(220px, 22vw, 300px); display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: start; overflow: hidden; background: #c9c0f0; }
+.site .appel-plaque > div { position: relative; z-index: 2; }
+.site .appel-plaque h2 { max-width: 13ch; }
+.site .appel-plaque .chapeau { color: rgba(12, 17, 36, 0.78); }
+.site .appel-plaque .aide { color: var(--encre-2); --aide-alerte: #b4416f; }
+.site .appel-plaque .aide .signe { color: #fff; }
+.site .appel-plaque .correction { background: rgba(255, 255, 255, 0.7); box-shadow: 0 0 0 1px rgba(12, 17, 36, 0.06); }
+.site .plume-fete-cadre { position: absolute !important; z-index: 3; width: 230px; right: clamp(24px, 9vw, 140px); bottom: clamp(40px, 6vw, 80px); filter: drop-shadow(0 20px 30px rgba(30, 20, 80, 0.3)); }
+.site .plume-fete-cadre svg { width: 100%; height: auto; display: block; }
+

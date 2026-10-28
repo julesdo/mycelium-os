@@ -1,0 +1,50 @@
+/* Site public, « plume » : transplanté de la maquette V26, lignes 574 à 617
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── PLUME ─────────────────────────────────────────────── */
+.site .plume-section { background: var(--blanc); }
+.site .plume-grille { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 56px; margin-top: 64px; align-items: stretch; }
+.site .capacites { display: flex; flex-direction: column; }
+.site .capacite { text-align: left; background: none; border: 0; border-top: 1px solid var(--filet); padding: 24px 0; color: var(--gris); position: relative; }
+.site .capacite:last-child { border-bottom: 1px solid var(--filet); }
+.site .capacite h3 { font-family: var(--f-titre); font-weight: 400; font-size: clamp(26px, 2.6vw, 34px); letter-spacing: -0.025em; line-height: 1.1; transition: color 0.2s; }
+.site .capacite p { margin: 0; max-height: 0; overflow: hidden; opacity: 0; color: var(--encre-2); transition: max-height 0.45s ease, opacity 0.3s, margin 0.3s; max-width: 46ch; }
+.site .capacite.active { color: var(--encre); }
+.site .capacite.active p { max-height: 140px; opacity: 1; margin-top: 10px; }
+.site .capacite .progres { position: absolute; left: 0; top: -1px; height: 2px; width: 0; background: var(--encre); }
+.site .capacite.active .progres { animation: site-progres 6s linear forwards; }
+@keyframes site-progres { to { width: 100%; } }
+.site .plaque-ombre { height: 100%; }
+.site .plaque { --coin: 44px; border-radius: 28px; min-height: 540px; height: 100%; display: grid; place-items: center end; padding: 48px 40px; overflow: hidden; background: #d9d4f5; }
+.site .plaque canvas, .site .appel-plaque canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.site .plaque > .pli, .site .appel-plaque > .pli { background: rgba(255, 255, 255, 0.45); }
+.site .plaque .plume-coin { position: absolute; width: 140px; left: 26px; bottom: 18px; z-index: 3; filter: drop-shadow(0 16px 24px rgba(30, 20, 80, 0.25)); }
+.site .plaque .plume-coin svg { width: 100%; height: auto; display: block; }
+.site .vue { width: min(390px, 100%); display: none; position: relative; z-index: 2; }
+.site .vue.active { display: block; animation: site-monte 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes site-monte { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+.site .vue .carte { box-shadow: 0 30px 70px rgba(42, 30, 110, 0.2), 0 1px 2px rgba(12, 17, 36, 0.06); font-family: var(--f-texte); }
+.site .courriel { padding: 18px; }
+.site .courriel .de { display: flex; gap: 10px; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--filet); font-size: 13px; }
+.site .courriel .de b { display: block; font-size: 14px; }
+.site .courriel .objet { margin: 14px 0 6px; font-weight: 600; font-size: 15px; }
+.site .courriel p { margin: 0 0 8px; font-size: 14px; color: var(--encre-2); line-height: 1.5; }
+.site .courriel .total { display: flex; justify-content: space-between; padding: 10px 12px; border-radius: 10px; background: var(--papier); font-size: 14px; font-variant-numeric: tabular-nums; }
+.site .envoi { margin-top: 12px; display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-size: 13.5px; }
+.site .envoi .heure { flex: 1; }
+.site .envoi .heure span { display: block; color: var(--gris); font-size: 12px; }
+.site .envoi button { height: 32px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--filet); background: #fff; font-size: 13px; font-weight: 600; }
+.site .parole { padding: 18px; display: grid; gap: 12px; font-size: 14px; }
+.site .parole .citation { padding: 12px 14px; border-radius: 12px; background: var(--papier); }
+.site .parole .citation span { display: block; font-size: 12px; color: var(--gris); margin-bottom: 2px; }
+.site .frise { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.site .frise div { padding: 10px; border-radius: 10px; border: 1px solid var(--filet); font-size: 12.5px; }
+.site .frise div b { display: block; font-size: 13px; }
+.site .frise div.calme { background: #f1f2fa; color: var(--encre-2); }
+.site .conv { padding: 16px; display: grid; gap: 10px; font-size: 14px; }
+.site .conv .question { max-width: 86%; }
+.site .note-bas { margin-top: 28px; font-size: 15px; color: var(--encre-2); }
+

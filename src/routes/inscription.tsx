@@ -1,5 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import {
+	createFileRoute,
+	useHydrated,
+	useNavigate,
+	useRouterState,
+	Link
+} from '@tanstack/react-router';
 import { Button, Input } from '@cladd-ui/react';
 import { CheckIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { authClient } from '../lib/client/auth';
@@ -67,9 +73,16 @@ function Inscription() {
 		api.croissance.parrainage.invitation,
 		cadeau === undefined ? 'skip' : { code: cadeau }
 	);
-	const [etape, setEtape] = useState<'adresse' | 'acces'>('adresse');
+	// L'adresse tapée sur le site (28/10/2026) : on ouvre au mot de passe. Seulement après
+	// l'hydratation : au rechargement, le serveur a dessiné l'étape de l'adresse, et l'état de
+	// l'historique, qu'il ne voit pas, ne doit pas faire diverger le premier rendu.
+	const hydrate = useHydrated();
+	const adresseDuSite = useRouterState({ select: (s) => s.location.state.adresseDInscription });
+	const venuDuSite =
+		hydrate && !invitation && adresseDuSite !== undefined && FORME_D_ADRESSE.test(adresseDuSite);
+	const [etape, setEtape] = useState<'adresse' | 'acces'>(() => (venuDuSite ? 'acces' : 'adresse'));
 	const [nom, setNom] = useState('');
-	const [email, setEmail] = useState('');
+	const [email, setEmail] = useState(() => (venuDuSite && adresseDuSite ? adresseDuSite : ''));
 	const [motDePasse, setMotDePasse] = useState('');
 	const [visible, setVisible] = useState(false);
 	const [erreur, setErreur] = useState<string | null>(null);

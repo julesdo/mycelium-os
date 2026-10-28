@@ -1,6 +1,6 @@
 # Ce qui, sur ce site, ne vient pas de nous
 
-## Cinq photographies, d'Unsplash (depuis le 6 octobre 2026)
+## Sept photographies, d'Unsplash (depuis le 6 octobre 2026)
 
 Des gens au travail — un menuisier, un chauffeur, une commerçante, un entrepôt —
 et des factures sur une table. Elles disent à qui le logiciel s'adresse ; elles
@@ -15,6 +15,8 @@ publie aucun.
 | Le manifeste — les factures étalées  | Dimitri Karastelev (@dkfra19)             | `photo-1635859890085-ec8cb5466806` |
 | L'appel — la boutique                | Centre for Ageing Better (@ageing_better) | `photo-1764173039506-c5cc7b8ec14b` |
 | L'appel — l'entrepôt                 | Centre for Ageing Better (@ageing_better) | `photo-1664382953403-fc1ac77073a0` |
+| Les métiers — l'agent de propreté    | @webseoweb                                | non relevé (ajoutée le 19/10/2026) |
+| Les métiers — le couloir d'hôpital   | Centre for Ageing Better (@ageing_better) | non relevé (ajoutée le 19/10/2026) |
 
 **Licence** : [licence Unsplash](https://unsplash.com/license) — usage commercial
 permis, sans autorisation préalable ni attribution obligatoire. On crédite quand

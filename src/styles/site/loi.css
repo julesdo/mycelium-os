@@ -1,0 +1,269 @@
+/* Site public, « loi » : transplanté de la maquette V26, lignes 311 à 573
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LA LOI : LA VIE D'UNE FACTURE ─────────────────────── */
+.site .loi { background: var(--papier); padding-top: 40px; }
+.site .recit-scene { position: relative; }
+.site .table { --coin: 44px; position: relative; height: 680px; border-radius: 30px; overflow: hidden; background: #dcd6f0; }
+.site .table canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.site .table > .pli { background: rgba(255, 255, 255, 0.5); }
+.site .cordon { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; }
+.site .cordon path { fill: none; stroke: #6e67a6; stroke-width: 1.3; stroke-linecap: round; }
+/* La facture : un papier plié en trois, ses mentions obligatoires en pied. */
+.site .facture { position: absolute; z-index: 2; left: 5%; top: 60px; width: 54%; background: #fffdf8; border-radius: 3px; padding: 26px 24px 20px; color: var(--encre); font-size: 11.5px; line-height: 1.5; box-shadow: 0 1px 1px rgba(40, 30, 90, 0.06), 0 8px 18px rgba(40, 30, 90, 0.08), 0 34px 70px rgba(40, 30, 90, 0.2); }
+.site .facture::before { content: ""; position: absolute; left: 0; right: 0; top: 34%; height: 16px; background: linear-gradient(180deg, rgba(40, 30, 90, 0), rgba(40, 30, 90, 0.05) 45%, rgba(255, 255, 255, 0.9) 55%, rgba(40, 30, 90, 0)); pointer-events: none; }
+.site .facture::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.22; mix-blend-mode: multiply; pointer-events: none; border-radius: inherit; }
+.site .agrafe { position: absolute; right: 16px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: #e9e5f2; box-shadow: inset 0 0 0 1.5px #b9b3d6; }
+.site .facture-tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid rgba(12, 17, 36, 0.12); }
+.site .facture-tete .emetteur b { display: block; font-family: var(--f-titre); font-size: 19px; font-weight: 500; letter-spacing: -0.01em; }
+.site .facture-tete .emetteur span, .site .facture-tete .numero .mono { display: block; color: var(--gris); }
+.site .facture-tete .numero { text-align: right; padding-right: 14px; }
+.site .facture-tete .numero b { font-size: 14px; }
+.site .facture-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 14px 0; }
+.site .facture-meta span { display: block; color: var(--gris); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; font-family: var(--f-mono); }
+.site .facture-meta em { font-style: normal; }
+.site .facture-lignes { width: 100%; border-collapse: collapse; margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+.site .facture-lignes th { text-align: left; font-weight: 500; color: var(--gris); font-size: 10px; padding: 6px 0; border-bottom: 1px solid rgba(12, 17, 36, 0.1); }
+.site .facture-lignes td { padding: 8px 0; border-bottom: 1px solid rgba(12, 17, 36, 0.06); }
+.site .facture-lignes td:last-child, .site .facture-lignes th:last-child { text-align: right; white-space: nowrap; }
+.site .facture-total { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; padding-top: 6px; font-variant-numeric: tabular-nums; }
+.site .facture-mentions { margin: 16px 0 0; padding-top: 10px; border-top: 1px dashed rgba(12, 17, 36, 0.16); color: var(--encre-2); font-size: 10px; line-height: 1.6; }
+.site .surligne { background-image: linear-gradient(transparent 56%, rgba(61, 107, 245, 0.24) 56%); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size 800ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .surligne.actif { background-size: 100% 100%; }
+/* L'étiquette que Letikette accroche à la facture, et qui se remplit. */
+.site .etiquette-recit { position: absolute; z-index: 4; left: 56%; top: 200px; width: 39%; min-width: 220px; transform-origin: 26px 0; }
+.site .etiquette-recit.balance { animation: site-balance 1.5s cubic-bezier(0.3, 0.7, 0.4, 1); }
+@keyframes site-balance { 0% { transform: rotate(0); } 16% { transform: rotate(-2.6deg); } 38% { transform: rotate(1.5deg); } 60% { transform: rotate(-0.7deg); } 80% { transform: rotate(0.3deg); } 100% { transform: rotate(0); } }
+.site .etiquette-recit .etiquette { --coin: 26px; background: #fffdf9; border-radius: 14px; padding: 18px 20px 18px; }
+.site .etiquette-recit .oeillet { position: absolute; left: 20px; top: 20px; width: 11px; height: 11px; border-radius: 50%; background: #efecf6; box-shadow: inset 0 0 0 2px #c4bedc; }
+.site .etiquette-recit .entete { display: block; color: var(--gris); padding: 0 0 12px 22px; }
+.site .ligne-recit { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid var(--filet); font-size: 13.5px; color: var(--encre-2); opacity: 0; transform: translateY(6px); filter: blur(3px); max-height: 0; overflow: hidden; padding-block: 0; transition: opacity 420ms ease-out, transform 520ms cubic-bezier(0.23, 1, 0.32, 1), filter 420ms ease, max-height 520ms cubic-bezier(0.23, 1, 0.32, 1), padding 520ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .ligne-recit.visible { opacity: 1; transform: none; filter: none; max-height: 48px; padding-block: 9px; }
+.site .ligne-recit b { color: var(--encre); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.site .total-recit { margin-top: 6px; padding-top: 12px; border-top: 1px solid rgba(12, 17, 36, 0.18); }
+.site .total-recit .mono { display: block; color: var(--gris); }
+.site .total-recit b { display: block; font-family: var(--f-titre); font-weight: 400; font-size: 34px; letter-spacing: -0.025em; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.site .total-recit small { display: block; font-size: 12px; color: var(--gris); margin-top: 2px; }
+.site .plume-loi { position: absolute; z-index: 5; left: 7%; bottom: 14px; width: 106px; filter: drop-shadow(0 14px 22px rgba(30, 20, 80, 0.25)); }
+.site .plume-loi svg { width: 100%; height: auto; display: block; }
+.site .lien-calcul { display: inline-flex; align-self: flex-start; margin-top: 26px; font-weight: 600; color: var(--encre); padding-bottom: 2px; border-bottom: 1.5px solid var(--encre); }
+
+/* La frise : un fil qui se remplit à la lecture, quatre jalons, et chacun porte son visuel juste à
+   côté de son texte (dessous au téléphone : on lit à la verticale, rien ne se sépare). */
+.site .chrono { position: relative; margin-top: 88px; padding-left: 64px; }
+.site .chrono-fil { position: absolute; left: 15px; top: 66px; bottom: 66px; width: 2px; border-radius: 2px; background: rgba(12, 17, 36, 0.08); overflow: hidden; }
+.site .chrono-fil i { position: absolute; inset: 0; transform-origin: 50% 0; background: linear-gradient(180deg, #ffcfa8, #b9a4ff 45%, #3d6bf5); }
+.site .jalon { position: relative; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 64px; align-items: center; padding: 56px 0; }
+.site .jalon-texte { position: relative; }
+.site .jalon-point { position: absolute; left: -55px; top: 7px; width: 14px; height: 14px; border-radius: 50%; background: var(--papier); box-shadow: inset 0 0 0 2px #cfcde0; transition: box-shadow 400ms ease, background 400ms ease; }
+.site .jalon.atteint .jalon-point { background: var(--bleu-2); box-shadow: 0 0 0 6px rgba(61, 107, 245, 0.14), inset 0 0 0 2px var(--bleu-2); }
+.site .jalon-pastille { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 1px var(--filet); color: var(--bleu-2); }
+.site .jalon h3 { font-family: var(--f-titre); font-weight: 400; font-size: clamp(30px, 3.1vw, 42px); letter-spacing: -0.025em; line-height: 1.06; margin: 18px 0 14px; }
+.site .jalon p { margin: 0; color: var(--encre-2); max-width: 42ch; }
+.site .jalon .ref { display: block; margin-top: 18px; color: var(--gris); }
+.site .vis { position: relative; overflow: hidden; border-radius: 26px; padding: 30px; min-height: 340px; background: #fff; box-shadow: 0 0 0 1px var(--filet), 0 1px 2px rgba(12, 17, 36, 0.04), 0 30px 60px rgba(40, 30, 100, 0.08); }
+.site .vis .mono { color: var(--gris); }
+/* 1. L'éphéméride qui se feuillette jusqu'à aujourd'hui. */
+.site .vis-cal { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center; background: linear-gradient(160deg, #f4f2fb, #fbf8f3); }
+.site .ephem { position: relative; width: 186px; margin-top: 10px; }
+.site .anneaux { position: absolute; z-index: 4; top: -10px; left: 0; right: 0; display: flex; justify-content: center; gap: 72px; }
+.site .anneaux i { width: 10px; height: 24px; border-radius: 6px; background: linear-gradient(90deg, #8f95b4, #d7d9e8 55%, #9aa0be); box-shadow: 0 2px 3px rgba(20, 20, 60, 0.18); }
+.site .ephem-feuille { position: relative; z-index: 1; overflow: hidden; border-radius: 14px; text-align: center; background: #fffdf8; box-shadow: 0 2px 0 #ece8f3, 0 4px 0 #e3deee, 0 6px 0 #dad4e8, 0 26px 44px rgba(40, 30, 100, 0.2); }
+.site .ephem-mois { display: block; padding: 20px 0 11px; background: var(--encre); color: #fff !important; letter-spacing: 0.16em; }
+.site .ephem-jour { display: block; padding: 14px 0 0; font-family: var(--f-titre); font-weight: 300; font-size: 104px; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: lining-nums tabular-nums; }
+.site .ephem-sem { display: block; padding: 6px 0 20px; color: var(--encre-2); font-size: 14.5px; }
+.site .ephem .chute { position: absolute; inset: 0; z-index: 3; transform-origin: 50% 0; animation: site-chute 560ms cubic-bezier(0.55, 0, 1, 0.45) forwards; }
+@keyframes site-chute { 40% { opacity: 1; } to { transform: translateY(110px) rotate(-16deg); opacity: 0; } }
+.site .cal-cote > b { display: block; margin: 6px 0 18px; font-family: var(--f-titre); font-weight: 300; font-size: 54px; line-height: 1; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+.site .cal-cote > b small { font-size: 0.42em; letter-spacing: 0; color: var(--encre-2); }
+.site .cal-ligne { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--filet); font-size: 14px; color: var(--encre-2); }
+.site .cal-ligne i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 2px #b9b6cf; flex: none; }
+.site .cal-ligne i.plein { background: var(--bleu-2); box-shadow: 0 0 0 4px rgba(61, 107, 245, 0.14); }
+.site .cal-ligne b { margin-left: auto; color: var(--encre); font-weight: 600; white-space: nowrap; }
+/* 2. La courbe des pénalités, semestre par semestre. */
+.site .vis-courbe { background: linear-gradient(180deg, #fff, #f7f6fc); }
+.site .courbe-tete b { display: block; margin-top: 6px; font-family: var(--f-titre); font-weight: 300; font-size: 58px; line-height: 1; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+.site .courbe-tete span:last-child { display: block; margin-top: 6px; font-size: 13px; color: var(--gris); }
+.site .courbe-svg { display: block; width: 100%; height: auto; margin-top: 22px; overflow: visible; }
+.site .courbe-svg .grille { stroke: rgba(12, 17, 36, 0.07); stroke-width: 1; }
+.site .courbe-svg .aire { fill: url(#aire-pen); opacity: 0; transition: opacity 800ms ease 500ms; }
+.site .courbe-svg .trait { fill: none; stroke: #2a46c8; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1400ms cubic-bezier(0.65, 0, 0.35, 1); }
+.site .courbe-svg .coupure { stroke: rgba(12, 17, 36, 0.28); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.site .courbe-svg .point { fill: #fff; stroke: #2a46c8; stroke-width: 2.6; opacity: 0; transition: opacity 300ms ease 1300ms; }
+.site .courbe-svg .halo { fill: rgba(61, 107, 245, 0.16); opacity: 0; transition: opacity 300ms ease 1300ms; }
+.site .vu .courbe-svg .aire, .site .vu .courbe-svg .point, .site .vu .courbe-svg .halo { opacity: 1; }
+.site .vu .courbe-svg .trait { stroke-dashoffset: 0; }
+.site .axe { position: relative; height: 18px; margin-top: 8px; }
+.site .axe span { position: absolute; top: 0; white-space: nowrap; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--gris); }
+.site .segments { margin-top: 20px; }
+.site .segments > div { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; padding: 12px 0; border-top: 1px solid var(--filet); opacity: 0; transform: translateY(8px); transition: opacity 420ms ease-out, transform 520ms cubic-bezier(0.23, 1, 0.32, 1); }
+.site .segments > div:nth-child(2) { transition-delay: 120ms; }
+.site .vu .segments > div { opacity: 1; transform: none; transition-delay: 900ms; }
+.site .vu .segments > div:nth-child(2) { transition-delay: 1020ms; }
+.site .segments span:not(.mono) { font-size: 13.5px; color: var(--encre-2); }
+.site .segments b { grid-column: 2; grid-row: 1 / 3; align-self: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* 3. Les 40 € accrochés à chaque facture. */
+.site .vis-forfait { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; background: linear-gradient(160deg, #f6f1fb, #fdf6f0); }
+.site .pile { position: relative; width: 300px; height: 256px; }
+.site .mini-fac { position: absolute; top: 46px; left: 50%; width: 148px; height: 192px; margin-left: -74px; display: flex; flex-direction: column; gap: 7px; padding: 16px 13px 14px; border-radius: 6px; background: #fffdf8; box-shadow: 0 2px 4px rgba(40, 30, 100, 0.08), 0 18px 34px rgba(40, 30, 100, 0.16); }
+.site .mini-fac > b { font-size: 11px; font-weight: 700; }
+.site .mini-fac > b small { display: block; font-family: var(--f-mono); font-weight: 400; font-size: 7.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gris); }
+.site .mini-fac > i { display: block; height: 5px; border-radius: 3px; background: #e6e2ef; }
+.site .mini-fac > i:nth-of-type(1) { width: 78%; }
+.site .mini-fac > i:nth-of-type(2) { width: 56%; }
+.site .mini-fac > i:nth-of-type(3) { width: 68%; }
+.site .mini-fac > span { margin-top: auto; display: flex; justify-content: space-between; font-size: 9px; color: var(--encre-2); }
+.site .mini-fac > span strong { font-size: 11.5px; color: var(--encre); font-variant-numeric: tabular-nums; }
+.site .f1 { z-index: 3; transform: translateX(56px) rotate(5deg); }
+.site .f2 { z-index: 2; transform: translateX(-2px) rotate(-2deg); }
+.site .f3 { z-index: 1; transform: translateX(-60px) rotate(-9deg); }
+.site .f2, .site .f3 { filter: saturate(0.9); }
+.site .tag { position: absolute; z-index: 4; top: -20px; right: -26px; transform-origin: 14px 50%; opacity: 0; transform: translateY(-26px) rotate(-14deg); transition: opacity 260ms ease-out, transform 700ms cubic-bezier(0.34, 1.56, 0.64, 1); filter: drop-shadow(0 8px 14px rgba(40, 30, 100, 0.25)); }
+.site .tag::before { content: ""; position: absolute; left: -16px; top: 55%; width: 22px; height: 1.4px; background: #6e67a6; transform: rotate(28deg); transform-origin: 100% 50%; }
+.site .tag span { display: block; padding: 8px 12px 8px 22px; border-radius: 7px; background: linear-gradient(135deg, #3d6bf5, #2a46c8 55%, #5b3fd4); color: #fff; font-family: var(--f-titre); font-size: 17px; white-space: nowrap; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+.site .tag span::before { content: ""; position: absolute; left: 9px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; box-shadow: inset 0 0 0 1.6px rgba(255, 255, 255, 0.7); }
+.site .f2 .tag, .site .f3 .tag { top: -38px; right: auto; left: -10px; }
+.site .f2 .tag span, .site .f3 .tag span { font-size: 14px; padding: 6px 10px 6px 20px; }
+.site .vu .tag { opacity: 1; transform: none; }
+.site .vu .f3 .tag { transition-delay: 0ms; }
+.site .vu .f2 .tag { transition-delay: 140ms; }
+.site .vu .f1 .tag { transition-delay: 300ms; }
+.site .forfait-total { margin: 0; text-align: center; }
+.site .forfait-total b { display: block; margin-top: 4px; font-family: var(--f-titre); font-weight: 400; font-size: 28px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+/* 4. La règle des cinq ans, Plume posé sur aujourd'hui. */
+.site .vis-limite { display: flex; flex-direction: column; justify-content: space-between; gap: 30px; background: linear-gradient(180deg, #f3f2fb, #fbf9f5); }
+.site .limite-tete b { display: block; margin-top: 6px; font-family: var(--f-titre); font-weight: 300; font-size: 54px; line-height: 1; letter-spacing: -0.035em; }
+.site .limite-tete span:last-child { display: block; margin-top: 8px; font-size: 13.5px; color: var(--encre-2); }
+.site .regle { position: relative; padding-top: 70px; }
+.site .regle-piste { position: relative; height: 10px; border-radius: 99px; background: rgba(12, 17, 36, 0.07); overflow: hidden; }
+.site .regle-passe { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p) * 100%); border-radius: inherit; background: linear-gradient(90deg, #ffcfa8, #3d6bf5); transform-origin: 0 50%; transform: scaleX(0); transition: transform 1200ms cubic-bezier(0.65, 0, 0.35, 1) 200ms; }
+.site .vu .regle-passe { transform: none; }
+.site .graduations { position: relative; height: 26px; margin-top: 6px; }
+.site .graduations span { position: absolute; top: 6px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 10.5px; color: var(--gris); }
+.site .graduations span::before { content: ""; position: absolute; left: 50%; top: -6px; width: 1px; height: 5px; background: rgba(12, 17, 36, 0.2); }
+.site .graduations span:first-child { transform: none; }
+.site .graduations span:first-child::before { left: 0; }
+.site .graduations span:last-child { transform: translateX(-100%); }
+.site .graduations span:last-child::before { left: auto; right: 0; }
+.site .regle-auj { position: absolute; top: 0; left: calc(var(--p) * 100%); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.site .regle-auj svg { width: 40px; height: 40px; }
+.site .regle-auj .mono { color: var(--bleu-2) !important; margin-top: 2px; white-space: nowrap; }
+.site .regle-auj::after { content: ""; width: 1px; height: 8px; margin-top: 3px; background: var(--bleu-2); }
+.site .regle-fin { position: absolute; top: 18px; right: 0; }
+.site .regle-fin span { display: block; padding: 6px 12px 6px 22px; border-radius: 7px; background: var(--encre); color: #fff; font-family: var(--f-titre); font-size: 15px; white-space: nowrap; clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%); position: relative; }
+.site .regle-fin span::before { content: ""; position: absolute; left: 9px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.6); }
+.site .transport { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--encre-2); }
+.site .transport i { flex: none; width: 20%; height: 6px; border-radius: 99px; box-shadow: inset 0 0 0 1.5px rgba(12, 17, 36, 0.25); background: repeating-linear-gradient(90deg, rgba(12, 17, 36, 0.12) 0 4px, transparent 4px 8px); }
+/* Les tableaux de la frise : le même massif peint, à quatre moments de la vie de la facture, et un
+   seul objet de papier posé dedans. Aucun cadre, aucun widget. */
+.site .tableau { position: relative; margin: 0; overflow: hidden; isolation: isolate; container-type: inline-size; border-radius: 30px; aspect-ratio: 6 / 5; background: #c9c3ec; box-shadow: 0 44px 90px rgba(40, 30, 100, 0.18), 0 2px 6px rgba(40, 30, 100, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+.site .tableau > canvas { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; display: block; }
+.site .t-ciel { position: absolute; z-index: 2; left: 7%; top: 8%; max-width: 76%; color: var(--encre); }
+.site .t-ciel b { display: block; font-family: var(--f-titre); font-weight: 300; font-size: clamp(40px, 10.5cqw, 76px); line-height: 0.95; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+.site .t-ciel b small { font-size: 0.5em; letter-spacing: -0.01em; }
+.site .t-ciel > span { display: block; margin-top: 12px; font-size: clamp(13px, 2.3cqw, 15px); opacity: 0.86; }
+.site .t-blanc { color: #fff; text-shadow: 0 2px 24px rgba(10, 10, 50, 0.35); }
+.site .t-fils { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.site .t-repere { position: absolute; z-index: 4; font-size: 12.5px; font-weight: 500; white-space: nowrap; color: #fff; text-shadow: 0 1px 12px rgba(20, 16, 70, 0.55); }
+/* L'étiquette de papier : coin coupé et son pli, un œillet de métal, un fil. */
+.site .etq { position: absolute; z-index: 4; filter: drop-shadow(0 18px 28px rgba(20, 16, 60, 0.32)) drop-shadow(0 2px 4px rgba(20, 16, 60, 0.18)); }
+.site .etq-papier { position: relative; display: block; overflow: hidden; padding: 16px 18px 16px 16px; border-radius: 11px; background: linear-gradient(180deg, #fffdf8, #f6f1e7); color: var(--encre); clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%); }
+.site .etq-papier::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.3; mix-blend-mode: multiply; pointer-events: none; }
+.site .etq-pli { position: absolute; z-index: 1; top: 0; right: 0; width: 20px; height: 20px; border-bottom-left-radius: 4px; background: linear-gradient(225deg, transparent 50%, #e8e2ef 50%, #d6cfe5); }
+.site .etq-oeillet { position: absolute; z-index: 1; left: 13px; top: 13px; width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #ffffff 0 16%, #d4d4e0 30%, #8f92aa 66%, #6b6e8c 100%); -webkit-mask: radial-gradient(circle, transparent 0 3.2px, #000 3.8px); mask: radial-gradient(circle, transparent 0 3.2px, #000 3.8px); }
+.site .etq-label { display: block; padding-left: 22px; font-size: 12.5px; color: var(--encre-2); }
+.site .etq-montant { display: block; margin-top: 10px; font-family: var(--f-titre); font-weight: 400; font-size: clamp(26px, 5.4cqw, 34px); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.site .etq-ligne { display: flex; justify-content: space-between; gap: 14px; margin-top: 10px; padding-top: 9px; border-top: 1px solid rgba(12, 17, 36, 0.09); font-size: 12px; color: var(--encre-2); white-space: nowrap; }
+.site .etq-ligne + .etq-ligne { margin-top: 0; padding-top: 6px; border-top: 0; }
+.site .etq-ligne b { color: var(--encre); font-weight: 600; font-variant-numeric: tabular-nums; }
+.site .etq-entree { opacity: 0; transform: translateY(-14px) rotate(-6deg); transform-origin: 20px 20px; transition: opacity 400ms ease-out, transform 900ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+.site .vu .etq-entree { opacity: 1; transform: none; }
+/* 1. Les saisons : la facture posée dans la brume, son échéance surlignée. */
+.site .posee { position: absolute; z-index: 3; right: 7%; bottom: 8%; width: clamp(126px, 29cqw, 178px); transform: rotate(-6deg); filter: drop-shadow(0 22px 26px rgba(20, 16, 60, 0.3)) drop-shadow(0 2px 3px rgba(20, 16, 60, 0.18)); }
+.site .posee .fd-papier { padding: 15px 12px 13px; }
+.site .fd-echeance { display: flex; justify-content: space-between; align-items: baseline; margin: 2px -5px; padding: 4px 5px; border-radius: 4px; font-size: 9px; color: var(--encre-2); background-image: linear-gradient(rgba(61, 107, 245, 0.2), rgba(61, 107, 245, 0.2)); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size 900ms cubic-bezier(0.23, 1, 0.32, 1) 500ms; }
+.site .fd-echeance b { font-size: 10.5px; color: var(--bleu-2); }
+.site .vu .fd-echeance { background-size: 100% 100%; }
+/* 2. La courbe des pénalités, un trait de lumière qui gravit le massif. */
+.site .t-courbe-halo { fill: none; stroke: rgba(255, 210, 150, 0.38); stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1500ms cubic-bezier(0.65, 0, 0.35, 1); }
+.site .t-courbe { fill: none; stroke: #fff1d6; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1500ms cubic-bezier(0.65, 0, 0.35, 1); }
+.site .vu .t-courbe, .site .vu .t-courbe-halo { stroke-dashoffset: 0; }
+.site .t-coupure { stroke: rgba(255, 255, 255, 0.6); stroke-width: 1.2; stroke-dasharray: 2 5; stroke-linecap: round; }
+.site .t-point { fill: #fffaf0; opacity: 0; transition: opacity 300ms ease 1400ms; }
+.site .t-point-halo { fill: rgba(255, 240, 210, 0.35); opacity: 0; transition: opacity 300ms ease 1400ms; }
+.site .vu .t-point, .site .vu .t-point-halo { opacity: 1; }
+.site .t-fil { fill: none; stroke: rgba(40, 36, 90, 0.6); stroke-width: 1.2; opacity: 0; transition: opacity 400ms ease 1300ms; }
+.site .vu .t-fil { opacity: 1; }
+.site .etq-courbe { width: clamp(186px, 40cqw, 236px); }
+.site .etq-courbe.etq-entree { transition-delay: 1350ms; }
+/* 3. Trois étiquettes suspendues, chacune à son fil. */
+.site .pendant { position: absolute; z-index: 3; top: 0; left: var(--x); width: 27%; transform-origin: 20px 0; animation: site-oscille var(--d) ease-in-out infinite alternate; }
+.site .pendant-int { transform: translateY(-115%); transition: transform 1200ms cubic-bezier(0.34, 1.32, 0.64, 1) var(--r); }
+.site .vu .pendant-int { transform: none; }
+.site .pendant-fil { display: block; width: 1.2px; height: var(--l); margin-left: 19.4px; background: rgba(40, 36, 90, 0.5); }
+.site .pendant .etq { position: relative; margin-top: -19px; }
+.site .pendant .etq-papier { padding: 14px 12px 13px 12px; }
+.site .pendant .etq-label { font-size: clamp(10px, 2.2cqw, 12px); padding-left: 20px; }
+.site .pendant .etq-montant { font-size: clamp(18px, 5.6cqw, 30px); margin-top: 8px; }
+.site .pendant .etq-sous { display: block; margin-top: 6px; font-size: clamp(9.5px, 2cqw, 11.5px); color: var(--encre-2); }
+@keyframes site-oscille { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
+.site .t-pilule { position: absolute; z-index: 4; left: 50%; bottom: 7%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 99px; background: rgba(14, 18, 48, 0.86); color: rgba(255, 255, 255, 0.82); font-size: clamp(12px, 2.4cqw, 14px); white-space: nowrap; box-shadow: 0 14px 30px rgba(20, 16, 60, 0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.site .t-pilule b { color: #fff; font-family: var(--f-titre); font-weight: 400; font-size: 1.25em; }
+/* 4. La nuit de 2031 : Plume veille, un chemin de lumière mène à la date limite. */
+.site .t-chemin { fill: none; stroke: rgba(255, 255, 255, 0.45); stroke-width: 1.6; stroke-dasharray: 1.5 7; stroke-linecap: round; }
+.site .t-lueur { fill: none; stroke: #ffe4c2; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.07 1; stroke-dashoffset: 1.07; opacity: 0; }
+.site .vu .t-lueur { opacity: 1; animation: site-lueur 4.2s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes site-lueur { from { stroke-dashoffset: 1.07; } to { stroke-dashoffset: 0; } }
+.site .t-transport { fill: #fff; }
+.site .t-transport-halo { fill: rgba(255, 255, 255, 0.2); }
+.site .drapeau { position: absolute; z-index: 4; display: flex; flex-direction: column; align-items: flex-end; }
+.site .drapeau .etq { position: relative; filter: drop-shadow(0 0 24px rgba(255, 210, 170, 0.55)) drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35)); }
+.site .drapeau .etq-papier { padding: 9px 14px 9px 30px; font-family: var(--f-titre); font-size: clamp(14px, 2.8cqw, 17px); white-space: nowrap; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%); }
+.site .drapeau .etq-pli { width: 12px; height: 12px; }
+.site .drapeau .etq-oeillet { top: 50%; margin-top: -6.5px; left: 10px; }
+.site .drapeau-hampe { display: block; width: 1.5px; height: clamp(26px, 7cqw, 44px); background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.2)); }
+.site .plume-veille { position: absolute; z-index: 4; left: 7%; bottom: 6%; width: clamp(64px, 15cqw, 98px); filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.4)); }
+.site .plume-veille svg { width: 100%; height: auto; display: block; }
+.site .pendant .etq-label { white-space: nowrap; }
+/* Un tableau étroit (téléphone) : la facture rapetisse sans se recomposer, le repère du semestre
+   laisse la place à l'étiquette qui le détaille déjà. */
+@container (max-width: 460px) {
+	.site .posee { width: 170px; right: 4%; bottom: 5%; transform: rotate(-6deg) scale(0.64); transform-origin: 100% 100%; }
+	.site .t-ciel { max-width: 62%; }
+	.site [data-repere="coupure"] { display: none; }
+	.site .pendant { width: 30%; }
+	.site .pendant .etq-papier { padding: 12px 9px 11px 10px; }
+	.site .pendant .etq-label { padding-left: 17px; font-size: 9.5px; }
+	.site .pendant .etq-oeillet { left: 10px; top: 11px; width: 11px; height: 11px; }
+	.site .pendant .etq-sous { font-size: 9.5px; }
+}
+
+/* La conclusion : la facture et son étiquette, au jour où on la réclame. */
+.site .conclusion { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; align-items: center; margin-top: 56px; padding-top: 80px; border-top: 1px solid var(--filet); }
+.site .conclusion-texte .mono { color: var(--bleu-2); }
+.site .conclusion-texte h3 { font-family: var(--f-titre); font-weight: 400; font-size: clamp(32px, 3.4vw, 46px); letter-spacing: -0.025em; line-height: 1.05; margin: 14px 0 16px; }
+.site .conclusion-texte p { margin: 0; color: var(--encre-2); max-width: 40ch; }
+@media (max-width: 760px) {
+	.site .chrono { padding-left: 34px; margin-top: 56px; }
+	.site .chrono-fil { left: 7px; top: 44px; bottom: 44px; }
+	.site .jalon { grid-template-columns: 1fr; gap: 22px; padding: 38px 0; }
+	.site .jalon-point { left: -34px; }
+	.site .vis { padding: 22px; min-height: 0; border-radius: 22px; }
+	.site .vis-cal { gap: 20px; }
+	.site .ephem { width: 132px; }
+	.site .anneaux { gap: 50px; }
+	.site .ephem-jour { font-size: 70px; }
+	.site .ephem-mois { padding: 16px 0 9px; font-size: 10px; }
+	.site .ephem-sem { font-size: 12.5px; padding-bottom: 14px; }
+	.site .cal-cote > b { font-size: 38px; margin-bottom: 10px; }
+	.site .cal-ligne { font-size: 12px; gap: 7px; }
+	.site .cal-ligne span { display: none; }
+	.site .courbe-tete b, .site .limite-tete b { font-size: 42px; }
+	.site .tableau { aspect-ratio: 1 / 1.08; border-radius: 24px; }
+	.site .pile { transform: scale(0.92); }
+	.site .regle-fin span { font-size: 13px; }
+}
+

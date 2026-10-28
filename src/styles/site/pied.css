@@ -1,0 +1,21 @@
+/* Site public, « pied » : transplanté de la maquette V26, lignes 974 à 988
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LE PIED ───────────────────────────────────────────── */
+.site .pied { background: var(--papier); border-top: 1px solid var(--filet); }
+.site .pied .enveloppe { padding-block: 56px 40px; display: grid; grid-template-columns: 1.3fr repeat(3, 1fr); gap: 32px; font-size: 14.5px; }
+.site .pied .marque { color: var(--encre); }
+.site .pied h4 { margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--gris); }
+.site .pied ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; color: var(--encre-2); }
+.site .pied .mention { grid-column: 1 / -1; padding-top: 28px; border-top: 1px solid var(--filet); color: var(--gris); font-size: 13px; max-width: 90ch; }
+.site .etiquette-maquette { position: fixed; z-index: 70; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); padding: 6px 10px; border-radius: 8px; background: rgba(12, 17, 36, 0.82); color: #fff; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+/* Apparitions au défilement, sans script : visibles au repos si le navigateur ne les connaît pas. */
+@supports (animation-timeline: view()) {
+	.site .revele { animation: site-revele linear both; animation-timeline: view(); animation-range: entry 0% cover 26%; }
+	@keyframes site-revele { from { opacity: 0.2; transform: translateY(34px); } }
+}
+

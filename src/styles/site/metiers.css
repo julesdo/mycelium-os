@@ -1,0 +1,108 @@
+/* Site public, « metiers » : transplanté de la maquette V26, lignes 1898 à 1999
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LES MÉTIERS ──────────────────────────────────────────
+   Quatre panneaux photo, un par métier. Celui qu'on choisit s'ouvre en grand ; les autres se
+   resserrent et gardent leur nom et leur chiffre. Dans le panneau ouvert : l'étiquette pendue à son
+   fil porte la règle du métier, la carte de l'app flotte avec les données de son exemple, et le
+   texte dit ce que fait Letikette. Au téléphone, un accordéon : une rangée par métier. */
+.site .metiers { --sortie: cubic-bezier(0.23, 1, 0.32, 1); --ouvre: cubic-bezier(0.22, 0.8, 0.2, 1); background: var(--papier); }
+.site .metiers h2 { max-width: 18ch; }
+.site .metiers .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.site .metiers-panneaux { --large: 700px; display: flex; gap: 10px; height: 580px; margin-top: 56px; }
+.site .metier { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; border-radius: 26px; background: #1b2350; isolation: isolate; transition: flex-grow 760ms var(--ouvre); }
+.site .metier.active { flex-grow: 4.2; }
+.site .metier-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.06); filter: saturate(0.88) contrast(1.02); transition: transform 1200ms var(--sortie), filter 600ms ease; }
+.site .metier.active .metier-photo { transform: scale(1); filter: saturate(0.95) contrast(1.03); }
+.site .metier-voile { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10, 14, 40, 0.18) 0%, rgba(10, 14, 40, 0) 28%, rgba(10, 14, 40, 0.1) 52%, rgba(8, 11, 32, 0.78) 100%), rgba(16, 20, 60, 0.32); transition: background-color 500ms ease; }
+.site .metier.active .metier-voile { background-color: rgba(16, 20, 60, 0); }
+.site .metier::after { content: ""; position: absolute; inset: 0; z-index: 2; background-image: var(--grain); opacity: 0.12; mix-blend-mode: overlay; pointer-events: none; }
+.site .metier-progres { position: absolute; z-index: 5; left: 0; top: 0; height: 3px; width: calc(var(--avance, 0) * 100%); background: rgba(255, 255, 255, 0.9); opacity: 0; transition: opacity 300ms ease; }
+.site .metier.active .metier-progres { opacity: 1; }
+
+/* Le panneau fermé : un bouton qui le couvre entier, son nom et son chiffre. */
+.site .metier-onglet { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 22px 18px; border: 0; background: none; color: #fff; text-align: left; cursor: pointer; font: inherit; -webkit-tap-highlight-color: transparent; transition: opacity 260ms ease; }
+.site .metier-onglet:focus-visible { outline: 2px solid #fff; outline-offset: -6px; border-radius: 22px; }
+.site .metier-court-nom { font-family: var(--f-titre); font-size: 19px; line-height: 1.14; letter-spacing: -0.01em; }
+.site .metier-court-chiffre { font-family: var(--f-titre); font-weight: 300; font-size: 26px; line-height: 1; letter-spacing: -0.02em; color: rgba(255, 255, 255, 0.8); white-space: nowrap; }
+.site .metier.active .metier-onglet { opacity: 0; pointer-events: none; }
+
+/* Le panneau ouvert. Le contenu garde la largeur du panneau ouvert : il ne se recompose pas pendant
+   que le panneau s'élargit, il se découvre. */
+.site .metier-contenu { position: absolute; z-index: 3; left: 0; top: 0; bottom: 0; width: var(--large); opacity: 0; visibility: hidden; transition: opacity 260ms ease, visibility 0s linear 260ms; }
+.site .metier.active .metier-contenu { opacity: 1; visibility: visible; transition: opacity 500ms ease 260ms, visibility 0s; }
+
+.site .m-pendu { position: absolute; z-index: 4; left: 30px; top: 0; width: 248px; transform-origin: 19px 0; animation: site-m-souffle 6.5s ease-in-out infinite; }
+@keyframes site-m-souffle { 0%, 100% { rotate: -1.1deg; } 50% { rotate: 1.3deg; } }
+.site .m-fil { position: absolute; left: 19px; top: 0; width: 1.4px; height: 50px; margin-left: -0.7px; background: rgba(255, 255, 255, 0.75); }
+.site .m-etiquette { position: absolute; left: 0; top: 31px; width: 100%; filter: drop-shadow(0 18px 24px rgba(4, 6, 30, 0.42)) drop-shadow(0 2px 3px rgba(4, 6, 30, 0.2)); transform-origin: 19px 19px; }
+.site .m-etiquette .etq-papier { padding: 13px 16px 14px 14px; }
+.site .m-grand { display: block; margin-top: 10px; font-family: var(--f-titre); font-weight: 400; font-size: 40px; line-height: 0.95; letter-spacing: -0.03em; color: var(--encre); white-space: nowrap; }
+.site .m-sous { display: block; margin-top: 8px; font-size: 12.5px; line-height: 1.38; color: var(--encre-2); }
+.site .metier.active .m-etiquette { animation: site-m-arrive 1.4s cubic-bezier(0.3, 0.7, 0.4, 1) 300ms both; }
+@keyframes site-m-arrive { 0% { opacity: 0; rotate: -14deg; translate: 0 -16px; } 22% { opacity: 1; } 40% { rotate: 6deg; translate: 0 0; } 62% { rotate: -2.5deg; } 82% { rotate: 1deg; } 100% { rotate: 0deg; } }
+
+/* La carte de l'app, aux tailles de l'app, et marquée « Exemple ». */
+.site .m-carte { position: absolute; z-index: 4; top: 40%; display: flex; align-items: center; gap: 12px; width: 320px; padding: 12px 14px 12px 12px; border-radius: 18px; background: rgba(255, 255, 255, 0.86); color: var(--encre); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.95), 0 22px 40px -14px rgba(4, 6, 30, 0.55); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); }
+.site .m-carte { right: 30px; }
+.site .metier.active .m-carte { animation: site-m-carte 700ms var(--sortie) 520ms both; }
+@keyframes site-m-carte { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
+.site .m-av { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+.site .m-temps { background: linear-gradient(135deg, #a48cf0, #6a4fd8); }
+.site .m-envoi { background: linear-gradient(135deg, #6f9bff, #2f57d8); }
+.site .m-carte-texte { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.site .m-l1, .site .m-l2 { display: flex; justify-content: space-between; gap: 10px; }
+.site .m-l1 b { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.site .m-l1 .m-montant { flex: none; font-variant-numeric: tabular-nums; }
+.site .m-l2 { font-size: 13px; color: var(--encre-2); }
+.site .m-l2 span:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.site .m-l2 span:last-child { flex: none; white-space: nowrap; }
+.site .m-exemple { position: absolute; right: 12px; top: -9px; padding: 2px 7px; border-radius: 99px; background: var(--encre); color: #fff; font: 600 9.5px/1.3 var(--f-texte); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Le texte du métier, en bas. */
+.site .metier-texte { position: absolute; z-index: 4; left: 30px; right: 30px; bottom: 28px; max-width: 470px; color: #fff; }
+.site .metier-public { display: block; font: 600 11px/1.3 var(--f-texte); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.78); }
+.site .metier-texte h3 { margin-top: 8px; font-family: var(--f-titre); font-weight: 400; font-size: clamp(34px, 3.6vw, 46px); line-height: 1.02; letter-spacing: -0.028em; color: #fff; }
+.site .metier-texte p { margin: 12px 0 0; font-size: 16px; line-height: 1.5; color: rgba(255, 255, 255, 0.86); }
+.site .metier-lien { display: inline-flex; align-items: center; gap: 8px; height: 42px; margin-top: 18px; padding: 0 18px; border-radius: 99px; background: #fff; color: var(--encre); font-size: 14.5px; font-weight: 600; transition: transform 120ms ease-out; }
+.site .metier-lien svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 260ms var(--sortie); }
+.site .metier-lien:active { transform: scale(0.97); }
+.site .metier.active .metier-texte { animation: site-m-texte 700ms var(--sortie) 340ms both; }
+@keyframes site-m-texte { from { opacity: 0; transform: translateY(12px); } }
+.site .metiers-suite { max-width: 70ch; margin: 22px 0 0; font-size: 14.5px; color: var(--encre-2); }
+
+@media (hover: hover) and (pointer: fine) {
+	.site .metier:not(.active):hover .metier-photo { transform: scale(1.03); }
+	.site .metier:not(.active):hover .metier-voile { background-color: rgba(16, 20, 60, 0.18); }
+	.site .metier-lien:hover svg { transform: translateX(3px); }
+}
+@media (max-width: 1180px) {
+	.site .metiers-panneaux { height: 560px; }
+	.site .m-carte { width: 300px; }
+	.site .metier-texte p { font-size: 15px; }
+}
+@media (max-width: 900px) {
+	.site .metiers-panneaux { flex-direction: column; gap: 8px; height: auto; margin-top: 40px; }
+	.site .metier { flex: none; height: 88px; border-radius: 20px; transition: height 640ms var(--ouvre); }
+	.site .metier.active { height: 566px; }
+	.site .metier-onglet { flex-direction: row; align-items: center; justify-content: space-between; padding: 0 20px; }
+	.site .metier-court-nom { font-size: 20px; }
+	.site .metier-court-chiffre { font-size: 26px; }
+	.site .metier-voile { background: linear-gradient(180deg, rgba(10, 14, 40, 0.2) 0%, rgba(10, 14, 40, 0) 30%, rgba(8, 11, 32, 0.82) 100%), rgba(16, 20, 60, 0.42); }
+	.site .metier-contenu { width: 100%; }
+	.site .metier-progres { display: none; }
+	.site .m-pendu { left: 18px; width: 230px; }
+	.site .m-grand { font-size: 34px; }
+	.site .m-carte { right: 16px; top: 214px; width: min(300px, calc(100% - 32px)); }
+	.site .metier-texte { left: 20px; right: 20px; bottom: 22px; }
+	.site .metier-texte h3 { font-size: 32px; }
+	.site .metier-texte p { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.site .metier, .site .metier-photo, .site .metier-contenu { transition-duration: 1ms; }
+	.site .m-pendu, .site .metier.active .m-etiquette, .site .metier.active .m-carte, .site .metier.active .metier-texte { animation: none; }
+}
+

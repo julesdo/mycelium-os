@@ -1,0 +1,24 @@
+/* Site public, « fluidite » : transplanté de la maquette V26, lignes 2008 à 2028
+   (docs/superpowers/maquettes/2026-10-28-site/index.html), puis CLOISONNÉ : chaque règle ne vise que
+   l'intérieur de `.site`, la page entière seulement quand le site est affiché (`:has(.site)`), et
+   chaque animation porte le préfixe `site-`. TanStack ne retire pas cette feuille quand on quitte la
+   page : sans ce cloisonnement, elle s'appliquerait à l'application. Valeurs de la maquette à l'octet ;
+   pas de réécriture en classes Tailwind (la comparaison au pixel s'appuie sur elles). */
+/* ── LA FLUIDITÉ ──────────────────────────────────────────
+   Mêmes images, moins de travail : les barres de progression se mettent à l'échelle sur le GPU (une
+   largeur qui change force la mise en page à chaque image), et les animations en boucle d'une section
+   hors de l'écran se mettent en pause ; elles reprennent dès qu'elle revient. */
+body .site .plume-grille .capacite .progres { width: 100%; transform: scaleX(var(--avance, 0)); transform-origin: 0 50%; will-change: transform; }
+body .site .plume-grille .capacite.fini .progres { transform: none; }
+body .site .metier-progres { width: 100%; transform: scaleX(var(--avance, 0)); transform-origin: 0 50%; will-change: transform; }
+.site .metier:not(.active) .m-pendu { animation-play-state: paused; }
+.site .hors-champ *:not(.revele), .site .hors-champ *::before, .site .hors-champ *::after { animation-play-state: paused !important; }
+/* Ce qui est caché sans être retiré (le menu « Logiciel » fermé, le menu du téléphone, les écrans du
+   téléphone qu'on ne regarde pas, sa feuille de conversation fermée) ne s'anime pas pour personne :
+   ses animations reprennent à l'instant où il s'ouvre. */
+.site .barre:not(.mega-ouvert) .mega *, .site .barre:not(.mega-ouvert) .mega *::before, .site .barre:not(.mega-ouvert) .mega *::after, .site .feuille-menu:not(.ouverte) *, .site .feuille-menu:not(.ouverte) *::before, .site .feuille-menu:not(.ouverte) *::after, .site .v-vue:not(.active) *, .site .v-vue:not(.active) *::before, .site .v-vue:not(.active) *::after, .site .v-feuille:not(.ouverte) *, .site .v-feuille:not(.ouverte) *::before, .site .v-feuille:not(.ouverte) *::after { animation-play-state: paused !important; }
+@media (max-width: 900px) {
+	body .site .plume-grille .capacite.active .progres { width: calc(25% - 6px); transform: scaleX(var(--avance, 0)); }
+	body .site .plume-grille .capacite.fini .progres { width: 100%; transform: none; }
+}
+
