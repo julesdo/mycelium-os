@@ -1,107 +1,27 @@
-import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
-import { demarrerBalayage } from '../../ui/site/balayage';
-import { demarrerBarre } from '../../ui/site/barre';
-import { demarrerChampsEmail } from '../../ui/site/champ-email';
-import {
-	demarrerBlocsVivants,
-	demarrerBoutonsQuiComptent,
-	demarrerHorsChamp,
-	demarrerRegardDePlume
-} from '../../ui/site/gestes';
-import { demarrerLoi } from '../../ui/site/loi';
-import { demarrerMetiers } from '../../ui/site/metiers';
-import { demarrerPaysages } from '../../ui/site/paysages';
-import { demarrerPlume } from '../../ui/site/plume';
-import { demarrerSecurite } from '../../ui/site/securite';
-import { SpriteDuSite } from '../../ui/site/sprite';
-import { demarrerTuiles } from '../../ui/site/tuiles';
-import { demarrerVitrine } from '../../ui/site/vitrine';
 import { SectionAppel } from './appel';
-import { BarreDuSite } from './barre';
+import { CoquilleDuSite } from './coquille';
 import { SectionLoi } from './loi';
-import { FACTURE_DE_LA_LOI, LOI } from './loi-demo';
 import { SectionMetiers } from './metiers';
-import { PiedDuSite } from './pied';
 import { SectionPlume } from './plume';
-import { PLUME } from './plume-demo';
 import { BandeDesPreuves } from './preuves';
 import { SectionSecurite } from './securite';
-import { RELEVE } from './securite-demo';
+import { SectionTarifs } from './tarifs';
 import { EnTete } from './tete';
 import { SectionTout } from './tout';
-import { SANTE } from './tout-demo';
-import { VITRINE } from './vitrine-demo';
 
-/**
- * LE SITE PUBLIC, D'APRÈS LA MAQUETTE V26 (28/10/2026).
- *
- * `docs/superpowers/specs/2026-10-28-site-en-production.md` dit comment il se construit :
- * la maquette (`docs/superpowers/maquettes/2026-10-28-site/`) est la référence, sa feuille de
- * style est transplantée telle quelle (`styles/site/`), et chaque section se compare à elle au
- * pixel (`scripts/comparer-maquette.ts`).
- *
- * ⚠️ REACT DESSINE LA PAGE UNE FOIS, LES MOTEURS LA FONT VIVRE. Rien ici n'a d'état : les
- * paysages, les visites guidées, les étiquettes qui se balancent écrivent sur les éléments,
- * hors de React, comme la lentille liquide de l'application. Chaque moteur rend de quoi se
- * défaire, pour qu'on puisse quitter la page et y revenir sans rechargement.
- */
+/** L'ACCUEIL DU SITE, D'APRÈS LA MAQUETTE V26 (28/10/2026), section par section. */
 export function PageSite() {
-	const racine = useRef<HTMLDivElement>(null);
-	const navigate = useNavigate();
-
-	useEffect(() => {
-		const el = racine.current;
-		if (!el) return;
-		// L'ordre est celui du script de la maquette.
-		const arrets = [
-			demarrerPaysages(el),
-			demarrerLoi(el, {
-				depart: FACTURE_DE_LA_LOI.echeance,
-				jours: LOI.jours,
-				penalites: LOI.penalites,
-				segments: LOI.segments
-			}),
-			demarrerBarre(el),
-			demarrerBoutonsQuiComptent(el),
-			demarrerTuiles(el, { sante: SANTE }),
-			demarrerVitrine(el, VITRINE),
-			demarrerBlocsVivants(el),
-			demarrerRegardDePlume(el),
-			demarrerSecurite(el, {
-				virements: RELEVE.virements,
-				solde: RELEVE.solde,
-				delai: PLUME.scenario.delai
-			}),
-			demarrerChampsEmail(el, (adresse) => {
-				void navigate({
-					to: '/inscription',
-					state: (precedent) => ({ ...precedent, adresseDInscription: adresse })
-				});
-			}),
-			demarrerPlume(el, PLUME.scenario),
-			demarrerMetiers(el),
-			demarrerBalayage(el),
-			demarrerHorsChamp(el)
-		];
-		return () => arrets.forEach((arreter) => arreter());
-	}, [navigate]);
-
 	return (
-		<div className="site" ref={racine}>
-			<SpriteDuSite />
-			<BarreDuSite />
-			<main id="haut">
-				<EnTete />
-				<BandeDesPreuves />
-				<SectionLoi />
-				<SectionPlume />
-				<SectionTout />
-				<SectionMetiers />
-				<SectionSecurite />
-				<SectionAppel />
-			</main>
-			<PiedDuSite />
-		</div>
+		<CoquilleDuSite>
+			<EnTete />
+			<BandeDesPreuves />
+			<SectionLoi />
+			<SectionPlume />
+			<SectionTout />
+			<SectionMetiers />
+			<SectionSecurite />
+			<SectionTarifs />
+			<SectionAppel />
+		</CoquilleDuSite>
 	);
 }

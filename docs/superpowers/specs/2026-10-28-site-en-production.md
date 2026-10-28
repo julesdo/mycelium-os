@@ -86,7 +86,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 5 | Tout ce qui va avec | livré |
 | 6 | Métiers | livré |
 | 7 | Sécurité : enveloppe, relevé, lettre | livré |
-| 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | |
+| 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | livré |
 | 9 | Blog : les champs des articles, puis la section | |
 | 10 | Appel définitif, bascule de `/`, `/securite`, plan du site, `llms.txt` | |
 
@@ -220,3 +220,23 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
 - **Le relevé reçoit ce que doivent les clients des autres démonstrations** (`securite-demo.ts`, tenu par `securite-demo.test.ts`) : Durand sa facture de la loi, Vidal et Bâti-Sud les montants du téléphone. Ce qui passe par Letikette reste à 0,00 € : la ligne rouge n° 2.
 - Le lien « Toutes nos mesures de sécurité » mène à `/securite`. Le cachet de cire et le corps de l'enveloppe, en couleur, sont dessinés dans `ui/site/dessins-securite.tsx`.
 - `#securite` sort de la liste d'attente de `fonctionnalites.test.ts` : le menu et les tuiles mènent tous à une section posée.
+
+## Lot 8, mesuré
+
+- **Les tarifs suivent la grille d'aujourd'hui**, pas celle de la maquette (`tarifs-demo.ts`, tenu par `tarifs-demo.test.ts`) :
+  - Équipe à 59 € et Pro à 149 € par mois (590 € et 1 490 € à l'année), au lieu de 39 € et 119 € ;
+  - les deux mois offerts sont lus par `moisOfferts` ;
+  - les limites de chaque formule viennent de `LIMITES` : Solo branche Qonto **et** Pennylane ;
+  - le comparatif est `CE_QUI_EST_INCLUS`, ligne par ligne. Découverte n'y coche pas tout : elle chiffre « 3 derniers mois » ;
+  - l'essai et le remboursement viennent de `DUREE_ESSAI_JOURS` et `JOURS_DE_REMBOURSEMENT`.
+- **La phrase de Découverte dit ce qu'elle chiffre** : « sur vos trois derniers mois de factures » (`historiqueDeDecouverte`). Elle prend une ligne de plus (+24 px).
+- **Contre la maquette : 0,00 % aux cinq largeurs**, une fois mis de côté les prix, la ligne des logiciels et le comparatif, et avec la phrase de la maquette. À 768 px, « Qonto et Pennylane branchés » passe sur deux lignes et allonge la carte Solo, exprès.
+- La bascule (au mois, sans engagement), le fil tendu, le centrage au téléphone et le comparatif qui s'ouvre jouent comme la maquette.
+- **La coquille du site est commune** (`coquille.tsx`) : chaque moteur ne fait rien quand sa section manque, et la coquille les démarre tous, sur n'importe quelle page.
+- **La page des tarifs** se construit sur `/nouveau-site/tarifs` (non liée, non indexée) jusqu'à la bascule :
+  - le comparatif ouvert d'emblée (`SectionTarifs complet`) ;
+  - les offres sur demande (`cartesDesOffres`), dans les « portes » de la section ; « Demander » ouvre la feuille de l'application, hors de `.site` (portail de Cladd) ;
+  - les questions de facturation (`questionsDeFacturation`), en `<details>` sous le filet du comparatif ;
+  - l'appel.
+
+  Ces deux sections n'étaient pas dessinées : elles prennent les formes de la section des tarifs (`styles/site/ajouts.css`). Leurs classes ont été vérifiées contre la feuille : `.question` était déjà la bulle de la conversation de Plume.

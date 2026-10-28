@@ -51,14 +51,15 @@ function dateLongue(iso: string): string {
 	});
 }
 
-interface CarteDOffre {
+export interface CarteDOffre {
 	readonly cle: OffreDemandable;
 	readonly pour: string;
 	readonly prix: string;
 	readonly conditions: readonly string[];
 }
 
-function cartes(): readonly CarteDOffre[] {
+/** Les offres sur demande, lues dans la grille : le site d'aujourd'hui et celui de la maquette V26 les posent. */
+export function cartesDesOffres(): readonly CarteDOffre[] {
 	const d = OFFRES.diagnosticComplet;
 	const r = OFFRES.reclamation;
 	const p = OFFRES.pilote;
@@ -253,7 +254,7 @@ export function OffresSurDemande() {
 				</Chapeau>
 			</div>
 			<div className="grid gap-cladd-2xs md:grid-cols-2">
-				{cartes().map((c) => (
+				{cartesDesOffres().map((c) => (
 					<div
 						key={c.cle}
 						className="flex flex-col gap-cladd-2xs rounded-carte-site border-2 border-filet-creme bg-papier p-cladd-xs md:p-cladd-sm"

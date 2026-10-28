@@ -61,6 +61,7 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
 import { Route as DesinscriptionJetonRouteImport } from './routes/desinscription.$jeton'
 import { Route as InvitationCodeRouteImport } from './routes/invitation.$code'
+import { Route as NouveauSiteTarifsRouteImport } from './routes/nouveau-site_.tarifs'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as SecteursSecteurRouteImport } from './routes/secteurs.$secteur'
@@ -359,6 +360,11 @@ const InvitationCodeRoute = InvitationCodeRouteImport.update({
   path: '/invitation/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NouveauSiteTarifsRoute = NouveauSiteTarifsRouteImport.update({
+  id: '/nouveau-site_/tarifs',
+  path: '/nouveau-site/tarifs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PJetonRoute = PJetonRouteImport.update({
   id: '/p/$jeton',
   path: '/p/$jeton',
@@ -585,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/invitation/$code': typeof InvitationCodeRoute
+  '/nouveau-site/tarifs': typeof NouveauSiteTarifsRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -672,6 +679,7 @@ export interface FileRoutesByTo {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/invitation/$code': typeof InvitationCodeRoute
+  '/nouveau-site/tarifs': typeof NouveauSiteTarifsRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -762,6 +770,7 @@ export interface FileRoutesById {
   '/connexion_/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/invitation/$code': typeof InvitationCodeRoute
+  '/nouveau-site_/tarifs': typeof NouveauSiteTarifsRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -853,6 +862,7 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/desinscription/$jeton'
     | '/invitation/$code'
+    | '/nouveau-site/tarifs'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -940,6 +950,7 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/desinscription/$jeton'
     | '/invitation/$code'
+    | '/nouveau-site/tarifs'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -1029,6 +1040,7 @@ export interface FileRouteTypes {
     | '/connexion_/verification'
     | '/desinscription/$jeton'
     | '/invitation/$code'
+    | '/nouveau-site_/tarifs'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -1100,6 +1112,7 @@ export interface RootRouteChildren {
   ConnexionVerificationRoute: typeof ConnexionVerificationRoute
   DesinscriptionJetonRoute: typeof DesinscriptionJetonRoute
   InvitationCodeRoute: typeof InvitationCodeRoute
+  NouveauSiteTarifsRoute: typeof NouveauSiteTarifsRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   SecteursSecteurRoute: typeof SecteursSecteurRoute
@@ -1471,6 +1484,13 @@ declare module '@tanstack/react-router' {
       path: '/invitation/$code'
       fullPath: '/invitation/$code'
       preLoaderRoute: typeof InvitationCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nouveau-site_/tarifs': {
+      id: '/nouveau-site_/tarifs'
+      path: '/nouveau-site/tarifs'
+      fullPath: '/nouveau-site/tarifs'
+      preLoaderRoute: typeof NouveauSiteTarifsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$jeton': {
@@ -1905,6 +1925,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConnexionVerificationRoute: ConnexionVerificationRoute,
   DesinscriptionJetonRoute: DesinscriptionJetonRoute,
   InvitationCodeRoute: InvitationCodeRoute,
+  NouveauSiteTarifsRoute: NouveauSiteTarifsRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   SecteursSecteurRoute: SecteursSecteurRoute,

@@ -9,3 +9,39 @@
 	.site .pied a:hover { color: var(--encre); }
 	.site .pied .pied-legal a:hover { text-decoration-color: currentColor; }
 }
+
+/* La page des tarifs : les offres sur demande et les questions, que la maquette n'avait pas
+   dessinées et que la page portait déjà. Elles prennent les formes de la section des tarifs :
+   les « portes » de Découverte et du sur mesure, le filet du comparatif. */
+.site .sur-demande, .site .faq-site { --sortie: cubic-bezier(0.23, 1, 0.32, 1); --encre-bleue: #2a46c8; background: var(--papier); }
+.site .sur-demande { padding-top: clamp(24px, 4vw, 56px); }
+.site .faq-site { padding-top: clamp(40px, 6vw, 96px); }
+.site .portes-offres { row-gap: 44px; }
+.site .portes-offres .porte + .porte { border-left: 0; }
+.site .portes-offres .porte:nth-child(even) { border-left: 1px solid var(--filet); }
+.site .porte-prix { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--encre-bleue); }
+.site .porte-conditions { display: grid; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--gris); }
+.site .porte-conditions li { position: relative; padding-left: 14px; }
+.site .porte-conditions li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+.site button.lien-porte { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.site .faq-grille { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 48px; align-items: start; }
+.site .faq-grille h2 { font-size: clamp(34px, 4.2vw, 56px); }
+.site .faq-liste { border-top: 1px solid var(--filet); }
+.site .faq-item { border-bottom: 1px solid var(--filet); }
+.site .faq-item summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding: 14px 0; cursor: pointer; list-style: none; font-size: 17px; font-weight: 600; color: var(--encre); }
+.site .faq-item summary::-webkit-details-marker { display: none; }
+.site .faq-item summary svg { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: rotate 320ms var(--sortie); }
+.site .faq-item[open] summary svg { rotate: 180deg; }
+.site .faq-item p { max-width: 60ch; margin: 0 0 20px; font-size: 15.5px; color: var(--encre-2); }
+@media (hover: hover) {
+	.site .faq-item summary:hover, .site button.lien-porte:hover { color: var(--encre-bleue); }
+	.site button.lien-porte:hover svg { transform: translateX(3px); }
+}
+@media (max-width: 900px) {
+	.site .faq-grille { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 760px) {
+	.site .portes-offres { row-gap: 0; }
+	.site .portes-offres .porte:nth-child(even) { border-left: 0; }
+	.site .portes-offres .porte + .porte { border-top: 1px solid var(--filet); }
+}
