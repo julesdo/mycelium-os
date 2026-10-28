@@ -60,7 +60,7 @@ import {
 } from '../../marketing/motifs-blog';
 import { COMPOSANTS_MDX } from '../../marketing/mdx';
 import { CouvertureIllustree } from '../../marketing/blog-couvertures';
-import { AUTEUR_PAR_DEFAUT, schemaEnteteArticle } from '../../lib/blog/schema';
+import { AUTEUR_PAR_DEFAUT, schemaEnteteArticle, type EnteteArticle } from '../../lib/blog/schema';
 import {
 	adresseDepuisTitre,
 	ecrireArticle,
@@ -280,6 +280,8 @@ interface Saisie {
 	pilier: string;
 	illustration: string;
 	enBref: string[];
+	/** L'étiquette de l'accueil du site : l'éditeur ne la montre pas, il la garde telle quelle. */
+	etiquette?: EnteteArticle['etiquette'];
 	brouillon: boolean;
 	auteur: string;
 	corps: string;
@@ -309,6 +311,7 @@ function saisieDepuis(source: string | null, aujourdHui: string): Saisie {
 		pilier: lu.entete.pilier ?? '',
 		illustration: lu.entete.illustration,
 		enBref: [...(lu.entete.enBref ?? [])],
+		...(lu.entete.etiquette === undefined ? {} : { etiquette: lu.entete.etiquette }),
 		brouillon: lu.entete.brouillon,
 		auteur: lu.entete.auteur,
 		corps: lu.corps
@@ -325,6 +328,7 @@ function valider(saisie: Saisie) {
 		...(saisie.pilier === '' ? {} : { pilier: saisie.pilier }),
 		illustration: saisie.illustration,
 		...(saisie.enBref.length === 0 ? {} : { enBref: saisie.enBref.map((p) => p.trim()) }),
+		...(saisie.etiquette === undefined ? {} : { etiquette: saisie.etiquette }),
 		brouillon: saisie.brouillon,
 		auteur: saisie.auteur
 	});
@@ -458,7 +462,11 @@ export function EcranEditeurArticle({
 	const [adresseSaisie, setAdresseSaisie] = useState<string | null>(adresseInitiale);
 	const [empreinte, setEmpreinte] = useState<string | undefined>(sha);
 	const [envoi, setEnvoi] = useState<Envoi>({ etat: 'repos' });
-	const surLeClient = useSyncExternalStore(abonnementNul, () => true, () => false);
+	const surLeClient = useSyncExternalStore(
+		abonnementNul,
+		() => true,
+		() => false
+	);
 	const api = useRef<ApiEditeur | null>(null);
 	const recevoirApi = useCallback((recue: ApiEditeur | null) => {
 		api.current = recue;
@@ -625,7 +633,11 @@ export function EcranEditeurArticle({
 				<ReglagesDeValeur
 					actuelle={valeurChoisie}
 					apercuActuel={
-						valeurChoisie === undefined ? `<${choix.nom} />` : <ApercuDeValeur valeur={valeurChoisie} />
+						valeurChoisie === undefined ? (
+							`<${choix.nom} />`
+						) : (
+							<ApercuDeValeur valeur={valeurChoisie} />
+						)
 					}
 					propositions={
 						rechercheRemplacement === ''
@@ -700,13 +712,13 @@ export function EcranEditeurArticle({
 		),
 		plan:
 			mode === 'mdx' ? (
-				<p className="px-1 text-cladd-2xs text-cladd-fg-soft">
-					Le plan revient en mode Écrire.
-				</p>
+				<p className="px-1 text-cladd-2xs text-cladd-fg-soft">Le plan revient en mode Écrire.</p>
 			) : (
 				<PlanDeLArticle titres={titresDuPlan(blocs)} onAller={versLeBloc} />
 			),
-		relecture: <PanneauDeRelecture bloquants={bloquants} avertissements={relecture.avertissements} />
+		relecture: (
+			<PanneauDeRelecture bloquants={bloquants} avertissements={relecture.avertissements} />
+		)
 	} satisfies Record<OngletDuPanneau, ReactNode>;
 
 	const panneau = (
@@ -728,7 +740,9 @@ export function EcranEditeurArticle({
 				{apercu.etat === 'pret' ? (
 					<apercu.Contenu components={COMPOSANTS_MDX} />
 				) : apercu.etat === 'erreur' ? (
-					<p className="text-cladd-md">L’aperçu attend un corps qui se compile : {apercu.message}</p>
+					<p className="text-cladd-md">
+						L’aperçu attend un corps qui se compile : {apercu.message}
+					</p>
 				) : (
 					<p className="text-cladd-md">Compilation de l’aperçu…</p>
 				)}
@@ -758,7 +772,10 @@ export function EcranEditeurArticle({
 						onReglages={() => setPanneauOuvert(true)}
 						action={
 							peutPublier ? (
-								<BoutonPrincipal disabled={envoi.etat === 'envoi'} onClick={() => setConfirmation(true)}>
+								<BoutonPrincipal
+									disabled={envoi.etat === 'envoi'}
+									onClick={() => setConfirmation(true)}
+								>
 									<SendIcon aria-hidden />
 									<span className="hidden sm:inline">{libelleBouton}</span>
 								</BoutonPrincipal>
@@ -808,14 +825,22 @@ export function EcranEditeurArticle({
 								/>
 								{erreurDeLecture === null ? null : (
 									<p className="rounded-carte-site bg-teinte-question px-cladd-xs py-cladd-3xs text-cladd-2xs">
-										Ce corps ne se lit pas en blocs ({erreurDeLecture}). Corrigez-le ici, en MDX, puis
-										repassez en mode Écrire.
+										Ce corps ne se lit pas en blocs ({erreurDeLecture}). Corrigez-le ici, en MDX,
+										puis repassez en mode Écrire.
 									</p>
 								)}
 								{mode === 'mdx' ? (
-									<ZoneDeCorps valeur={saisie.corps} onChange={changer('corps')} extraits={EXTRAITS} />
+									<ZoneDeCorps
+										valeur={saisie.corps}
+										onChange={changer('corps')}
+										extraits={EXTRAITS}
+									/>
 								) : memoire === undefined || !surLeClient ? null : (
-									<Suspense fallback={<p className="text-cladd-md text-encre-site-douce">Ouverture de l’éditeur…</p>}>
+									<Suspense
+										fallback={
+											<p className="text-cladd-md text-encre-site-douce">Ouverture de l’éditeur…</p>
+										}
+									>
 										<EditeurBlocs
 											key={generation}
 											blocsInitiaux={'erreur' in lecture ? [] : lecture.blocs}
@@ -898,7 +923,9 @@ export function EcranEditeurArticle({
 							bloquants={bloquants}
 							avertissements={relecture.avertissements.length}
 							lignesChangees={
-								confirmation && source !== null && sortie !== null ? lignesChangees(source, sortie) : null
+								confirmation && source !== null && sortie !== null
+									? lignesChangees(source, sortie)
+									: null
 							}
 						/>
 						{envoi.etat === 'erreur' ? (

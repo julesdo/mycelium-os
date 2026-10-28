@@ -66,6 +66,24 @@ const articles = defineCollection({
 	}
 });
 
+/**
+ * LES MÊMES ARTICLES, SANS LEUR CORPS (28/10/2026) : ce que montre l'accueil du site (le titre,
+ * l'« En bref », l'étiquette, la durée de lecture). Lire `allArticles` dans l'accueil y ferait
+ * entrer le texte compilé de chaque article ; `allResumes` n'en porte que l'en-tête.
+ */
+const resumes = defineCollection({
+	name: 'resumes',
+	typeName: 'ResumeDArticle',
+	directory: 'content/blog',
+	include: '**/*.mdx',
+	schema: schemaEnteteArticle.extend({ content: z.string() }),
+	transform: (article) => {
+		const { content, ...entete } = article;
+		const mots = content.split(/\s+/).filter(Boolean).length;
+		return { ...entete, adresse: article._meta.path, minutes: Math.max(1, Math.round(mots / 200)) };
+	}
+});
+
 export default defineConfig({
-	content: [articles]
+	content: [articles, resumes]
 });

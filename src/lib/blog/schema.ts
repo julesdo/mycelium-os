@@ -17,6 +17,9 @@ const dateDuJour = z.preprocess(
 
 export const AUTEUR_PAR_DEFAUT = 'L’équipe Letikette';
 
+/** Aucun chiffre : un nombre se lit au registre, jamais dans un texte écrit à la main. */
+const SANS_CHIFFRE = /^[^0-9]*$/;
+
 export const schemaEnteteArticle = z.object({
 	titre: z.string().min(10).max(90),
 	description: z.string().min(50).max(170),
@@ -39,6 +42,26 @@ export const schemaEnteteArticle = z.object({
 		.optional(),
 	// Deux à cinq phrases courtes : ce que le lecteur retient s'il ne lit que ça.
 	enBref: z.array(z.string().min(10).max(220)).min(2).max(5).optional(),
+	// L'étiquette que l'article pend sur l'accueil du site (28/10/2026) : un libellé, une valeur
+	// en grand, une ligne dessous. ⚠️ AUCUN CHIFFRE N'Y EST TAPÉ : la valeur en grand est soit une
+	// valeur du registre nommée par sa clé (`registre: delaisPaiementPublics.SANTE`, lue au rendu
+	// par `marketing/site/blog-demo.ts`), soit un mot (`mot: La livraison`). Un chiffre tapé à la
+	// main ne se corrigerait pas le jour où la loi change.
+	etiquette: z
+		.object({
+			libelle: z.string().min(3).max(24).regex(SANS_CHIFFRE),
+			registre: z
+				.string()
+				.regex(/^[a-zA-Z]+(\.[A-Za-z_]+)?$/)
+				.optional(),
+			// Quinze signes au plus : la valeur en grand tient sur l'étiquette, téléphone compris.
+			mot: z.string().min(3).max(15).regex(SANS_CHIFFRE).optional(),
+			sous: z.string().min(5).max(70).regex(SANS_CHIFFRE)
+		})
+		.refine((e) => (e.registre === undefined) !== (e.mot === undefined), {
+			message: 'une étiquette porte soit une valeur du registre, soit un mot, jamais les deux'
+		})
+		.optional(),
 	brouillon: z.boolean().default(false)
 });
 

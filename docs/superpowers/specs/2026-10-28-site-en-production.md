@@ -87,7 +87,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 6 | Métiers | livré |
 | 7 | Sécurité : enveloppe, relevé, lettre | livré |
 | 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | livré |
-| 9 | Blog : les champs des articles, puis la section | |
+| 9 | Blog : les champs des articles, puis la section | livré |
 | 10 | Appel définitif, bascule de `/`, `/securite`, plan du site, `llms.txt` | |
 
 ## Lot 0, mesuré
@@ -240,3 +240,24 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - l'appel.
 
   Ces deux sections n'étaient pas dessinées : elles prennent les formes de la section des tarifs (`styles/site/ajouts.css`). Leurs classes ont été vérifiées contre la feuille : `.question` était déjà la bulle de la conversation de Plume.
+
+## Lot 9, mesuré
+
+- **Le blog montre les quatre derniers articles sortis**, à Paris, même en développement, et annonce le suivant (« Jeudi 29 octobre ») (`blog-demo.ts`, tenu par `blog-demo.test.ts`). Rendu au serveur à chaque visite : un article daté de jeudi monte jeudi.
+- **Il lit `allResumes`, une seconde collection** (`content-collections.ts`) : les en-têtes et la durée de lecture, sans le corps. Le texte des 26 articles n'entre pas dans le paquet de l'accueil.
+- **Chaque article porte son étiquette** (`etiquette` dans `lib/blog/schema.ts`) :
+  - un libellé ;
+  - une valeur en grand : la **clé** d'une valeur du registre (`registre: delaisPaiementPublics.SANTE`, lue au rendu, « 50 jours »), ou un **mot** de quinze signes au plus (« La livraison ») ;
+  - une ligne dessous.
+
+  Le schéma y refuse tout chiffre. La maquette pendait « 70 jours » et « 13,4 jours », relevés d'un rapport et tapés à la main.
+  - Les 26 articles en ont une.
+  - Le CMS de l'admin la garde à l'enregistrement : `ecrireArticle` l'écrit, et l'éditeur la porte sans la montrer. Le test aller-retour de `source.test.ts` la couvre.
+  - `content/blog/README.md` le dit.
+- **Contre la maquette** : de 0,19 à 0,39 % au bureau, une fois mis de côté les articles, l'étiquette et la feuille, qui disent les vrais articles :
+  - les deux du 20 octobre dans l'ordre des fichiers ;
+  - un autre article du 6 octobre en quatrième ;
+  - un « En bref » de quatre phrases au lieu de trois.
+
+  Au téléphone, la plaque grandit de cette quatrième phrase (+88 px).
+- Le récit avance seul (9 s), un toucher choisit, le balayage du téléphone passe au suivant, et le lien « Lire l'article » suit l'article montré. Ce lien est simple, parce que son adresse change.

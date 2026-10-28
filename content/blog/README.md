@@ -61,6 +61,7 @@ Du texte, des **mots en gras**, des [liens](/blog), des listes…
 | `auteur`       | non         | « L’équipe Letikette » par défaut.                                                                                             |
 | `illustration` | non         | Le motif de la couverture : `facture` (par défaut), `decompte`, `indemnites`, `calendrier`, `relance` ou `paiement`.           |
 | `enBref`       | non         | Deux à cinq phrases courtes, affichées en tête : ce que le lecteur retient s'il ne lit que ça.                                 |
+| `etiquette`    | conseillé   | L'étiquette pendue sur l'accueil : `libelle`, `registre` (une clé du registre, lue au rendu) **ou** `mot` (quinze signes), et `sous`. Aucun chiffre tapé. |
 | `couverture`   | non         | Une vraie image, seulement si l'article en a besoin : `src` (`/blog/…` ou `/ecrans/…`) et `alt`. Elle remplace l'illustration. |
 | `brouillon`    | non         | `true` : visible en local seulement, jamais en ligne. `false` par défaut.                                                      |
 
@@ -158,7 +159,9 @@ cadratins. Pas de point d'exclamation. Pas d'emoji.
 
 **Aucune valeur de la loi dans l’en-tête.** Le titre, la description et `enBref` ne lisent pas le
 registre : on y écrit « un délai bien plus court », jamais « un an » ni « 40 € ». L’adresse de
-l’article non plus.
+l’article non plus. L’étiquette, elle, nomme la clé du registre dont elle montre la valeur
+(`registre: indemniteForfaitaire`) : le chiffre se lit au rendu, et se corrige avec la loi. Sans
+étiquette, l’accueil pend l’article sans elle, et `blog-demo.test.ts` le signale.
 
 **Un chiffre de veille porte son lien.** Retard moyen, défaillances, délais publics : la source
 (Banque de France, Altares) en lien, la période dite, et ce que mesure le chiffre (qui paie tard,

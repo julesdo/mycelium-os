@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { demarrerBalayage } from '../../ui/site/balayage';
 import { demarrerBarre } from '../../ui/site/barre';
+import { demarrerBlog, type ArticleDuRecit } from '../../ui/site/blog';
 import { demarrerChampsEmail } from '../../ui/site/champ-email';
 import {
 	demarrerBlocsVivants,
@@ -42,7 +43,14 @@ import { VITRINE } from './vitrine-demo';
  * quitter la page et y revenir sans rechargement ; et chacun ne fait rien quand sa section n'est
  * pas sur la page : la coquille les démarre tous, quelle que soit la page.
  */
-export function CoquilleDuSite({ children }: { children: ReactNode }) {
+export function CoquilleDuSite({
+	children,
+	articles = []
+}: {
+	children: ReactNode;
+	/** Les articles du blog que la page a rendus : le récit les fait défiler. */
+	articles?: readonly ArticleDuRecit[];
+}) {
 	const racine = useRef<HTMLDivElement>(null);
 	const navigate = useNavigate();
 
@@ -77,12 +85,13 @@ export function CoquilleDuSite({ children }: { children: ReactNode }) {
 			}),
 			demarrerPlume(el, PLUME.scenario),
 			demarrerTarifs(el),
+			demarrerBlog(el, articles),
 			demarrerMetiers(el),
 			demarrerBalayage(el),
 			demarrerHorsChamp(el)
 		];
 		return () => arrets.forEach((arreter) => arreter());
-	}, [navigate]);
+	}, [navigate, articles]);
 
 	return (
 		<div className="site" ref={racine}>

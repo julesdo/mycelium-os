@@ -33,6 +33,7 @@ const LIBELLES: Readonly<Record<string, string>> = {
 	illustration: 'L’illustration',
 	couverture: 'La couverture',
 	enBref: '« En bref »',
+	etiquette: 'L’étiquette',
 	brouillon: 'Le brouillon'
 };
 
@@ -101,6 +102,15 @@ export function ecrireArticle({ entete, corps }: ArticleSource): string {
 	}
 	if (entete.enBref !== undefined && entete.enBref.length > 0) {
 		lignes.push('enBref:', ...entete.enBref.map((phrase) => `  - ${scalaire(phrase)}`));
+	}
+	const e = entete.etiquette;
+	if (e !== undefined) {
+		lignes.push(
+			'etiquette:',
+			`  libelle: ${scalaire(e.libelle)}`,
+			e.registre !== undefined ? `  registre: ${e.registre}` : `  mot: ${scalaire(e.mot ?? '')}`,
+			`  sous: ${scalaire(e.sous)}`
+		);
 	}
 	if (entete.brouillon) lignes.push('brouillon: true');
 	return `---\n${lignes.join('\n')}\n---\n\n${corps.replace(/^\s+/, '').replace(/\s*$/, '\n')}`;
