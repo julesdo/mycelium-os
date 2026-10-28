@@ -1,0 +1,112 @@
+/* Site public : LES PAGES DU COMPTE (28/10/2026) — la connexion, l'inscription, le mot de passe
+   oublié, le nouveau mot de passe et le code de vérification, dans la DA du site.
+
+   Le papier, les titres en Newsreader, le champ en pilule de l'appel et son liseré d'aube au focus,
+   le bouton d'encre ; à droite, un tableau du massif où Plume se tient, avec une carte de papier
+   qui dit ce qui vient. Au téléphone, le tableau devient une bande en tête, et le formulaire reste
+   sous le pouce. Cloisonné comme le reste (`.site`). */
+.site.compte { --encre-bleue: #2a46c8; --sortie: cubic-bezier(0.23, 1, 0.32, 1); --alerte: #c2410c; min-height: 100svh; background: var(--papier); }
+.site .compte-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr); gap: clamp(32px, 4vw, 64px); max-width: 1320px; min-height: 100svh; margin: 0 auto; padding: 24px clamp(20px, 3vw, 40px); }
+.site .compte-colonne { display: flex; flex-direction: column; min-height: calc(100svh - 48px); }
+.site .compte-tete { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; }
+.site .compte-tete .marque { color: var(--encre); }
+.site .compte-autre { font-size: 14.5px; color: var(--encre-2); }
+.site .compte-autre a { margin-left: 6px; color: var(--encre); font-weight: 600; text-decoration: none; }
+.site .compte-corps { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 440px; margin: 0 auto; padding: 48px 0; }
+.site .compte-etape { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gris); }
+.site .compte-etape i { display: block; width: 44px; height: 3px; border-radius: 3px; background: var(--filet); overflow: hidden; }
+.site .compte-etape i::after { content: ""; display: block; width: var(--fait, 50%); height: 100%; border-radius: inherit; background: var(--encre); transition: width 520ms var(--sortie); }
+.site.compte h1 { font-family: var(--f-titre); font-weight: 380; font-size: clamp(38px, 4.4vw, 54px); line-height: 1.02; letter-spacing: -0.03em; margin: 0; text-wrap: balance; }
+.site.compte h1 .ton { color: var(--gris); }
+.site.compte .chapeau { margin-top: 16px; font-size: 16.5px; max-width: 42ch; }
+.site .compte-form { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
+.site .compte-pied { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 22px; font-size: 14.5px; color: var(--encre-2); }
+.site .compte-pied a, .site .compte-lien { color: var(--encre); font-weight: 600; text-decoration: none; }
+.site .compte-mention { margin: 0; padding-top: 24px; font-size: 12.5px; line-height: 1.5; color: var(--gris); }
+.site .compte-mention a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Le champ : la pilule de l'appel, seule, le libellé qui monte, l'icône à gauche. */
+.site .compte-champ { --i-fond: #fff; --i-fond-focus: #fff; --i-bord: rgba(12, 17, 36, 0.12); --i-bord-survol: rgba(12, 17, 36, 0.24); --i-texte: var(--encre); --i-libelle: #7d82a0; --i-libelle-haut: #8a8fac; --i-icone: #8a8fac; --i-ok: #2a46c8; --i-halo: rgba(109, 139, 255, 0.14); --i-alerte: #c2410c;
+	position: relative; height: 58px; border-radius: 16px; background: var(--i-fond); border: 1px solid var(--i-bord); box-shadow: 0 1px 2px rgba(12, 17, 36, 0.04), 0 8px 24px -16px rgba(12, 17, 36, 0.18); transition: border-color 200ms ease, box-shadow 240ms var(--sortie); }
+.site .compte-champ::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1.5px; background: linear-gradient(100deg, #ffcfa8, #c7b2ff 45%, #6d8bff); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0; transition: opacity 240ms ease; pointer-events: none; }
+.site .compte-champ:focus-within { box-shadow: 0 0 0 5px var(--i-halo), 0 10px 28px -16px rgba(42, 70, 200, 0.4); }
+.site .compte-champ:focus-within::before { opacity: 1; }
+.site .compte-champ.erreur::before { background: var(--i-alerte); opacity: 1; }
+.site .compte-champ.secoue { animation: site-secoue 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+.site .compte-champ .champ { position: absolute; inset: 0; height: auto; border-radius: inherit; }
+.site .compte-champ .champ input { padding-top: 20px; padding-right: 52px; font-size: 16px; }
+.site .compte-champ .champ input.code { padding-left: 50px; font-family: var(--f-mono); font-size: 20px; letter-spacing: 0.42em; }
+.site .compte-champ .champ-bout { right: 12px; }
+.site .compte-oeil { position: absolute; inset: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--i-icone); cursor: pointer; padding: 0; }
+.site .compte-oeil svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.site .compte-oeil:active { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) {
+	.site .compte-champ:not(:focus-within):hover { border-color: var(--i-bord-survol); }
+	.site .compte-oeil:hover { color: var(--encre); }
+	.site .compte-pied a:hover, .site .compte-lien:hover, .site .compte-autre a:hover { color: var(--encre-bleue); }
+}
+.site .compte-ligne { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 20px; padding: 0 4px; font-size: 13px; color: var(--gris); }
+.site .compte-ligne.alerte { color: var(--alerte); }
+.site .compte-suggestion { border: 0; padding: 0; background: none; font: inherit; color: var(--encre-bleue); font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+/* La longueur du mot de passe : une jauge en douze traits, qui se remplit à la frappe. */
+.site .compte-jauge { display: grid; grid-template-columns: repeat(var(--n, 12), 1fr); gap: 3px; width: 108px; }
+.site .compte-jauge i { height: 4px; border-radius: 2px; background: var(--filet); transition: background-color 180ms ease; }
+.site .compte-jauge i.plein { background: var(--encre); }
+.site .compte-jauge.assez i { background: var(--encre-bleue); }
+
+/* L'erreur, dite en une phrase, au-dessus du bouton. */
+.site .compte-erreur { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 14px; background: rgba(194, 65, 12, 0.07); color: #8a2e0a; font-size: 14px; line-height: 1.45; }
+.site .compte-erreur svg { flex: none; width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.site .compte-note { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: #fff; border: 1px solid var(--filet); font-size: 14px; color: var(--encre-2); }
+.site .compte-note b { color: var(--encre); }
+.site .compte-pastille { display: inline-flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%; padding: 6px 8px 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--filet); font-size: 14px; color: var(--encre); }
+.site .compte-pastille span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site .compte-pastille button { border: 0; padding: 4px 8px; border-radius: 999px; background: var(--papier); color: var(--encre-2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+/* Le bouton : celui d'encre de l'appel, pleine largeur. */
+.site.compte .bouton.cta { width: 100%; justify-content: center; height: 54px; margin-top: 6px; }
+.site.compte .bouton.cta[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.site.compte .bouton.cta .compte-tourne { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #fff; animation: site-compte-tourne 700ms linear infinite; }
+@keyframes site-compte-tourne { to { transform: rotate(360deg); } }
+.site .compte-secondaire { align-self: center; border: 0; padding: 10px 12px; background: none; color: var(--encre-2); font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; }
+
+/* Les messageries, une fois le lien envoyé. */
+.site .compte-messageries { display: flex; flex-wrap: wrap; gap: 8px; }
+.site .compte-messageries a { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1px solid var(--filet); color: var(--encre); font-size: 14px; font-weight: 600; text-decoration: none; }
+
+/* Le tableau : le massif, Plume, une carte de papier. */
+.site .compte-tableau { --coin: 30px; position: sticky; top: 24px; height: calc(100svh - 48px); min-height: 560px; border-radius: 32px; overflow: hidden; }
+.site .compte-tableau > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.site .compte-scene { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: clamp(24px, 3vw, 44px); }
+.site .compte-plume { position: absolute; left: clamp(24px, 4vw, 56px); top: clamp(28px, 6svh, 72px); width: clamp(104px, 10vw, 148px); }
+.site .compte-plume svg { width: 100%; height: auto; }
+.site .compte-carte { position: relative; max-width: 380px; margin-left: auto; padding: 22px 22px 18px; border-radius: 22px; background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); box-shadow: 0 28px 60px -28px rgba(20, 16, 70, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.9); }
+.site .compte-carte h2 { font-family: var(--f-titre); font-weight: 420; font-size: 24px; line-height: 1.1; letter-spacing: -0.015em; max-width: none; margin: 0 0 14px; }
+.site .compte-carte ol, .site .compte-carte ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.site .compte-carte li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; font-size: 14.5px; line-height: 1.4; color: var(--encre-2); }
+.site .compte-carte li b { display: block; color: var(--encre); font-weight: 600; }
+.site .compte-carte li > span:first-child { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--encre); color: #fff; font-family: var(--f-mono); font-size: 12px; }
+.site .compte-carte li > svg { width: 28px; height: 28px; padding: 6px; border-radius: 50%; background: rgba(42, 70, 200, 0.1); fill: none; stroke: var(--encre-bleue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 1023px) {
+	.site .compte-page { grid-template-columns: 1fr; grid-template-rows: auto 1fr; padding: 0; gap: 0; }
+	.site .compte-colonne { order: 2; min-height: 0; padding: 0 20px 28px; }
+	.site .compte-tete { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); left: 20px; right: 20px; z-index: 2; }
+	.site.compte[data-ciel="sombre"] .compte-tete .marque, .site.compte[data-ciel="sombre"] .compte-autre, .site.compte[data-ciel="sombre"] .compte-autre a { color: #fff; }
+	.site .compte-tableau { order: 1; position: relative; top: 0; height: 236px; min-height: 0; border-radius: 0 0 28px 28px; }
+	.site .compte-plume { left: auto; right: 22px; top: auto; bottom: 18px; width: 92px; }
+	.site .compte-carte { display: none; }
+	.site .compte-tableau { --coin: 0px; }
+	.site .compte-tableau > .pli { display: none; }
+	.site .compte-corps { justify-content: flex-start; padding: 32px 0 0; }
+	.site .compte-form { margin-top: 26px; }
+}
+@media (max-width: 519px) {
+	.site .compte-question { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.site .compte-champ.secoue { animation: none; }
+	.site.compte .bouton.cta .compte-tourne { animation-duration: 2s; }
+}
+.site .compte-note > svg { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--encre-bleue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }

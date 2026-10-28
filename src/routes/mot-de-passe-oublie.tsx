@@ -1,68 +1,24 @@
-import { useState, type FormEvent } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
-import { authClient } from '../lib/client/auth';
-import { BoutonPrincipal, CadreAuth, Champ } from '../ui';
+import { createFileRoute, useHydrated, useRouterState } from '@tanstack/react-router';
+import { FORME_D_ADRESSE } from '../lib/compte/regles';
+import { PageMotDePasseOublie } from '../marketing/compte/mot-de-passe';
+import feuilleDuSite from '../styles/site/site.css?url';
 
-export const Route = createFileRoute('/mot-de-passe-oublie')({ component: MotDePasseOublie });
+/**
+ * LE MOT DE PASSE OUBLIÉ, dans la DA du site (28/10/2026) : `marketing/compte/mot-de-passe.tsx`.
+ * L'adresse tapée à la connexion arrive par l'état de l'historique, jamais par l'URL.
+ */
+export const Route = createFileRoute('/mot-de-passe-oublie')({
+	head: () => ({
+		meta: [{ title: 'Mot de passe oublié · Letikette' }],
+		links: [{ rel: 'stylesheet', href: feuilleDuSite }]
+	}),
+	component: MotDePasseOublie
+});
 
 function MotDePasseOublie() {
-	const [email, setEmail] = useState('');
-	const [envoye, setEnvoye] = useState(false);
-	const [enCours, setEnCours] = useState(false);
-
-	async function soumettre(e: FormEvent) {
-		e.preventDefault();
-		setEnCours(true);
-		await authClient.requestPasswordReset({
-			email,
-			redirectTo: `${window.location.origin}/nouveau-mot-de-passe`
-		});
-		setEnCours(false);
-		// On confirme l'envoi SANS dire si l'adresse existe : répondre « compte
-		// inconnu » à un inconnu lui apprend quelles cantines sont clientes.
-		setEnvoye(true);
-	}
-
-	if (envoye) {
-		return (
-			<CadreAuth
-				titre="Vérifiez votre boîte mail."
-				explication={`Si un compte existe pour ${email}, un lien de réinitialisation vient d’y être envoyé. Il est valable une heure.`}
-			>
-				<p className="text-cladd-2xs leading-relaxed text-cladd-fg-softer">
-					Rien reçu au bout de quelques minutes ? Regardez dans les indésirables, puis réessayez.
-				</p>
-				<Button as={Link} to="/connexion" size="lg">
-					Revenir à la connexion
-				</Button>
-			</CadreAuth>
-		);
-	}
-
-	return (
-		<CadreAuth
-			titre="Mot de passe oublié"
-			explication="Indiquez votre adresse : nous vous enverrons un lien pour en choisir un nouveau."
-			pied={
-				<Link to="/connexion" className="font-medium underline underline-offset-2">
-					Revenir à la connexion
-				</Link>
-			}
-		>
-			<form onSubmit={soumettre} className="flex flex-col gap-cladd-2xs">
-				<Champ etiquette="Adresse e-mail">
-					<Input type="email" value={email} onChange={setEmail} name="email" required />
-				</Champ>
-
-				<BoutonPrincipal
-					type="submit"
-					loading={enCours}
-					readOnly={enCours}
-				>
-					Envoyer le lien
-				</BoutonPrincipal>
-			</form>
-		</CadreAuth>
-	);
+	const hydrate = useHydrated();
+	const adresse = useRouterState({ select: (s) => s.location.state.adresseDInscription });
+	const adresseConnue =
+		hydrate && adresse !== undefined && FORME_D_ADRESSE.test(adresse) ? adresse : undefined;
+	return <PageMotDePasseOublie key={adresseConnue ?? 'vide'} adresseConnue={adresseConnue} />;
 }

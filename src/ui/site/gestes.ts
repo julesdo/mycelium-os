@@ -169,7 +169,7 @@ export function demarrerBlocsVivants(racine: HTMLElement): Defaire {
  * regarder ailleurs) continuent dedans. Hors de la fenêtre, il revient au centre.
  */
 const PLUMES_QUI_REGARDENT =
-	'.plume-vedette svg, .plume-coin svg, .plume-veille svg, .plume-mega svg, .plume-loi svg, .plume-fil svg';
+	'.plume-vedette svg, .plume-coin svg, .plume-veille svg, .plume-mega svg, .plume-loi svg, .plume-fil svg, .compte-plume svg';
 
 export function demarrerRegardDePlume(racine: HTMLElement): Defaire {
 	if (mouvementReduit() || !sourisFine()) return () => {};

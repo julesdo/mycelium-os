@@ -38,6 +38,8 @@ declare module '@tanstack/react-router' {
 		 * s'ouvre au mot de passe. Jamais dans l'adresse de la page (journaux, mesure d'audience).
 		 */
 		adresseDInscription?: string;
+		/** Le mot de passe vient d'être changé : la connexion le dit en tête (28/10/2026). */
+		motDePasseChange?: boolean;
 	}
 }
 

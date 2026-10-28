@@ -1,21 +1,14 @@
-import { useState, type FormEvent } from 'react';
-import {
-	createFileRoute,
-	useHydrated,
-	useNavigate,
-	useRouterState,
-	Link
-} from '@tanstack/react-router';
-import { Button, Input } from '@cladd-ui/react';
-import { CheckIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
-import { authClient } from '../lib/client/auth';
+import { createFileRoute, useHydrated, useRouterState } from '@tanstack/react-router';
+import { useQuery } from '../app/donnees';
+import { FORME_D_ADRESSE } from '../lib/compte/regles';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
 import { api } from '../lib/convex/_generated/api';
-import { BoutonPrincipal, CadreAuth, Champ, MentionDuCadeau, MessageErreur } from '../ui';
-import { suivre } from '../app/analytique';
-import { useQuery } from '../app/donnees';
+import { PageInscription } from '../marketing/compte/inscription';
+import feuilleDuSite from '../styles/site/site.css?url';
 
 /**
+ * L'INSCRIPTION, dans la DA du site (28/10/2026) : `marketing/compte/inscription.tsx`.
+ *
  * `invitation` porte le jeton d'une invitation en cours.
  *
  * SANS LUI, UN INVITÉ PERD SON INVITATION EN CRÉANT SON COMPTE, et le pire suit :
@@ -39,248 +32,41 @@ export const Route = createFileRoute('/inscription')({
 		pour: search.pour === 'diagnostic' ? 'diagnostic' : undefined,
 		cadeau: typeof search.cadeau === 'string' ? search.cadeau.slice(0, 32) : undefined
 	}),
+	head: () => ({
+		meta: [{ title: 'Créer votre compte · Letikette' }],
+		links: [{ rel: 'stylesheet', href: feuilleDuSite }]
+	}),
 	component: Inscription
 });
 
-const LONGUEUR_MINIMALE = 12;
-
-/** Une adresse qui a la forme d'une adresse : le serveur tranche le reste. */
-const FORME_D_ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/**
- * L'INSCRIPTION, EN DEUX TEMPS (13/10/2026).
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * ⚠️ UNE QUESTION PAR ÉCRAN, COMME REVOLUT BUSINESS, MONZO ET CLAUDE
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Les trois champs tenaient sur un écran : le nom, l'adresse, le mot de passe.
- * Au téléphone, le clavier en cachait la moitié, et le bouton passait dessous.
- * L'adresse d'abord, puis le mot de passe : le clavier reste ouvert, le bouton
- * reste sous le pouce, et chaque écran ne demande qu'une chose.
- *
- * ⚠️ LE NOM N'EST PLUS ICI : Plume le demande en se présentant, à l'écran
- * suivant (`/bienvenue`), comme Claude le fait (« Nice to meet you, I'm… »).
- * Un invité, lui, ne passe pas par Plume : il le donne ici.
- *
- * ⚠️ LE MOT DE PASSE SE VOIT EN LE TAPANT, à la demande (l'œil), et sa longueur
- * se compte sous lui : douze caractères, la règle que le serveur tient aussi.
- */
 function Inscription() {
-	const navigate = useNavigate();
 	const { invitation, pour, cadeau } = Route.useSearch();
 	const offre = useQuery(
 		api.croissance.parrainage.invitation,
 		cadeau === undefined ? 'skip' : { code: cadeau }
 	);
-	// L'adresse tapée sur le site (28/10/2026) : on ouvre au mot de passe. Seulement après
+	// L'adresse tapée sur le site (28/10/2026) ouvre au mot de passe. Seulement après
 	// l'hydratation : au rechargement, le serveur a dessiné l'étape de l'adresse, et l'état de
 	// l'historique, qu'il ne voit pas, ne doit pas faire diverger le premier rendu.
 	const hydrate = useHydrated();
-	const adresseDuSite = useRouterState({ select: (s) => s.location.state.adresseDInscription });
-	const venuDuSite =
-		hydrate && !invitation && adresseDuSite !== undefined && FORME_D_ADRESSE.test(adresseDuSite);
-	const [etape, setEtape] = useState<'adresse' | 'acces'>(() => (venuDuSite ? 'acces' : 'adresse'));
-	const [nom, setNom] = useState('');
-	const [email, setEmail] = useState(() => (venuDuSite && adresseDuSite ? adresseDuSite : ''));
-	const [motDePasse, setMotDePasse] = useState('');
-	const [visible, setVisible] = useState(false);
-	const [erreur, setErreur] = useState<string | null>(null);
-	const [enCours, setEnCours] = useState(false);
-
-	const assezLong = motDePasse.length >= LONGUEUR_MINIMALE;
-
-	function continuer(e: FormEvent) {
-		e.preventDefault();
-		if (!FORME_D_ADRESSE.test(email.trim())) {
-			setErreur('Cette adresse ne semble pas complète : il manque l’arobase ou le domaine.');
-			return;
-		}
-		setErreur(null);
-		setEtape('acces');
-	}
-
-	async function creer(e: FormEvent) {
-		e.preventDefault();
-		if (!assezLong) return;
-		setErreur(null);
-		setEnCours(true);
-		const adresse = email.trim();
-		const { error } = await authClient.signUp.email({
-			email: adresse,
-			password: motDePasse,
-			// Sans invitation, Plume demande le nom à l'écran suivant ; l'adresse le tient
-			// en attendant, comme avant.
-			name: nom.trim() || adresse
-		});
-		setEnCours(false);
-		if (error) {
-			setErreur(
-				'Ce compte n’a pas pu être créé. L’adresse est peut-être déjà utilisée : essayez de vous connecter.'
-			);
-			return;
-		}
-		suivre('inscription', { invitation: Boolean(invitation) });
-		if (pour === 'diagnostic') suivre('diagnostic-lance');
-		if (invitation) {
-			await navigate({ to: '/rejoindre/$token', params: { token: invitation } });
-			return;
-		}
-		await navigate({ to: '/bienvenue' });
-	}
-
-	const pied = (
-		<span>
-			Vous avez déjà un compte ?{' '}
-			<Link
-				to="/connexion"
-				search={invitation ? { invitation } : {}}
-				className="font-medium text-cladd-primary"
-			>
-				Se connecter
-			</Link>
-		</span>
-	);
-
-	if (etape === 'adresse') {
-		return (
-			<CadreAuth
-				titre="Créer votre compte"
-				explication="Votre adresse e-mail professionnelle : c’est elle qui vous connecte, et là que vous recevez ce qui compte."
-				levees={['Votre bilan offert', `${DUREE_ESSAI_JOURS} jours d’essai`, 'Sans engagement']}
-				pied={pied}
-			>
-				{offre === undefined || offre === null ? null : (
-					<MentionDuCadeau
-						offertPar={offre.offertPar}
-						detail={`Déduit de votre deuxième prélèvement, après vos ${DUREE_ESSAI_JOURS} jours d’essai.`}
-					/>
-				)}
-				<form onSubmit={continuer} className="flex flex-col gap-cladd-2xs" noValidate>
-					<Champ etiquette="Adresse e-mail">
-						<Input
-							type="email"
-							value={email}
-							onChange={(valeur) => {
-								setEmail(valeur);
-								setErreur(null);
-							}}
-							name="email"
-							inputMode="email"
-							inputComponentProps={{ autoComplete: 'email', autoCapitalize: 'none' }}
-							autoFocus
-							required
-						/>
-					</Champ>
-
-					{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
-
-					<BoutonPrincipal type="submit" pleineLargeur disabled={email.trim() === ''}>
-						Continuer
-					</BoutonPrincipal>
-				</form>
-			</CadreAuth>
-		);
-	}
-
+	const adresse = useRouterState({ select: (s) => s.location.state.adresseDInscription });
+	const adresseDuSite =
+		hydrate && adresse !== undefined && FORME_D_ADRESSE.test(adresse) ? adresse : undefined;
 	return (
-		<CadreAuth
-			titre={invitation ? 'Votre nom et votre mot de passe' : 'Choisissez un mot de passe'}
-			explication={`Pour ${email.trim()}. Une phrase dont vous vous souvenez vaut mieux qu’un mot compliqué.`}
-			onRetour={() => {
-				setErreur(null);
-				setEtape('adresse');
-			}}
-			pied={pied}
-		>
-			<form onSubmit={creer} className="flex flex-col gap-cladd-2xs">
-				{invitation ? (
-					<Champ etiquette="Votre nom">
-						<Input
-							value={nom}
-							onChange={setNom}
-							name="name"
-							inputComponentProps={{ autoComplete: 'name' }}
-							required
-						/>
-					</Champ>
-				) : null}
-
-				{/*
-				  Une longueur, pas un jeu de caractères imposé. Exiger une majuscule
-				  et un chiffre produit « Cantine2024! » chez tout le monde ; exiger
-				  douze caractères produit une vraie phrase.
-				*/}
-				<div className="flex flex-col gap-1.5">
-					<Champ etiquette="Mot de passe">
-						<Input
-							type={visible ? 'text' : 'password'}
-							value={motDePasse}
-							onChange={setMotDePasse}
-							name="new-password"
-							inputComponentProps={{ autoComplete: 'new-password' }}
-							autoFocus={!invitation}
-							inputClassName="pr-1"
-							suffix={
-								<Button
-									// Sans `type`, un bouton posé dans un formulaire l'ENVOIE : l'œil créait le compte.
-									type="button"
-									size="sm"
-									variant="transparent"
-									outline={false}
-									rounded
-									square
-									className="mr-1 shrink-0"
-									aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-									aria-pressed={visible}
-									onClick={() => setVisible((v) => !v)}
-								>
-									{visible ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-								</Button>
-							}
-							required
-						/>
-					</Champ>
-					{/* Le compte se lit au fil de la frappe : on sait où l'on en est avant d'appuyer. */}
-					<p
-						className="flex items-center gap-1 text-cladd-3xs text-cladd-fg-softer"
-						aria-live="polite"
-					>
-						{assezLong ? (
-							<>
-								<CheckIcon size={14} strokeWidth={2.5} aria-hidden className="text-cladd-fg-soft" />
-								<span className="text-cladd-fg-soft">Assez long</span>
-							</>
-						) : (
-							`${motDePasse.length} sur ${LONGUEUR_MINIMALE} caractères au minimum`
-						)}
-					</p>
-				</div>
-
-				{erreur ? <MessageErreur>{erreur}</MessageErreur> : null}
-
-				<BoutonPrincipal
-					type="submit"
-					pleineLargeur
-					loading={enCours}
-					readOnly={enCours}
-					disabled={!assezLong || (invitation !== undefined && nom.trim() === '')}
-				>
-					Créer mon compte
-				</BoutonPrincipal>
-
-				<p className="text-cladd-3xs leading-relaxed text-cladd-fg-softer">
-					En créant votre compte, vous acceptez les{' '}
-					<Link to="/conditions-generales" className="underline underline-offset-2">
-						conditions générales
-					</Link>{' '}
-					et la{' '}
-					<Link to="/politique-de-confidentialite" className="underline underline-offset-2">
-						politique de confidentialité
-					</Link>
-					.
-				</p>
-			</form>
-		</CadreAuth>
+		<PageInscription
+			// Une adresse qui arrive après l'hydratation recommence la page à l'étape du mot de passe.
+			key={adresseDuSite ?? 'adresse'}
+			invitation={invitation}
+			pour={pour}
+			adresseDuSite={adresseDuSite}
+			offre={
+				offre
+					? {
+							offertPar: offre.offertPar,
+							detail: `Déduit de votre deuxième prélèvement, après vos ${DUREE_ESSAI_JOURS} jours d’essai.`
+						}
+					: null
+			}
+		/>
 	);
 }

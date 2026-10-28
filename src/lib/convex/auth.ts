@@ -12,6 +12,7 @@ import authSchema from './betterAuth/schema';
 import authConfig from './auth.config';
 import { requireEnv, googleOAuth, githubOAuth } from './env';
 import { devNotice } from '../dev/notice';
+import { LONGUEUR_MINIMALE_DU_MOT_DE_PASSE } from '../compte/regles';
 
 // Required for triggers to work - references internal auth functions
 const authFunctions: AuthFunctions = internal.auth;
@@ -113,7 +114,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>): BetterAuthOptions
 			// suffisait à créer un compte plus faible que ce que l'interface promet.
 			// L'écart s'est vu en rédigeant l'annexe de sécurité de l'accord de
 			// sous-traitance, où il fallait écrire un chiffre vrai.
-			minPasswordLength: 12,
+			minPasswordLength: LONGUEUR_MINIMALE_DU_MOT_DE_PASSE,
 			// L'INSCRIPTION OUVRE UNE SESSION. Elle exigeait la vérification de
 			// l'adresse, et le compte se créait donc sans personne d'authentifié
 			// derrière : l'écran suivant demandait le nom de l'établissement, puis
