@@ -1,24 +1,13 @@
 import { majorationLisible } from '../lib/verticales/recouvrement/pays/france/taux';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-	Navbar,
-	Hero,
-	BandeLogiciels,
-	Situations,
-	Calcul,
-	SectionPlume,
-	ToutCeQuiVaAvec,
-	Etapes,
-	Securite,
-	Tarifs,
-	Faq,
-	Appel,
-	Pied
-} from '../marketing';
+import { PageSite } from '../marketing/site/page';
+import feuilleDuSite from '../styles/site/site.css?url';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 
 /**
- * La racine sert la page d'accueil publique.
+ * La racine sert la page d'accueil publique : le site d'après la maquette V26 (28/10/2026,
+ * `docs/superpowers/specs/2026-10-28-site-en-production.md`), section par section dans
+ * `marketing/site/`.
  *
  * Elle renvoyait vers `/app` jusqu'ici, faute de site public. Un gérant déjà
  * connecté n'y perd rien : l'en-tête porte « Se connecter » et les deux appels
@@ -76,50 +65,11 @@ export const Route = createFileRoute('/')({
 			{ name: 'twitter:description', content: RESUME },
 			{ name: 'twitter:image', content: APERCU }
 		],
-		links: [{ rel: 'canonical', href: SITE_CANONIQUE }]
+		links: [
+			{ rel: 'canonical', href: SITE_CANONIQUE },
+			// La feuille du site, cloisonnée sous `.site` : elle ne touche pas l'application.
+			{ rel: 'stylesheet', href: feuilleDuSite }
+		]
 	}),
-	component: Accueil
+	component: PageSite
 });
-
-/**
- * L'ORDRE DES SECTIONS EST LE RYTHME DU PAPIER (06/10/2026).
- *
- *   crème · crème · PROFOND · crème · PROFOND · ENCRE · PROFOND · crème ·
- *   crème · ENCRE
- *
- * Chaque changement de ton annonce un changement de sujet, et il se fait par un
- * arc doux (`courbe`) : la section se pose sur la précédente comme une colline.
- * Le crème raconte, le crème profond démontre, l'encre ne porte que la sécurité
- * et le pied de page. Voir
- * `docs/superpowers/specs/2026-10-06-site-direction-artistique.md`.
- */
-function Accueil() {
-	return (
-		<main className="flex w-full flex-col bg-creme">
-			<Navbar />
-			<Hero />
-			{/* LE CALCULATEUR remplace la loi et la frise (14/10/2026) : le visiteur fait
-			    lui-même, sur SA facture, ce que les deux sections énonçaient. Il monte juste
-			    sous le héros (19/10/2026, audit) : la réponse à sa question, avant les logos. */}
-			<Calcul />
-			<BandeLogiciels />
-			{/* PLUME, juste après ce qu'on vous doit : celui qui va le réclamer. */}
-			<SectionPlume />
-			<Etapes />
-			<ToutCeQuiVaAvec />
-			{/* LA CIBLE, après le produit : les métiers, en photos, sans prénom. */}
-			<Situations />
-			{/*
-			  LA SÉCURITÉ AVANT LE PRIX (réécriture du 06/10 au soir) : ce qui rassure
-			  — rien ne part sans vous, aucun fonds touché — se lit avant qu'on
-			  demande de l'argent. Elle remplace le manifeste, le veilleur, les
-			  limites et la défense de l'abonnement.
-			*/}
-			<Securite />
-			<Tarifs />
-			<Faq />
-			<Appel />
-			<Pied />
-		</main>
-	);
-}

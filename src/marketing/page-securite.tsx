@@ -31,13 +31,14 @@ import { Chapeau, EcranProduit, SectionMarketing, TitreSection } from './section
  * ⚠️ AUCUN NUMÉRO D'ARTICLE NI AUCUN DÉLAI LÉGAL ÉCRIT ICI : ils vivent dans la
  * politique de confidentialité, vers laquelle la page renvoie.
  */
-interface Mesure {
+export interface Mesure {
 	readonly Icone: ComponentType<{ size?: number; 'aria-hidden'?: boolean }>;
 	readonly titre: string;
 	readonly lignes: readonly string[];
 }
 
-const MESURES: readonly Mesure[] = [
+/** Les mesures en place, une par rangée : la page d'aujourd'hui et celle du site V26 les lisent. */
+export const MESURES: readonly Mesure[] = [
 	{
 		Icone: FileLockIcon,
 		titre: 'Vos documents, scellés dès l’arrivée',

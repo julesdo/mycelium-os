@@ -18,7 +18,8 @@ import { euros } from './vitrine-demo';
  * La facture, le relevé et la lettre sont ceux des autres démonstrations (`securite-demo.ts`).
  * Les gestes vivent dans `ui/site/securite.ts`.
  */
-export function SectionSecurite() {
+/** `surSaPage` : sur `/securite`, le lien vers la page qui détaille les mesures se tait. */
+export function SectionSecurite({ surSaPage = false }: { surSaPage?: boolean }) {
 	return (
 		<section className="section securite" id="securite">
 			<div className="nuit-fond grain" aria-hidden="true">
@@ -319,20 +320,22 @@ export function SectionSecurite() {
 					<i>·</i>
 					<b>Effacement complet</b>, votre clé en premier
 				</p>
-				<Link className="lien-fleche lien-centre" to="/securite">
-					Toutes nos mesures de sécurité{' '}
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 16 16"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.8"
-						strokeLinecap="round"
-					>
-						<path d="M3 8h10M9 4l4 4-4 4" />
-					</svg>
-				</Link>
+				{surSaPage ? null : (
+					<Link className="lien-fleche lien-centre" to="/securite">
+						Toutes nos mesures de sécurité{' '}
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 16 16"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.8"
+							strokeLinecap="round"
+						>
+							<path d="M3 8h10M9 4l4 4-4 4" />
+						</svg>
+					</Link>
+				)}
 			</div>
 		</section>
 	);

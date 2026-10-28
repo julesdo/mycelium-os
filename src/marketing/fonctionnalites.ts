@@ -45,17 +45,19 @@ export interface Fonctionnalite {
 	/** Une phrase, sur sa tuile. */
 	readonly phrase: string;
 	readonly famille: FamilleRangee;
-	/** Où elle se montre sur la page d'accueil : `/#<id>`. */
+	/**
+	 * Où elle se montre sur la page d'accueil : `/#<id>`, l'identifiant d'une section du site
+	 * (`marketing/site/`). Les pages qui gardent la barre d'avant (le blog, les métiers, les
+	 * pages légales) y mènent par elle.
+	 */
 	readonly ancre: `/#${string}`;
 	/** L'écran qui la montre, s'il y en a un (le calcul se FAIT sur la page). */
 	readonly capture?: CaptureProduit;
 	/** Sa place dans la grille « Tout ce qui va avec » : celles qui n'ont pas leur section. */
 	readonly tuile: boolean;
 	/**
-	 * Son entrée du menu « Logiciel » sur le site d'après la maquette V26 (28/10/2026), construit
-	 * sur `/nouveau-site`. Elle mène aux sections de la NOUVELLE page ; `ancre` reste celle de
-	 * l'accueil actuel jusqu'à la bascule, où les deux se rejoindront
-	 * (`docs/superpowers/specs/2026-10-28-site-en-production.md`). `court` la nomme dans la
+	 * Son entrée du menu « Logiciel » du site d'après la maquette V26 (28/10/2026,
+	 * `docs/superpowers/specs/2026-10-28-site-en-production.md`). `court` la nomme dans la
 	 * feuille du téléphone ; sans lui, elle n'y figure pas.
 	 */
 	readonly menu?: {
@@ -112,7 +114,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Pénalités, frais et date limite',
 		phrase: 'Les pénalités et les frais dus sur chaque facture, détaillés période par période.',
 		famille: 'ARGENT',
-		ancre: '/#calcul',
+		ancre: '/#loi',
 		tuile: false,
 		menu: {
 			titre: 'Les pénalités au centime',
@@ -128,7 +130,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Chacune se retient une heure avant',
 		phrase: 'Rappels et lettre officielle partent à votre nom, et chacun se retient avant.',
 		famille: 'ENVOI',
-		ancre: '/#comment',
+		ancre: '/#plume',
 		capture: 'part-bientot',
 		tuile: false,
 		menu: {
@@ -145,7 +147,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Pennylane, QuickBooks, Qonto…',
 		phrase: 'Vos factures arrivent seules et passent payées quand elles le sont.',
 		famille: 'PAPIERS',
-		ancre: '/#logiciels',
+		ancre: '/#tout',
 		capture: 'logiciels',
 		tuile: false,
 		carte: {
@@ -160,7 +162,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Vos documents chiffrés',
 		phrase: 'Chaque document est scellé à son arrivée, et chaque ouverture est notée.',
 		famille: 'PAPIERS',
-		ancre: '/#coffre',
+		ancre: '/#securite',
 		capture: 'coffre',
 		tuile: true,
 		menu: {
@@ -181,7 +183,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Le risque, fait par fait',
 		phrase: 'Un indice sur cent, et chacun des faits qui le font bouger, à sa source.',
 		famille: 'TEMPS',
-		ancre: '/#sante',
+		ancre: '/#tout',
 		capture: 'sante',
 		tuile: true,
 		menu: {
@@ -202,7 +204,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Plume se tait quand il a promis',
 		phrase: 'Le paiement en plusieurs fois se convient, puis se suit versement par versement.',
 		famille: 'QUESTION',
-		ancre: '/#parole',
+		ancre: '/#tout',
 		capture: 'echeancier',
 		tuile: true,
 		carte: {
@@ -217,7 +219,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		phrase:
 			'Les avocats et commissaires de justice qui exercent près de votre client, et leurs coordonnées.',
 		famille: 'ENVOI',
-		ancre: '/#defense',
+		ancre: '/#tout',
 		capture: 'defense',
 		tuile: true,
 		menu: {
@@ -238,7 +240,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Votre client paie sur votre compte',
 		phrase: 'Votre client paie par virement, sur votre compte, depuis une page à votre nom.',
 		famille: 'ARGENT',
-		ancre: '/#paiement',
+		ancre: '/#tout',
 		capture: 'paiement',
 		tuile: true,
 		menu: {
@@ -259,7 +261,7 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		resume: 'Comme une application',
 		phrase: 'Elle s’installe depuis le navigateur, sans passer par un magasin d’applications.',
 		famille: 'MACHINE',
-		ancre: '/#telephone',
+		ancre: '/#haut',
 		capture: 'aujourdhui',
 		tuile: true
 	}

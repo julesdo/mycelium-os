@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { nomDeLOffre, type OffreDemandable } from '../../lib/crm/demande';
-import { questionsDeFacturation, type QuestionReponse } from '../faq';
+import { questionsDeFacturation, questionsDeLAccueil, type QuestionReponse } from '../faq';
 import { FeuilleDeDemande, cartesDesOffres } from '../offres';
 import { SectionAppel } from './appel';
 import { CoquilleDuSite } from './coquille';
@@ -12,7 +12,8 @@ import { SectionTarifs } from './tarifs';
  * La section des tarifs de l'accueil, son comparatif ouvert d'emblée, puis ce que la maquette
  * n'avait pas dessiné et que la page portait déjà :
  * - les offres sur demande (`cartesDesOffres`, lues dans la grille) ;
- * - les questions qu'on se pose avant de payer (`questionsDeFacturation`).
+ * - les questions de l'accueil d'avant (`questionsDeLAccueil`), puis celles qu'on se pose avant de
+ *   payer (`questionsDeFacturation`).
  *
  * Elles prennent les formes de la section des tarifs : les « portes » de Découverte et du sur
  * mesure, le filet du comparatif. « Demander » ouvre la feuille de l'application
@@ -111,6 +112,12 @@ export function PageTarifs() {
 		<CoquilleDuSite>
 			<SectionTarifs complet />
 			<SectionSurDemande />
+			<SectionQuestions
+				id="vos-questions"
+				titre="Vos questions."
+				ton="Nos réponses."
+				questions={questionsDeLAccueil()}
+			/>
 			<SectionQuestions
 				id="questions"
 				titre="Avant de payer."

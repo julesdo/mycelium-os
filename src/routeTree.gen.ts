@@ -23,7 +23,6 @@ import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as NouveauMotDePasseRouteImport } from './routes/nouveau-mot-de-passe'
-import { Route as NouveauSiteRouteImport } from './routes/nouveau-site'
 import { Route as PaiementRouteImport } from './routes/paiement'
 import { Route as PolitiqueDeConfidentialiteRouteImport } from './routes/politique-de-confidentialite'
 import { Route as ProcedureSansJugeRouteImport } from './routes/procedure-sans-juge'
@@ -61,7 +60,6 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog/rss[.]xml'
 import { Route as ConnexionVerificationRouteImport } from './routes/connexion_.verification'
 import { Route as DesinscriptionJetonRouteImport } from './routes/desinscription.$jeton'
 import { Route as InvitationCodeRouteImport } from './routes/invitation.$code'
-import { Route as NouveauSiteTarifsRouteImport } from './routes/nouveau-site_.tarifs'
 import { Route as PJetonRouteImport } from './routes/p.$jeton'
 import { Route as RejoindreTokenRouteImport } from './routes/rejoindre.$token'
 import { Route as SecteursSecteurRouteImport } from './routes/secteurs.$secteur'
@@ -166,11 +164,6 @@ const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
 const NouveauMotDePasseRoute = NouveauMotDePasseRouteImport.update({
   id: '/nouveau-mot-de-passe',
   path: '/nouveau-mot-de-passe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NouveauSiteRoute = NouveauSiteRouteImport.update({
-  id: '/nouveau-site',
-  path: '/nouveau-site',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaiementRoute = PaiementRouteImport.update({
@@ -358,11 +351,6 @@ const DesinscriptionJetonRoute = DesinscriptionJetonRouteImport.update({
 const InvitationCodeRoute = InvitationCodeRouteImport.update({
   id: '/invitation/$code',
   path: '/invitation/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NouveauSiteTarifsRoute = NouveauSiteTarifsRouteImport.update({
-  id: '/nouveau-site_/tarifs',
-  path: '/nouveau-site/tarifs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PJetonRoute = PJetonRouteImport.update({
@@ -556,7 +544,6 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
-  '/nouveau-site': typeof NouveauSiteRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/procedure-sans-juge': typeof ProcedureSansJugeRoute
@@ -591,7 +578,6 @@ export interface FileRoutesByFullPath {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/invitation/$code': typeof InvitationCodeRoute
-  '/nouveau-site/tarifs': typeof NouveauSiteTarifsRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -644,7 +630,6 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
-  '/nouveau-site': typeof NouveauSiteRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/procedure-sans-juge': typeof ProcedureSansJugeRoute
@@ -679,7 +664,6 @@ export interface FileRoutesByTo {
   '/connexion/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/invitation/$code': typeof InvitationCodeRoute
-  '/nouveau-site/tarifs': typeof NouveauSiteTarifsRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -735,7 +719,6 @@ export interface FileRoutesById {
   '/mentions-legales': typeof MentionsLegalesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/nouveau-mot-de-passe': typeof NouveauMotDePasseRoute
-  '/nouveau-site': typeof NouveauSiteRoute
   '/paiement': typeof PaiementRoute
   '/politique-de-confidentialite': typeof PolitiqueDeConfidentialiteRoute
   '/procedure-sans-juge': typeof ProcedureSansJugeRoute
@@ -770,7 +753,6 @@ export interface FileRoutesById {
   '/connexion_/verification': typeof ConnexionVerificationRoute
   '/desinscription/$jeton': typeof DesinscriptionJetonRoute
   '/invitation/$code': typeof InvitationCodeRoute
-  '/nouveau-site_/tarifs': typeof NouveauSiteTarifsRoute
   '/p/$jeton': typeof PJetonRoute
   '/rejoindre/$token': typeof RejoindreTokenRoute
   '/secteurs/$secteur': typeof SecteursSecteurRoute
@@ -827,7 +809,6 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
-    | '/nouveau-site'
     | '/paiement'
     | '/politique-de-confidentialite'
     | '/procedure-sans-juge'
@@ -862,7 +843,6 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/desinscription/$jeton'
     | '/invitation/$code'
-    | '/nouveau-site/tarifs'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -915,7 +895,6 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
-    | '/nouveau-site'
     | '/paiement'
     | '/politique-de-confidentialite'
     | '/procedure-sans-juge'
@@ -950,7 +929,6 @@ export interface FileRouteTypes {
     | '/connexion/verification'
     | '/desinscription/$jeton'
     | '/invitation/$code'
-    | '/nouveau-site/tarifs'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -1005,7 +983,6 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/mot-de-passe-oublie'
     | '/nouveau-mot-de-passe'
-    | '/nouveau-site'
     | '/paiement'
     | '/politique-de-confidentialite'
     | '/procedure-sans-juge'
@@ -1040,7 +1017,6 @@ export interface FileRouteTypes {
     | '/connexion_/verification'
     | '/desinscription/$jeton'
     | '/invitation/$code'
-    | '/nouveau-site_/tarifs'
     | '/p/$jeton'
     | '/rejoindre/$token'
     | '/secteurs/$secteur'
@@ -1096,7 +1072,6 @@ export interface RootRouteChildren {
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   NouveauMotDePasseRoute: typeof NouveauMotDePasseRoute
-  NouveauSiteRoute: typeof NouveauSiteRoute
   PaiementRoute: typeof PaiementRoute
   PolitiqueDeConfidentialiteRoute: typeof PolitiqueDeConfidentialiteRoute
   ProcedureSansJugeRoute: typeof ProcedureSansJugeRoute
@@ -1112,7 +1087,6 @@ export interface RootRouteChildren {
   ConnexionVerificationRoute: typeof ConnexionVerificationRoute
   DesinscriptionJetonRoute: typeof DesinscriptionJetonRoute
   InvitationCodeRoute: typeof InvitationCodeRoute
-  NouveauSiteTarifsRoute: typeof NouveauSiteTarifsRoute
   PJetonRoute: typeof PJetonRoute
   RejoindreTokenRoute: typeof RejoindreTokenRoute
   SecteursSecteurRoute: typeof SecteursSecteurRoute
@@ -1218,13 +1192,6 @@ declare module '@tanstack/react-router' {
       path: '/nouveau-mot-de-passe'
       fullPath: '/nouveau-mot-de-passe'
       preLoaderRoute: typeof NouveauMotDePasseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/nouveau-site': {
-      id: '/nouveau-site'
-      path: '/nouveau-site'
-      fullPath: '/nouveau-site'
-      preLoaderRoute: typeof NouveauSiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paiement': {
@@ -1484,13 +1451,6 @@ declare module '@tanstack/react-router' {
       path: '/invitation/$code'
       fullPath: '/invitation/$code'
       preLoaderRoute: typeof InvitationCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/nouveau-site_/tarifs': {
-      id: '/nouveau-site_/tarifs'
-      path: '/nouveau-site/tarifs'
-      fullPath: '/nouveau-site/tarifs'
-      preLoaderRoute: typeof NouveauSiteTarifsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$jeton': {
@@ -1909,7 +1869,6 @@ const rootRouteChildren: RootRouteChildren = {
   MentionsLegalesRoute: MentionsLegalesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   NouveauMotDePasseRoute: NouveauMotDePasseRoute,
-  NouveauSiteRoute: NouveauSiteRoute,
   PaiementRoute: PaiementRoute,
   PolitiqueDeConfidentialiteRoute: PolitiqueDeConfidentialiteRoute,
   ProcedureSansJugeRoute: ProcedureSansJugeRoute,
@@ -1925,7 +1884,6 @@ const rootRouteChildren: RootRouteChildren = {
   ConnexionVerificationRoute: ConnexionVerificationRoute,
   DesinscriptionJetonRoute: DesinscriptionJetonRoute,
   InvitationCodeRoute: InvitationCodeRoute,
-  NouveauSiteTarifsRoute: NouveauSiteTarifsRoute,
   PJetonRoute: PJetonRoute,
   RejoindreTokenRoute: RejoindreTokenRoute,
   SecteursSecteurRoute: SecteursSecteurRoute,

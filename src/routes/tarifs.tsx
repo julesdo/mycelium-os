@@ -1,13 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import {
-	Appel,
-	Faq,
-	Navbar,
-	OffresSurDemande,
-	Pied,
-	Tarifs,
-	questionsDeFacturation
-} from '../marketing';
+import { PageTarifs } from '../marketing/site/page-tarifs';
+import feuilleDuSite from '../styles/site/site.css?url';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 import { DUREE_ESSAI_JOURS } from '../lib/config/tarifs';
 
@@ -29,25 +22,10 @@ export const Route = createFileRoute('/tarifs')({
 			{ property: 'og:description', content: RESUME },
 			{ property: 'og:url', content: `${SITE_CANONIQUE}/tarifs` }
 		],
-		links: [{ rel: 'canonical', href: `${SITE_CANONIQUE}/tarifs` }]
+		links: [
+			{ rel: 'canonical', href: `${SITE_CANONIQUE}/tarifs` },
+			{ rel: 'stylesheet', href: feuilleDuSite }
+		]
 	}),
-	component: Page
+	component: PageTarifs
 });
-
-function Page() {
-	return (
-		<main className="flex w-full flex-col bg-creme pt-barre-publique">
-			<Navbar />
-			<Tarifs complet />
-			{/* LES OFFRES SUR DEMANDE (19/10/2026, audit) : un devis, jamais un paiement en ligne. */}
-			<OffresSurDemande />
-			<Faq
-				id="questions-facturation"
-				titre="Avant de payer."
-				questions={questionsDeFacturation()}
-			/>
-			<Appel />
-			<Pied />
-		</main>
-	);
-}

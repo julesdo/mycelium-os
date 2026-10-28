@@ -82,7 +82,7 @@ export function BarreDuSite() {
 		<>
 			<header className="barre" data-barre="" data-ton="sombre" data-defile="non">
 				<div className="barre-int">
-					<a className="marque" href="#haut" aria-label="Letikette, accueil">
+					<a className="marque" href="/#haut" aria-label="Letikette, accueil">
 						<svg aria-hidden="true">
 							<use href="#logo" />
 						</svg>
@@ -103,7 +103,7 @@ export function BarreDuSite() {
 							</svg>
 						</button>
 						{RUBRIQUES.map((r) => (
-							<a key={r.id} className="lien-nav" href={`#${r.id}`} data-spy={r.id}>
+							<a key={r.id} className="lien-nav" href={`/#${r.id}`} data-spy={r.id}>
 								{r.nom}
 							</a>
 						))}
@@ -142,7 +142,7 @@ export function BarreDuSite() {
 					<div className="mega-liste">
 						<span className="mono mega-titre">Le logiciel</span>
 						{MENU.map((e) => (
-							<a key={e.cle} className="mega-item" href={e.menu.ancre}>
+							<a key={e.cle} className="mega-item" href={`/${e.menu.ancre}`}>
 								<Icone entree={e} />
 								<span>
 									<b>{e.menu.titre}</b>
@@ -151,7 +151,7 @@ export function BarreDuSite() {
 							</a>
 						))}
 					</div>
-					<a className="mega-vedette" href="#plume">
+					<a className="mega-vedette" href="/#plume">
 						<canvas data-paysage="mega" aria-hidden="true" />
 						<span className="plume-mega">
 							<Plume humeur="salue" sol decoratif />
@@ -187,7 +187,7 @@ export function BarreDuSite() {
 							key={r.id}
 							className="anim"
 							style={rang(RANG_DANS_LA_FEUILLE[i] ?? i)}
-							href={`#${r.id}`}
+							href={`/#${r.id}`}
 						>
 							{r.nom}{' '}
 							<svg viewBox="0 0 16 16">
@@ -201,7 +201,12 @@ export function BarreDuSite() {
 				</p>
 				<div className="feuille-logiciel">
 					{MENU.filter((e) => e.menu.court).map((e, i) => (
-						<a key={e.cle} className="anim" style={rang(6 + Math.floor(i / 2))} href={e.menu.ancre}>
+						<a
+							key={e.cle}
+							className="anim"
+							style={rang(6 + Math.floor(i / 2))}
+							href={`/${e.menu.ancre}`}
+						>
 							<Icone entree={e} />
 							{e.menu.court}
 						</a>

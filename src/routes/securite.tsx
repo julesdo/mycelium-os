@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Appel, Navbar, PageSecurite, Pied } from '../marketing';
+import { PageSecuriteDuSite } from '../marketing/site/page-securite';
+import feuilleDuSite from '../styles/site/site.css?url';
 import { SITE_CANONIQUE } from '../lib/config/legal';
 
 /**
  * LA PAGE « SÉCURITÉ » (14/10/2026) : comment nous protégeons vos données.
- * Le contenu vit dans `marketing/page-securite.tsx`, la politique de
- * confidentialité fait foi.
+ * Le contenu vit dans `marketing/site/page-securite.tsx` (les mesures, dans
+ * `marketing/page-securite.tsx`) ; la politique de confidentialité fait foi.
  */
 const TITRE = 'Sécurité · Letikette';
 const RESUME =
@@ -20,18 +21,10 @@ export const Route = createFileRoute('/securite')({
 			{ property: 'og:description', content: RESUME },
 			{ property: 'og:url', content: `${SITE_CANONIQUE}/securite` }
 		],
-		links: [{ rel: 'canonical', href: `${SITE_CANONIQUE}/securite` }]
+		links: [
+			{ rel: 'canonical', href: `${SITE_CANONIQUE}/securite` },
+			{ rel: 'stylesheet', href: feuilleDuSite }
+		]
 	}),
-	component: Page
+	component: PageSecuriteDuSite
 });
-
-function Page() {
-	return (
-		<main className="flex w-full flex-col bg-creme">
-			<Navbar />
-			<PageSecurite />
-			<Appel />
-			<Pied />
-		</main>
-	);
-}

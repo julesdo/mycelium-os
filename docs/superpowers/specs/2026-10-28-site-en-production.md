@@ -57,9 +57,8 @@ On ne retape pas la maquette, on la **transplante**. Son style et ses moteurs pa
 
 ## Livrer sans casser le site en ligne
 
-- La page se construit sur `/nouveau-site` : `noindex`, liée nulle part, absente du plan du site.
-- Elle est livrée sur `main` lot par lot et vérifiée sur le vrai déploiement.
-- Le jour où toutes les sections passent, `/` la sert en une ligne, et l'adresse disparaît.
+- La page s'est construite sur `/nouveau-site` (`noindex`, liée nulle part, absente du plan du site), livrée sur `main` lot par lot et vérifiée sur le vrai déploiement.
+- Le 28/10/2026 au soir, `/`, `/tarifs` et `/securite` la servent ; `/nouveau-site` a disparu (lot 10).
 
 ## La preuve, à chaque lot
 
@@ -88,7 +87,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 7 | Sécurité : enveloppe, relevé, lettre | livré |
 | 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | livré |
 | 9 | Blog : les champs des articles, puis la section | livré |
-| 10 | Appel définitif, bascule de `/`, `/securite`, plan du site, `llms.txt` | |
+| 10 | Appel définitif, bascule de `/`, `/securite`, plan du site, `llms.txt` | livré |
 
 ## Lot 0, mesuré
 
@@ -261,3 +260,13 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
 
   Au téléphone, la plaque grandit de cette quatrième phrase (+88 px).
 - Le récit avance seul (9 s), un toucher choisit, le balayage du téléphone passe au suivant, et le lien « Lire l'article » suit l'article montré. Ce lien est simple, parce que son adresse change.
+
+## Lot 10, la bascule
+
+- **`/` sert le site d'après la maquette** (`marketing/site/page.tsx`), `/tarifs` sa page des tarifs, `/securite` sa page de sécurité. Les trois routes gardent leurs titres, leurs descriptions, leurs aperçus de partage et leurs adresses canoniques. Chacune charge la feuille du site, cloisonnée sous `.site`. `/nouveau-site` et `/nouveau-site/tarifs` ont disparu.
+- **La page de sécurité** (`site/page-securite.tsx`) : la section de l'accueil, sans son lien vers elle-même, puis chaque mesure en place (`MESURES`, la liste de la page d'avant, qui ne dit rien de plus que la politique de confidentialité), dans les « portes » des tarifs, puis l'appel.
+- **La FAQ de l'accueil d'avant part sur `/tarifs`** (`questionsDeLAccueil`), avant les questions de facturation.
+- **Les liens de la barre et du pied mènent à `/#section`** : un saut sur l'accueil, un retour à l'accueil depuis les autres pages. L'espion de la barre lit `data-spy`, pas l'adresse. Dans le pied, « Tarifs » et « Blog » mènent à leurs pages.
+- **Les ancres du registre suivent les nouvelles sections** (`fonctionnalites.ts`, `ancre`) : le calcul vers `#loi`, les relances vers `#plume`, les tuiles vers `#tout` ou `#securite`, le téléphone vers `#haut`. Les pages qui gardent la barre d'avant (le blog, les métiers, les pages légales) y mènent par elles. `fonctionnalites.test.ts` vérifie l'ancre, le menu et la tuile de chaque entrée contre les sections du site.
+- Le plan du site et `llms.txt` listaient déjà `/tarifs` et `/securite` et lisent la grille : rien à changer.
+- **Ce qui reste de l'ancien accueil** : ses sections (`marketing/hero.tsx`, `situations.tsx`, `etapes.tsx`…) ne servent plus qu'à la salle d'exposition (`routes/-salle/accueil.tsx`). Le blog, les pages métier, les pages légales, le fondateur, les experts-comptables et la procédure sans juge gardent la barre et le pied d'avant : ils sont à reprendre dans la DA, page par page.

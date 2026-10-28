@@ -45,3 +45,10 @@
 	.site .portes-offres .porte:nth-child(even) { border-left: 0; }
 	.site .portes-offres .porte + .porte { border-top: 1px solid var(--filet); }
 }
+
+/* Un lien dans un chapeau (la politique de confidentialité, sur `/securite`) : le soulignement du
+   pied, sans quoi rien ne le distingue du texte. */
+.site .chapeau a { text-decoration: underline; text-decoration-color: rgba(12, 17, 36, 0.25); text-underline-offset: 3px; }
+@media (hover: hover) {
+	.site .chapeau a:hover { color: var(--encre); text-decoration-color: currentColor; }
+}

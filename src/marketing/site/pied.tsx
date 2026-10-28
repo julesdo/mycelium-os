@@ -30,7 +30,7 @@ export function PiedDuSite() {
 		<footer className="pied">
 			<div className="enveloppe">
 				<div>
-					<a className="marque" href="#haut">
+					<a className="marque" href="/#haut">
 						<svg aria-hidden="true">
 							<use href="#logo" />
 						</svg>
@@ -42,7 +42,7 @@ export function PiedDuSite() {
 					<ul>
 						{LOGICIEL.map(([cle, ancre]) => (
 							<li key={cle}>
-								<a href={ancre}>{nomDe(cle)}</a>
+								<a href={`/${ancre}`}>{nomDe(cle)}</a>
 							</li>
 						))}
 					</ul>
@@ -51,7 +51,7 @@ export function PiedDuSite() {
 					<h4>Ressources</h4>
 					<ul>
 						<li>
-							<a href="#tarifs">Tarifs</a>
+							<Link to="/tarifs">Tarifs</Link>
 						</li>
 						<li>
 							<Link to="/securite">Sécurité</Link>
@@ -66,7 +66,7 @@ export function PiedDuSite() {
 							<Link to="/experts-comptables">Experts-comptables</Link>
 						</li>
 						<li>
-							<a href="#blog">Blog</a>
+							<Link to="/blog">Blog</Link>
 						</li>
 					</ul>
 				</div>

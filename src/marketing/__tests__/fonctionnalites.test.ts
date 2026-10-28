@@ -15,41 +15,16 @@ import { LOGOS_DES_SERVICES } from '../../ui/logos-services';
 const MARKETING = join(import.meta.dirname, '..');
 const PUBLIC = join(import.meta.dirname, '..', '..', '..', 'public');
 
-/** Tous les `id="…"` écrits en clair dans les sections du site. */
-function identifiantsEcrits(): Set<string> {
-	const ids = new Set<string>();
-	for (const fichier of readdirSync(MARKETING).filter((nom) => nom.endsWith('.tsx'))) {
-		const source = readFileSync(join(MARKETING, fichier), 'utf8');
-		for (const [, id] of source.matchAll(/\bid="([a-z-]+)"/g)) if (id !== undefined) ids.add(id);
-	}
-	return ids;
-}
-
 describe('le registre des fonctions', () => {
-	it('mène chaque entrée à une section de la page d’accueil', () => {
-		const ids = identifiantsEcrits();
-		const tuiles = readFileSync(join(MARKETING, 'tout.tsx'), 'utf8');
-		for (const fonctionnalite of FONCTIONNALITES) {
-			const id = fonctionnalite.ancre.slice(2);
-			if (fonctionnalite.tuile) {
-				// Une tuile porte la clé de sa fonction comme identifiant.
-				expect(id, fonctionnalite.cle).toBe(fonctionnalite.cle);
-				expect(tuiles).toContain('id={fonctionnalite.cle}');
-			} else {
-				expect(ids.has(id), `aucune section ne pose id="${id}" (${fonctionnalite.cle})`).toBe(true);
-			}
-		}
-	});
-
-	it('mène le menu et les tuiles du nouveau site à une de ses sections', () => {
+	it('mène chaque entrée, son menu et sa tuile à une section de l’accueil', () => {
 		const dossier = join(MARKETING, 'site');
 		const ids = new Set<string>();
 		for (const fichier of readdirSync(dossier).filter((nom) => nom.endsWith('.tsx'))) {
 			const source = readFileSync(join(dossier, fichier), 'utf8');
 			for (const [, id] of source.matchAll(/\bid="([a-z-]+)"/g)) if (id !== undefined) ids.add(id);
 		}
-		for (const { cle, menu, carte } of FONCTIONNALITES) {
-			for (const ancre of [menu?.ancre, carte?.ancre]) {
+		for (const { cle, ancre: deLAccueil, menu, carte } of FONCTIONNALITES) {
+			for (const ancre of [deLAccueil.slice(1), menu?.ancre, carte?.ancre]) {
 				if (ancre === undefined) continue;
 				expect(ids.has(ancre.slice(1)), `aucune section du site ne pose ${ancre} (${cle})`).toBe(
 					true

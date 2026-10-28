@@ -49,7 +49,7 @@ function option(nom: string): string | undefined {
 	return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-const SITE = option('site') ?? 'http://localhost:20982/nouveau-site';
+const SITE = option('site') ?? 'http://localhost:20982/';
 const LARGEURS = (option('largeurs') ?? '375,768,1024,1280,1440').split(',').map(Number);
 const SORTIE = option('sortie');
 const SEUIL = 0.5;
