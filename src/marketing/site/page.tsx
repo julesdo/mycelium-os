@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { demarrerBarre } from '../../ui/site/barre';
 import { demarrerChampsEmail } from '../../ui/site/champ-email';
 import {
 	demarrerBlocsVivants,
@@ -10,6 +11,8 @@ import {
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { SpriteDuSite } from '../../ui/site/sprite';
 import { SectionAppel } from './appel';
+import { BarreDuSite } from './barre';
+import { PiedDuSite } from './pied';
 
 /**
  * LE SITE PUBLIC, D'APRÈS LA MAQUETTE V26 (28/10/2026).
@@ -34,6 +37,7 @@ export function PageSite() {
 		// L'ordre est celui du script de la maquette.
 		const arrets = [
 			demarrerPaysages(el),
+			demarrerBarre(el),
 			demarrerBoutonsQuiComptent(el),
 			demarrerBlocsVivants(el),
 			demarrerRegardDePlume(el),
@@ -51,9 +55,11 @@ export function PageSite() {
 	return (
 		<div className="site" ref={racine}>
 			<SpriteDuSite />
+			<BarreDuSite />
 			<main id="haut">
 				<SectionAppel />
 			</main>
+			<PiedDuSite />
 		</div>
 	);
 }

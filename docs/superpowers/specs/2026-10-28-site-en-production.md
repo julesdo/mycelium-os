@@ -79,7 +79,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | Lot | Contenu | État |
 |---|---|---|
 | 0 | Socle : référence, polices, peinture, gestes communs, champ d'inscription, comparateur, adresse cachée ; l'appel en premier essai | livré |
-| 1 | Barre (ton lu au défilement, capsule, menu « Logiciel » illustré, feuille au téléphone) et pied | |
+| 1 | Barre (ton lu au défilement, capsule, menu « Logiciel » illustré, feuille au téléphone) et pied | livré |
 | 2 | En-tête : le téléphone qu'on essaie | |
 | 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l'argent ») | |
 | 4 | Plume : quatre scènes, barres en récit, balayage | |
@@ -103,3 +103,16 @@ L'appel contre la maquette, 0,5 % au plus :
 | 1440 px | 0,00 % |
 
 La taille est identique à toutes les largeurs, et Plume est à sa place.
+
+## Lot 1, mesuré
+
+- **La barre se compare état par état** : sombre ou claire, au repos ou en verre. Elle prend le ton de la section dessous, et une barre isolée n'a rien dessous.
+  - Les quatre états, aux cinq largeurs : de 0,00 à 0,18 %.
+  - Le menu « Logiciel » ouvert, à 1440 px : 0,08 %, Plume compris. Il lit le registre (`fonctionnalites.ts`, champ `menu`, ordre `MENU_DU_SITE`).
+  - La feuille du téléphone ouverte, à 375 px : 0,00 %.
+- **Le pied est plus haut, exprès** (+69 px au bureau, +152 px à 375 px).
+  - La maquette n'avait aucun lien légal. Le site garde visibles les cinq pages légales, sous la phrase qui borne le produit, dans son style (`styles/site/ajouts.css`).
+  - Il mène aussi aux pages qu'aucune autre ne lie (la procédure sans juge, les experts-comptables, le fondateur), sans quoi elles deviendraient orphelines.
+  - Le reste est le dessin de la maquette, vérifié à l'œil côte à côte.
+- **Quitter la page la défait** : ni la couleur du haut (`--haut`), ni le menu ouvert ne restent sur le document.
+- **Un défaut de la maquette est corrigé.** Un paysage qu'on demandait à peindre pendant qu'il était caché sortait de la file sans être peint, et ne se peignait plus jamais. Il attend maintenant d'être vu.

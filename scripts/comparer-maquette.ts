@@ -95,18 +95,61 @@ async function ouvrir(navigateur: Browser, url: string, largeur: number): Promis
 		throw new Error(`${url} n'est pas en mode standard`);
 	await page.evaluate(() => document.fonts.ready);
 	await page.waitForTimeout(1200);
+	// Un passage sur toute la page, comme un visiteur : chaque paysage se peint quand on
+	// l'approche, et la maquette ne repeint pas un canevas qu'on lui a demandé caché.
+	await page.evaluate(async (selecteurs) => {
+		for (const s of selecteurs) {
+			const el = document.querySelector(s);
+			if (!el || s === '.barre') continue;
+			el.scrollIntoView({ block: 'start' });
+			await new Promise((ok) => setTimeout(ok, 150));
+		}
+		window.scrollTo(0, 0);
+	}, Object.values(SECTIONS));
+	await page.waitForTimeout(600);
 	return page;
+}
+
+/**
+ * LA BARRE SE COMPARE ÉTAT PAR ÉTAT. Elle prend le ton de la section qui passe dessous ; isolée,
+ * elle n'a rien dessous, et chaque page la laisserait dans le ton qu'elle avait au chargement.
+ * On pose donc les quatre états à l'identique des deux côtés : sombre ou clair, au repos ou en
+ * défilement (le verre).
+ */
+const ETATS_DE_LA_BARRE = [
+	['sombre', 'non'],
+	['clair', 'non'],
+	['clair', 'oui'],
+	['sombre', 'oui']
+] as const;
+
+async function poserLaBarre(page: Page, ton: string, defile: string): Promise<void> {
+	await page.evaluate(
+		([t, d]) => {
+			const b = document.querySelector('[data-barre]');
+			b?.setAttribute('data-ton', t);
+			b?.setAttribute('data-defile', d);
+		},
+		[ton, defile] as const
+	);
+	await page.waitForTimeout(450);
 }
 
 type Boite = { x: number; y: number; w: number; h: number };
 type Capture = { image: Buffer; plumes: Boite[] };
 
-async function capturer(page: Page, selecteur: string): Promise<Capture | null> {
+async function capturer(
+	page: Page,
+	selecteur: string,
+	avant?: (page: Page) => Promise<void>
+): Promise<Capture | null> {
 	const el = page.locator(selecteur).first();
 	if ((await el.count()) === 0) return null;
 	const style = await page.addStyleTag({ content: isoler(selecteur) });
 	await el.scrollIntoViewIfNeeded();
 	await page.waitForTimeout(700);
+	// Après l'isolement : la page raccourcie a pu défiler, et la barre relire son ton.
+	if (avant) await avant(page);
 	const image = await el.screenshot({ animations: 'disabled' });
 	const plumes = await el.evaluate((s) => {
 		const base = s.getBoundingClientRect();
@@ -204,15 +247,24 @@ for (const largeur of LARGEURS) {
 		ouvrir(navigateur, MAQUETTE, largeur),
 		ouvrir(navigateur, SITE, largeur)
 	]);
-	for (const nom of DEMANDEES) {
-		const selecteur = SECTIONS[nom];
-		if (!selecteur) throw new Error(`Section inconnue : ${nom}`);
-		const [a, b] = await Promise.all([capturer(maquette, selecteur), capturer(site, selecteur)]);
+	for (const [nom, selecteur, avant] of DEMANDEES.flatMap((n) => {
+		const s = SECTIONS[n];
+		if (!s) throw new Error(`Section inconnue : ${n}`);
+		if (n !== 'barre') return [[n, s, undefined] as const];
+		return ETATS_DE_LA_BARRE.map(
+			([ton, defile]) =>
+				[`barre:${ton}/${defile}`, s, (p: Page) => poserLaBarre(p, ton, defile)] as const
+		);
+	})) {
+		const [a, b] = await Promise.all([
+			capturer(maquette, selecteur, avant),
+			capturer(site, selecteur, avant)
+		]);
 		if (!a) throw new Error(`La maquette n'a pas de ${selecteur}`);
 		if (!b) {
 			if (option('sections')) {
 				echecs++;
-				console.log(`${String(largeur).padStart(4)} px  ${nom.padEnd(9)} absente du site`);
+				console.log(`${String(largeur).padStart(4)} px  ${nom.padEnd(17)} absente du site`);
 			}
 			continue;
 		}
@@ -226,13 +278,14 @@ for (const largeur of LARGEURS) {
 		const ok = part < SEUIL && !ecart.largeur && !ecart.hauteur && !deplaces;
 		if (!ok) echecs++;
 		console.log(
-			`${String(largeur).padStart(4)} px  ${nom.padEnd(9)} ${part.toFixed(2).padStart(6)} %${taille}${deplaces ? `  ${deplaces} Plume déplacé(s)` : ''}${ok ? '' : '  ✗'}`
+			`${String(largeur).padStart(4)} px  ${nom.padEnd(17)} ${part.toFixed(2).padStart(6)} %${taille}${deplaces ? `  ${deplaces} Plume déplacé(s)` : ''}${ok ? '' : '  ✗'}`
 		);
 		if (SORTIE && !ok) {
 			mkdirSync(SORTIE, { recursive: true });
-			writeFileSync(join(SORTIE, `${nom}-${largeur}-maquette.png`), a.image);
-			writeFileSync(join(SORTIE, `${nom}-${largeur}-site.png`), b.image);
-			writeFileSync(join(SORTIE, `${nom}-${largeur}-ecart.png`), image);
+			const fichier = nom.replace(/[:/]/g, '-');
+			writeFileSync(join(SORTIE, `${fichier}-${largeur}-maquette.png`), a.image);
+			writeFileSync(join(SORTIE, `${fichier}-${largeur}-site.png`), b.image);
+			writeFileSync(join(SORTIE, `${fichier}-${largeur}-ecart.png`), image);
 		}
 	}
 	await Promise.all([maquette.close(), site.close()]);

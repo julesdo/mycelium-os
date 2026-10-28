@@ -21,9 +21,20 @@ export function demarrerPaysages(racine: HTMLElement): () => void {
 		return Math.round(r.width) + 'x' + Math.round(r.height) + ':' + nom + ':' + horizon.toFixed(3);
 	}
 
+	/**
+	 * ⚠️ UN CANEVAS CACHÉ RESTE DANS LA FILE (28/10/2026). La maquette le retirait de la file sans
+	 * le peindre (un canevas sans taille ne se peint pas), et il ne se peignait plus jamais quand
+	 * il réapparaissait : relevé par la comparaison au pixel, sur l'appel de la maquette. Caché, il
+	 * attend que le guetteur le voie.
+	 */
 	function peindreMaintenant(cv: HTMLCanvasElement): void {
 		const t = aPeindre.get(cv);
 		if (!t) return;
+		const r = cv.getBoundingClientRect();
+		if (!r.width || !r.height) {
+			guetteur?.observe(cv);
+			return;
+		}
 		aPeindre.delete(cv);
 		const k = cle(cv, t[0], t[1]);
 		if (dejaPeint.get(cv) === k) return;
@@ -88,12 +99,18 @@ export function demarrerPaysages(racine: HTMLElement): () => void {
 	};
 	function peindreAuRepos(d: { timeRemaining(): number }): void {
 		if (arrete) return;
-		let n = aPeindre.keys().next();
-		while (!n.done && d.timeRemaining() > 6) {
-			peindreMaintenant(n.value);
-			n = aPeindre.keys().next();
+		for (const cv of [...aPeindre.keys()]) {
+			if (d.timeRemaining() <= 6) break;
+			peindreMaintenant(cv);
 		}
-		if (aPeindre.size) auRepos(peindreAuRepos);
+		// Ce qui reste caché attend le guetteur : on ne tourne pas à vide au repos pour lui.
+		if (
+			[...aPeindre.keys()].some((cv) => {
+				const r = cv.getBoundingClientRect();
+				return r.width > 0 && r.height > 0;
+			})
+		)
+			auRepos(peindreAuRepos);
 	}
 	let minuteurRepos: ReturnType<typeof setTimeout> | undefined;
 	const auChargement = () => {

@@ -1,0 +1,11 @@
+/* Site public : ce que la maquette V26 n'avait pas et que le site doit porter. Chaque ajout dit
+   pourquoi, et suit le style de la maquette autour de lui. Cloisonné comme le reste (`.site`). */
+
+/* Le pied : la rangée des cinq pages légales, sous la phrase qui borne le produit, dans son
+   style (13 px, le gris de la phrase). La maquette n'en avait aucune ; la loi les veut visibles. */
+.site .pied .pied-legal { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: -18px; color: var(--gris); font-size: 13px; }
+.site .pied .pied-legal a { text-decoration: underline; text-decoration-color: rgba(12, 17, 36, 0.18); text-underline-offset: 3px; }
+@media (hover: hover) {
+	.site .pied a:hover { color: var(--encre); }
+	.site .pied .pied-legal a:hover { text-decoration-color: currentColor; }
+}

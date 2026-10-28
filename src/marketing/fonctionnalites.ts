@@ -50,7 +50,31 @@ export interface Fonctionnalite {
 	readonly capture?: CaptureProduit;
 	/** Sa place dans la grille « Tout ce qui va avec » : celles qui n'ont pas leur section. */
 	readonly tuile: boolean;
+	/**
+	 * Son entrée du menu « Logiciel » sur le site d'après la maquette V26 (28/10/2026), construit
+	 * sur `/nouveau-site`. Elle mène aux sections de la NOUVELLE page ; `ancre` reste celle de
+	 * l'accueil actuel jusqu'à la bascule, où les deux se rejoindront
+	 * (`docs/superpowers/specs/2026-10-28-site-en-production.md`). `court` la nomme dans la
+	 * feuille du téléphone ; sans lui, elle n'y figure pas.
+	 */
+	readonly menu?: {
+		readonly titre: string;
+		readonly ligne: string;
+		readonly ancre: `#${string}`;
+		readonly teinte: 'part' | 'argent' | 'papiers' | 'temps' | 'question';
+		readonly court?: string;
+	};
 }
+
+/** L'ordre du menu « Logiciel » du nouveau site, celui de la maquette. */
+export const MENU_DU_SITE: readonly CleFonctionnalite[] = [
+	'relances',
+	'calcul',
+	'coffre',
+	'sante',
+	'paiement',
+	'defense'
+];
 
 export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 	{
@@ -70,7 +94,14 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		phrase: 'Les pénalités et les frais dus sur chaque facture, détaillés période par période.',
 		famille: 'ARGENT',
 		ancre: '/#calcul',
-		tuile: false
+		tuile: false,
+		menu: {
+			titre: 'Les pénalités au centime',
+			ligne: 'Calculées et datées le jour où vous les réclamez.',
+			ancre: '#loi',
+			teinte: 'argent',
+			court: 'Pénalités'
+		}
 	},
 	{
 		cle: 'relances',
@@ -80,7 +111,14 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'ENVOI',
 		ancre: '/#comment',
 		capture: 'part-bientot',
-		tuile: false
+		tuile: false,
+		menu: {
+			titre: 'Les relances à votre nom',
+			ligne: 'Rappels puis lettre officielle, une heure pour retenir.',
+			ancre: '#plume',
+			teinte: 'part',
+			court: 'Relances'
+		}
 	},
 	{
 		cle: 'logiciels',
@@ -100,7 +138,14 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'PAPIERS',
 		ancre: '/#coffre',
 		capture: 'coffre',
-		tuile: true
+		tuile: true,
+		menu: {
+			titre: 'Le coffre-fort',
+			ligne: 'Chaque document scellé, chaque ouverture notée.',
+			ancre: '#securite',
+			teinte: 'papiers',
+			court: 'Coffre-fort'
+		}
 	},
 	{
 		cle: 'sante',
@@ -110,7 +155,14 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'TEMPS',
 		ancre: '/#sante',
 		capture: 'sante',
-		tuile: true
+		tuile: true,
+		menu: {
+			titre: 'La santé de vos clients',
+			ligne: 'Un indice sur cent, chaque fait à sa source.',
+			ancre: '#tout',
+			teinte: 'temps',
+			court: 'Santé clients'
+		}
 	},
 	{
 		cle: 'parole',
@@ -131,7 +183,13 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'ENVOI',
 		ancre: '/#defense',
 		capture: 'defense',
-		tuile: true
+		tuile: true,
+		menu: {
+			titre: 'Votre défense',
+			ligne: 'Avocats et commissaires près de votre client.',
+			ancre: '#tout',
+			teinte: 'question'
+		}
 	},
 	{
 		cle: 'paiement',
@@ -141,7 +199,13 @@ export const FONCTIONNALITES: readonly Fonctionnalite[] = [
 		famille: 'ARGENT',
 		ancre: '/#paiement',
 		capture: 'paiement',
-		tuile: true
+		tuile: true,
+		menu: {
+			titre: 'La page de paiement',
+			ligne: 'Votre IBAN, le montant, la référence. Rien ne passe par nous.',
+			ancre: '#tout',
+			teinte: 'argent'
+		}
 	},
 	{
 		cle: 'telephone',
