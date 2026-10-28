@@ -10,15 +10,21 @@ import { DUREE_ESSAI_JOURS } from '../../lib/config/tarifs';
  * La maquette affichait ensuite « C'est noté. Étape suivante : votre mot de passe » sur place ;
  * le site va droit à cette étape, et le bloc a disparu.
  */
-export function ChampInscription({ id, jour }: { readonly id: string; readonly jour?: boolean }) {
+/**
+ * `jour` sur un tableau clair (l'appel) : le bouton d'encre, et l'étiquette qui se balance dessous ;
+ * `nuit` sur l'aube de l'en-tête : le bouton clair, sans étiquette.
+ */
+export function ChampInscription({
+	id,
+	ton
+}: {
+	readonly id: string;
+	readonly ton: 'jour' | 'nuit';
+}) {
 	const aide = `aide-${id}`;
 	return (
 		<>
-			<form
-				className={jour ? 'inscription inscription-jour' : 'inscription'}
-				data-inscription=""
-				noValidate
-			>
+			<form className={`inscription inscription-${ton}`} data-inscription="" noValidate>
 				<div className="champ">
 					<svg className="champ-icone" viewBox="0 0 24 24" aria-hidden="true">
 						<rect x="3.2" y="5.6" width="17.6" height="12.8" rx="2.6" />
@@ -56,7 +62,11 @@ export function ChampInscription({ id, jour }: { readonly id: string; readonly j
 						</button>
 					</span>
 				</div>
-				<button className="bouton bouton-encre cta" type="submit" data-cta="">
+				<button
+					className={ton === 'jour' ? 'bouton bouton-encre cta' : 'bouton bouton-clair cta'}
+					type="submit"
+					data-cta=""
+				>
 					<span className="cta-fond" aria-hidden="true" />
 					<span className="cta-attente" aria-hidden="true" />
 					<span className="cta-txt">Commencer l’essai</span>
@@ -64,11 +74,13 @@ export function ChampInscription({ id, jour }: { readonly id: string; readonly j
 						<path className="ligne" d="M0 5h7" />
 						<path className="pointe" d="M1 1l4 4-4 4" />
 					</svg>
-					<span className="cta-etq" aria-hidden="true">
-						<span className="cta-etq-papier">
-							<b>{DUREE_ESSAI_JOURS} jours d’essai</b>0 € aujourd’hui
+					{ton === 'jour' ? (
+						<span className="cta-etq" aria-hidden="true">
+							<span className="cta-etq-papier">
+								<b>{`${DUREE_ESSAI_JOURS} jours d’essai`}</b>0 € aujourd’hui
+							</span>
 						</span>
-					</span>
+					) : null}
 				</button>
 			</form>
 			<p className="aide" id={aide} aria-live="polite" />

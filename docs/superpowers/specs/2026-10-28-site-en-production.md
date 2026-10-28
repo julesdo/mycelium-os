@@ -80,7 +80,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 |---|---|---|
 | 0 | Socle : référence, polices, peinture, gestes communs, champ d'inscription, comparateur, adresse cachée ; l'appel en premier essai | livré |
 | 1 | Barre (ton lu au défilement, capsule, menu « Logiciel » illustré, feuille au téléphone) et pied | livré |
-| 2 | En-tête : le téléphone qu'on essaie | |
+| 2 | En-tête : le téléphone qu'on essaie | livré |
 | 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l'argent ») | |
 | 4 | Plume : quatre scènes, barres en récit, balayage | |
 | 5 | Tout ce qui va avec | |
@@ -116,3 +116,25 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - Le reste est le dessin de la maquette, vérifié à l'œil côte à côte.
 - **Quitter la page la défait** : ni la couleur du haut (`--haut`), ni le menu ouvert ne restent sur le document.
 - **Un défaut de la maquette est corrigé.** Un paysage qu'on demandait à peindre pendant qu'il était caché sortait de la file sans être peint, et ne se peignait plus jamais. Il attend maintenant d'être vu.
+
+## Lot 2, mesuré
+
+- **L'en-tête contre la maquette : de 0,06 à 0,12 %** aux cinq largeurs, Plume compris. L'écart restant est la date corrigée.
+  - Le téléphone suit sa propre horloge. Même en mouvement réduit, les trois tâches de Plume arrivent (dépôt, virement, dossier). Le comparateur attend donc qu'elles soient passées des deux côtés.
+  - Une mesure à 0,48 % est retombée à 0,12 % : une minute avait changé entre les deux captures, et le téléphone écrit l'heure de sa dernière veille.
+- **Ses chiffres sont ceux du moteur** (`vitrine-demo.ts`), tenus au centime par `vitrine-demo.test.ts` contre `REVELATION_DEMO` de la salle :
+  - 66 704,82 € dus sur 4 factures ;
+  - les tranches 0,00 / 293,30 / 66 411,52 € ;
+  - 18 443,92 € jamais réclamés.
+
+  La maquette s'y trompait deux fois :
+  - elle disait « au 28 oct. 2026 », alors que ces chiffres sont arrêtés au 9 sept. 2026 ;
+  - elle détaillait « 17 803,92 € + 16 factures × 40 € », alors que le moteur donne 18 283,92 € + 4 × 40 €.
+
+  Les 40 € se lisent au registre, les heures d'envoi à `HEURES_D_ENVOI`. Les montants par client restent une fiction qui s'additionne au total, et leurs dates suivent le 9 septembre.
+- **La visite joue la même chose des deux côtés** : au bout de 34 s, même montant (64 244,32 €) et mêmes faits.
+  - Un vrai toucher rend la main, la pastille relance la visite.
+  - Plume répond au toucher d'un client.
+  - L'interrupteur des relances agit.
+- **Une phrase où s'insère une valeur s'écrit d'une seule chaîne** (`` {`${n} factures en retard`} ``). React la couperait sinon en deux nœuds de texte, et le dessin des lettres change à la jointure.
+- Les couleurs des avatars de démonstration vivent dans `ui/site/avatars.ts`, la muselière les refusant dans `marketing/`.

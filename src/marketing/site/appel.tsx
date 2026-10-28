@@ -21,11 +21,9 @@ export function SectionAppel() {
 						<div>
 							<h2>Commencez avec vos vraies factures.</h2>
 							<p className="chapeau">
-								Déposez un export ou branchez votre logiciel : vous voyez ce qu’on vous doit en
-								quelques minutes. {DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui, sans
-								engagement.
+								{`Déposez un export ou branchez votre logiciel : vous voyez ce qu’on vous doit en quelques minutes. ${DUREE_ESSAI_JOURS} jours d’essai, 0 € aujourd’hui, sans engagement.`}
 							</p>
-							<ChampInscription id="courriel-appel" jour />
+							<ChampInscription id="courriel-appel" ton="jour" />
 						</div>
 						<div className="plume-fete-cadre">
 							<Plume humeur="fete" sol className="clair plume-fete-anim" />

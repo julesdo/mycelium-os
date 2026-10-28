@@ -10,9 +10,12 @@ import {
 } from '../../ui/site/gestes';
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { SpriteDuSite } from '../../ui/site/sprite';
+import { demarrerVitrine } from '../../ui/site/vitrine';
 import { SectionAppel } from './appel';
 import { BarreDuSite } from './barre';
 import { PiedDuSite } from './pied';
+import { EnTete } from './tete';
+import { VITRINE } from './vitrine-demo';
 
 /**
  * LE SITE PUBLIC, D'APRÈS LA MAQUETTE V26 (28/10/2026).
@@ -39,6 +42,7 @@ export function PageSite() {
 			demarrerPaysages(el),
 			demarrerBarre(el),
 			demarrerBoutonsQuiComptent(el),
+			demarrerVitrine(el, VITRINE),
 			demarrerBlocsVivants(el),
 			demarrerRegardDePlume(el),
 			demarrerChampsEmail(el, (adresse) => {
@@ -57,6 +61,7 @@ export function PageSite() {
 			<SpriteDuSite />
 			<BarreDuSite />
 			<main id="haut">
+				<EnTete />
 				<SectionAppel />
 			</main>
 			<PiedDuSite />

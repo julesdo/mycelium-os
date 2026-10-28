@@ -71,6 +71,14 @@ const SECTIONS: Readonly<Record<string, string>> = {
 };
 const DEMANDEES = option('sections')?.split(',') ?? Object.keys(SECTIONS);
 
+/**
+ * CE QUI VIT SE COMPARE À LA MÊME HEURE. Le téléphone de l'en-tête suit sa propre horloge : en
+ * mouvement réduit, la visite ne joue pas, mais les trois tâches de Plume arrivent quand même
+ * (dépôt, virement, dossier), jusqu'à 20 s après que le téléphone est vu. On attend qu'elles soient
+ * passées des deux côtés : l'état d'arrivée est le même.
+ */
+const ATTENTES: Readonly<Record<string, number>> = { tete: 24_000 };
+
 /** Masque ce qui flotte, et toutes les sections sauf celle qu'on capture. */
 function isoler(selecteur: string): string {
 	const autres = Object.values(SECTIONS).filter((s) => s !== selecteur && s !== '.barre');
@@ -147,7 +155,9 @@ async function capturer(
 	if ((await el.count()) === 0) return null;
 	const style = await page.addStyleTag({ content: isoler(selecteur) });
 	await el.scrollIntoViewIfNeeded();
-	await page.waitForTimeout(700);
+	await page.waitForTimeout(
+		700 + (ATTENTES[Object.keys(SECTIONS).find((k) => SECTIONS[k] === selecteur) ?? ''] ?? 0)
+	);
 	// Après l'isolement : la page raccourcie a pu défiler, et la barre relire son ton.
 	if (avant) await avant(page);
 	const image = await el.screenshot({ animations: 'disabled' });
@@ -280,7 +290,7 @@ for (const largeur of LARGEURS) {
 		console.log(
 			`${String(largeur).padStart(4)} px  ${nom.padEnd(17)} ${part.toFixed(2).padStart(6)} %${taille}${deplaces ? `  ${deplaces} Plume déplacé(s)` : ''}${ok ? '' : '  ✗'}`
 		);
-		if (SORTIE && !ok) {
+		if (SORTIE && (!ok || process.argv.includes('--toujours'))) {
 			mkdirSync(SORTIE, { recursive: true });
 			const fichier = nom.replace(/[:/]/g, '-');
 			writeFileSync(join(SORTIE, `${fichier}-${largeur}-maquette.png`), a.image);

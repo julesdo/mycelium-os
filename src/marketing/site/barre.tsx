@@ -116,12 +116,12 @@ export function BarreDuSite() {
 							<span className="cta-fond" aria-hidden="true" />
 							<span className="cta-txt">
 								Essayer
-								<span className="long">{' '}gratuitement</span>
+								<span className="long">{'\u00a0'}gratuitement</span>
 							</span>
 							<Fleche />
 							<span className="cta-etq" aria-hidden="true">
 								<span className="cta-etq-papier">
-									<b>{DUREE_ESSAI_JOURS} jours d’essai</b>0 € aujourd’hui
+									<b>{`${DUREE_ESSAI_JOURS} jours d’essai`}</b>0 € aujourd’hui
 								</span>
 							</span>
 						</Link>
