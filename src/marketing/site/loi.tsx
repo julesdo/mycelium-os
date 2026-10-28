@@ -17,9 +17,12 @@ import {
  * limite pour agir au bout du chemin.
  *
  * ⚠️ TOUT CE QUI EST CHIFFRÉ SORT DU MOTEUR ET DU REGISTRE (`loi-demo.ts`), jamais de la maquette,
- * dont la répartition par semestre était fausse. Le mot du droit (« indemnité forfaitaire ») ne
- * vit que sur la facture dessinée, d'où il vient (`pays/france/mention-de-facture.ts`) ; le
- * texte de la page dit « frais » (`lexique.test.ts`).
+ * dont la répartition par semestre était fausse. Le texte dit « frais », le mot de tous les jours
+ * (`lexique.test.ts`).
+ *
+ * La maquette finissait sur la facture d'exemple et son étiquette (« Ce que Fournitures Durand
+ * vous doit ») : retirées le 28/10/2026 au soir. Le fondateur : un exemple nommé que personne ne
+ * reconnaît, et du texte partout. La section s'arrête à la date limite pour agir.
  *
  * Le moteur des tableaux vit dans `ui/site/loi.ts`.
  */
@@ -62,7 +65,7 @@ export function SectionLoi() {
 							<span className="mono jalon-pastille">{dateLongue(F.echeance)}</span>
 							<h3>L’échéance passe.</h3>
 							<p>
-								{`${F.client} devait ${eurosDeLaLoi(F.ttc)} ce jour-là. Rien n’est arrivé sur votre compte, et chaque jour qui passe compte.`}
+								{`Votre client devait vous régler ${eurosDeLaLoi(F.ttc)} ce jour-là. Rien n’est arrivé sur votre compte, et chaque jour qui passe compte.`}
 							</p>
 						</div>
 						<figure
@@ -288,145 +291,6 @@ export function SectionLoi() {
 							</div>
 						</figure>
 					</article>
-				</div>
-				<div className="conclusion">
-					<div className="conclusion-texte revele">
-						<span className="mono">{`Au ${dateLongue(JOUR_DE_LA_LOI)}`}</span>
-						<h3>{`Ce que ${F.client} vous doit.`}</h3>
-						<p>
-							La facture, plus tout ce que la loi y ajoute, compté au jour où vous le réclamez.
-							Chaque ligne se décompose et se refait à la main.
-						</p>
-						<a className="lien-calcul" href="#appel">
-							Faire ce calcul sur vos factures{' '}
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 16 16"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.8"
-								strokeLinecap="round"
-								aria-hidden="true"
-							>
-								<path d="M3 8h10M9 4l4 4-4 4" />
-							</svg>
-						</a>
-					</div>
-					<div className="recit-scene">
-						<div className="ombre">
-							<div className="etiquette grain table" data-vivant="" data-table-conclusion="">
-								<canvas data-paysage="matin" aria-hidden="true" />
-								<span className="pli" />
-								<svg className="cordon" aria-hidden="true">
-									<path data-cordon="" d="" />
-								</svg>
-								<article
-									className="facture"
-									aria-label={`Facture ${F.reference} de ${F.emetteur} à ${F.client}`}
-								>
-									<span className="agrafe" data-agrafe="" />
-									<header className="facture-tete">
-										<div className="emetteur">
-											<b>Menuiserie Laurent</b>
-											<span>Lyon 7e</span>
-										</div>
-										<div className="numero">
-											<span className="mono">Facture</span>
-											<b>F-2026-118</b>
-										</div>
-									</header>
-									<div className="facture-meta">
-										<div>
-											<span>Facturé à</span>
-											Fournitures Durand
-										</div>
-										<div>
-											<span>Émise le</span>
-											{dateLongue(F.emiseLe)}
-										</div>
-										<div>
-											<span>Échéance</span>
-											<em className="surligne actif" data-surligne="1">
-												{dateLongue(F.echeance)}
-											</em>
-										</div>
-										<div>
-											<span>Règlement</span>
-											Par virement
-										</div>
-									</div>
-									<table className="facture-lignes">
-										<thead>
-											<tr>
-												<th>Désignation</th>
-												<th>Montant</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr>
-												<td>Fourniture et pose de menuiseries bois</td>
-												<td>{eurosDeLaLoi(F.hors)}</td>
-											</tr>
-											<tr>
-												<td>TVA 20 %</td>
-												<td>{eurosDeLaLoi(F.tva)}</td>
-											</tr>
-										</tbody>
-									</table>
-									<div className="facture-total">
-										<span>Total TTC</span>
-										<span>{eurosDeLaLoi(F.ttc)}</span>
-									</div>
-									<p className="facture-mentions">
-										En cas de retard de paiement :{' '}
-										<span className="surligne actif" data-surligne="2">
-											{LOI.mention.penalites}
-										</span>{' '}
-										et{' '}
-										<span className="surligne actif" data-surligne="3">
-											{LOI.mention.frais}
-										</span>
-										.
-									</p>
-								</article>
-								<div className="etiquette-recit ombre" data-etiquette-recit="">
-									<div className="etiquette">
-										<span className="pli" /> <span className="oeillet" data-oeillet="" />{' '}
-										<span className="mono entete">Letikette · F-2026-118</span>
-										<div className="ligne-recit visible" data-des="1">
-											<span>Échue depuis le</span>
-											<b>{dateLongue(F.echeance)}</b>
-										</div>
-										<div className="ligne-recit visible" data-des="2">
-											<span>Jours de retard</span>
-											<b data-jours="">{LOI.jours}</b>
-										</div>
-										<div className="ligne-recit visible" data-des="2">
-											<span>Pénalités de retard</span>
-											<b data-penalites="">{eurosDeLaLoi(LOI.penalites)}</b>
-										</div>
-										<div className="ligne-recit visible" data-des="3">
-											<span>Frais de recouvrement</span>
-											<b>{eurosDeLaLoi(LOI.indemnite)}</b>
-										</div>
-										<div className="ligne-recit visible" data-des="4">
-											<span>Date limite pour agir</span>
-											<b>{dateLongue(LOI.prescription)}</b>
-										</div>
-										<div className="total-recit">
-											<span className="mono">Ce qu’on vous doit</span>
-											<b data-total="">{eurosDeLaLoi(LOI.total)}</b>
-											<small>{`Compté au ${dateLongue(JOUR_DE_LA_LOI)}`}</small>
-										</div>
-									</div>
-								</div>
-								<div className="plume-loi">
-									<Plume humeur="travaille" className="clair" />
-								</div>
-							</div>
-						</div>
-					</div>
 				</div>
 			</div>
 		</section>

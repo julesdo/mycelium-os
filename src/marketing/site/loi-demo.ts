@@ -1,7 +1,6 @@
 import { depuisCentimes, enCentimes } from '../../lib/socle/montants';
 import { decompterFacture, joursEntre } from '../../lib/verticales/recouvrement/decompte';
 import { PARAMETRES } from '../../lib/verticales/recouvrement/parametres';
-import { mentionDeRetard } from '../../lib/verticales/recouvrement/pays/france/mention-de-facture';
 import {
 	dateDePrescription,
 	regimePrescription
@@ -34,10 +33,7 @@ export const FACTURE_DE_LA_LOI = {
 	emetteur: 'Menuiserie Laurent',
 	ville: 'Lyon 7e',
 	client: 'Fournitures Durand',
-	emiseLe: '2026-02-26',
 	echeance: '2026-03-28',
-	hors: 1_033_333,
-	tva: 206_667,
 	ttc: 1_240_000,
 	/** Les deux autres factures du même client, pour les frais qui s'additionnent. */
 	autres: [
@@ -137,9 +133,6 @@ export const LOI = {
 		interets: Number(enCentimes(s.interets))
 	})),
 	indemnite: Number(indemnite),
-	get total(): number {
-		return FACTURE_DE_LA_LOI.ttc + this.penalites + this.indemnite;
-	},
 	prescription,
 	transport,
 	pourAgir: duree(JOUR_DE_LA_LOI, prescription),
@@ -150,8 +143,7 @@ export const LOI = {
 		penalites: article(PARAMETRES.tauxInteretLegalDefaut.source),
 		frais: article(PARAMETRES.indemniteForfaitaire.source),
 		prescription: article(PARAMETRES.delaiPrescriptionCommerciale.source)
-	},
-	mention: mentionDeRetard()
+	}
 };
 
 /** « 12 400,00 € », l'espace ordinaire de cette section de la maquette. */

@@ -66,48 +66,12 @@ export function demarrerLoi(racine: HTMLElement, s: ScenarioLoi): () => void {
 		defaires.push(() => cible.removeEventListener(type, g, options));
 	}
 
-	// Le cordon de l'étiquette, tendu de l'agrafe de la facture à l'œillet, d'après la mise en page réelle.
-	function placerCordon() {
-		const svg = racine.querySelector<SVGSVGElement>('.cordon'),
-			trait = racine.querySelector('[data-cordon]');
-		const a = racine.querySelector('[data-agrafe]'),
-			o = racine.querySelector('[data-oeillet]');
-		if (!svg || !trait || !a || !o) return;
-		const r = svg.getBoundingClientRect(),
-			ra = a.getBoundingClientRect(),
-			ro = o.getBoundingClientRect();
-		if (!r.width || getComputedStyle(svg).display === 'none') return;
-		const x1 = ra.left + ra.width / 2 - r.left,
-			y1 = ra.top + ra.height / 2 - r.top;
-		const x2 = ro.left + ro.width / 2 - r.left,
-			y2 = ro.top + ro.height / 2 - r.top;
-		svg.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
-		trait.setAttribute(
-			'd',
-			'M' +
-				x1 +
-				' ' +
-				y1 +
-				' Q' +
-				((x1 + x2) / 2 + 24) +
-				' ' +
-				(Math.max(y1, y2) + 40) +
-				' ' +
-				x2 +
-				' ' +
-				y2
-		);
-	}
-
 	const chrono = racine.querySelector<HTMLElement>('[data-chrono]');
 	const fil = chrono?.querySelector<HTMLElement>('[data-fil]');
 	const t1 = chrono?.querySelector<HTMLElement>('[data-tableau="saisons"]');
 	const t2 = chrono?.querySelector<HTMLElement>('[data-tableau="courbe"]');
 	const t4 = chrono?.querySelector<HTMLElement>('[data-tableau="horizon"]');
-	if (!chrono || !fil || !t1 || !t2 || !t4) {
-		placerCordon();
-		return () => {};
-	}
+	if (!chrono || !fil || !t1 || !t2 || !t4) return () => {};
 	const [premier, second] = s.segments;
 	const s1 = premier ?? { jours: s.jours, interets: s.penalites },
 		s2 = second ?? { jours: 0, interets: 0 };
@@ -298,7 +262,6 @@ export function demarrerLoi(racine: HTMLElement, s: ScenarioLoi): () => void {
 		placerCourbe();
 		placerHorizon();
 		majFil();
-		placerCordon();
 	}
 	regler();
 	let minuterie: ReturnType<typeof setTimeout> | undefined;
@@ -310,7 +273,6 @@ export function demarrerLoi(racine: HTMLElement, s: ScenarioLoi): () => void {
 		if (arrete) return;
 		placerCourbe();
 		placerHorizon();
-		placerCordon();
 	});
 
 	// À LA SOURIS, CHAQUE TABLEAU SE LIT.

@@ -85,11 +85,6 @@ export function majorationLisible(): string {
 	return pointsEnLettres(MAJORATION_L441_10);
 }
 
-/** « 10 points » : la même majoration en chiffres, comme une facture l'imprime (28/10/2026). */
-export function majorationEnChiffres(): string {
-	return `${String(Number(MAJORATION_L441_10) / 100).replace('.', ',')} points`;
-}
-
 /** Le multiplicateur du plancher contractuel : « trois fois le taux légal ». */
 const MULTIPLICATEUR_PLANCHER = 3n;
 

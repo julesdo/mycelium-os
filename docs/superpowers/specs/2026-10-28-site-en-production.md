@@ -153,7 +153,7 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - les articles cités (L441-10, D441-5, L110-4, lus dans les sources du registre).
 
   Le jour est figé au 28 octobre 2026 : la frise va de mars à octobre.
-- **La mention de retard de la facture dessinée** vient de `pays/france/mention-de-facture.ts`. C'est le vocabulaire du document, dans la zone de droit, composé de `majorationEnChiffres()` et de l'indemnité du registre.
+- La mention de retard de la facture dessinée venait de `pays/france/mention-de-facture.ts`. La facture a été retirée après la bascule (voir plus bas), le module avec elle.
 - **Deux pièges de la feuille, corrigés pour toute la page** :
   - **La remise à zéro de Tailwind** effaçait les valeurs par défaut du navigateur, dont la maquette dépend (1em autour d'un paragraphe : 28 px de moins sur les preuves). `styles/site/defauts.css` les rend sous `.site`, dans une couche placée après celles de Tailwind et sous la moindre règle de la maquette.
   - **Un nom de classe de la maquette peut être un utilitaire Tailwind** : la carte `.table` de la conclusion devenait `display: table` et disparaissait. Le nom est neutralisé dans `defauts.css`, et `feuille-du-site.test.ts` refuse un nom nouveau qui ne le serait pas.
@@ -270,3 +270,15 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
 - **Les ancres du registre suivent les nouvelles sections** (`fonctionnalites.ts`, `ancre`) : le calcul vers `#loi`, les relances vers `#plume`, les tuiles vers `#tout` ou `#securite`, le téléphone vers `#haut`. Les pages qui gardent la barre d'avant (le blog, les métiers, les pages légales) y mènent par elles. `fonctionnalites.test.ts` vérifie l'ancre, le menu et la tuile de chaque entrée contre les sections du site.
 - Le plan du site et `llms.txt` listaient déjà `/tarifs` et `/securite` et lisent la grille : rien à changer.
 - **Ce qui reste de l'ancien accueil** : ses sections (`marketing/hero.tsx`, `situations.tsx`, `etapes.tsx`…) ne servent plus qu'à la salle d'exposition (`routes/-salle/accueil.tsx`). Le blog, les pages métier, les pages légales, le fondateur, les experts-comptables et la procédure sans juge gardent la barre et le pied d'avant : ils sont à reprendre dans la DA, page par page.
+
+## Après la bascule : la facture d'exemple retirée
+
+Le 28/10/2026 au soir, le fondateur, sur le bloc « Ce que Fournitures Durand vous doit » qui finissait la section « La loi » : « incompréhensible, personne ne comprend ça, Durand quoi ! », puis « prendre un exemple comme ça c'est bizarre, en plus il y a du texte partout ».
+
+- Le bloc est retiré : la facture dessinée de Menuiserie Laurent, son étiquette calculée, son cordon et le lien « Faire ce calcul sur vos factures ».
+- La section s'arrête aux quatre tableaux (l'échéance, les pénalités, les frais, la date limite pour agir).
+- Le premier tableau ne nomme plus le client : « Votre client devait vous régler 12 400,00 € ce jour-là ».
+- Partent avec le bloc :
+  - le cordon du moteur (`placerCordon`) ;
+  - les champs que la facture lisait seule (émission, hors taxes, TVA, total) ;
+  - `mention-de-facture.ts` et `majorationEnChiffres`.
