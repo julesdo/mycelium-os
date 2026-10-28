@@ -4,6 +4,7 @@ import { Plume, type HumeurPlume } from '../../ui';
 import { demarrerRegardDePlume } from '../../ui/site/gestes';
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { SpriteDuSite } from '../../ui/site/sprite';
+import feuilleDuSite from '../../styles/site/site.css?url';
 
 /**
  * LE CADRE DES PAGES DU COMPTE, DANS LA DA DU SITE (28/10/2026).
@@ -61,6 +62,9 @@ export function CadreDuCompte({
 	}, []);
 	return (
 		<div className="site compte" data-ciel={scene.ciel} ref={racine}>
+			{/* La feuille du site, partout où le cadre se pose (la salle d'exposition comprise) : React la
+			    hisse dans le `head` et ne la charge qu'une fois. */}
+			<link rel="stylesheet" href={feuilleDuSite} precedence="site" />
 			<SpriteDuSite />
 			<div className="compte-page">
 				<div className="compte-colonne">

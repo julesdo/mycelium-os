@@ -153,22 +153,29 @@ export function BoutonDuCompte({
 	children,
 	enCours = false,
 	inactif = false,
-	form
+	form,
+	surClic
 }: {
 	children: ReactNode;
 	enCours?: boolean;
 	inactif?: boolean;
 	form?: string;
+	/** Hors d'un formulaire : le bouton agit au clic, et n'envoie rien. */
+	surClic?: () => void;
 }) {
 	return (
 		<button
-			type="submit"
+			type={surClic ? 'button' : 'submit'}
 			form={form}
 			className="bouton bouton-encre cta"
 			aria-disabled={inactif || undefined}
 			aria-busy={enCours || undefined}
 			onClick={(e) => {
-				if (inactif || enCours) e.preventDefault();
+				if (inactif || enCours) {
+					e.preventDefault();
+					return;
+				}
+				surClic?.();
 			}}
 		>
 			<span className="cta-fond" aria-hidden="true" />

@@ -4,12 +4,14 @@ _28/10/2026. Demande du fondateur, le soir de la bascule du site : « les pages 
 
 ## Ce qui change
 
-Cinq pages quittent le cadre sombre de l'application (`CadreAuth`) pour la page du site :
+Sept pages quittent le cadre sombre de l'application (`CadreAuth`) pour la page du site :
 - la connexion (`/connexion`) ;
 - l'inscription en deux étapes (`/inscription`) ;
 - le mot de passe oublié (`/mot-de-passe-oublie`) ;
 - le nouveau mot de passe (`/nouveau-mot-de-passe`) ;
-- le code de la double authentification (`/connexion/verification`).
+- le code de la double authentification (`/connexion/verification`) ;
+- l'acceptation d'une invitation dans une équipe (`/rejoindre/$token`, `marketing/compte/rejoindre.tsx`) ;
+- la page de l'invité d'une recommandation (`/invitation/$code`, `screens/invitation.tsx`, que la salle d'exposition montre aussi).
 
 Leur logique ne bouge pas. Elle reste dans les routes et dans les pages de `marketing/compte/` :
 - l'invitation transportée et la suite bornée (`suiteSure`) ;
@@ -31,7 +33,7 @@ Leur logique ne bouge pas. Elle reste dans les routes et dans les pages de `mark
   - le mot de passe, la nuit bleue (le lien, valable une heure) ;
   - le code, la nuit (le compte gardé deux fois).
 - **Sous 1024 px**, le tableau devient une bande en tête. La carte se tait et le formulaire reste sous le pouce. L'en-tête s'écrit à l'encre sur un ciel clair, en blanc sur un ciel sombre (`ciel`). Sous 520 px, l'autre porte ne garde que son lien.
-- La feuille reste cloisonnée sous `.site`, et les paysages et le regard de Plume sont ceux du site.
+- La feuille reste cloisonnée sous `.site`, et les paysages et le regard de Plume sont ceux du site. Le cadre la charge lui-même (`<link precedence>`, hissé dans le `head` par React) : il s'affiche juste où qu'on le pose, la salle d'exposition comprise.
 
 ## Le champ et le bouton (`marketing/compte/champ.tsx`)
 
@@ -61,9 +63,6 @@ Leur logique ne bouge pas. Elle reste dans les routes et dans les pages de `mark
 
 ## Ce qui reste
 
-- **Trois écrans gardent le cadre d'avant** :
-  - l'acceptation d'une invitation dans une équipe (`/rejoindre/$token`) ;
-  - la page de l'invité d'une recommandation (`/invitation/$code`) ;
-  - les premiers pas (`/bienvenue`, `ui/premiers-pas.tsx`), qui relèvent de l'application.
+- **Les premiers pas** (`/bienvenue`, `ui/premiers-pas.tsx`) gardent le cadre d'avant : ils relèvent de l'application, et passeront avec son kit.
 - **La connexion par Google** est prévue au serveur (`socialProviders`), mais n'a pas de bouton. Sa mise en service en production n'a pas pu être vérifiée.
 - **Les clés d'accès** : le serveur porte le greffon (\`passkey\`), mais le client ne l'utilise pas encore.

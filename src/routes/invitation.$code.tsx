@@ -4,6 +4,7 @@ import { useQuery } from '../app/donnees';
 import { noterParrainDeLaVisite } from '../app/source-visite';
 import { api } from '../lib/convex/_generated/api';
 import { EcranInvitation } from '../screens/invitation';
+import feuilleDuSite from '../styles/site/site.css?url';
 
 export const Route = createFileRoute('/invitation/$code')({
 	head: () => ({
@@ -11,7 +12,8 @@ export const Route = createFileRoute('/invitation/$code')({
 			{ title: 'Un mois de Letikette vous est offert' },
 			// Une invitation est personnelle : elle n'a rien à faire dans un moteur de recherche.
 			{ name: 'robots', content: 'noindex' }
-		]
+		],
+		links: [{ rel: 'stylesheet', href: feuilleDuSite }]
 	}),
 	component: Invitation
 });
