@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { demarrerBalayage } from '../../ui/site/balayage';
 import { demarrerBarre } from '../../ui/site/barre';
 import { demarrerChampsEmail } from '../../ui/site/champ-email';
 import {
@@ -10,6 +11,7 @@ import {
 } from '../../ui/site/gestes';
 import { demarrerLoi } from '../../ui/site/loi';
 import { demarrerPaysages } from '../../ui/site/paysages';
+import { demarrerPlume } from '../../ui/site/plume';
 import { SpriteDuSite } from '../../ui/site/sprite';
 import { demarrerVitrine } from '../../ui/site/vitrine';
 import { SectionAppel } from './appel';
@@ -17,6 +19,8 @@ import { BarreDuSite } from './barre';
 import { SectionLoi } from './loi';
 import { FACTURE_DE_LA_LOI, LOI } from './loi-demo';
 import { PiedDuSite } from './pied';
+import { SectionPlume } from './plume';
+import { PLUME } from './plume-demo';
 import { BandeDesPreuves } from './preuves';
 import { EnTete } from './tete';
 import { VITRINE } from './vitrine-demo';
@@ -61,6 +65,8 @@ export function PageSite() {
 					state: (precedent) => ({ ...precedent, adresseDInscription: adresse })
 				});
 			}),
+			demarrerPlume(el, PLUME.scenario),
+			demarrerBalayage(el),
 			demarrerHorsChamp(el)
 		];
 		return () => arrets.forEach((arreter) => arreter());
@@ -74,6 +80,7 @@ export function PageSite() {
 				<EnTete />
 				<BandeDesPreuves />
 				<SectionLoi />
+				<SectionPlume />
 				<SectionAppel />
 			</main>
 			<PiedDuSite />

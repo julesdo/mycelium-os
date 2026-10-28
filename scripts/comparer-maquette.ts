@@ -143,6 +143,22 @@ async function poserLaBarre(page: Page, ton: string, defile: string): Promise<vo
 	await page.waitForTimeout(450);
 }
 
+/**
+ * LES RÉCITS SE COMPARENT SCÈNE PAR SCÈNE. En mouvement réduit, une section qui raconte (Plume, le
+ * blog) ne montre que sa première scène ; un toucher sur chaque capacité joue la sienne, à
+ * l'identique des deux côtés, jusqu'à son état final.
+ */
+async function jouerLaScene(page: Page, grille: string, k: number): Promise<void> {
+	await page.locator(`${grille} .capacite`).nth(k).click();
+	await page.waitForTimeout(3200);
+}
+const SCENES: Readonly<Record<string, { grille: string; noms: readonly string[] }>> = {
+	plume: {
+		grille: '.plume-grille:not(.blog-grille)',
+		noms: ['dossiers', 'relance', 'client', 'geste']
+	}
+};
+
 type Boite = { x: number; y: number; w: number; h: number };
 type Capture = { image: Buffer; plumes: Boite[] };
 
@@ -260,6 +276,11 @@ for (const largeur of LARGEURS) {
 	for (const [nom, selecteur, avant] of DEMANDEES.flatMap((n) => {
 		const s = SECTIONS[n];
 		if (!s) throw new Error(`Section inconnue : ${n}`);
+		const recit = SCENES[n];
+		if (recit)
+			return recit.noms.map(
+				(scene, k) => [`${n}:${scene}`, s, (p: Page) => jouerLaScene(p, recit.grille, k)] as const
+			);
 		if (n !== 'barre') return [[n, s, undefined] as const];
 		return ETATS_DE_LA_BARRE.map(
 			([ton, defile]) =>

@@ -82,7 +82,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 1 | Barre (ton lu au défilement, capsule, menu « Logiciel » illustré, feuille au téléphone) et pied | livré |
 | 2 | En-tête : le téléphone qu'on essaie | livré |
 | 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l’argent ») | livré |
-| 4 | Plume : quatre scènes, barres en récit, balayage | |
+| 4 | Plume : quatre scènes, barres en récit, balayage | livré |
 | 5 | Tout ce qui va avec | |
 | 6 | Métiers | |
 | 7 | Sécurité : enveloppe, relevé, lettre | |
@@ -159,3 +159,16 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
   - **La remise à zéro de Tailwind** effaçait les valeurs par défaut du navigateur, dont la maquette dépend (1em autour d'un paragraphe : 28 px de moins sur les preuves). `styles/site/defauts.css` les rend sous `.site`, dans une couche placée après celles de Tailwind et sous la moindre règle de la maquette.
   - **Un nom de classe de la maquette peut être un utilitaire Tailwind** : la carte `.table` de la conclusion devenait `display: table` et disparaissait. Le nom est neutralisé dans `defauts.css`, et `feuille-du-site.test.ts` refuse un nom nouveau qui ne le serait pas.
 - **Le pied : +93 px au bureau, tout entiers dans les liens ajoutés** (deux ressources, la rangée légale). Les +69 px d'avant cachaient la marge du paragraphe, effacée sur le site.
+
+## Lot 4, mesuré
+
+- **Plume contre la maquette : de 0,00 à 0,05 %**, aux cinq largeurs et scène par scène. En mouvement réduit, la section ne montre que sa première scène ; le comparateur touche donc chaque capacité des deux côtés et compare les quatre états finaux (`SCENES` dans `comparer-maquette.ts`).
+- **La visite joue la même chose des deux côtés** : les quatre scènes aux mêmes instants (10, 22, 35, 46 s), le doigt fantôme, la reprise en main au premier vrai geste, la pastille qui relance.
+- **Le balayage du téléphone** passe à la scène suivante et à la précédente comme dans la maquette (`ui/site/balayage.ts`, qui servira aussi au blog).
+- **Ce que les scènes promettent se lit sur la règle qui le tient** (`plume-demo.ts`, tenu par `plume-demo.test.ts`) :
+  - « dans 59:59 » et « une heure » : `DELAI_POUR_RETENIR_MS` ;
+  - « jusqu’au 23 » : le jour promis plus `JOURS_DE_GRACE` ;
+  - le paiement en trois fois de Vidal : `versements`, le calendrier de l'accord écrit (1 440,16 €, 1 440,16 €, 1 440,18 €, le reliquat sur le dernier) ;
+  - l'heure du rappel, dans `HEURES_D_ENVOI`.
+- Les clients sont ceux des autres démonstrations : Durand et sa facture de la loi (12 400,00 €, 214 jours), Rousseau et Vidal du téléphone. Le dépôt du matin (198 factures, 40 règlements) reste une fiction, la même que sur le téléphone.
+- Plume est le composant du produit : au travail dans le coin de la plaque, content dans la conversation (la maquette dessinait un Plume sans bras ; le composant n'a pas cette tête).
