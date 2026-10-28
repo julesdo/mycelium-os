@@ -84,7 +84,7 @@ node --experimental-strip-types scripts/comparer-maquette.ts --sections appel --
 | 3 | Bande des preuves et calculateur (« La loi vous doit déjà de l’argent ») | livré |
 | 4 | Plume : quatre scènes, barres en récit, balayage | livré |
 | 5 | Tout ce qui va avec | livré |
-| 6 | Métiers | |
+| 6 | Métiers | livré |
 | 7 | Sécurité : enveloppe, relevé, lettre | |
 | 8 | Tarifs, puis la page `/tarifs` (comparatif, FAQ) | |
 | 9 | Blog : les champs des articles, puis la section | |
@@ -187,3 +187,18 @@ La taille est identique à toutes les largeurs, et Plume est à sa place.
 - **Les coupons du paiement en trois fois suivent `versements`** (2 000 € le 1er de chaque mois, le deuxième « dans 4 jours » au 28 octobre). La page de paiement règle la facture de la loi.
 - **Un écart de mesure, corrigé dans le comparateur.** Au doigt, une tuile joue sa scène une fois, à son entrée à l'écran, et la garde. Tant que le site n'a pas toutes ses sections, sa page est plus courte, et le passage du début ne montrait pas les mêmes tuiles des deux côtés. Le comparateur les fait maintenant toutes passer à l'écran avant de capturer.
 - Au survol, chaque scène joue comme dans la maquette : le coffre scelle le devis à l'heure qu'il est, l'échéancier passe à 4 000 € reçus, les factures se comptent jusqu'à 198.
+
+## Lot 6, mesuré
+
+- **Les métiers : de 0,00 à 0,08 %**, aux cinq largeurs et panneau par panneau (le comparateur ouvre chacun des quatre, `SCENES`). Les photos sont celles du site (`public/photos/`), les mêmes fichiers que la maquette, octet pour octet.
+- **La règle de chaque métier se lit au registre** (`metiers-demo.ts`, tenu par `metiers-demo.test.ts`) :
+  - le transport : 1 an pour agir contre 5 ans (`regimePrescription`) ;
+  - le bâtiment : 40 € de frais (`indemniteForfaitaire`) ;
+  - les services : douze fois ces frais, 480 € ;
+  - le secteur public : 50 jours pour un hôpital (`delaisPaiementPublics.SANTE`).
+- **Le nom, le public et la page de chaque métier viennent de `secteurs.ts`**, et le lien mène à `/secteurs/<métier>` au lieu de l'ancre de la maquette.
+- **La carte d'exemple est celle de la scène du métier** (`scenes-metiers.ts`), la même que sur sa capture d'écran. Elle suit le produit sur deux points où la maquette s'en écartait :
+  - les initiales prennent les deux premiers mots, comme l'avatar (« SL », « CD », au lieu de « ST », « CV ») ;
+  - la date se dit comme sur une carte du produit (`dateRelative`) : « aujourd’hui » pour les services, au lieu de « 10:00 ».
+- **Deux écarts de mesure, corrigés dans le comparateur** : une photo en chargement différé pouvait n'être pas arrivée d'un côté (34 % à 1280 px), et le bouton d'un panneau ouvert se touche sous son contenu.
+- Au survol, au clavier et au toucher, les panneaux s'ouvrent comme dans la maquette.

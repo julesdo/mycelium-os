@@ -148,14 +148,19 @@ async function poserLaBarre(page: Page, ton: string, defile: string): Promise<vo
  * blog) ne montre que sa première scène ; un toucher sur chaque capacité joue la sienne, à
  * l'identique des deux côtés, jusqu'à son état final.
  */
-async function jouerLaScene(page: Page, grille: string, k: number): Promise<void> {
-	await page.locator(`${grille} .capacite`).nth(k).click();
+async function jouerLaScene(page: Page, boutons: string, k: number): Promise<void> {
+	// Le bouton du panneau ouvert est sous son contenu : on le touche sans viser.
+	await page.locator(boutons).nth(k).dispatchEvent('click');
 	await page.waitForTimeout(3200);
 }
-const SCENES: Readonly<Record<string, { grille: string; noms: readonly string[] }>> = {
+const SCENES: Readonly<Record<string, { boutons: string; noms: readonly string[] }>> = {
 	plume: {
-		grille: '.plume-grille:not(.blog-grille)',
+		boutons: '.plume-grille:not(.blog-grille) .capacite',
 		noms: ['dossiers', 'relance', 'client', 'geste']
+	},
+	metiers: {
+		boutons: '[data-metier-onglet]',
+		noms: ['transport', 'batiment', 'services', 'public']
 	}
 };
 
@@ -196,6 +201,15 @@ async function capturer(
 		await el.scrollIntoViewIfNeeded();
 		await page.waitForTimeout(2600);
 	}
+	// Une photo en chargement différé peut n'être pas arrivée d'un côté : on les attend toutes.
+	await el.evaluate((s) =>
+		Promise.all(
+			Array.from(s.querySelectorAll('img')).map((i) => {
+				i.loading = 'eager';
+				return i.decode().catch(() => undefined);
+			})
+		)
+	);
 	// Après l'isolement : la page raccourcie a pu défiler, et la barre relire son ton.
 	if (avant) await avant(page);
 	const image = await el.screenshot({ animations: 'disabled' });
@@ -317,7 +331,7 @@ for (const largeur of LARGEURS) {
 		const recit = SCENES[n];
 		if (recit)
 			return recit.noms.map(
-				(scene, k) => [`${n}:${scene}`, s, (p: Page) => jouerLaScene(p, recit.grille, k)] as const
+				(scene, k) => [`${n}:${scene}`, s, (p: Page) => jouerLaScene(p, recit.boutons, k)] as const
 			);
 		if (n !== 'barre') return [[n, s, undefined] as const];
 		return ETATS_DE_LA_BARRE.map(

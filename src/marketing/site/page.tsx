@@ -10,6 +10,7 @@ import {
 	demarrerRegardDePlume
 } from '../../ui/site/gestes';
 import { demarrerLoi } from '../../ui/site/loi';
+import { demarrerMetiers } from '../../ui/site/metiers';
 import { demarrerPaysages } from '../../ui/site/paysages';
 import { demarrerPlume } from '../../ui/site/plume';
 import { SpriteDuSite } from '../../ui/site/sprite';
@@ -19,6 +20,7 @@ import { SectionAppel } from './appel';
 import { BarreDuSite } from './barre';
 import { SectionLoi } from './loi';
 import { FACTURE_DE_LA_LOI, LOI } from './loi-demo';
+import { SectionMetiers } from './metiers';
 import { PiedDuSite } from './pied';
 import { SectionPlume } from './plume';
 import { PLUME } from './plume-demo';
@@ -70,6 +72,7 @@ export function PageSite() {
 				});
 			}),
 			demarrerPlume(el, PLUME.scenario),
+			demarrerMetiers(el),
 			demarrerBalayage(el),
 			demarrerHorsChamp(el)
 		];
@@ -86,6 +89,7 @@ export function PageSite() {
 				<SectionLoi />
 				<SectionPlume />
 				<SectionTout />
+				<SectionMetiers />
 				<SectionAppel />
 			</main>
 			<PiedDuSite />
